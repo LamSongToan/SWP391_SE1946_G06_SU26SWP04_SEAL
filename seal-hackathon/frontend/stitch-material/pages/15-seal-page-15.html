@@ -1,0 +1,349 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ba1a1a",
+                    "surface-container": "#e5eeff",
+                    "surface-container-high": "#dce9ff",
+                    "on-primary-container": "#dad7ff",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#8a4cfc",
+                    "outline-variant": "#c7c4d8",
+                    "tertiary": "#00505f",
+                    "surface-dim": "#cbdbf5",
+                    "secondary": "#712ae2",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "secondary-fixed": "#eaddff",
+                    "surface-bright": "#f8f9ff",
+                    "background": "#f8f9ff",
+                    "primary-container": "#4f46e5",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#c3c0ff",
+                    "surface-tint": "#4d44e3",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-secondary-fixed": "#25005a",
+                    "on-tertiary-fixed": "#001f26",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-surface": "#0b1c30",
+                    "inverse-surface": "#213145",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-tertiary-container": "#93e8ff",
+                    "surface-container-low": "#eff4ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "outline": "#777587",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed": "#acedff",
+                    "on-primary-fixed": "#0f0069",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#fffbff",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "on-surface-variant": "#464555",
+                    "surface-variant": "#d3e4fe",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "primary-fixed": "#e2dfff",
+                    "tertiary-container": "#006a7c",
+                    "primary": "#3525cd",
+                    "on-background": "#0b1c30",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "stack-md": "24px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "container-max": "1280px",
+                    "stack-sm": "12px",
+                    "stack-lg": "48px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 flex flex-col py-stack-md px-base border-r border-outline-variant bg-surface">
+<div class="px-4 mb-stack-lg">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Judge Portal</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Academic League</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="font-label-md text-label-md">Assigned Events</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="stacks">stacks</span>
+<span class="font-label-md text-label-md">Assigned Rounds</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-md text-label-md">Assigned Submissions</span>
+</a>
+<!-- Active Tab: Calibration Round -->
+<a class="flex items-center gap-3 px-4 py-3 text-primary font-bold bg-primary-fixed rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="model_training">model_training</span>
+<span class="font-label-md text-label-md">Calibration Round</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-label-md text-label-md">Scoring History</span>
+</a>
+</nav>
+<div class="mt-auto pt-stack-md border-t border-outline-variant">
+<button class="w-full mb-stack-sm bg-primary text-on-primary py-3 px-4 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
+                Review Guidelines
+            </button>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-margin-desktop w-full h-16 ml-64 bg-surface-container-lowest shadow-sm">
+<div class="flex items-center gap-4">
+<span class="font-title-lg text-title-lg text-on-surface">Calibration Round</span>
+<div class="bg-surface-container-high px-3 py-1 rounded-full flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Active Session</span>
+</div>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container transition-colors p-2 rounded-full" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container transition-colors p-2 rounded-full" data-icon="help">help</button>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant">
+<div class="text-right">
+<p class="font-label-md text-label-md font-bold">Judge Profile</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant text-primary">Senior Reviewer</p>
+</div>
+<img alt="Judge profile photo" class="w-10 h-10 rounded-full object-cover border-2 border-surface-container-high" data-alt="A professional headshot of a senior academic judge with a neutral, authoritative expression. The background is a blurred university library setting with soft, natural morning light filtering through high windows. The image has a clean, high-end corporate aesthetic with a cool-toned color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBi6RPSzpPGZL_ksrtWkxSMde11UrCzNLehGuqcU19cYHqLhoIPSseTC7lZWuF_-OAv2XqBvbSa-aLLg5cSmObPU-iTMXeBE5swTlZPAVp4BgHiZLK4h_qiGlx_HuRWNyUXPolE8wnbnHmSbtd47Yz7D0VyWpf2QNDA3vHIf7mJGK_ZK2yGjTF0_3ijEPEZvvfzQwmrE5ZWGPCGBCxvBnCKBoW0X1KUp8p7eTZcCXCArRXXktHceLbvLMx0Ffh2rxZL61PQg_pwayZn">
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 p-margin-desktop max-w-container-max mx-auto">
+<!-- Welcome Hero -->
+<section class="mb-stack-lg bg-primary-container p-stack-lg rounded-xl flex items-center justify-between overflow-hidden relative">
+<div class="relative z-10 text-on-primary">
+<h2 class="font-headline-lg text-headline-lg mb-2">Align Your Standards</h2>
+<p class="font-body-lg text-body-lg max-w-2xl opacity-90">Welcome to the Calibration Round. This session ensures all judges are scoring against the same baseline criteria to maintain competition integrity.</p>
+<button class="mt-stack-md bg-surface-container-lowest text-primary font-bold py-3 px-8 rounded-lg canvas-shadow hover:scale-95 transition-transform">
+                    Start Calibration
+                </button>
+</div>
+<div class="hidden lg:block">
+<img class="w-80 h-48 object-cover rounded-xl shadow-2xl rotate-3" data-alt="A sophisticated data visualization dashboard displayed on a sleek glass tablet. The graphics show vibrant bar charts and scatter plots in indigo and purple hues, representing statistical alignment. The scene is set in a modern, brightly lit architectural space with minimalist furniture and a visionary, systematic atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJSBV2vCq5Z7wghHgcA8oHaBPC2eXPr8nhXkx0kN5uNHFZUoKXi6PCS-9ai9ZI4Afmrqe6Ax1KsadvrAURdYUdggrb7FWLPGJgY_IY5wWglO1EG0jZMCyPzDLaMm4iroXP2mEeND8ebMjKChogrlitULUHdX8DKnufWsJPue_IgOzh2ledTkNtcoPVFnH_ILGN9Z6o04vA5VLHxc4uG525uI26w6yAj8Jm-IR7cNJwNy-fQ_cM7itMLB87IlYcFWnQo9FnQcisGjCv">
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Current Calibration Task (Main Bento Box) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl canvas-shadow p-stack-md border border-surface-container">
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-title-lg text-title-lg">Current Calibration Task</h3>
+<span class="font-label-sm text-label-sm px-3 py-1 bg-surface-container-high text-primary rounded-full">Task #124-A</span>
+</div>
+<div class="bg-surface-container-low rounded-xl p-stack-md mb-stack-md border border-outline-variant/30">
+<div class="flex items-start justify-between mb-4">
+<div>
+<h4 class="font-headline-md text-headline-md mb-1">Project: NeuralLink Optimizer</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Track: Advanced Machine Learning</p>
+</div>
+<button class="flex items-center gap-2 text-primary font-bold hover:underline">
+<span class="material-symbols-outlined" data-icon="open_in_new">open_in_new</span>
+                            View Full Submission
+                        </button>
+</div>
+<div class="space-y-4">
+<div class="p-4 bg-surface-container-lowest rounded-lg">
+<p class="font-label-sm text-label-sm uppercase text-on-surface-variant mb-2">Executive Summary</p>
+<p class="font-body-md text-body-md">Proposed a novel optimization algorithm for spiking neural networks that reduces energy consumption by 42% while maintaining 98.5% accuracy on standard benchmarks. The team utilized a custom C++ framework for hardware acceleration.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-surface-container-lowest rounded-lg">
+<p class="font-label-sm text-label-sm uppercase text-on-surface-variant mb-2">Technical Rigor</p>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-4/5 rounded-full"></div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-lowest rounded-lg">
+<p class="font-label-sm text-label-sm uppercase text-on-surface-variant mb-2">Innovation Score</p>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-3/4 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-outline-variant hover:border-primary hover:bg-surface-container transition-all">
+<span class="font-display text-display text-primary">8</span>
+<span class="font-label-md text-label-md">High Pass</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-outline-variant hover:border-primary hover:bg-surface-container transition-all">
+<span class="font-display text-display text-on-surface-variant">5</span>
+<span class="font-label-md text-label-md">Standard</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-outline-variant hover:border-primary hover:bg-surface-container transition-all">
+<span class="font-display text-display text-error">3</span>
+<span class="font-label-md text-label-md">Below Bar</span>
+</button>
+</div>
+</div>
+<!-- Rubric Guide Panel -->
+<div class="col-span-12 lg:col-span-4 space-y-gutter">
+<div class="bg-surface-container-lowest rounded-xl canvas-shadow p-stack-md border border-surface-container">
+<div class="flex items-center gap-3 mb-stack-md">
+<span class="material-symbols-outlined text-primary" data-icon="gavel">gavel</span>
+<h3 class="font-title-lg text-title-lg">Rubric Guide</h3>
+</div>
+<div class="space-y-4">
+<div class="group border-b border-outline-variant pb-3 last:border-0">
+<p class="font-label-md text-label-md font-bold text-primary mb-1">Technical Innovation (40%)</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Does the project use non-trivial technology or apply existing tech in a highly unique way?</p>
+</div>
+<div class="group border-b border-outline-variant pb-3 last:border-0">
+<p class="font-label-md text-label-md font-bold text-primary mb-1">Execution &amp; Scale (30%)</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Is the prototype robust? Could this reasonably be scaled for production use?</p>
+</div>
+<div class="group border-b border-outline-variant pb-3 last:border-0">
+<p class="font-label-md text-label-md font-bold text-primary mb-1">Presentation (30%)</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Clarity of thought, documentation quality, and overall communication of the core value.</p>
+</div>
+</div>
+<button class="w-full mt-stack-md py-2 text-primary font-bold flex items-center justify-center gap-2 hover:bg-primary-fixed rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                        Full PDF Rubric
+                    </button>
+</div>
+<!-- Community Comparison Chart -->
+<div class="bg-surface-container-lowest rounded-xl canvas-shadow p-stack-md border border-surface-container">
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-title-lg text-title-lg">Global Alignment</h3>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="analytics">analytics</span>
+</div>
+<div class="relative h-48 flex items-end justify-between gap-2 px-2">
+<!-- Simulated Chart Bars -->
+<div class="flex-1 bg-surface-container-high rounded-t-lg relative group h-[30%]">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-on-primary text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">12%</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-lg relative group h-[45%]"></div>
+<div class="flex-1 bg-primary rounded-t-lg relative group h-[85%]">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-on-primary text-[10px] px-2 py-1 rounded">Avg: 7.8</div>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-lg relative group h-[60%]"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-lg relative group h-[20%]"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-lg relative group h-[15%]"></div>
+</div>
+<div class="flex justify-between mt-2 px-2 font-label-sm text-label-sm text-on-surface-variant">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+</div>
+<p class="mt-stack-md font-body-md text-body-md text-on-surface-variant text-center">Your scoring is <span class="text-secondary font-bold">within 0.5 points</span> of the lead judge average.</p>
+</div>
+</div>
+</div>
+<!-- Recent Calibrations Table -->
+<section class="mt-stack-lg bg-surface-container-lowest rounded-xl canvas-shadow border border-surface-container overflow-hidden">
+<div class="p-stack-md border-b border-surface-container flex items-center justify-between">
+<h3 class="font-title-lg text-title-lg">Recent Calibration History</h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 font-label-md text-label-md">
+                    View All <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase">Submission ID</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase">Your Score</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase">Consensus</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase">Variance</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="px-6 py-4 font-label-md text-label-md">#CAL-089 (Bio-Mod)</td>
+<td class="px-6 py-4 font-body-md text-body-md">9.0</td>
+<td class="px-6 py-4 font-body-md text-body-md">8.8</td>
+<td class="px-6 py-4"><span class="text-secondary font-bold">+0.2</span></td>
+<td class="px-6 py-4">
+<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-label-sm text-label-sm">Aligned</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="px-6 py-4 font-label-md text-label-md">#CAL-088 (SolarGrid)</td>
+<td class="px-6 py-4 font-body-md text-body-md">6.5</td>
+<td class="px-6 py-4 font-body-md text-body-md">7.2</td>
+<td class="px-6 py-4"><span class="text-error font-bold">-0.7</span></td>
+<td class="px-6 py-4">
+<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-label-sm text-label-sm">In Review</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="px-6 py-4 font-label-md text-label-md">#CAL-087 (CyberShield)</td>
+<td class="px-6 py-4 font-body-md text-body-md">8.0</td>
+<td class="px-6 py-4 font-body-md text-body-md">8.1</td>
+<td class="px-6 py-4"><span class="text-secondary font-bold">-0.1</span></td>
+<td class="px-6 py-4">
+<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-label-sm text-label-sm">Aligned</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</body></html>
+
+<!-- Judge Dashboard - Scoring History -->
+

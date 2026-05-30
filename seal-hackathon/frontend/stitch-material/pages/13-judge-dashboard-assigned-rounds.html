@@ -1,0 +1,415 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Judge Dashboard - Assigned Rounds</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ba1a1a",
+                    "surface-container": "#e5eeff",
+                    "surface-container-high": "#dce9ff",
+                    "on-primary-container": "#dad7ff",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#8a4cfc",
+                    "outline-variant": "#c7c4d8",
+                    "tertiary": "#00505f",
+                    "surface-dim": "#cbdbf5",
+                    "secondary": "#712ae2",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "secondary-fixed": "#eaddff",
+                    "surface-bright": "#f8f9ff",
+                    "background": "#f8f9ff",
+                    "primary-container": "#4f46e5",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#c3c0ff",
+                    "surface-tint": "#4d44e3",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-secondary-fixed": "#25005a",
+                    "on-tertiary-fixed": "#001f26",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-surface": "#0b1c30",
+                    "inverse-surface": "#213145",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-tertiary-container": "#93e8ff",
+                    "surface-container-low": "#eff4ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "outline": "#777587",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed": "#acedff",
+                    "on-primary-fixed": "#0f0069",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#fffbff",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "on-surface-variant": "#464555",
+                    "surface-variant": "#d3e4fe",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "primary-fixed": "#e2dfff",
+                    "tertiary-container": "#006a7c",
+                    "primary": "#3525cd",
+                    "on-background": "#0b1c30",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "stack-md": "24px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "container-max": "1280px",
+                    "stack-sm": "12px",
+                    "stack-lg": "48px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-margin-desktop w-full h-16 bg-surface-container-lowest dark:bg-inverse-surface shadow-sm">
+<div class="flex items-center gap-stack-md">
+<span class="font-display text-display text-primary dark:text-inverse-primary text-[24px] leading-tight">SEAL Dashboard</span>
+<div class="hidden md:flex items-center bg-surface-container-low rounded-full px-4 py-1.5 gap-2 border border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-64 placeholder:text-on-surface-variant/60" placeholder="Search rounds or events..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help">help</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="Judge profile photo" class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged academic professional with a friendly expression. He is wearing a sharp navy blue blazer and a crisp white shirt, set against a blurred background of a modern architectural library. The lighting is bright and even, reinforcing a clean, high-end light-mode aesthetic with professional clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADPrCVV292RX4DTqs1hzro4GfffNTYmOj2KEoxzF9AH-7etOIpijt58p5Mngt9pU1NROY9Gwp0H-CnEvDdj2G7K2WIyC7Bl1Wkncok0zDhMQMEccMPXnX3UYoXT1hFZbn_TvVqO98OLKecm5X3_4BPrLWuQmhMGcLBSC6YWkq-GBGK_TuDPULSMaZZWtermkGbWEpCB6y8WurD4YQGfuGP-5ROfEF-hMUf2oAoxTB8aOv3utq_SFjNCYqFKA8tgAfgYXgIMtazkmHF">
+</div>
+</div>
+</header>
+<div class="flex">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-[calc(100vh-64px)] w-64 fixed left-0 top-16 py-stack-md px-base border-r border-outline-variant bg-surface dark:bg-on-background">
+<div class="mb-stack-md px-2">
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-1">Judge Portal</h2>
+<p class="font-label-md text-label-md text-on-surface-variant opacity-70">Academic League</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-high dark:hover:bg-surface-container transition-all hover:-translate-y-0.5" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+                    Assigned Events
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-primary dark:text-inverse-primary font-bold bg-primary-fixed dark:bg-primary-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined sx-0001" data-icon="stacks" data-weight="fill">stacks</span>
+                    Assigned Rounds
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-high dark:hover:bg-surface-container transition-all hover:-translate-y-0.5" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                    Assigned Submissions
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-high dark:hover:bg-surface-container transition-all hover:-translate-y-0.5" href="#">
+<span class="material-symbols-outlined" data-icon="model_training">model_training</span>
+                    Calibration Round
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-high dark:hover:bg-surface-container transition-all hover:-translate-y-0.5" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                    Scoring History
+                </a>
+</nav>
+<div class="mt-auto space-y-1 pt-stack-md border-t border-outline-variant/30">
+<button class="w-full flex items-center justify-center gap-2 mb-stack-sm py-2 px-4 bg-primary text-white font-label-md text-label-md rounded-lg hover:bg-primary/90 transition-colors">
+                    Review Guidelines
+                </button>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                    Settings
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+                    Support
+                </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-margin-desktop max-w-container-max mx-auto">
+<!-- Page Header & Filters -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-gutter mb-stack-lg">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Assigned Rounds</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Review and score student projects across active competition phases.</p>
+</div>
+<div class="flex items-center p-1 bg-surface-container-high rounded-xl">
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md transition-colors hover:bg-surface-container active-filter">Active</button>
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container">Upcoming</button>
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container">Completed</button>
+</div>
+</div>
+<!-- Dashboard Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Quick Stats Column -->
+<div class="lg:col-span-12 grid grid-cols-1 sm:grid-cols-3 gap-gutter mb-stack-md">
+<div class="bg-surface-container-lowest custom-card-shadow rounded-xl p-stack-md border border-outline-variant/10">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-primary-fixed rounded-lg text-primary">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Total Submissions</p>
+<p class="font-headline-md text-headline-md text-on-surface">124</p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest custom-card-shadow rounded-xl p-stack-md border border-outline-variant/10">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-secondary-fixed rounded-lg text-secondary">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Pending Reviews</p>
+<p class="font-headline-md text-headline-md text-on-surface">18</p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest custom-card-shadow rounded-xl p-stack-md border border-outline-variant/10">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-tertiary-fixed rounded-lg text-tertiary">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Time Remaining</p>
+<p class="font-headline-md text-headline-md text-on-surface">3d 14h</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Round Cards Grid -->
+<!-- Card 1 -->
+<div class="lg:col-span-6 bg-surface-container-lowest custom-card-shadow rounded-xl border border-outline-variant/10 overflow-hidden group hover:-translate-y-1 transition-all">
+<div class="p-stack-md border-b border-outline-variant/10 bg-surface-container-low/30">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm rounded-md">In Progress</span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                                Oct 12 - Oct 15
+                            </span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Technical Review</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Global Sustainability Hackathon 2024</p>
+</div>
+<div class="p-stack-md">
+<div class="flex justify-between mb-2">
+<p class="font-label-md text-label-md text-on-surface">Grading Progress</p>
+<p class="font-label-md text-label-md font-bold text-primary">32 / 45</p>
+</div>
+<div class="w-full bg-surface-container-high h-2.5 rounded-full mb-stack-md">
+<div class="bg-primary h-2.5 rounded-full sx-0001"></div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<img alt="Team 1" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest object-cover" data-alt="A portrait of a young female software engineer with a confident smile, wearing glasses and a minimalist gray hoodie. The background is a brightly lit, modern co-working space with pops of primary colors. The photography is clean, sharp, and uses high-key lighting to emphasize a professional yet creative academic competition atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwm_ztWHMSunf1wKO5sEMMrN4dVLGXGbolvi4BSzk_rdvegquCwnhYf6Hyra3VasfhXpW9KlOiMz__rUE0joe9-EJDy49DnRXEaqPn3weqZGVRR3m7Y4GzkT1LEGXP-Sk4AjC3EiKOG3iVqJNAYpYZeeJ9e0ziqBBhnf7agCxZs6IJj3o-fLaHWXvv2G_mFXt8_BNNC5RotgFpDh2PoIspa9EmidJ9lLnhnnaJ-Sn-H0KNTfMvzBswGQQbCoKEaNnu-Hi6EHY7pI-A">
+<img alt="Team 2" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest object-cover" data-alt="A portrait of a male student wearing a stylish dark turtleneck, looking thoughtfully at the camera. The setting is a minimalist tech hub with sleek lines and soft natural light streaming in from large windows. The overall aesthetic is clean and modern, following the Indigo-based color palette of the professional dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC749LfYq8LCggZwH7lXD-5rc72wwmhk_1P1L-LnHGZWheWtAPy02vNXow4TdFNGrdJtChKP4rbGeBQgvxQXw_V96_yLxldnoWSgzkkvOpNOFdM73WcWg4CdRX-qG57y6xA8GMtKlocXCYWvDhRapzCrIWJ-YNvaDoBpZfX_ATJXZ_o8RxapaucmmeLe8KWAvnpBb2sLAl1Eayw7zCI0cGMiCRmCt8MmsXPAsVu9fxIvzBWxYefW3jIKCfL81Qqpo_6YjMin_H3SIvB">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-surface-container-high flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">+13</div>
+</div>
+<button class="px-6 py-2 bg-primary text-white font-label-md text-label-md rounded-lg hover:bg-primary/90 active:scale-95 transition-all">
+                                View Submissions
+                            </button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="lg:col-span-6 bg-surface-container-lowest custom-card-shadow rounded-xl border border-outline-variant/10 overflow-hidden group hover:-translate-y-1 transition-all">
+<div class="p-stack-md border-b border-outline-variant/10 bg-surface-container-low/30">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-surface-container-highest text-on-surface font-label-sm text-label-sm rounded-md">Urgent</span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                                Oct 14 - Oct 16
+                            </span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Preliminary Round</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">AI Innovation Challenge: Healthcare</p>
+</div>
+<div class="p-stack-md">
+<div class="flex justify-between mb-2">
+<p class="font-label-md text-label-md text-on-surface">Grading Progress</p>
+<p class="font-label-md text-label-md font-bold text-primary">12 / 60</p>
+</div>
+<div class="w-full bg-surface-container-high h-2.5 rounded-full mb-stack-md">
+<div class="bg-primary h-2.5 rounded-full sx-0001"></div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<img alt="Team 3" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest object-cover" data-alt="A close-up portrait of a female researcher with a focused gaze, wearing a light blue lab coat. The setting is a clean, modern laboratory with cool-toned LED lighting and high-tech equipment visible in the background. The style is professional, minimalist, and aligned with a modern healthcare innovation theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIaHit3UOVzIZF_Oo6vLcEDF3td7yFtWl-v7bElNOYz5s3J4rMfelG3fX4jZURI5wZfZonEspYx_uUCrofun_Ujh-wYA96YMs08KHCP27VLB_J4atiR_GYBLoTDaI5tL9xUJ6X02NRJfHVlq5jJ_YLNQmQS9XV327lyqqO8tYgS7RNoBX30xcqlxyJLuAeaIyBNUJx5Ck5WVc37gEzHrRYq2JUKo1BNZx-dKM_RswNPBinhJuKZ9WWwkwziBbPKLmbu83hoY4w8eBX">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-surface-container-high flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">+48</div>
+</div>
+<button class="px-6 py-2 bg-primary text-white font-label-md text-label-md rounded-lg hover:bg-primary/90 active:scale-95 transition-all">
+                                View Submissions
+                            </button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="lg:col-span-8 bg-surface-container-lowest custom-card-shadow rounded-xl border border-outline-variant/10 overflow-hidden group hover:-translate-y-1 transition-all">
+<div class="p-stack-md border-b border-outline-variant/10 bg-surface-container-low/30">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-surface-container-highest text-on-surface font-label-sm text-label-sm rounded-md">Queue</span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                                Oct 15 - Oct 20
+                            </span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Final Presentation Review</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">National Collegiate Cybersecurity League</p>
+</div>
+<div class="p-stack-md grid md:grid-cols-2 gap-stack-md">
+<div>
+<div class="flex justify-between mb-2">
+<p class="font-label-md text-label-md text-on-surface">Grading Progress</p>
+<p class="font-label-md text-label-md font-bold text-primary">0 / 15</p>
+</div>
+<div class="w-full bg-surface-container-high h-2.5 rounded-full mb-stack-md">
+<div class="bg-primary h-2.5 rounded-full sx-0001"></div>
+</div>
+</div>
+<div class="flex items-center justify-end">
+<button class="px-6 py-2 border-2 border-primary text-primary font-label-md text-label-md rounded-lg hover:bg-primary-fixed transition-all">
+                                View Guidelines
+                            </button>
+<button class="ml-4 px-6 py-2 bg-primary text-white font-label-md text-label-md rounded-lg hover:bg-primary/90 active:scale-95 transition-all">
+                                View Submissions
+                            </button>
+</div>
+</div>
+</div>
+<!-- Side Info Panel (Internal Guidelines or Reminders) -->
+<div class="lg:col-span-4 bg-secondary-fixed text-on-secondary-fixed rounded-xl p-stack-md flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-stack-sm">
+<span class="material-symbols-outlined">lightbulb</span>
+<p class="font-title-lg text-title-lg">Judge Tip</p>
+</div>
+<p class="font-body-md text-body-md mb-4 opacity-80">
+                            Remember to check the rubric for the "Impact" category specifically for this round. The criteria have been updated since the last event.
+                        </p>
+<ul class="space-y-2">
+<li class="flex items-center gap-2 font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                Review all 3 video links
+                            </li>
+<li class="flex items-center gap-2 font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                Verify GitHub repository access
+                            </li>
+</ul>
+</div>
+<button class="mt-stack-md w-full py-2 bg-secondary text-white rounded-lg font-label-md text-label-md hover:bg-secondary/90 transition-colors">
+                        Download Rubric (PDF)
+                    </button>
+</div>
+</div>
+<!-- Recently Graded (Optional, for depth) -->
+<section class="mt-stack-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface mb-stack-md">Recently Graded Submissions</h2>
+<div class="bg-surface-container-lowest custom-card-shadow rounded-xl border border-outline-variant/10 overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Submission ID</th>
+<th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Project Name</th>
+<th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Round</th>
+<th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Score</th>
+<th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10 font-body-md text-body-md">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-4 text-on-surface-variant">#S-8821</td>
+<td class="p-4 font-bold text-on-surface">EcoTrack AI</td>
+<td class="p-4 text-on-surface-variant">Technical Review</td>
+<td class="p-4">
+<span class="px-2 py-1 bg-surface-container text-primary font-bold rounded">88 / 100</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-primary font-label-md text-label-md hover:underline">Edit Score</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-4 text-on-surface-variant">#S-8819</td>
+<td class="p-4 font-bold text-on-surface">SolarGrid Connect</td>
+<td class="p-4 text-on-surface-variant">Technical Review</td>
+<td class="p-4">
+<span class="px-2 py-1 bg-surface-container text-primary font-bold rounded">94 / 100</span>
+</td>
+<td class="p-4 text-right">
+<button class="text-primary font-label-md text-label-md hover:underline">Edit Score</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</div>
+<!-- Mobile Navigation (Visible only on mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-outline-variant flex items-center justify-around z-50">
+<button class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">event_available</span>
+<span class="text-[10px]">Events</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary">
+<span class="material-symbols-outlined sx-0001">stacks</span>
+<span class="text-[10px] font-bold">Rounds</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">description</span>
+<span class="text-[10px]">Subs</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[10px]">History</span>
+</button>
+</nav>
+</body></html>
+
+<!-- Judge Dashboard - Assigned Events -->
+

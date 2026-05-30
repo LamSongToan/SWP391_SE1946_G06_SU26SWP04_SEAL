@@ -1,0 +1,344 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-container-high": "#dce9ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline-variant": "#c7c4d8",
+                        "surface-tint": "#4d44e3",
+                        "on-surface-variant": "#464555",
+                        "primary-container": "#4f46e5",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#e2dfff",
+                        "on-secondary": "#ffffff",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-error": "#ffffff",
+                        "secondary": "#712ae2",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-dim": "#cbdbf5",
+                        "outline": "#777587",
+                        "tertiary-container": "#006a7c",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#acedff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-tertiary-fixed": "#001f26",
+                        "on-primary-container": "#dad7ff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#00505f",
+                        "secondary-container": "#8a4cfc",
+                        "surface": "#f8f9ff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-tertiary-container": "#93e8ff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-background": "#0b1c30",
+                        "inverse-surface": "#213145",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container": "#e5eeff",
+                        "on-secondary-container": "#fffbff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "secondary-fixed": "#eaddff",
+                        "on-secondary-fixed": "#25005a",
+                        "primary": "#3525cd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "48px",
+                        "margin-desktop": "32px",
+                        "base": "8px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "stack-sm": "12px",
+                        "stack-md": "24px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "display": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-margin-desktop h-16 sticky top-0 z-40">
+<div class="flex items-center gap-stack-md">
+<span class="font-display text-title-lg font-bold text-primary">Judge Portal</span>
+<div class="hidden md:flex items-center gap-stack-md ml-margin-desktop">
+<nav class="flex gap-stack-md">
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-3 py-1 rounded-lg font-label-md text-label-md" href="#">Dashboard</a>
+<a class="text-primary font-bold border-b-2 border-primary px-3 py-1 font-label-md text-label-md" href="#">Assigned Submissions</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-3 py-1 rounded-lg font-label-md text-label-md" href="#">Guidelines</a>
+</nav>
+</div>
+</div>
+<div class="flex items-center gap-stack-sm">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-on-surface-variant">notifications</span></button>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-on-surface-variant">help</span></button>
+<div class="w-8 h-8 rounded-full bg-primary-container overflow-hidden ml-2 ring-2 ring-outline-variant">
+<img alt="Judge Avatar" data-alt="A professional headshot of a middle-aged academic judge with a warm expression, wearing a tailored blazer in a modern office setting. The lighting is soft and natural, emphasizing a professional yet approachable persona, consistent with a clean, high-end corporate web application aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuINVOQ9Etdq_ZieC9TQaGxdeP6c4rCxa2Mq3Raf0LU-cZAfpYWnExvIGBbOcDiANNXRf7H5RpLYF028GI9FRrzL0HTPDh1Z5XudV8yoqLe8HWZIPO8uiU9SeZPZ7zMksWw9B9jb6iMWHuiLuB5o3syTG3LWe0zz7YI_yL9JSDkJydBiE1lM-mbWhy11_fVqjvqtBrq3EjMd3duuKH58SBgB2lg1sAKJmUdNWwIKPxYT6Fv33E1ovuvIEjCATzuBNurmvrYUgAUarN">
+</div>
+</div>
+</header>
+<div class="flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col pt-stack-md pb-stack-md px-4 gap-base z-50 bg-surface-container-low border-r border-outline-variant w-64 hidden md:flex pt-[80px]">
+<div class="px-4 mb-stack-md">
+<h2 class="font-display text-headline-md font-black tracking-tight text-primary">Agile League</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-70">Judge Dashboard</p>
+</div>
+<nav class="flex flex-col gap-1 flex-grow">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-sm text-label-sm">Assigned Events</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">view_carousel</span>
+<span class="font-label-sm text-label-sm">Assigned Rounds</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-semibold rounded-lg translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-sm text-label-sm">Assigned Submissions</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="font-label-sm text-label-sm">Calibration Round</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-sm text-label-sm">Scoring History</span>
+</a>
+</nav>
+<div class="mt-auto px-4">
+<button class="w-full py-3 bg-secondary text-on-secondary rounded-xl font-label-md text-label-md hover:opacity-90 transition-opacity">Contact Admin</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-grow md:ml-64 p-margin-desktop bg-background">
+<div class="max-w-container-max mx-auto">
+<!-- Breadcrumbs & Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-stack-md gap-4">
+<div>
+<div class="flex items-center gap-2 text-on-surface-variant mb-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Assigned Submissions</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary">EcoTrack AI</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Evaluating Submission</h1>
+</div>
+<div class="flex items-center gap-3">
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full font-label-sm text-label-sm flex items-center gap-1.5">
+<span class="w-2 h-2 bg-primary rounded-full"></span>
+                            In Progress
+                        </span>
+<div class="h-8 w-px bg-outline-variant mx-2"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Assigned on Oct 12, 2023</span>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Column: Submission Details -->
+<div class="col-span-12 lg:col-span-8 space-y-gutter">
+<!-- Project Identity Card -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)]">
+<div class="flex flex-col md:flex-row gap-stack-md">
+<div class="w-24 h-24 bg-surface-container rounded-lg flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-4xl text-primary">eco</span>
+</div>
+<div class="flex-grow">
+<div class="flex items-start justify-between">
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface mb-1">EcoTrack AI</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-3">by <span class="font-semibold text-on-surface">Green Coders</span></p>
+</div>
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full font-label-sm text-label-sm">Sustainability</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                                        An AI-powered dashboard that utilizes satellite imagery and IoT sensors to track real-time deforestation and carbon sequestration in tropical rainforests. The project features predictive modeling to alert local authorities about high-risk zones.
+                                    </p>
+</div>
+</div>
+</div>
+<!-- Resources Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-md">
+<a class="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-transform group border border-transparent hover:border-primary-fixed" href="#">
+<span class="material-symbols-outlined text-3xl text-primary mb-2 group-hover:scale-110 transition-transform">code</span>
+<h3 class="font-label-md text-label-md text-on-surface mb-1">GitHub Repo</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Source code &amp; documentation</p>
+</a>
+<a class="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-transform group border border-transparent hover:border-primary-fixed" href="#">
+<span class="material-symbols-outlined text-3xl text-secondary mb-2 group-hover:scale-110 transition-transform">open_in_new</span>
+<h3 class="font-label-md text-label-md text-on-surface mb-1">Live Demo</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Interactive web application</p>
+</a>
+<a class="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-transform group border border-transparent hover:border-primary-fixed" href="#">
+<span class="material-symbols-outlined text-3xl text-tertiary mb-2 group-hover:scale-110 transition-transform">picture_as_pdf</span>
+<h3 class="font-label-md text-label-md text-on-surface mb-1">Technical Report</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Architecture &amp; PDF docs</p>
+</a>
+</div>
+<!-- Visual Preview/Technical Details -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+<div class="p-stack-md border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-title-lg text-title-lg">Submission Preview</h3>
+<div class="flex gap-2">
+<button class="p-1.5 rounded bg-surface-container hover:bg-surface-container-high"><span class="material-symbols-outlined text-lg">fullscreen</span></button>
+</div>
+</div>
+<div class="relative h-[400px] bg-slate-900 overflow-hidden">
+<img alt="Tech Architecture Preview" class="w-full h-full object-cover opacity-60" data-alt="A sophisticated technical dashboard interface displayed on a monitor, showing complex data visualizations, heat maps, and neural network graphs. The lighting is low and cool-toned, with high-contrast glowing elements in neon blue and white, suggesting a high-performance software engineering environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqwXmRwEArLPH2Csm7TRWuq_vaFVu49OCfhEd6Rq-p7I81zMQRg2p6MtmlfXXILb4owODmQxBY1ez4D3yvNbcimd6ahq-GMTq7hHwhP9KlSHTxFa3gu2ZMH87NIw6vIGUlkxkSq-xNVZJLaMuSCCVDdGj3FmTK0jwrR6vPfF_VjifDIqw695pKaLoUiIf88n1X-s2vq8yPcO7XJDvLXvN8tCK6CvsPJaoG9Lx4xZ4QLcesbxp4F_nBEkKiPcjJ9MUbFGZpu0XjObMO">
+<div class="absolute inset-0 flex items-center justify-center">
+<button class="flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-full border border-white/20 hover:bg-white/20 transition-colors">
+<span class="material-symbols-outlined">play_circle</span>
+<span class="font-label-md">Watch Demo Pitch</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Scoring & Feedback -->
+<div class="col-span-12 lg:col-span-4 space-y-gutter">
+<!-- Score Panel -->
+<section class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)] border border-primary-fixed">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-stack-md flex items-center justify-between">
+                                Score Submission
+                                <span class="font-display text-headline-md text-primary">0/40</span>
+</h3>
+<div class="space-y-stack-md mb-stack-lg">
+<!-- Criterion 1 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Technical Innovation</label>
+<span class="text-primary font-bold">8/10</span>
+</div>
+<input class="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary" max="10" min="0" step="1" type="range">
+</div>
+<!-- Criterion 2 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Code Quality</label>
+<span class="text-primary font-bold">7/10</span>
+</div>
+<input class="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary" max="10" min="0" step="1" type="range">
+</div>
+<!-- Criterion 3 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="font-label-md text-label-md text-on-surface-variant">UI/UX Design</label>
+<span class="text-primary font-bold">0/10</span>
+</div>
+<input class="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary" max="10" min="0" step="1" type="range">
+</div>
+<!-- Criterion 4 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Documentation</label>
+<span class="text-primary font-bold">0/10</span>
+</div>
+<input class="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary" max="10" min="0" step="1" type="range">
+</div>
+</div>
+<!-- Feedback Area -->
+<div class="mb-stack-lg">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2">Add Feedback</label>
+<textarea class="w-full h-32 p-3 bg-surface border border-outline-variant rounded-lg text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Enter qualitative comments for the team..."></textarea>
+<p class="text-[10px] text-on-surface-variant mt-1 italic opacity-60">Feedback is shared with students after the final results.</p>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary rounded-xl font-label-md text-label-md font-bold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all">
+                                Submit Evaluation
+                            </button>
+</section>
+<!-- Rubric Guidance Card -->
+<section class="bg-surface-container rounded-xl p-stack-md">
+<div class="flex items-center gap-2 mb-stack-sm text-primary">
+<span class="material-symbols-outlined text-2xl">info</span>
+<h4 class="font-title-lg text-title-lg">Rubric Guidance</h4>
+</div>
+<div class="space-y-4 custom-scrollbar max-h-64 overflow-y-auto pr-2">
+<div>
+<h5 class="font-label-md text-label-md text-on-surface mb-1">Technical Innovation</h5>
+<p class="font-body-md text-[13px] text-on-surface-variant leading-relaxed">How original is the approach? Does it utilize modern stacks (AI/ML, Edge) effectively?</p>
+</div>
+<div>
+<h5 class="font-label-md text-label-md text-on-surface mb-1">Code Quality</h5>
+<p class="font-body-md text-[13px] text-on-surface-variant leading-relaxed">Clean repository structure, meaningful commit history, and efficient algorithms.</p>
+</div>
+<div>
+<h5 class="font-label-md text-label-md text-on-surface mb-1">UI/UX Design</h5>
+<p class="font-body-md text-[13px] text-on-surface-variant leading-relaxed">Accessibility, intuitive navigation, and overall aesthetic polish of the front-end.</p>
+</div>
+</div>
+<button class="mt-stack-md w-full py-2 text-primary font-label-md text-label-md hover:bg-white/50 rounded-lg transition-colors border border-primary/20">View Full Rubric (PDF)</button>
+</section>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Bottom Navigation -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant flex justify-around items-center h-16 z-40 px-margin-mobile">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-[10px] font-label-sm">Evaluate</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[10px] font-label-sm">History</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-label-sm">Profile</span>
+</a>
+</nav>
+</body></html>
+
+<!-- Judge Dashboard - Assigned Rounds -->
+

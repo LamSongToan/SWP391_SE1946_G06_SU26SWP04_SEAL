@@ -1,0 +1,311 @@
+﻿<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Awards | SEAL - Software Engineering Academic League</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "secondary": "#712ae2",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "surface-variant": "#d3e4fe",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#25005a",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#0b1c30",
+                        "primary": "#3525cd",
+                        "on-background": "#0b1c30",
+                        "primary-fixed": "#e2dfff",
+                        "surface-bright": "#f8f9ff",
+                        "secondary-fixed": "#eaddff",
+                        "primary-container": "#4f46e5",
+                        "surface": "#f8f9ff",
+                        "tertiary-container": "#006a7c",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-high": "#dce9ff",
+                        "on-secondary-container": "#fffbff",
+                        "on-surface-variant": "#464555",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#d3e4fe",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-tertiary-fixed": "#001f26",
+                        "on-tertiary-container": "#93e8ff",
+                        "surface-tint": "#4d44e3",
+                        "surface-container": "#e5eeff",
+                        "outline-variant": "#c7c4d8",
+                        "background": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "inverse-primary": "#c3c0ff",
+                        "error": "#ba1a1a",
+                        "outline": "#777587",
+                        "inverse-surface": "#213145",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary": "#00505f",
+                        "inverse-on-surface": "#eaf1ff",
+                        "secondary-container": "#8a4cfc",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "tertiary-fixed": "#acedff",
+                        "on-primary-container": "#dad7ff",
+                        "on-primary-fixed": "#0f0069"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "stack-sm": "12px",
+                        "stack-lg": "48px",
+                        "container-max": "1280px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "stack-md": "24px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "display": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background">
+<!-- TopNavBar -->
+<nav class="bg-surface/90 backdrop-blur-md shadow-sm docked full-width top-0 sticky z-50 h-16">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-full">
+<div class="text-headline-md font-headline-md font-bold tracking-tight text-primary">SEAL</div>
+<div class="hidden md:flex gap-gutter items-center">
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded" href="#">About SEAL</a>
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded" href="#">Upcoming Events</a>
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded" href="#">Past Events</a>
+<a class="text-label-md font-label-md text-primary border-b-2 border-primary pb-1" href="#">Awards</a>
+<a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded" href="#">Contact</a>
+</div>
+<div class="flex gap-stack-sm">
+<button class="px-4 py-2 text-label-md font-label-md text-primary hover:bg-surface-container-low transition-all duration-200 rounded">Sign In</button>
+<button class="px-4 py-2 bg-primary text-on-primary text-label-md font-label-md rounded-lg shadow-sm hover:opacity-90 transition-all active:scale-95 duration-100">Register</button>
+</div>
+</div>
+</nav>
+<main class="max-w-container-max mx-auto px-margin-desktop py-stack-lg">
+<!-- Hero Section -->
+<section class="mb-stack-lg text-center max-w-3xl mx-auto">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-widest bg-secondary-fixed/30 px-3 py-1 rounded-full">Excellence Recognized</span>
+<h1 class="font-display text-display mt-stack-sm mb-stack-sm">The SEAL Honors</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Celebrating the brightest minds in software engineering across every season. From technical innovation to design mastery, these are the standards we uphold.</p>
+</section>
+<!-- Seasons Navigation -->
+<div class="flex justify-center gap-stack-sm mb-stack-lg">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm">All Seasons</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">Season 2024</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">Season 2023</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">Season 2022</button>
+</div>
+<!-- Awards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter mb-stack-lg">
+<!-- Gold Award -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30 hover:-translate-y-1 transition-transform group">
+<div class="w-16 h-16 bg-primary-fixed rounded-xl flex items-center justify-center mb-stack-md group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-headline-md sx-0001">military_tech</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-2">Grand Champion: Gold</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md">Awarded to the team that demonstrates ultimate mastery in system architecture, scalability, and execution.</p>
+<div class="flex items-center justify-between pt-stack-sm border-t border-outline-variant/20">
+<span class="text-label-sm font-label-sm text-primary">Season 2024 Winner</span>
+<span class="font-label-md text-label-md font-bold">Team Binary_Beats</span>
+</div>
+</div>
+<!-- Innovation Award -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30 hover:-translate-y-1 transition-transform group">
+<div class="w-16 h-16 bg-tertiary-fixed rounded-xl flex items-center justify-center mb-stack-md group-hover:bg-tertiary group-hover:text-on-tertiary transition-colors">
+<span class="material-symbols-outlined text-headline-md sx-0001">lightbulb</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-2">Innovation Excellence</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md">Recognizing the project that pushed technical boundaries or implemented a truly unique problem-solving approach.</p>
+<div class="flex items-center justify-between pt-stack-sm border-t border-outline-variant/20">
+<span class="text-label-sm font-label-sm text-tertiary-fixed-variant">Season 2024 Winner</span>
+<span class="font-label-md text-label-md font-bold">Neural Nexus</span>
+</div>
+</div>
+<!-- UI/UX Award -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30 hover:-translate-y-1 transition-transform group">
+<div class="w-16 h-16 bg-secondary-fixed rounded-xl flex items-center justify-center mb-stack-md group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+<span class="material-symbols-outlined text-headline-md sx-0001">palette</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-2">Best UI/UX Design</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md">Honoring the team that delivered the most intuitive, accessible, and visually stunning user experience.</p>
+<div class="flex items-center justify-between pt-stack-sm border-t border-outline-variant/20">
+<span class="text-label-sm font-label-sm text-secondary">Season 2024 Winner</span>
+<span class="font-label-md text-label-md font-bold">Studio.Init</span>
+</div>
+</div>
+<!-- Silver Award -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30 hover:-translate-y-1 transition-transform">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center mb-stack-sm">
+<span class="material-symbols-outlined text-headline-md text-on-surface-variant">award_star</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Silver Runner-Up</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">Exceptional engineering quality across all evaluation criteria.</p>
+<div class="bg-surface-container-low rounded-lg p-3 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-outline-variant"></div>
+<span class="font-label-md text-label-md">Logic_Legends</span>
+</div>
+</div>
+<!-- Bronze Award -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30 hover:-translate-y-1 transition-transform">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center mb-stack-sm">
+<span class="material-symbols-outlined text-headline-md text-on-surface-variant">workspace_premium</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Bronze Merit</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">Outstanding technical contribution and presentation skills.</p>
+<div class="bg-surface-container-low rounded-lg p-3 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-outline-variant"></div>
+<span class="font-label-md text-label-md">Protocol Pioneers</span>
+</div>
+</div>
+<!-- Best Documentation -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30 hover:-translate-y-1 transition-transform">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center mb-stack-sm">
+<span class="material-symbols-outlined text-headline-md text-on-surface-variant">description</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Elite Documentation</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">For the most thorough, readable, and professional code documentation.</p>
+<div class="bg-surface-container-low rounded-lg p-3 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-outline-variant"></div>
+<span class="font-label-md text-label-md">Stack Overflow Kings</span>
+</div>
+</div>
+</div>
+<!-- Hall of Fame Section -->
+<section class="bg-primary-container/10 rounded-[1.5rem] p-stack-lg border border-primary/10">
+<div class="flex flex-col md:flex-row justify-between items-end mb-stack-lg gap-base">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Hall of Fame</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Recognizing individuals and teams who have achieved multi-season excellence.</p>
+</div>
+<button class="text-label-md font-label-md text-primary flex items-center gap-2 hover:gap-3 transition-all">
+                    View Full Rankings <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<!-- Hall of Fame Member 1 -->
+<div class="text-center">
+<div class="relative w-32 h-32 mx-auto mb-stack-sm">
+<img alt="Professional Profile" class="w-full h-full object-cover rounded-full border-4 border-white shadow-lg" data-alt="A professional headshot of a young male software engineer with a confident smile, wearing a modern navy polo shirt. The background is a clean, slightly blurred office setting with natural light and hints of high-tech equipment. The lighting is soft and flattering, creating a premium light-mode corporate aesthetic. High resolution, minimalist and sharp." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvw06JRRRkzih2lbgPCPOIIBHWi2gyF51XxnhpG-73S4tc6oE_rZcXSMr3LjvWnivuc67h-Ok8nvnljKv8HXsR1HLHk7sfbUsV9C4AtjOtEcZvgLd_O_NJ9rmlDDtymCErzsV0zFgRCBA_cVXtRedzPZGYC2xhnxVur1gnskPV3nwOiOyU3YB2HO8ew9amcnPL1vH02zo_rsUelp3aCXAkcQJnMIuG1BudBFyED3rC70B4OPpmLzmcmxEpO4wmCOeqajLj1iB8VR4g">
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary rounded-full p-1 border-2 border-white">
+<span class="material-symbols-outlined text-[16px] sx-0001">star</span>
+</div>
+</div>
+<h4 class="font-title-lg text-title-lg">Marcus Chen</h4>
+<p class="text-label-sm font-label-sm text-secondary uppercase mb-2">3x Grand Champion</p>
+<p class="text-body-md text-body-md text-on-surface-variant italic">"Building the future, one commit at a time."</p>
+</div>
+<!-- Hall of Fame Member 2 -->
+<div class="text-center">
+<div class="relative w-32 h-32 mx-auto mb-stack-sm">
+<img alt="Professional Profile" class="w-full h-full object-cover rounded-full border-4 border-white shadow-lg" data-alt="A professional portrait of a woman in her late 20s, featuring a bright, intelligent expression. She is wearing a modern minimalist white blouse. The background is a bright architectural space with clean lines and soft daylight, reflecting a sophisticated and systematic brand identity. The overall image is bright and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNWjU7pE4nCDgruQkxZ8EonBa4ldLyai_vCxqtnhdUH365un27vJ57U9Kfd583etLKALYasYAtTsqG3-PDyTDBypNUZ2VSaJd7V6rrAuD0Ej7Upd1U0zlEApQg3-Y99oxq6FG1hhngIZDdILgublTb_sS-obrl2maAI9ASfojz3YMjehLwkwZWBRZboay4gOYIH_vAZXeXZmn5XCepLRmNSuLFknr9kr-Mpu1y9e3mUSqUxdHfLNtcTxo1hDzuPT7-uouE11sPO5Vn">
+<div class="absolute -bottom-1 -right-1 bg-secondary text-on-secondary rounded-full p-1 border-2 border-white">
+<span class="material-symbols-outlined text-[16px] sx-0001">verified</span>
+</div>
+</div>
+<h4 class="font-title-lg text-title-lg">Sarah Jenkins</h4>
+<p class="text-label-sm font-label-sm text-secondary uppercase mb-2">UI/UX Architect</p>
+<p class="text-body-md text-body-md text-on-surface-variant italic">"Design is not just what it looks like, but how it works."</p>
+</div>
+<!-- Hall of Fame Member 3 -->
+<div class="text-center">
+<div class="relative w-32 h-32 mx-auto mb-stack-sm">
+<img alt="Professional Profile" class="w-full h-full object-cover rounded-full border-4 border-white shadow-lg" data-alt="Close-up headshot of a male developer with an approachable look, wearing stylish glasses. The setting is a minimalist studio with soft-box lighting that highlights facial details without harsh shadows. The color palette is composed of soft blues and whites to match a modern tech brand. The mood is visionary and reliable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZrBR6g65wTyFn9wAlTFU9R90PtRKEEPAvVof-xt0SEyg6jVdgMYrBMklwzhYRtpH2YjOLRJQYjsDVt9rm01V6iILxK48DoOv1IUOqE3ifsciZMUhyn7uUyi-b_Hs_XC3_heZS8pSjzkpIU9SkRrmVt4cbEVSYSHbCtlu5tk4jTV5SupJeoXEsYcxlkt-zyRSNXiTVkvh_L6cPnmcbqHNzB9rdePH1i8-5vgu1hLcIak_7NG7C9KZTDKIKkLEwBrhP3bh6wVB8kgye">
+<div class="absolute -bottom-1 -right-1 bg-tertiary text-on-tertiary rounded-full p-1 border-2 border-white">
+<span class="material-symbols-outlined text-[16px] sx-0001">psychology</span>
+</div>
+</div>
+<h4 class="font-title-lg text-title-lg">Aleksei Volkov</h4>
+<p class="text-label-sm font-label-sm text-secondary uppercase mb-2">Algorithm Master</p>
+<p class="text-body-md text-body-md text-on-surface-variant italic">"Optimization is an art form of technical constraints."</p>
+</div>
+<!-- Hall of Fame Member 4 -->
+<div class="text-center">
+<div class="relative w-32 h-32 mx-auto mb-stack-sm">
+<img alt="Professional Profile" class="w-full h-full object-cover rounded-full border-4 border-white shadow-lg" data-alt="A high-end professional photograph of a young woman with a focused and systematic demeanor. She is standing against a backdrop of frosted glass and metal accents, typical of a modern software firm. The lighting is bright and airy, accentuating a sense of innovation and clarity. The visual style is minimal and corporate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCN6CnQwRLJxdCB1gRcXcPEmBC8USBZb5cKLrhs2h-QKWsbrClaTD8N0C4A_2wyGefO-mK-zL11VehdvEssSXdZwTDyyvPDti4-ff4tO5O3dKipx0E6AU_oYJrTUbDXp7nwkT1rUBnD7h9nTRfhw7Aj0LxsXZ21ByND9h8Zl_X8k8d6-cmPLIOFgbBUKxXw9qpjrEFkcz0CfV7fCWgnvUjynOqgB9gZ30-dZ6GcKUA-PWJBcd7lKivhK8y9lWVJP1XqdJItZXoL5qdW">
+<div class="absolute -bottom-1 -right-1 bg-error text-on-error rounded-full p-1 border-2 border-white">
+<span class="material-symbols-outlined text-[16px] sx-0001">terminal</span>
+</div>
+</div>
+<h4 class="font-title-lg text-title-lg">Maya Rodriguez</h4>
+<p class="text-label-sm font-label-sm text-secondary uppercase mb-2">Lead Backend Dev</p>
+<p class="text-body-md text-body-md text-on-surface-variant italic">"Robustness starts where documentation ends."</p>
+</div>
+</div>
+</section>
+<!-- Stats Section -->
+<section class="mt-stack-lg py-stack-md border-t border-outline-variant/30 grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+<div class="text-center">
+<div class="font-display text-display text-primary">450+</div>
+<p class="text-label-md font-label-md text-on-surface-variant">Awards Issued</p>
+</div>
+<div class="text-center">
+<div class="font-display text-display text-primary">12</div>
+<p class="text-label-md font-label-md text-on-surface-variant">Seasons Completed</p>
+</div>
+<div class="text-center">
+<div class="font-display text-display text-primary">$1.2M</div>
+<p class="text-label-md font-label-md text-on-surface-variant">Total Prizes Distributed</p>
+</div>
+<div class="text-center">
+<div class="font-display text-display text-primary">2.4k</div>
+<p class="text-label-md font-label-md text-on-surface-variant">Global Participants</p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant full-width bottom-0">
+<div class="flex flex-col md:flex-row justify-between items-center w-full py-stack-md px-margin-desktop max-w-container-max mx-auto gap-base">
+<div class="text-title-lg font-title-lg font-bold text-on-surface">SEAL</div>
+<div class="flex flex-wrap justify-center gap-gutter">
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Sponsorships</a>
+</div>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Â© 2024 SEAL Software Engineering Academic League. All rights reserved.</p>
+</div>
+</footer>
+</body></html>
+
+<!-- Contact -->
+

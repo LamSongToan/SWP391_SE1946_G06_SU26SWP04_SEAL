@@ -1,0 +1,394 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Dashboard - Category Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d3e4fe",
+                    "primary": "#3525cd",
+                    "on-secondary-fixed": "#25005a",
+                    "on-primary-fixed": "#0f0069",
+                    "tertiary": "#00505f",
+                    "surface-container": "#e5eeff",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-error": "#ffffff",
+                    "on-background": "#0b1c30",
+                    "surface-container-low": "#eff4ff",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e2dfff",
+                    "surface-bright": "#f8f9ff",
+                    "primary-container": "#4f46e5",
+                    "on-secondary-container": "#fffbff",
+                    "surface-container-high": "#dce9ff",
+                    "background": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "inverse-surface": "#213145",
+                    "surface-tint": "#4d44e3",
+                    "outline": "#777587",
+                    "tertiary-container": "#006a7c",
+                    "on-tertiary-container": "#93e8ff",
+                    "on-tertiary-fixed": "#001f26",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#464555",
+                    "secondary-fixed": "#eaddff",
+                    "on-surface": "#0b1c30",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-primary-container": "#dad7ff",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "surface-dim": "#cbdbf5",
+                    "secondary": "#712ae2",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#8a4cfc",
+                    "inverse-primary": "#c3c0ff",
+                    "tertiary-fixed": "#acedff",
+                    "outline-variant": "#c7c4d8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "12px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "stack-md": "24px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "stack-lg": "48px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="h-full w-72 fixed left-0 top-0 bg-surface-container-low shadow-sm flex flex-col py-base z-50">
+<div class="px-6 py-4 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white sx-0001">shield</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-primary">SEAL</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Hackathon Manager</p>
+</div>
+</div>
+<nav class="flex-1 mt-6 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+<!-- Active: Category Management -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-md text-label-md">Event Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+<span class="font-label-md text-label-md">Round Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors bg-primary-container/10 text-primary font-bold border-r-4 border-primary" href="#">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+<span class="font-label-md text-label-md">Category Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="rule">rule</span>
+<span class="font-label-md text-label-md">Criteria Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+<span class="font-label-md text-label-md">User Approval</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span class="font-label-md text-label-md">Submission Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+<span class="font-label-md text-label-md">Ranking &amp; Awards</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-label-md text-label-md">Research Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-high text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+</nav>
+<div class="px-4 py-4 mt-auto">
+<div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-high">
+<img alt="Organizer Profile" class="w-10 h-10 rounded-full object-cover" data-alt="A professional headshot of a female technology event organizer in a modern office environment. She has a confident smile and is wearing smart-casual professional attire. The background is softly blurred, showing a high-tech conference room with warm, natural sunlight filtering through large windows, maintaining a clean light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoa5BYbjOMNaMe9lBJDigaufn6VrnwcZmpnkyKibeqtRFRRwzRHDLrxN648xWnDtWG4voAaLgQfodOz4dm90rn5Y_lIRFeDdRAYm3B9UkyXxZm8AmB02IDfRvG9uJij32OlYOzIgsCbzMxeel7HJGw--OLA3cS5e6VKiEEkXAgQnpvhs8bNci8q31xaS5g6QbN3InKLAZlw5Hh-WoB1XMKGdTWQ5PEoRcttWXr2AHal1pZtL44H5zCl4G9gO5Gj6kU_3oxI-lEwdEP">
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md text-on-surface truncate">Alex Rivera</p>
+<p class="text-xs text-on-surface-variant truncate">Event Lead</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface shadow-sm flex justify-between items-center px-margin-desktop z-40">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 font-body-md text-body-md focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Search technical tracks..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-stack-sm">
+<button class="hover:bg-surface-container rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help">help</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-72 mt-16 p-margin-desktop">
+<!-- Dashboard Header -->
+<div class="flex justify-between items-end mb-stack-lg">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Category Management</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Define and oversee technical tracks, mentors, and live rankings.</p>
+</div>
+<button class="bg-primary text-white px-6 py-3 rounded-lg font-label-md text-label-md flex items-center gap-2 shadow-md hover:translate-y-[-2px] transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                Create Category
+            </button>
+</div>
+<!-- Technical Tracks Grid (Bento Layout) -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Category Card: AI & Machine Learning -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl card-shadow p-stack-md flex flex-col gap-stack-md border border-outline-variant/30">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl" data-icon="psychology">psychology</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">AI &amp; Machine Learning</h3>
+<span class="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined" data-icon="edit">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+<!-- Mentor Assignment -->
+<div class="bg-surface rounded-lg p-4 border border-outline-variant/20">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-2 block">Assigned Faculty Mentor</label>
+<div class="relative group">
+<div class="flex items-center gap-3 p-2 bg-surface-container-lowest border border-outline rounded-lg cursor-pointer hover:border-primary transition-colors">
+<img alt="Mentor" class="w-8 h-8 rounded-full border border-surface-variant" data-alt="A professional portrait of an elderly male academic professor with gray hair and glasses, wearing a tweed jacket. He is standing in a library with rows of leather-bound books in the background. The lighting is soft and warm, conveying wisdom and expertise in a high-end academic setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3BflR-HENzpgy2a8jQKH_esrpfqegI4aXUN9zcVk4-qYrF8-XiTVF_lJl5Bi3kH5m52yoT01nPeRHCQI9ujudz3cGL5iEmuIi7Ym08SA_ic-nwR4HSIIcLIrtsYixinwONtp0cwPqmVk-EpdY092QpiyHgZx5fp6vtZnys2Ti_rJ3JFqAyE3OqzF_NGknOob57owV6cvqAS0s3X9E3Yi9GQSlTzJBZ6TXBbhVeJQgnASHryzxVeNYJWqhPNYaWeBYsT_dy618Ewe_">
+<span class="font-body-md text-body-md flex-1 text-on-surface">Dr. Sarah Thompson</span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Category Stats -->
+<div class="flex items-center justify-between gap-4">
+<div class="flex-1 p-4 bg-surface rounded-lg border border-outline-variant/20 text-center">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Teams</p>
+<p class="text-headline-md font-headline-md text-primary">24</p>
+</div>
+<div class="flex-1 p-4 bg-surface rounded-lg border border-outline-variant/20 text-center">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Avg Score</p>
+<p class="text-headline-md font-headline-md text-tertiary">8.4</p>
+</div>
+</div>
+</div>
+<!-- Ranking Table -->
+<div>
+<div class="flex justify-between items-center mb-3">
+<h4 class="font-label-md text-label-md text-on-surface font-bold">Category Ranking (Top 3)</h4>
+<button class="text-primary font-label-sm text-label-sm hover:underline">View All</button>
+</div>
+<div class="overflow-hidden rounded-lg border border-outline-variant/20">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container text-label-sm font-label-sm text-on-surface-variant uppercase">
+<tr>
+<th class="px-4 py-3">Rank</th>
+<th class="px-4 py-3">Team Name</th>
+<th class="px-4 py-3">Submission</th>
+<th class="px-4 py-3 text-right">Total Score</th>
+</tr>
+</thead>
+<tbody class="text-body-md font-body-md divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-4 py-3 font-bold text-primary">#1</td>
+<td class="px-4 py-3">NeuralPathways</td>
+<td class="px-4 py-3 text-on-surface-variant">Optimized Traffic AI</td>
+<td class="px-4 py-3 text-right font-bold">92.5</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-4 py-3 font-bold text-on-surface-variant">#2</td>
+<td class="px-4 py-3">DeepVision</td>
+<td class="px-4 py-3 text-on-surface-variant">Retail Analytics</td>
+<td class="px-4 py-3 text-right font-bold">89.0</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-4 py-3 font-bold text-on-surface-variant">#3</td>
+<td class="px-4 py-3">Aether Intelligence</td>
+<td class="px-4 py-3 text-on-surface-variant">Generative UI Bot</td>
+<td class="px-4 py-3 text-right font-bold">87.2</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Small Category Card: Web3 & Blockchain -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl card-shadow p-stack-md flex flex-col gap-stack-md border border-outline-variant/30">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-tertiary/10 text-tertiary rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl" data-icon="currency_bitcoin">currency_bitcoin</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Web3</h3>
+<span class="bg-surface-container-high text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Finalizing</span>
+</div>
+</div>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<div class="space-y-4">
+<div class="bg-surface rounded-lg p-4 border border-outline-variant/20">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-2 block">Mentor</label>
+<div class="flex items-center gap-3">
+<img alt="Mentor" class="w-8 h-8 rounded-full" data-alt="Close-up portrait of a young, innovative female researcher with dark curly hair and a modern minimalist aesthetic. She is wearing a simple white lab coat or smart blazer. The background is a crisp, bright architectural space with clean lines and high-key lighting, maintaining a sleek corporate minimalist look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6fhGLvImeDGDHysd4KjynMB5Huf4EdzjwfIqGUJadfMxA3grYk0__6tiMNF-TmVSWnfbr4dZaiZYleNyB9cRy372sJg0VWlU0hEZQZ0nJCdTSjOFw1MgoUbQhC9DgInemNLcxojtz_Wm3hfb3TEBdRlBaoMgQCmjb22UrjUq-07IK28mUZRmueFDaCZTzcOk7TZ0Rpd6YdrzIglRuCnCeuSXwdyPQcittg15P0xkESMIGAQig8gKHEXraznj7PiI61WBeUo_Kht24">
+<span class="font-body-md text-body-md text-on-surface">Prof. James Chen</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span>Judging Progress</span>
+<span>65%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full sx-0001"></div>
+</div>
+</div>
+</div>
+<div class="mt-auto">
+<button class="w-full py-2 bg-surface text-primary border border-primary/20 rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-colors">
+                        Manage Track
+                    </button>
+</div>
+</div>
+<!-- Category Card: IoT & Embedded Systems -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl card-shadow p-stack-md flex flex-col gap-stack-md border border-outline-variant/30">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl" data-icon="router">router</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">IoT</h3>
+<span class="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+</div>
+</div>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<div class="bg-surface rounded-lg p-4 border border-outline-variant/20">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-2 block">Mentor</label>
+<div class="flex items-center gap-3">
+<img alt="Mentor" class="w-8 h-8 rounded-full" data-alt="A portrait of a middle-aged male engineering professor in a tech-focused workspace. He has short hair and a focused expression. In the background, modern electronics, circuit boards, and laboratory equipment are visible but artistically blurred. The lighting is balanced and professional, adhering to the clean light-mode UI style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlMsCmZ4LFUQ35dFqKRzV1-SfsaDDsdtXFzaaQ6Vf05l01q0A9Y76qjiUrnKmVcOVL7U2SuCB2uE080SXJ-UTvjLaUKWr5cJChWbUtLafVW1KCgUB85B9JGDlnpEzpqp6uQOnLydbRFhySUzckG_T1GRr4kSpCLs-PtsNa7IB6_0ZOkuee07uKIpsuklLQsdWJ8hqc_xZiE5TWJ6-9CPkVnceY2Lkhu_zo-w2gfYuAudIlNA41p-bgoDo-NcNP1VIMmzRp-GkszMKq">
+<span class="font-body-md text-body-md text-on-surface">Dr. Elena Rodriguez</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg border border-dashed border-outline">
+<span class="text-body-md text-on-surface-variant">Track Lead Assigned</span>
+<span class="material-symbols-outlined text-green-600" data-icon="check_circle">check_circle</span>
+</div>
+<button class="w-full py-2 bg-surface text-primary border border-primary/20 rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-colors">
+                    Manage Track
+                </button>
+</div>
+<!-- Analytics/Quick View Track Distribution -->
+<div class="col-span-12 lg:col-span-8 bg-primary-container text-white rounded-xl card-shadow p-stack-md flex items-center gap-stack-lg relative overflow-hidden">
+<div class="relative z-10 flex-1">
+<h3 class="font-headline-md text-headline-md mb-2">Track Distribution</h3>
+<p class="font-body-md text-body-md opacity-80 mb-6 max-w-sm">Global overview of team participation across all technical categories for this hackathon edition.</p>
+<div class="flex gap-stack-md">
+<div>
+<p class="text-3xl font-bold">128</p>
+<p class="text-xs uppercase opacity-70">Total Teams</p>
+</div>
+<div class="w-px h-10 bg-white/20"></div>
+<div>
+<p class="text-3xl font-bold">12</p>
+<p class="text-xs uppercase opacity-70">Total Mentors</p>
+</div>
+</div>
+</div>
+<!-- Asymmetric Graphic Element -->
+<div class="absolute right-0 top-0 h-full w-1/3 bg-white/10 -skew-x-12 translate-x-12"></div>
+<div class="hidden md:flex gap-4 relative z-10">
+<div class="w-12 h-40 bg-white/20 rounded-full flex flex-col justify-end p-1">
+<div class="bg-white rounded-full h-[80%]"></div>
+</div>
+<div class="w-12 h-40 bg-white/20 rounded-full flex flex-col justify-end p-1">
+<div class="bg-white rounded-full h-[40%]"></div>
+</div>
+<div class="w-12 h-40 bg-white/20 rounded-full flex flex-col justify-end p-1">
+<div class="bg-white rounded-full h-[60%]"></div>
+</div>
+<div class="w-12 h-40 bg-white/20 rounded-full flex flex-col justify-end p-1">
+<div class="bg-white rounded-full h-[55%]"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for quick creation (if needed as per guidelines) -->
+<div class="fixed bottom-10 right-10 z-50">
+<button class="bg-secondary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+</div>
+</body></html>
+
+<!-- Organizer Dashboard - Round Management -->
+

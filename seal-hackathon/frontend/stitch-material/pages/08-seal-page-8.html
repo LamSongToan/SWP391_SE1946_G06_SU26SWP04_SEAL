@@ -1,0 +1,246 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "secondary": "#712ae2",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "surface-variant": "#d3e4fe",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#25005a",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#0b1c30",
+                    "primary": "#3525cd",
+                    "on-background": "#0b1c30",
+                    "primary-fixed": "#e2dfff",
+                    "surface-bright": "#f8f9ff",
+                    "secondary-fixed": "#eaddff",
+                    "primary-container": "#4f46e5",
+                    "surface": "#f8f9ff",
+                    "tertiary-container": "#006a7c",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#cbdbf5",
+                    "surface-container-high": "#dce9ff",
+                    "on-secondary-container": "#fffbff",
+                    "on-surface-variant": "#464555",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-tertiary-fixed": "#001f26",
+                    "on-tertiary-container": "#93e8ff",
+                    "surface-tint": "#4d44e3",
+                    "surface-container": "#e5eeff",
+                    "outline-variant": "#c7c4d8",
+                    "background": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "inverse-primary": "#c3c0ff",
+                    "error": "#ba1a1a",
+                    "outline": "#777587",
+                    "inverse-surface": "#213145",
+                    "surface-container-low": "#eff4ff",
+                    "tertiary": "#00505f",
+                    "inverse-on-surface": "#eaf1ff",
+                    "secondary-container": "#8a4cfc",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "tertiary-fixed": "#acedff",
+                    "on-primary-container": "#dad7ff",
+                    "on-primary-fixed": "#0f0069"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "stack-sm": "12px",
+                    "stack-lg": "48px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "gutter": "24px",
+                    "stack-md": "24px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-md shadow-sm docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-16">
+<div class="text-headline-md font-headline-md font-bold tracking-tight text-primary dark:text-primary-fixed">SEAL</div>
+<nav class="hidden md:flex items-center gap-gutter">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors text-label-md font-label-md" href="#">About SEAL</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors text-label-md font-label-md" href="#">Upcoming Events</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors text-label-md font-label-md" href="#">Past Events</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors text-label-md font-label-md" href="#">Awards</a>
+<a class="text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 text-label-md font-label-md" href="#">Contact</a>
+</nav>
+<div class="flex items-center gap-stack-sm">
+<button class="px-4 py-2 text-label-md font-label-md text-primary dark:text-primary-fixed hover:bg-surface-container-low transition-all">Sign In</button>
+<button class="px-6 py-2 bg-primary text-on-primary rounded-lg text-label-md font-label-md hover:opacity-90 active:scale-95 transition-all">Register</button>
+</div>
+</div>
+</header>
+<main class="flex-grow">
+<!-- Hero Section -->
+<section class="py-stack-lg bg-surface-container-low">
+<div class="max-w-container-max mx-auto px-margin-desktop text-center">
+<h1 class="font-display text-display text-on-surface mb-stack-sm">Get in Touch</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Have questions about our hackathons or academic competitions? Our team at FPT University HCMC is here to support your journey into software engineering excellence.</p>
+</div>
+</section>
+<!-- Main Content: Bento Grid Layout -->
+<section class="py-stack-lg max-w-container-max mx-auto px-margin-desktop">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Contact Form Card -->
+<div class="md:col-span-7 bg-surface-container-lowest p-stack-md rounded-xl elevation-l1">
+<h2 class="font-headline-md text-headline-md mb-stack-md">Send us a Message</h2>
+<form class="space-y-stack-md">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-stack-md">
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-2">FULL NAME</label>
+<input class="w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="John Doe" type="text">
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-2">EMAIL ADDRESS</label>
+<input class="w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="john@university.edu" type="email">
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-2">SUBJECT</label>
+<select class="w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+<option>Event Registration Inquiry</option>
+<option>Academic Partnership</option>
+<option>Sponsorship Opportunities</option>
+<option>Technical Support</option>
+<option>Other</option>
+</select>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-outline mb-2">MESSAGE</label>
+<textarea class="w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none" placeholder="How can we help you today?" rows="5"></textarea>
+</div>
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 rounded-lg hover:opacity-95 transition-all elevation-l1 active:scale-[0.98]" type="submit">
+                            Send Message
+                        </button>
+</form>
+</div>
+<!-- Info Column -->
+<div class="md:col-span-5 space-y-gutter">
+<!-- Address Card -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl elevation-l1">
+<div class="flex items-start gap-4 mb-4">
+<span class="material-symbols-outlined text-primary p-3 bg-primary-fixed rounded-lg">location_on</span>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Department Headquarters</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">FPT University HCMC<br>LÃ´ E2a-7, ÄÆ°á»ng D1, Ä. D1, Long Tháº¡nh Má»¹, ThÃ nh Phá»‘ Thá»§ Äá»©c, Há»“ ChÃ­ Minh 700000</p>
+</div>
+</div>
+<div class="aspect-video w-full rounded-lg overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist map visualization showing the precise location of FPT University in Ho Chi Minh City's High Tech Park. The map uses a sophisticated dark blue and white color scheme to match the SEAL brand identity, highlighting major landmarks and arterial roads with crisp, professional cartography. The lighting is digital and clear, emphasizing accessibility and technological advancement in a modern urban setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAh3hbdjK_8lA5WA8Fmr2jXXIPJnZRNSXrDJFPge06PZo9WsR7JbsFFUNUTacBH-Zdv-QnCDQhCcMvqq38SNuzsFG1waUQxTQ0nf_l2jIu7Zz7SDLfarOoRV_PJXM5gxl-NHkDEom2dmzM5FoWdnW0RS0FYYUUdASdCpMCSihBlLUk8dLqlevK16d7on-d00upxoFSDaOV-VDIF5iNmWK1ZBoexFwZmA0Y6mGjky_5i3jVLbo8CX_b5YeOit8B80aak69TE6ivILmE0">
+<div class="absolute inset-0 bg-primary/10 pointer-events-none"></div>
+</div>
+</div>
+<!-- Connect Card -->
+<div class="bg-primary text-on-primary p-stack-md rounded-xl elevation-l1">
+<h3 class="font-title-lg text-title-lg mb-4">Direct Communication</h3>
+<div class="space-y-4">
+<a class="flex items-center gap-4 hover:translate-x-1 transition-transform" href="mailto:contact@seal-league.edu">
+<span class="material-symbols-outlined">mail</span>
+<span class="font-body-md text-body-md">contact@seal-league.edu</span>
+</a>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined">call</span>
+<span class="font-body-md text-body-md">+84 (028) 7300 5588</span>
+</div>
+</div>
+<hr class="my-6 border-white/20">
+<div class="flex gap-4">
+<a class="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all" href="#"><span class="material-symbols-outlined">share</span></a>
+<a class="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all" href="#"><span class="material-symbols-outlined">school</span></a>
+<a class="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all" href="#"><span class="material-symbols-outlined">hub</span></a>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ Section -->
+<section class="py-stack-lg bg-surface">
+<div class="max-w-3xl mx-auto px-margin-desktop">
+<h2 class="font-headline-lg text-headline-lg text-center mb-stack-lg">Registration FAQ</h2>
+<div class="space-y-stack-md">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl border border-outline-variant">
+<h4 class="font-title-lg text-title-lg mb-2">How do I register for an upcoming hackathon?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Simply click the "Register" button in the navigation bar. You'll need to provide your university credentials and team details if applicable.</p>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl border border-outline-variant">
+<h4 class="font-title-lg text-title-lg mb-2">Can students from other universities participate?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Yes, SEAL is an academic league. While hosted at FPT University, we welcome registered students from all accredited institutions in the region.</p>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl border border-outline-variant">
+<h4 class="font-title-lg text-title-lg mb-2">What is the registration deadline?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Deadlines vary per event. Generally, registration closes 7 days before the competition start date to allow for logistics planning.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest dark:bg-surface-dim border-t border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between items-center w-full py-stack-md px-margin-desktop max-w-container-max mx-auto gap-base">
+<div class="text-title-lg font-title-lg font-bold text-on-surface dark:text-on-surface">SEAL</div>
+<div class="flex flex-wrap justify-center gap-gutter text-on-surface-variant">
+<a class="text-label-sm font-label-sm hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-label-sm font-label-sm hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-label-sm font-label-sm hover:text-primary transition-colors" href="#">Accessibility</a>
+<a class="text-label-sm font-label-sm hover:text-primary transition-colors" href="#">Sponsorships</a>
+</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant text-center md:text-right">
+                Â© 2024 SEAL Software Engineering Academic League. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>
+<!-- Participant Dashboard - Profile -->
+

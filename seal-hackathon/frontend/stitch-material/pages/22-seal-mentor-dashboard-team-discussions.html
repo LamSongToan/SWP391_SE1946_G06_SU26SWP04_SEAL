@@ -1,0 +1,411 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Mentor Dashboard - Team Discussions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#eaddff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "tertiary-fixed": "#acedff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-tertiary-fixed": "#001f26",
+                        "secondary-container": "#8a4cfc",
+                        "outline": "#777587",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "background": "#f8f9ff",
+                        "surface-variant": "#d3e4fe",
+                        "primary-fixed": "#e2dfff",
+                        "on-tertiary-container": "#93e8ff",
+                        "on-surface-variant": "#464555",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-surface": "#213145",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#006a7c",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "primary": "#3525cd",
+                        "on-primary-container": "#dad7ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "secondary": "#712ae2",
+                        "tertiary": "#00505f",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-primary-fixed": "#0f0069",
+                        "surface-tint": "#4d44e3",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-surface": "#0b1c30",
+                        "primary-container": "#4f46e5",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#e5eeff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-secondary-fixed": "#25005a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "stack-lg": "48px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "stack-sm": "12px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-surface">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 z-50 bg-background border-r border-outline-variant/20 flex flex-col p-4 gap-stack-md">
+<div class="flex items-center gap-base mb-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container">school</span>
+</div>
+<div>
+<h1 class="font-display text-headline-md text-primary tracking-tight">SEAL Mentor</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Hackathon Edition</p>
+</div>
+</div>
+<nav class="flex flex-col gap-base flex-grow">
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="font-label-md text-label-md">Assigned Categories</span>
+</a>
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label-md text-label-md">Team Progress</span>
+</a>
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-md text-label-md">Mentoring Notes</span>
+</a>
+<a class="flex items-center gap-base bg-secondary-container text-on-secondary-container rounded-lg px-4 py-2 font-bold shadow-sm" href="#">
+<span class="material-symbols-outlined sx-0001">forum</span>
+<span class="font-label-md text-label-md">Team Discussions</span>
+</a>
+</nav>
+<button class="w-full py-3 px-4 bg-primary text-on-primary rounded-xl font-label-md flex items-center justify-center gap-2 hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+                Support Request
+            </button>
+<div class="mt-auto pt-4 border-t border-outline-variant/20 flex flex-col gap-base">
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-base text-error px-4 py-2 hover:bg-error-container/20 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-grow flex flex-col bg-surface overflow-hidden">
+<!-- TopAppBar -->
+<header class="h-16 w-full flex justify-between items-center px-margin-desktop bg-surface-container-lowest shadow-sm z-40">
+<div class="flex items-center gap-stack-md flex-grow">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-body-md focus:ring-2 focus:ring-primary/20" placeholder="Search conversations..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-gutter">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md flex items-center gap-2 shadow-sm hover:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                        New Note
+                    </button>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface-container-lowest"></span>
+</button>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<img alt="Mentor Avatar" class="w-10 h-10 rounded-full border-2 border-primary/10 object-cover" data-alt="A professional headshot of a middle-aged mentor with a friendly expression, wearing a navy blazer and white shirt. The background is a blurred office environment with soft natural lighting, reflecting a modern corporate and authoritative hackathon atmosphere. The lighting is high-key and clean." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEL8PEhhppe1yB9XfrXa41KeVatFOQAa1Op4psFdIk5bio1Mvt4TuzISvz-pmXsvth1teaXU4-tM5BPXvQ06nSgtOqRLfpr8gL0LonlF8ggwAycbtakIq2M7P8Jbv0F25CFTKrdAdgfSoTPKef8Fqcvkl8_WT_iFHiWz_nVlblSwSUr_3HwSelbuKSV9veIRH0A57tGNcpQgmcv98i12dbOqKkFpZt5IMu1n9AFoT2vYNn74TAKBLpkc0kW1H1lotYbi5rIwOuYOwP">
+</div>
+</header>
+<!-- Layout: Two Pane + Participant List -->
+<div class="flex-grow flex overflow-hidden">
+<!-- Thread Sidebar -->
+<div class="w-80 flex flex-col bg-surface border-r border-outline-variant/20">
+<div class="p-4 border-b border-outline-variant/10">
+<h2 class="font-title-lg text-title-lg text-on-surface px-2">Active Chats</h2>
+</div>
+<div class="flex-grow overflow-y-auto chat-scroll p-2 space-y-1">
+<!-- Chat Item Active -->
+<button class="w-full p-4 flex gap-3 bg-surface-container-high rounded-xl text-left border-l-4 border-primary transition-all">
+<div class="relative flex-shrink-0">
+<div class="w-12 h-12 rounded-lg bg-tertiary-container flex items-center justify-center text-on-tertiary">
+<span class="material-symbols-outlined">group</span>
+</div>
+<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-surface-container-high"></div>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface truncate">Team Pixel-Perfect</span>
+<span class="text-[10px] text-on-surface-variant font-medium">10:45 AM</span>
+</div>
+<p class="text-label-sm text-primary font-semibold truncate">Sarah: Updated the UI mocks...</p>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 bg-secondary-container/20 text-secondary text-[10px] rounded-full font-bold">Category: AI</span>
+</div>
+</div>
+</button>
+<!-- Chat Item Unread -->
+<button class="w-full p-4 flex gap-3 hover:bg-surface-container-low rounded-xl text-left transition-all group">
+<div class="relative flex-shrink-0">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">hub</span>
+</div>
+<div class="absolute top-0 right-0 w-3 h-3 bg-error rounded-full ring-2 ring-surface"></div>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface truncate">Team Neural-Net</span>
+<span class="text-[10px] text-on-surface-variant font-medium">9:12 AM</span>
+</div>
+<p class="text-label-sm text-on-surface-variant font-bold truncate">James: Needs backend review</p>
+</div>
+</button>
+<!-- Chat Item Regular -->
+<button class="w-full p-4 flex gap-3 hover:bg-surface-container-low rounded-xl text-left transition-all">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">terminal</span>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface truncate">Team Kernel-Hacks</span>
+<span class="text-[10px] text-on-surface-variant">Yesterday</span>
+</div>
+<p class="text-label-sm text-on-surface-variant truncate">Alex: Thanks for the feedback!</p>
+</div>
+</button>
+</div>
+</div>
+<!-- Chat Area -->
+<div class="flex-grow flex flex-col bg-surface-container-lowest">
+<!-- Chat Header -->
+<div class="h-16 px-gutter flex items-center justify-between border-b border-outline-variant/10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container flex items-center justify-center text-on-tertiary">
+<span class="material-symbols-outlined">group</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Team Pixel-Perfect</h3>
+<p class="text-label-sm text-on-surface-variant">Developing: AI-driven Accessibility Suite</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined">videocam</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined">phone</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Messages -->
+<div class="flex-grow overflow-y-auto chat-scroll p-6 space-y-6">
+<!-- Date Divider -->
+<div class="flex items-center gap-4 py-2">
+<div class="h-px flex-grow bg-outline-variant/30"></div>
+<span class="text-label-sm text-outline font-bold">TODAY, OCTOBER 24</span>
+<div class="h-px flex-grow bg-outline-variant/30"></div>
+</div>
+<!-- Message Left -->
+<div class="flex gap-4 max-w-2xl">
+<img alt="Sarah" class="w-8 h-8 rounded-full object-cover" data-alt="A portrait of a young female college student with glasses, smiling warmly. She is in a collaborative laboratory setting with whiteboards in the background. The lighting is bright and professional, following the modern corporate design system aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA59tXMxH-alEMv6OFGs_YY9d-RSNvSaeFsJGUKI811J_GL2Bqi9Capr-LrlJBANxoOLBgNGgJZOqKJbX3X9c7CqkC84RQsbOguAC06xFa81ljztTrL2m_-8ATCAbVrBxzBoJJJwESDivIjckmtIrboQ5x2_3K0Yn29RrkvjKMjyDm5djQDGlvL8Wl3WiQ79rqakQyADpo3Qmlf6S94-QhoULXnhNChllnBhUFKtcaKaKfYfw6KMB4DOOR8jncn7DKDQafKcsuqdH-B">
+<div class="space-y-1">
+<div class="flex items-baseline gap-2">
+<span class="font-label-md text-on-surface">Sarah Chen</span>
+<span class="text-[10px] text-outline">10:45 AM</span>
+</div>
+<div class="bg-surface-container text-on-surface p-3 rounded-2xl rounded-tl-none shadow-sm">
+<p class="text-body-md">Hey Mentor! We've just uploaded the updated UI mocks for the accessibility dashboard. Could you take a look at the contrast ratios on the navigation components?</p>
+</div>
+<!-- File Attachment -->
+<div class="mt-2 p-3 border border-outline-variant/20 rounded-xl flex items-center gap-3 bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer group">
+<div class="w-10 h-10 bg-error/10 text-error rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div class="flex-grow">
+<p class="text-label-md text-on-surface font-bold">UI_V2_Draft.pdf</p>
+<p class="text-[10px] text-on-surface-variant">4.2 MB â€¢ Added by Sarah</p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">download</span>
+</div>
+</div>
+</div>
+<!-- Message Right (Mentor) -->
+<div class="flex gap-4 flex-row-reverse">
+<img alt="Mentor" class="w-8 h-8 rounded-full object-cover" data-alt="A professional headshot of a middle-aged mentor with a friendly expression, wearing a navy blazer and white shirt. This profile image is small and used in a chat context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAfdA6P5p8cUpXeAnZvA9cjc5_4kRX-aglBYhugYvoh-UUpyjDDhQekr_GUyJpk5xmjwY6fRUFBgMbeUpjS_wVn8YtEZHRHuoGx7LFjsmXPlYWnwIeIuCkwALz_4KmY4EpUn3GxMn2louIJ9sTtlzsSxHR8aFnNyigSGMAf1KSYXT9GrXFkcjKz_xcWAYoGJtc53cCFQWplQhOJRe3k2ZIfI8aPS2RC0djSPJD3o0rw5gv-ccPFEK0G8-rVfWMZJYuVc6nKQn4TB4C">
+<div class="space-y-1 text-right">
+<div class="flex items-baseline gap-2 flex-row-reverse">
+<span class="font-label-md text-on-surface">You</span>
+<span class="text-[10px] text-outline">10:52 AM</span>
+</div>
+<div class="bg-primary text-on-primary p-3 rounded-2xl rounded-tr-none shadow-md inline-block text-left">
+<p class="text-body-md">Great work on the iteration. I'll review it in about 20 minutes and leave comments directly in the Figma file. Are you still using the indigo/surface palette from the guide?</p>
+</div>
+</div>
+</div>
+<!-- Message Left -->
+<div class="flex gap-4 max-w-2xl">
+<img alt="Marcus" class="w-8 h-8 rounded-full object-cover" data-alt="A young male developer with a focused expression, wearing a gray hoodie in a tech-focused workspace. He is surrounded by monitors and peripheral equipment. The lighting is cool-toned and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDojqix1yaBOpACutu9QXbnupQD8Jfg4MARi4Gvh2IvroFYq5QAsRLyA92Flu8kHw6-AnuHTdH8fhCZegQfBn_HGxaE9kfqyPGuyceKSE7YqP-ruoyLk6hm2AkRWtrO-pfNPMP0BZbdHHfnNK0BWbVWoimWst2eKwN1SMt_1zy_Npff6uDrP1EiIhW_JyzTmpDWqW5HC7qx12ELouK-nTeK7cXNbu9wwhNTVw7NU1p28HeWPwJpaFNMzpl_wXFiv0mZy_C6wxVnqIFl">
+<div class="space-y-1">
+<div class="flex items-baseline gap-2">
+<span class="font-label-md text-on-surface">Marcus Thorne</span>
+<span class="text-[10px] text-outline">11:05 AM</span>
+</div>
+<div class="bg-surface-container text-on-surface p-3 rounded-2xl rounded-tl-none shadow-sm">
+<p class="text-body-md">Yes, exactly. We're matching the SEAL design system tokens 1:1. Also, we're having a small issue with the API integration for the real-time contrast checker. Marcus will explain more.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Chat Input -->
+<div class="p-6 pt-2 bg-surface-container-lowest">
+<div class="p-2 border border-outline-variant/30 rounded-2xl bg-surface-container-low shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<textarea class="w-full p-2 bg-transparent border-none resize-none focus:ring-0 text-body-md min-h-[44px]" placeholder="Type a message to Team Pixel-Perfect..." rows="1"></textarea>
+<div class="flex justify-between items-center px-2 py-1">
+<div class="flex gap-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-all">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-all">
+<span class="material-symbols-outlined">mood</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-all">
+<span class="material-symbols-outlined">alternate_email</span>
+</button>
+</div>
+<button class="bg-primary text-on-primary px-5 py-2 rounded-xl font-label-md flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md">
+                                    Send
+                                    <span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Participant List Sidebar -->
+<div class="w-64 flex flex-col bg-surface border-l border-outline-variant/20">
+<div class="p-4 border-b border-outline-variant/10">
+<h2 class="font-label-sm text-label-sm text-outline uppercase tracking-widest">Team Members</h2>
+</div>
+<div class="flex-grow overflow-y-auto chat-scroll p-4 space-y-4">
+<!-- Member Item -->
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Sarah" class="w-8 h-8 rounded-full" data-alt="Small thumbnail of Sarah Chen, young female student with glasses, smiling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAylzc1ecvsrbWMsQBGXOXoWTkJ7ggtEHLGOSKEShtX55p1WKU2xd5t4Pn7K-Vwtocz7lur5I9dPItSvi5jfvD93bcXxIL36_UWisyLDfUudbteq29IjwPYHWxuY7JSHzVfeufSiOSNE1oJiSiCJ_xaqhW_WrLnv66acxLxX_5RXNEuVgES7VSBNXW76d79kpmj8tLewwpfaqUEvIjHuUAgGTifUjvixkx2pMKV5fHpsHlRSQTpAnvm3BmVaLCu4uyT-KpTKVcHpx19">
+<div class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full ring-2 ring-surface"></div>
+</div>
+<div class="min-w-0">
+<p class="font-label-md text-on-surface truncate">Sarah Chen</p>
+<p class="text-[10px] text-on-surface-variant">Team Lead â€¢ UI/UX</p>
+</div>
+</div>
+<!-- Member Item -->
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Marcus" class="w-8 h-8 rounded-full" data-alt="Small thumbnail of Marcus Thorne, male developer in a hoodie." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeWKRd-YgjNIhO_CTXGDyFXTnQk85R8EGZasMo34OfeF_Rg0-yO67cgvLIn7ZQLBiSHlyAkPygcx-t2uyTUhJzEoXIzWHfRX5VdLjMBUokJM6jdt6HE08cCzMf2ya6UznoksjwJNWYwPI6ZQyBxrrelNdwYjhrLhYzh9yrzFZUBDkhBSoO6XnwzfH6q7r-Ig2sqzjqzqgJKPmgGLlGn3abH0niBbWH1INXQpIck75VTQq_vZzkPYUyEuEgJE3kMFljQ0ppG2V9kUFM">
+<div class="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full ring-2 ring-surface"></div>
+</div>
+<div class="min-w-0">
+<p class="font-label-md text-on-surface truncate">Marcus Thorne</p>
+<p class="text-[10px] text-on-surface-variant">Full Stack Dev</p>
+</div>
+</div>
+<!-- Member Item -->
+<div class="flex items-center gap-3 opacity-60">
+<div class="relative">
+<img alt="Elena" class="w-8 h-8 rounded-full" data-alt="Small thumbnail of Elena, a young woman with curly hair, in a casual setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdkPRp1V-pM0vTXAI0duKH8fQA2HU81usv69WxyDSg4IUtgKtANnwNKRMVtmYjOVzU7Ta5GQidKjmxx3va5ouwOni3elGiIBF2DQJ5kje9HF1tfdJqqoSZKfoOAhUyzla0sfpcdIgfzKj2WiLRpd2_Z6LuxLSjvFrXJaqY9ldZLg0MNppqdd7qCSv3QwjUVGU90V3bg_fLCsU3g0ZpeJUcGOySga9f-NYQwpeC4SPIcVMJDymwyzl-1ZqwHWiLP6VpO8Am_hrNfRuA">
+<div class="absolute bottom-0 right-0 w-2 h-2 bg-outline rounded-full ring-2 ring-surface"></div>
+</div>
+<div class="min-w-0">
+<p class="font-label-md text-on-surface truncate">Elena Rodriguez</p>
+<p class="text-[10px] text-on-surface-variant">Data Scientist</p>
+</div>
+</div>
+<div class="pt-4 mt-2 border-t border-outline-variant/10">
+<h2 class="font-label-sm text-label-sm text-outline uppercase tracking-widest mb-4">Files &amp; Links</h2>
+<div class="space-y-3">
+<div class="flex items-center gap-2 group cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">link</span>
+<span class="text-label-sm text-on-surface truncate group-hover:underline">Figma Prototype V2</span>
+</div>
+<div class="flex items-center gap-2 group cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">terminal</span>
+<span class="text-label-sm text-on-surface truncate group-hover:underline">GitHub Repository</span>
+</div>
+<div class="flex items-center gap-2 group cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">description</span>
+<span class="text-label-sm text-on-surface truncate group-hover:underline">Project Spec.docx</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
+
+<!-- Mentor Dashboard - Assigned Categories -->
+

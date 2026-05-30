@@ -1,0 +1,422 @@
+﻿<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Judge Portal - Scoring History</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "surface-container": "#e5eeff",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-container": "#dad7ff",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#8a4cfc",
+                        "outline-variant": "#c7c4d8",
+                        "tertiary": "#00505f",
+                        "surface-dim": "#cbdbf5",
+                        "secondary": "#712ae2",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "secondary-fixed": "#eaddff",
+                        "surface-bright": "#f8f9ff",
+                        "background": "#f8f9ff",
+                        "primary-container": "#4f46e5",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-tint": "#4d44e3",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-secondary-fixed": "#25005a",
+                        "on-tertiary-fixed": "#001f26",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-surface": "#0b1c30",
+                        "inverse-surface": "#213145",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-tertiary-container": "#93e8ff",
+                        "surface-container-low": "#eff4ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline": "#777587",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#acedff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#fffbff",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-surface-variant": "#464555",
+                        "surface-variant": "#d3e4fe",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "primary-fixed": "#e2dfff",
+                        "tertiary-container": "#006a7c",
+                        "primary": "#3525cd",
+                        "on-background": "#0b1c30",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "stack-md": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "stack-sm": "12px",
+                        "stack-lg": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="text-on-background">
+<!-- Sidebar (Shared Component) -->
+<aside class="h-screen w-64 fixed left-0 top-0 flex flex-col py-stack-md px-base border-r border-outline-variant bg-surface dark:bg-on-background z-40 hidden md:flex">
+<div class="mb-stack-lg px-4 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined sx-0001">terminal</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface">Judge Portal</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Academic League</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">event_available</span>
+                Assigned Events
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">stacks</span>
+                Assigned Rounds
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">description</span>
+                Assigned Submissions
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">model_training</span>
+                Calibration Round
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-primary dark:text-inverse-primary font-bold bg-primary-fixed dark:bg-primary-container rounded-lg" href="#">
+<span class="material-symbols-outlined sx-0001">history</span>
+                Scoring History
+            </a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-stack-md">
+<button class="w-full mb-4 py-3 px-4 bg-primary text-on-primary font-label-md text-label-md rounded-lg elevation-l1 hover:-translate-y-0.5 transition-all">
+                Review Guidelines
+            </button>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                Support
+            </a>
+</div>
+</aside>
+<!-- Header (Shared Component) -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-margin-desktop w-full h-16 bg-surface-container-lowest dark:bg-inverse-surface shadow-sm ml-0 md:ml-64 md:w-[calc(100%-16rem)]">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 text-on-surface">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-display text-display text-primary dark:text-inverse-primary text-2xl">SEAL Dashboard</h1>
+</div>
+<div class="flex items-center gap-stack-md">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-1.5 rounded-full border border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-primary focus:outline-none text-body-md" placeholder="Search evaluations..." type="text">
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="Judge profile photo" data-alt="A professional headshot of a middle-aged academic judge with a warm, discerning expression, set against a blurred background of a modern university library. The lighting is soft and professional, reflecting a high-end corporate academic environment with indigo and white tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBelomQzVe0bG6XwH-H8avi3ky_-btp7yqAqN_0-2cqze02PDd1k5iGPQ2TwbjnmH5Y9iLqVNITTo048E99E0wSusCCK9WhcUdObhTRwBZ-ibRfcMAHTjCFAfu4rVCIwzMUFkjN1A6TgsNbwmazr0ygomUoUz5I6VvBYSuRDZ4g4paDSGx127tCK7HbqZcf6XhvDbTWDV9L_YVLJC9iDFWDwFH0ezSGYQmNQMTeJNT-3P6N1OtieAHbASnnnaPdxo5hVr7JR8GsDdhE">
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-0 md:ml-64 p-margin-mobile md:p-margin-desktop min-h-screen">
+<div class="max-w-container-max mx-auto">
+<!-- Page Title Area -->
+<div class="mb-stack-lg">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Scoring History</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Review and manage your past evaluation records across all assigned events.</p>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl elevation-l1 border border-outline-variant/30">
+<div class="flex items-start justify-between">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Total Submissions Scored</p>
+<h3 class="font-display text-display text-primary mt-1">142</h3>
+</div>
+<div class="p-3 bg-primary-fixed rounded-lg text-primary">
+<span class="material-symbols-outlined sx-0001">fact_check</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+12 from last week</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl elevation-l1 border border-outline-variant/30">
+<div class="flex items-start justify-between">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Average Score Given</p>
+<h3 class="font-display text-display text-primary mt-1">84.5</h3>
+</div>
+<div class="p-3 bg-tertiary-fixed rounded-lg text-tertiary">
+<span class="material-symbols-outlined sx-0001">analytics</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-label-sm text-outline">
+<span>Standard deviation: 4.2 pts</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl elevation-l1 border border-outline-variant/30">
+<div class="flex items-start justify-between">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Completion Rate</p>
+<h3 class="font-display text-display text-primary mt-1">98%</h3>
+</div>
+<div class="p-3 bg-secondary-fixed rounded-lg text-secondary">
+<span class="material-symbols-outlined sx-0001">verified</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[98%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter and Search Bar -->
+<div class="bg-surface-container-lowest p-4 rounded-t-xl border-x border-t border-outline-variant/30 flex flex-col md:flex-row gap-4 items-center justify-between">
+<div class="flex items-center gap-stack-sm w-full md:w-auto">
+<div class="relative w-full md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="w-full pl-9 pr-4 py-2 border border-outline rounded-lg focus:ring-2 focus:ring-primary focus:outline-none text-body-md" placeholder="Search team or event..." type="text">
+</div>
+<button class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors flex items-center gap-2 text-label-md">
+<span class="material-symbols-outlined">filter_list</span>
+                        Filter
+                    </button>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-4 py-2 text-label-md text-primary font-bold hover:bg-surface-container rounded-lg transition-colors">
+                        Export CSV
+                    </button>
+</div>
+</div>
+<!-- Table Container -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-b-xl overflow-x-auto elevation-l1">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Event Name</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Round</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Team Name</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-center">Final Score</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Date Submitted</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Global Hackathon 2024</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant rounded text-[12px] font-medium">Finals</span>
+</td>
+<td class="px-6 py-4 font-title-lg text-label-md font-semibold text-primary">Cyber Knights</td>
+<td class="px-6 py-4 text-center">
+<span class="font-bold text-headline-md text-primary">94</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant font-label-md">Oct 12, 2024, 14:30</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-outline hover:bg-surface-container-high rounded-lg transition-all" title="Edit">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Sustainability Challenge</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant rounded text-[12px] font-medium">Qualifiers</span>
+</td>
+<td class="px-6 py-4 font-title-lg text-label-md font-semibold text-primary">Eco Warriors</td>
+<td class="px-6 py-4 text-center">
+<span class="font-bold text-headline-md text-primary">82</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant font-label-md">Oct 11, 2024, 09:15</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-outline hover:bg-surface-container-high rounded-lg transition-all" title="Edit">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Global Hackathon 2024</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant rounded text-[12px] font-medium">Semi-Finals</span>
+</td>
+<td class="px-6 py-4 font-title-lg text-label-md font-semibold text-primary">Bit Busters</td>
+<td class="px-6 py-4 text-center">
+<span class="font-bold text-headline-md text-primary">76</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant font-label-md">Oct 10, 2024, 18:45</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-outline hover:bg-surface-container-high rounded-lg transition-all" title="Edit">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">AI Innovation Summit</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant rounded text-[12px] font-medium">Final Round</span>
+</td>
+<td class="px-6 py-4 font-title-lg text-label-md font-semibold text-primary">Neural Netters</td>
+<td class="px-6 py-4 text-center">
+<span class="font-bold text-headline-md text-primary">91</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant font-label-md">Oct 09, 2024, 22:10</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-outline hover:bg-surface-container-high rounded-lg transition-all" title="Edit">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">AI Innovation Summit</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant rounded text-[12px] font-medium">Preliminary</span>
+</td>
+<td class="px-6 py-4 font-title-lg text-label-md font-semibold text-primary">Algorithmics</td>
+<td class="px-6 py-4 text-center">
+<span class="font-bold text-headline-md text-primary">88</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant font-label-md">Oct 08, 2024, 11:00</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-outline hover:bg-surface-container-high rounded-lg transition-all" title="Edit">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="mt-stack-md flex items-center justify-between">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Showing 1 to 5 of 142 submissions</p>
+<div class="flex gap-2">
+<button class="p-2 border border-outline-variant rounded-lg text-on-surface disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 bg-primary text-on-primary rounded-lg font-bold text-label-md">1</button>
+<button class="w-10 h-10 hover:bg-surface-container rounded-lg font-medium text-label-md">2</button>
+<button class="w-10 h-10 hover:bg-surface-container rounded-lg font-medium text-label-md">3</button>
+<button class="p-2 border border-outline-variant rounded-lg text-on-surface">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Calibration Insight Card (Bento Style addition) -->
+<div class="mt-stack-lg grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="bg-surface-container p-6 rounded-2xl flex items-center gap-6">
+<div class="w-24 h-24 rounded-full border-4 border-primary flex items-center justify-center bg-surface-container-lowest">
+<span class="font-display text-display text-primary text-xl">92%</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Calibration Consistency</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Your scores are 92% aligned with the lead judging panel's baseline.</p>
+<button class="mt-3 text-primary font-bold text-label-md flex items-center gap-1 group">
+                            View Calibration Report
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="relative overflow-hidden rounded-2xl bg-on-background p-6 text-white min-h-[200px] flex flex-col justify-end">
+<div class="absolute inset-0 opacity-40">
+<img alt="Abstract Data Pattern" data-alt="A sophisticated abstract visualization of data nodes and network connections flowing through space. The color scheme is a deep indigo and electric blue on a dark background, reflecting a high-tech academic scoring environment. The style is clean, modern, and visionary, with glowing lines and soft bokeh effects." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB-DqgtFN0Oa1KNdNsfaBCMXdhVoCiMqq4Rimm7EkOiNwIvk4m4bYNoA1fk2wiRbvCKphMSXJCU2VeWgSSj_ZBrK3kT_x-34X2QFpmwU3FudKU4U15HNyOgB76pLtOTG1wIaxWB8xZ8d_xFE07L6IKSya9bt-Lyl_9ab5uaVjvugKo2j6OiivWIvhu2q14rHlPueX_CrP-4nHeuV-QHtYxnnLsvlaOE6y-PoqMVF0W1mcD7pq7O07Rt5Q00n8qmedc5s16mUJwGHl-">
+</div>
+<div class="relative z-10">
+<h4 class="font-headline-md text-headline-md mb-2">Upcoming Evaluations</h4>
+<p class="font-body-md opacity-80 mb-4">You have 12 new submissions assigned for the 'Future Tech' round starting tomorrow.</p>
+<button class="bg-primary hover:bg-primary-container px-6 py-3 rounded-xl font-bold transition-all">Go to Assignments</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
+
+<!-- Participant Dashboard - Team Detail -->
+

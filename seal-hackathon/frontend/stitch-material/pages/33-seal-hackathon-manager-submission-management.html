@@ -1,0 +1,450 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Hackathon Manager - Submission Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#712ae2",
+                    "surface-container-highest": "#d3e4fe",
+                    "surface-bright": "#f8f9ff",
+                    "secondary-fixed": "#eaddff",
+                    "on-primary-container": "#dad7ff",
+                    "surface-container": "#e5eeff",
+                    "on-surface": "#0b1c30",
+                    "on-tertiary-container": "#93e8ff",
+                    "primary-container": "#4f46e5",
+                    "background": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "on-background": "#0b1c30",
+                    "outline": "#777587",
+                    "surface-variant": "#d3e4fe",
+                    "primary-fixed": "#e2dfff",
+                    "on-secondary-fixed": "#25005a",
+                    "surface-container-high": "#dce9ff",
+                    "on-primary-fixed": "#0f0069",
+                    "secondary-container": "#8a4cfc",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-surface-variant": "#464555",
+                    "on-error-container": "#93000a",
+                    "on-secondary-container": "#fffbff",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "primary": "#3525cd",
+                    "outline-variant": "#c7c4d8",
+                    "surface-container-low": "#eff4ff",
+                    "surface-dim": "#cbdbf5",
+                    "surface-tint": "#4d44e3",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c3c0ff",
+                    "tertiary-fixed": "#acedff",
+                    "tertiary": "#00505f",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "tertiary-container": "#006a7c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed": "#001f26"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1280px",
+                    "margin-desktop": "32px",
+                    "stack-md": "24px",
+                    "stack-lg": "48px",
+                    "margin-mobile": "16px",
+                    "base": "8px",
+                    "stack-sm": "12px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background">
+<!-- SideNavBar Component -->
+<aside class="h-full w-72 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-low shadow-sm flex flex-col py-base z-50">
+<div class="px-6 py-8 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">SEAL</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Hackathon Manager</p>
+</div>
+</div>
+<nav class="flex-1 px-3 space-y-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+                Event Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+                Round Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+                Category Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="rule">rule</span>
+                Criteria Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+                User Approval
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-primary-container/10 Active: translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+                Submission Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+                Ranking &amp; Awards
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+                Research Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Reports
+            </a>
+</nav>
+<div class="px-6 py-4 border-t border-outline-variant/30 mt-auto">
+<div class="flex items-center gap-3">
+<img alt="Organizer Profile" class="w-10 h-10 rounded-full object-cover shadow-sm" data-alt="A professional headshot of a middle-aged academic man with glasses and a friendly expression. He is wearing a sharp charcoal suit in a bright, modern office setting with soft, natural lighting. The image maintains a high-end corporate aesthetic with a shallow depth of field, highlighting his approachable yet authoritative presence for an organizer role." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkLVHCCUCIsjj17whNz-zftUZNFDpIb2X4mRRKzehqPdN9hW4bXKxT-6a9eeIr8zDJBhCW9xUY5csGBB5S_Cblr7iayJS9onrNmDIRzFQGGcZ6pqIKU6cnoK-PxXbSuTGbJlk-kh_XjrLDuAHAfiqphOqJg_QPJOCivFzHYppE_9gl6rPPjFMvp5PC-hx9gFahd3qyY4qABtk3T8cMwaJsPyHMuWfQGya8oExlNFik5VM__LfwtivA69593_V-_cz1_-1BwEEspuru">
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md text-on-surface truncate">Dr. Alex Rivera</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Global Lead Organizer</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar Component -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface dark:bg-surface shadow-sm flex justify-between items-center px-margin-desktop h-16 z-40">
+<div class="flex items-center gap-stack-md flex-1">
+<h2 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Submission Management</h2>
+<div class="relative w-96 ml-8">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary text-body-md font-body-md" placeholder="Search projects or team IDs..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 transition-transform Active: scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 transition-transform Active: scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help">help</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-72 pt-24 px-margin-desktop pb-stack-lg min-h-screen">
+<!-- Statistics Bar -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-sm border border-outline-variant/10 flex items-center justify-between">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Total Submissions</p>
+<p class="font-display text-display text-primary">1,248</p>
+<p class="font-label-sm text-label-sm text-tertiary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span>
+                        +12% from last year
+                    </p>
+</div>
+<div class="w-16 h-16 bg-primary-container/10 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]" data-icon="description">description</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-sm border border-outline-variant/10 flex items-center justify-between">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Reviewed</p>
+<p class="font-display text-display text-secondary">856</p>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-4">
+<div class="bg-secondary h-1.5 rounded-full sx-0001"></div>
+</div>
+</div>
+<div class="w-16 h-16 bg-secondary-container/10 rounded-full flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[32px]" data-icon="task_alt">task_alt</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-sm border border-outline-variant/10 flex items-center justify-between">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Flagged Items</p>
+<p class="font-display text-display text-error">24</p>
+<p class="font-label-sm text-label-sm text-error mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="warning">warning</span>
+                        Requires immediate attention
+                    </p>
+</div>
+<div class="w-16 h-16 bg-error-container/20 rounded-full flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[32px]" data-icon="report">report</span>
+</div>
+</div>
+</section>
+<!-- Filters & Table Content -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden">
+<!-- Table Header & Filters -->
+<div class="p-stack-md border-b border-outline-variant/20 bg-surface-container-low/30">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<button class="bg-white border border-outline-variant px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+                            All Filters
+                        </button>
+<div class="h-6 w-[1px] bg-outline-variant/50"></div>
+<select class="bg-transparent border-none font-label-md text-label-md text-on-surface-variant focus:ring-0 cursor-pointer">
+<option>Category: All Categories</option>
+<option>FinTech Innovation</option>
+<option>Sustainable Tech</option>
+<option>AI &amp; Machine Learning</option>
+</select>
+<select class="bg-transparent border-none font-label-md text-label-md text-on-surface-variant focus:ring-0 cursor-pointer">
+<option>Round: All Rounds</option>
+<option>Round 1: Initial Pitch</option>
+<option>Round 2: Technical Demo</option>
+<option>Finals</option>
+</select>
+<select class="bg-transparent border-none font-label-md text-label-md text-on-surface-variant focus:ring-0 cursor-pointer">
+<option>Status: All Statuses</option>
+<option>Pending Review</option>
+<option>Accepted</option>
+<option>Flagged</option>
+<option>Disqualified</option>
+</select>
+</div>
+<div class="flex items-center gap-3">
+<button class="font-label-md text-label-md text-primary px-4 py-2 rounded-lg hover:bg-primary-container/10 transition-colors">
+                            Export CSV
+                        </button>
+<button class="bg-primary text-white font-label-md text-label-md px-4 py-2 rounded-lg shadow-sm hover:translate-y-[-2px] transition-transform">
+                            Bulk Action
+                        </button>
+</div>
+</div>
+</div>
+<!-- Submissions Table -->
+<div class="overflow-x-auto">
+<table class="w-full border-collapse">
+<thead class="bg-surface-container-low/50">
+<tr>
+<th class="px-6 py-4 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Project Name</th>
+<th class="px-6 py-4 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Category</th>
+<th class="px-6 py-4 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Round</th>
+<th class="px-6 py-4 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Team ID</th>
+<th class="px-6 py-4 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 text-left font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Submission Date</th>
+<th class="px-6 py-4 text-right font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Table Row 1 -->
+<tr class="hover:bg-surface-container-low/20 transition-colors group">
+<td class="px-6 py-4">
+<div>
+<p class="font-label-md text-label-md text-on-surface font-semibold">EcoChain Logistics</p>
+<p class="text-[12px] text-on-surface-variant">Blockchain for sustainability</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-tertiary/10 text-tertiary text-label-sm font-label-sm rounded-full">Sustainable Tech</span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Round 2</td>
+<td class="px-6 py-4 font-body-md text-body-md font-mono text-primary">#T-8821</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-label-sm font-label-sm text-tertiary">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                                    Accepted
+                                </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">Oct 24, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Detail"><span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Audit Logs"><span class="material-symbols-outlined text-[20px]" data-icon="history">history</span></button>
+<button class="p-2 hover:bg-error/10 rounded-lg text-error" title="Disqualify"><span class="material-symbols-outlined text-[20px]" data-icon="person_off">person_off</span></button>
+</div>
+</td>
+</tr>
+<!-- Table Row 2 -->
+<tr class="hover:bg-surface-container-low/20 transition-colors group">
+<td class="px-6 py-4">
+<div>
+<p class="font-label-md text-label-md text-on-surface font-semibold">NeuroSense AI</p>
+<p class="text-[12px] text-on-surface-variant">EEG Data Processing</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-primary/10 text-primary text-label-sm font-label-sm rounded-full">AI &amp; ML</span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Round 2</td>
+<td class="px-6 py-4 font-body-md text-body-md font-mono text-primary">#T-9042</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-label-sm font-label-sm text-secondary">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                    In Review
+                                </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">Oct 25, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Detail"><span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Audit Logs"><span class="material-symbols-outlined text-[20px]" data-icon="history">history</span></button>
+<button class="p-2 hover:bg-error/10 rounded-lg text-error" title="Disqualify"><span class="material-symbols-outlined text-[20px]" data-icon="person_off">person_off</span></button>
+</div>
+</td>
+</tr>
+<!-- Table Row 3 (Flagged) -->
+<tr class="bg-error/5 hover:bg-error/10 transition-colors group border-l-4 border-error">
+<td class="px-6 py-4">
+<div>
+<p class="font-label-md text-label-md text-on-surface font-semibold">SwiftPay v2</p>
+<p class="text-[12px] text-on-surface-variant">Instant Payment Protocol</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary/10 text-secondary text-label-sm font-label-sm rounded-full">FinTech</span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Round 1</td>
+<td class="px-6 py-4 font-body-md text-body-md font-mono text-primary">#T-7712</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-label-sm font-label-sm text-error">
+<span class="material-symbols-outlined text-[14px] sx-0001" data-icon="flag">flag</span>
+                                    Flagged (Plagiarism)
+                                </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">Oct 26, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Detail"><span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Audit Logs"><span class="material-symbols-outlined text-[20px]" data-icon="history">history</span></button>
+<button class="p-2 bg-error text-white rounded-lg" title="Disqualify"><span class="material-symbols-outlined text-[20px]" data-icon="person_off">person_off</span></button>
+</div>
+</td>
+</tr>
+<!-- Table Row 4 -->
+<tr class="hover:bg-surface-container-low/20 transition-colors group">
+<td class="px-6 py-4">
+<div>
+<p class="font-label-md text-label-md text-on-surface font-semibold">MediSync Pro</p>
+<p class="text-[12px] text-on-surface-variant">Telehealth Dashboard</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-surface-variant/50 text-on-surface-variant text-label-sm font-label-sm rounded-full">HealthTech</span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Round 2</td>
+<td class="px-6 py-4 font-body-md text-body-md font-mono text-primary">#T-1209</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-label-sm font-label-sm text-tertiary">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                                    Accepted
+                                </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">Oct 26, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Detail"><span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant" title="View Audit Logs"><span class="material-symbols-outlined text-[20px]" data-icon="history">history</span></button>
+<button class="p-2 hover:bg-error/10 rounded-lg text-error" title="Disqualify"><span class="material-symbols-outlined text-[20px]" data-icon="person_off">person_off</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-between bg-surface-container-low/30">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Showing 1-10 of 1,248 submissions</p>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-label-md text-label-md">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface font-label-md text-label-md">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface font-label-md text-label-md">3</button>
+<span class="px-2 text-on-surface-variant">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface font-label-md text-label-md">125</button>
+<button class="p-2 hover:bg-surface-container rounded-lg">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Warning Overlay (Mock) -->
+<div class="fixed inset-0 bg-on-surface/40 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+<div class="bg-surface-container-lowest w-[480px] rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+<div class="p-stack-md bg-error/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-error/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[28px]" data-icon="warning">warning</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Confirm Disqualification</h3>
+<p class="font-label-sm text-label-sm text-error">This action cannot be undone.</p>
+</div>
+</div>
+<div class="p-stack-md">
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">You are about to disqualify <strong>Team SwiftPay v2 (#T-7712)</strong>. Please provide a mandatory reason for this action which will be recorded in the audit logs and sent to the team.</p>
+<label class="block font-label-md text-label-md text-on-surface mb-2">Reasoning &amp; Evidence</label>
+<textarea class="w-full rounded-xl border-outline-variant focus:ring-2 focus:ring-error focus:border-error text-body-md p-3" placeholder="e.g., Code base found to be 92% identical to public GitHub repo..." rows="4"></textarea>
+<div class="mt-stack-md flex justify-end gap-3">
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md border border-outline-variant hover:bg-surface-container transition-colors">Cancel</button>
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md bg-error text-white shadow-sm hover:bg-error/90 transition-colors">Confirm Disqualification</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for Global Actions -->
+<button class="fixed bottom-margin-desktop right-margin-desktop bg-primary text-white h-14 px-6 rounded-full shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform z-40">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="font-label-md text-label-md font-bold uppercase tracking-wide">Manual Submission</span>
+</button>
+</body></html>
+
+<!-- Organizer Dashboard - Ranking & Awards -->
+

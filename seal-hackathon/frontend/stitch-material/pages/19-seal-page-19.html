@@ -1,0 +1,320 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "surface-container-high": "#dce9ff",
+                  "error": "#ba1a1a",
+                  "on-tertiary-fixed-variant": "#004e5c",
+                  "on-surface": "#0b1c30",
+                  "surface-container-lowest": "#ffffff",
+                  "surface-container": "#e5eeff",
+                  "surface-container-low": "#eff4ff",
+                  "tertiary-fixed-dim": "#4cd7f6",
+                  "on-secondary-fixed": "#25005a",
+                  "error-container": "#ffdad6",
+                  "on-secondary-fixed-variant": "#5a00c6",
+                  "tertiary-container": "#006a7c",
+                  "surface-bright": "#f8f9ff",
+                  "surface-dim": "#cbdbf5",
+                  "secondary-fixed": "#eaddff",
+                  "tertiary-fixed": "#acedff",
+                  "secondary-container": "#8a4cfc",
+                  "outline": "#777587",
+                  "inverse-primary": "#c3c0ff",
+                  "on-error": "#ffffff",
+                  "on-tertiary": "#ffffff",
+                  "on-secondary": "#ffffff",
+                  "background": "#f8f9ff",
+                  "on-secondary-container": "#fffbff",
+                  "surface-tint": "#4d44e3",
+                  "surface-container-highest": "#d3e4fe",
+                  "primary": "#3525cd",
+                  "on-tertiary-container": "#93e8ff",
+                  "on-surface-variant": "#464555",
+                  "surface": "#f8f9ff",
+                  "secondary": "#712ae2",
+                  "on-primary-fixed-variant": "#3323cc",
+                  "primary-container": "#4f46e5",
+                  "secondary-fixed-dim": "#d2bbff",
+                  "primary-fixed-dim": "#c3c0ff",
+                  "inverse-on-surface": "#eaf1ff",
+                  "primary-fixed": "#e2dfff",
+                  "on-error-container": "#93000a",
+                  "on-tertiary-fixed": "#001f26",
+                  "on-primary-container": "#dad7ff",
+                  "inverse-surface": "#213145",
+                  "outline-variant": "#c7c4d8",
+                  "on-primary": "#ffffff",
+                  "on-background": "#0b1c30",
+                  "surface-variant": "#d3e4fe",
+                  "on-primary-fixed": "#0f0069",
+                  "tertiary": "#00505f"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "margin-mobile": "16px",
+                  "container-max": "1280px",
+                  "gutter": "24px",
+                  "margin-desktop": "32px",
+                  "stack-sm": "12px",
+                  "stack-md": "24px",
+                  "stack-lg": "48px",
+                  "base": "8px"
+          },
+          "fontFamily": {
+                  "headline-md": ["Inter"],
+                  "headline-lg": ["Inter"],
+                  "title-lg": ["Inter"],
+                  "headline-lg-mobile": ["Inter"],
+                  "label-sm": ["Inter"],
+                  "body-lg": ["Inter"],
+                  "label-md": ["Inter"],
+                  "display": ["Inter"],
+                  "body-md": ["Inter"]
+          },
+          "fontSize": {
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                  "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                  "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                  "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col h-screen sticky left-0 top-0 w-64 bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant dark:border-outline py-stack-md px-4 gap-stack-sm">
+<div class="mb-stack-lg px-4">
+<h1 class="font-headline-md text-headline-md font-black tracking-tight text-primary">SEAL</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Participant Portal</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">notifications</span>
+<span class="font-label-md text-label-md">Notifications</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">groups</span>
+<span class="font-label-md text-label-md">My Teams</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">event_available</span>
+<span class="font-label-md text-label-md">Event Participation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined sx-0001">upload_file</span>
+<span class="font-label-md text-label-md">Submissions</span>
+</a>
+</nav>
+<div class="mt-auto px-4 py-stack-md bg-surface-container-high rounded-xl">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-2">READY FOR NEXT STAGE?</p>
+<button class="w-full py-2 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-all">Browse Events</button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 min-w-0 overflow-y-auto">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-40 w-full h-16 bg-surface dark:bg-on-background shadow-sm flex justify-between items-center px-margin-desktop max-w-container-max mx-auto">
+<div class="flex items-center gap-4">
+<div class="relative group lg:w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full font-body-md text-body-md focus:ring-2 focus:ring-primary" placeholder="Search events or submissions..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-stack-sm">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="Participant Profile" data-alt="A professional close-up headshot of a young adult software engineer with a friendly expression. They are wearing modern glasses and a dark tech-style hoodie. The background is a softly blurred modern office environment with cool blue and white ambient lighting that matches the UI design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsxmHEuDpU5ASJrP1Y1Row68ar3N4M2scHZFUxeA_rtck54ZyHKKXIAbvZa1Jyh5unzCFuK6hheMIlUi6PPabk6gTKQntJSUSNBfras3kmGWfWj9_VDDxb_RJp6jjH_PfwUYNYtF1Mk4e23MskLIlXQn-MlwkHVzM_C2hCeUYtEAQk9rhDsOkmvdxB6bMexC0I_WacfTnwGydWCrbRWI5h613CTt2C3MrFd4edtXnCuCTNiwxobvL9jwmDeFaqKL3g3A1NLZpO-Eq_">
+</div>
+</div>
+</header>
+<div class="p-margin-desktop max-w-container-max mx-auto">
+<!-- Breadcrumb & Header -->
+<div class="mb-stack-lg">
+<div class="flex items-center gap-2 text-on-surface-variant mb-2">
+<span class="font-label-md text-label-md">Dashboard</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-label-md text-label-md text-primary font-bold">Submissions</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Deliverable Submissions</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your project deliverables and track evaluation status in real-time.</p>
+</div>
+<!-- Deadline Warning Banner -->
+<div class="mb-stack-lg p-stack-md bg-error-container text-on-error-container rounded-xl flex items-start gap-4 custom-shadow border-l-4 border-error">
+<span class="material-symbols-outlined text-error">warning</span>
+<div>
+<h4 class="font-title-lg text-title-lg mb-1">Upcoming Deadline: Sprint 3 Prototype</h4>
+<p class="font-body-md text-body-md opacity-90">You have 14 hours and 22 minutes remaining to submit your functional prototype and technical report. Delayed submissions will incur a 15% point penalty.</p>
+</div>
+<button class="ml-auto px-4 py-2 bg-error text-on-error rounded-lg font-label-md text-label-md whitespace-nowrap">View Deadline Details</button>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+<!-- Form Section -->
+<section class="xl:col-span-7 space-y-gutter">
+<div class="bg-surface-container-lowest p-stack-md rounded-2xl custom-shadow">
+<h3 class="font-title-lg text-title-lg mb-stack-md border-b border-outline-variant pb-stack-sm">Submit New Deliverable</h3>
+<form class="space-y-stack-md">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Select Milestone</label>
+<select class="w-full p-3 bg-surface-container-low border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all">
+<option>Sprint 3: Functional Prototype</option>
+<option>Sprint 4: Final Product</option>
+<option>Post-Event Documentation</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Submit Repository (GitHub/GitLab)</label>
+<div class="flex">
+<span class="bg-surface-container-high px-4 py-3 border border-r-0 border-outline-variant rounded-l-lg text-on-surface-variant font-label-md flex items-center">https://</span>
+<input class="w-full p-3 bg-surface-container-low border border-outline-variant rounded-r-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="github.com/username/project" type="text">
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Submit Demo URL</label>
+<input class="w-full p-3 bg-surface-container-low border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="https://your-demo-app.vercel.app" type="url">
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Submit Slides or Report</label>
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-stack-lg flex flex-col items-center justify-center bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-4xl text-primary mb-2 group-hover:scale-110 transition-transform">cloud_upload</span>
+<p class="font-body-md text-body-md text-on-surface mb-1">Click to upload or drag and drop</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">PDF, PPTX or DOCX (Max. 20MB)</p>
+<input class="hidden" type="file">
+</div>
+</div>
+<div class="pt-stack-md">
+<button class="w-full py-4 bg-primary text-on-primary rounded-xl font-title-lg text-title-lg hover:opacity-90 transition-all flex justify-center items-center gap-2" type="submit">
+<span class="material-symbols-outlined">send</span>
+                  Confirm Final Submission
+                </button>
+<p class="mt-4 font-label-sm text-label-sm text-center text-on-surface-variant italic">Note: You can re-submit as many times as needed before the deadline.</p>
+</div>
+</form>
+</div>
+</section>
+<!-- Status Tracker Section -->
+<section class="xl:col-span-5 space-y-gutter">
+<div class="bg-surface-container-lowest p-stack-md rounded-2xl custom-shadow h-fit">
+<h3 class="font-title-lg text-title-lg mb-stack-md flex justify-between items-center">
+              Submission Status
+              <span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">history</span>
+</h3>
+<div class="space-y-4">
+<!-- Item 1: Accepted -->
+<div class="p-4 bg-surface-container-low rounded-xl hover-lift transition-all border border-transparent hover:border-outline-variant">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h5 class="font-label-md text-label-md text-on-surface font-bold">Sprint 2: Architecture Design</h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Submitted Oct 12, 09:45 AM</p>
+</div>
+<span class="px-2 py-1 bg-[#dcfce7] text-[#166534] rounded-md font-label-sm text-[10px] uppercase tracking-wider font-bold">Accepted</span>
+</div>
+<div class="flex items-center gap-3 mt-4 text-primary text-[14px]">
+<a class="flex items-center gap-1 hover:underline" href="#"><span class="material-symbols-outlined text-[16px]">link</span> View Doc</a>
+<a class="flex items-center gap-1 hover:underline" href="#"><span class="material-symbols-outlined text-[16px]">comment</span> Feedback (3)</a>
+</div>
+</div>
+<!-- Item 2: Needs Revision -->
+<div class="p-4 bg-surface-container-low rounded-xl hover-lift transition-all border border-transparent hover:border-outline-variant">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h5 class="font-label-md text-label-md text-on-surface font-bold">Sprint 1: User Personas</h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Submitted Oct 05, 11:20 PM</p>
+</div>
+<span class="px-2 py-1 bg-error-container text-on-error-container rounded-md font-label-sm text-[10px] uppercase tracking-wider font-bold">Needs Revision</span>
+</div>
+<p class="mt-2 font-body-md text-[13px] text-error font-medium italic">"Persona mapping lacks diversity in demographic representation. Please update."</p>
+</div>
+<!-- Item 3: Under Review -->
+<div class="p-4 bg-surface-container-low rounded-xl hover-lift transition-all border border-transparent hover:border-outline-variant">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h5 class="font-label-md text-label-md text-on-surface font-bold">Technical Stack Proposal</h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Submitted Oct 14, 02:15 PM</p>
+</div>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant rounded-md font-label-sm text-[10px] uppercase tracking-wider font-bold">Under Review</span>
+</div>
+<div class="mt-3 w-full bg-outline-variant h-1 rounded-full overflow-hidden">
+<div class="bg-primary w-2/3 h-full"></div>
+</div>
+<p class="mt-2 font-label-sm text-label-sm text-on-surface-variant">ETA: 24 hours</p>
+</div>
+</div>
+<button class="w-full mt-stack-md py-3 border border-primary text-primary rounded-lg font-label-md text-label-md hover:bg-surface-container-high transition-colors">
+              Download All Submissions (.zip)
+            </button>
+</div>
+<!-- Quick Guidelines Card -->
+<div class="bg-primary-container p-stack-md rounded-2xl text-on-primary-container">
+<h4 class="font-title-lg text-title-lg mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined">lightbulb</span>
+              Pro-Tips
+            </h4>
+<ul class="space-y-2 font-body-md text-body-md">
+<li class="flex gap-2"><span>â€¢</span> Ensure your repo is set to "Public" or "Internal".</li>
+<li class="flex gap-2"><span>â€¢</span> README.md must contain setup instructions.</li>
+<li class="flex gap-2"><span>â€¢</span> Video demos must be under 3 minutes.</li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Mobile Navigation Placeholder -->
+<div class="md:hidden fixed bottom-0 left-0 w-full h-16 bg-surface-container border-t border-outline-variant flex justify-around items-center z-50">
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-label-sm">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined sx-0001">upload_file</span>
+<span class="text-[10px] font-label-sm">Upload</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-[10px] font-label-sm">Team</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-label-sm">Profile</span>
+</button>
+</div>
+</body></html>
+
+<!-- Mentor Dashboard - Mentoring Notes -->
+

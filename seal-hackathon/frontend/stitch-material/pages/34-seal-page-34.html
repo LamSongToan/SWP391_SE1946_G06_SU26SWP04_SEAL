@@ -1,0 +1,413 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#712ae2",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-bright": "#f8f9ff",
+                        "secondary-fixed": "#eaddff",
+                        "on-primary-container": "#dad7ff",
+                        "surface-container": "#e5eeff",
+                        "on-surface": "#0b1c30",
+                        "on-tertiary-container": "#93e8ff",
+                        "primary-container": "#4f46e5",
+                        "background": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "on-background": "#0b1c30",
+                        "outline": "#777587",
+                        "surface-variant": "#d3e4fe",
+                        "primary-fixed": "#e2dfff",
+                        "on-secondary-fixed": "#25005a",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-fixed": "#0f0069",
+                        "secondary-container": "#8a4cfc",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-surface-variant": "#464555",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "primary": "#3525cd",
+                        "outline-variant": "#c7c4d8",
+                        "surface-container-low": "#eff4ff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-tint": "#4d44e3",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#c3c0ff",
+                        "tertiary-fixed": "#acedff",
+                        "tertiary": "#00505f",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "tertiary-container": "#006a7c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f8f9ff",
+                        "on-tertiary-fixed": "#001f26"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "margin-desktop": "32px",
+                        "stack-md": "24px",
+                        "stack-lg": "48px",
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "stack-sm": "12px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- Sidebar Navigation Shell -->
+<aside class="h-full w-72 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-low shadow-sm flex flex-col py-base z-50">
+<div class="px-6 py-8 flex flex-col gap-1">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">SEAL</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Hackathon Manager</span>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-md text-label-md">Event Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+<span class="font-label-md text-label-md">Round Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+<span class="font-label-md text-label-md">Category Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="rule">rule</span>
+<span class="font-label-md text-label-md">Criteria Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+<span class="font-label-md text-label-md">User Approval</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span class="font-label-md text-label-md">Submission Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-primary-container/10 translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined sx-0001" data-icon="military_tech">military_tech</span>
+<span class="font-label-md text-label-md">Ranking &amp; Awards</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-label-md text-label-md">Research Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+</nav>
+<div class="mt-auto px-6 py-4 flex items-center gap-3 border-t border-outline-variant/30">
+<img alt="Organizer Profile" class="w-8 h-8 rounded-full bg-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPnAVXqY32uBSUJtm2UD8w3gXkN6CyVhP5ecciCccg3FuUqtPsIvP9bqlyNg8bXBICRFsG9vezxRXb-sTMcfyAB2kzWczfiND0TBQfWw5UikrWdLGiERcwKgJe6ZFsXipPKTiqH-idOj2410rrxUl7s2_3GzCxUwNSviBrvIxLOqqxe1WMufzoP0mG3YR8ci79neMD29uZ8ZzFzSuAWKXsbFjx_DEhEqHuPwXtnVbZIT55YTl821gbD7qV8kFVDe_iNVg8kMneEslu">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Alex Rivera</span>
+<span class="text-[10px] text-on-surface-variant">Global Organizer</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-72 min-h-screen">
+<!-- Top App Bar Shell -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface dark:bg-surface shadow-sm flex justify-between items-center px-margin-desktop z-40">
+<div class="flex items-center gap-4">
+<h1 class="font-title-lg text-title-lg text-primary dark:text-primary-fixed">Ranking &amp; Awards</h1>
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Status: Draft</span>
+</div>
+</div>
+<div class="flex items-center gap-gutter">
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help">help</span>
+</button>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-md text-label-md shadow-sm hover:translate-y-[-2px] transition-all">
+                    Publish Results
+                </button>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto">
+<!-- Quick Actions & Global Stats -->
+<div class="grid grid-cols-12 gap-gutter mb-stack-md">
+<div class="col-span-12 md:col-span-8 bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-outline-variant/10">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Auto-Ranking Engine</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Generate rankings based on aggregated judge scores and weighted criteria.</p>
+</div>
+<button class="flex items-center gap-2 bg-secondary text-on-secondary px-5 py-3 rounded-lg font-label-md text-label-md hover:translate-y-[-2px] transition-all">
+<span class="material-symbols-outlined sx-0001" data-icon="bolt">bolt</span>
+                            Run Auto-Rank
+                        </button>
+</div>
+<div class="flex items-center gap-6 p-4 bg-surface-container-low rounded-lg">
+<div class="flex -space-x-3">
+<img alt="Judge 1" class="w-10 h-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh3E0ct7Q2NRX1b9szE2qAEn864NK73g20XNck2IAnxVDwDZk2O563cQGYTUffjw_2cYta4yisVCbJ4FNZyMnbhU3bv2HMpvSuaZ6mkgCp6CJ_VlnIcrSedFdm32DPH7_vTfNO3UoNPM5wwwRZsrc9a0VDyCtrumMLXzyU5fV63EQvzC5jDzkyI4k3IEO_li_PMJcWCTilJlSNbHUNC48EKTHmHzak-WU-xqvmkOOh3Mz-QCJW2eoZJ4HUJ8g0LmkC0PUxUp3-9KjO">
+<img alt="Judge 2" class="w-10 h-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXARZkVwsfZIs9uQJPnNoXpTB5Bt4rAusK_7xPsiKpotebk4I6zJTSIfekqBnrTYCAnL-3bOX0SnBJFMdIyite_MLjQkjncZBwVwGNBceCh8KbeYq_vFkdfX02iAov3xNrzCYVfIgM1tRNg6KiXMZ5ZMexSeAeLmcLesu26Zb0Pc4aDOx2PUV5t0WPoE7vqZBqDDnefzXN5KdulKQNaR_qEWg8qLRvXzBN6JjVdYctIIW37coqjfVbN-53U_9aitkHBzZiSKh9mib5">
+<img alt="Judge 3" class="w-10 h-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhevHTn0EHXg8sDnBVZIKWe995wIGyTCKYd5zw29y-WgycpWWzFRHJOxHBJ7FJnqe_2bYs7Lc2o97qeQhhJc4R27xcRcAOkPX8C0r0fWr2p6znq85ktbajhyl0KuusuxZtYQNoX5TM8T7MRzf0VQsXyMPNR3tw02WEqX7DEl0E17Haz0k0aKVYfzN7xT9PfzjcJZyBhZ0z5jv8GkduIVhSKvRlTqvVkywMqInKWVn5gnbxCTrv_FewziODbGItXUk8kkH2I7vjm9HF">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-white flex items-center justify-center text-label-sm font-bold text-primary">+8</div>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Submissions Evaluated</span>
+<span class="font-title-lg text-title-lg text-on-surface">124 / 124 (100%)</span>
+</div>
+<div class="ml-auto">
+<span class="flex items-center gap-1 text-tertiary font-label-md">
+<span class="material-symbols-outlined text-[18px] sx-0001" data-icon="check_circle">check_circle</span>
+                                Scoring Finalized
+                            </span>
+</div>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-primary-container p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] text-on-primary-container relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="font-title-lg text-title-lg mb-2">Advancement Pool</h3>
+<p class="font-body-md text-body-md opacity-90 mb-4">Current threshold set to Top 25% of all category participants.</p>
+<div class="space-y-3">
+<div class="flex justify-between font-label-md">
+<span>Moving Forward</span>
+<span class="font-bold">32 Teams</span>
+</div>
+<div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+<div class="bg-white h-full sx-0001"></div>
+</div>
+<button class="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-label-md transition-colors">
+                                Edit Thresholds
+                            </button>
+</div>
+</div>
+<!-- Abstract Background Pattern -->
+<div class="absolute top-0 right-0 -mr-8 -mt-8 opacity-20">
+<span class="material-symbols-outlined text-[160px] sx-0001" data-icon="trophy">trophy</span>
+</div>
+</div>
+</div>
+<!-- Main Grid: Ranking and Awards -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Top Ranked Teams List -->
+<div class="col-span-12 lg:col-span-7 space-y-gutter">
+<div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] overflow-hidden border border-outline-variant/10">
+<div class="px-6 py-4 bg-surface-container-low border-b border-outline-variant/20 flex justify-between items-center">
+<h3 class="font-label-sm text-label-sm uppercase text-on-surface-variant tracking-wider">Top Teams: Innovation Category</h3>
+<button class="text-primary font-label-md hover:underline">View All</button>
+</div>
+<div class="divide-y divide-outline-variant/10">
+<!-- Rank Item 1 -->
+<div class="p-6 flex items-center gap-6 hover:bg-surface-bright transition-colors group">
+<div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-lg">1</div>
+<img alt="Team Logo" class="w-12 h-12 rounded-lg bg-surface-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDC6RCkPvMqyG0fh_6Hol2zAVvyIFgIlz5C7kuzMezCXkRqNY0SRnJTio_rJpByFxGNUYAtq_sDsNUIllUt8HtpMTfgKYAHqHAtv-iXSSCtTtlWgrBxMfiMMcXaqho4Y7RigLsprylUXQ_m7-aPHLc8umjMvSbJlx03U9c-dMX7lSi76eg96KgGB0ltNsN3Dwn2uHALQn2DwEJdTvOtDkY-tZuQzRmLhz9nGjDdg3uVpzLableGWV8daMqTG75bhgK3cdG7o8D5r3R">
+<div class="flex-1">
+<h4 class="font-title-lg text-title-lg text-on-surface">NeuralPath AI</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">University of Technology â€¢ Advanced Health-Tech</p>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-headline-md text-primary">98.4</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Weighted Score</span>
+</div>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-surface-container rounded-full">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<!-- Rank Item 2 -->
+<div class="p-6 flex items-center gap-6 hover:bg-surface-bright transition-colors group">
+<div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg">2</div>
+<img alt="Team Logo" class="w-12 h-12 rounded-lg bg-surface-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1gr-YzfDmIjASS-6IeJPuoIMUiva7o_M7j-zzjrf5VKHo8JAfj2jQXTvjdW0ZGIsri8WDYgvevdo5ix6kZdy537fVV8zw2wveHy_ngtUlBF4maNmUiWGLY5i3mAHEglz_bSAlYsNmj2s-j3-MLXgoG6hZR0UW5iCwtfZ4UMWuTN_mut1JvdaUHe7Bdmcj52parYiBujYkjTcx5gTcj2i63ao0JUsnX1-1i8H2jl-yDxZlYIa95_z-ujWamZCcyD5SHLpS67wcVxT8">
+<div class="flex-1">
+<h4 class="font-title-lg text-title-lg text-on-surface">SolarGrid Systems</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Institute of Science â€¢ Green Energy Solution</p>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-headline-md text-on-surface">95.2</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Weighted Score</span>
+</div>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-surface-container rounded-full">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<!-- Rank Item 3 -->
+<div class="p-6 flex items-center gap-6 hover:bg-surface-bright transition-colors group">
+<div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-lg">3</div>
+<img alt="Team Logo" class="w-12 h-12 rounded-lg bg-surface-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ8tM-1uX-Nad7WFvKPnjSV-DVhFq_bVfURPnTJwOuyBXIDwewlVahomr8fvsnWDqLJWr3AcLKPmYtDI5plTXgu_Mycd3zFQThF0TKwvLBQ0u4NJK1zrNpTA3F8dBYomDD4egpP2uxg7Y7rB2OTKJlv6W_BnvQGRI9fehX76ggO2g312WSJ829VzGJSNdqD6LaxJZj7UCzEp5F7KUp1m00Sl8hwCyVTbNRgvp685hSwtLY9pRy9vLsrw0LzvFrI9j7XSlLppsyW9WG">
+<div class="flex-1">
+<h4 class="font-title-lg text-title-lg text-on-surface">CloudGuard</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">City Engineering College â€¢ Cybersecurity</p>
+</div>
+<div class="text-right">
+<span class="block font-headline-md text-headline-md text-on-surface">92.8</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Weighted Score</span>
+</div>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-surface-container rounded-full">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] p-6 border border-outline-variant/10">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-title-lg text-title-lg text-on-surface">Advancement Results</h3>
+<span class="bg-surface-container px-3 py-1 rounded-full text-label-sm font-bold text-primary">ROUND 1</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-tertiary/5 rounded-lg border border-tertiary/10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary" data-icon="trending_up">trending_up</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold">Top 32 Promoted</p>
+<p class="text-[12px] text-on-surface-variant">Automatically assigned to Final Round</p>
+</div>
+</div>
+<button class="text-tertiary font-label-md border-b border-tertiary/30">View List</button>
+</div>
+<div class="flex items-center justify-between p-4 bg-error/5 rounded-lg border border-error/10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error" data-icon="close">close</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold">92 Disqualified / Not Advancing</p>
+<p class="text-[12px] text-on-surface-variant">Participation certificates generated</p>
+</div>
+</div>
+<button class="text-error font-label-md border-b border-error/30">Review</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Award Management -->
+<div class="col-span-12 lg:col-span-5 space-y-gutter">
+<div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] p-6 border border-outline-variant/10 h-full">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-title-lg text-title-lg text-on-surface">Specialized Awards</h3>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</div>
+<div class="space-y-4">
+<!-- Award Assignment 1 -->
+<div class="p-4 border border-outline-variant rounded-xl bg-surface-bright">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary sx-0001" data-icon="brush">brush</span>
+<span class="font-label-md text-label-md font-bold">Best User Interface</span>
+</div>
+<span class="text-secondary font-label-sm uppercase tracking-tighter">Assigned</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<img alt="Assigned Team" class="w-8 h-8 rounded-full bg-white border border-outline-variant/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYbimFMskZNecoAoiSA3BaAb7boniH3H8nPBnrhC_EHn-7E1Z4RAuWlZfLowqf3uZB6fHkp4qpu_RElnV6YnBLIAEKl71B8oTeVKxrvtWhan74y2V20hb7Mj5gRNnIxLzRPzsYLax9HUVNEh_Aaa0HJRjgiI0rS0etsh89DyaQ8xavWCzMb7LJeLT3kvfhyjcVavJdJ173fAPXmJDZ_z66tWZhTJyINB-avwdQ2Lr_uTc5LtA5cqRzj2eV4VK8P64ALi9bPc3Xv4AO">
+<span class="font-body-md text-body-md text-on-surface">Team PixelPerfect</span>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+<!-- Award Assignment 2 -->
+<div class="p-4 border border-outline-variant rounded-xl bg-surface-bright">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary sx-0001" data-icon="lightbulb">lightbulb</span>
+<span class="font-label-md text-label-md font-bold">Most Innovative Idea</span>
+</div>
+<span class="text-on-surface-variant font-label-sm uppercase tracking-tighter">Pending</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 opacity-50 italic">
+<div class="w-8 h-8 rounded-full bg-outline-variant/20 flex items-center justify-center">?</div>
+<span class="font-body-md text-body-md text-on-surface">Select winning team...</span>
+</div>
+<button class="text-primary font-label-md hover:underline flex items-center gap-1">
+                                        Assign <span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Award Assignment 3 -->
+<div class="p-4 border border-outline-variant rounded-xl bg-surface-bright">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary sx-0001" data-icon="code">code</span>
+<span class="font-label-md text-label-md font-bold">Technical Excellence</span>
+</div>
+<span class="text-secondary font-label-sm uppercase tracking-tighter">Assigned</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<img alt="Assigned Team" class="w-8 h-8 rounded-full bg-white border border-outline-variant/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApWSt_pye-gOzLT--aTFHg60Op2nAevXfG9z4LYVS5qlVAffKpa4QDpyP3OsPgrk1vd7ByGO-TuQov48kMxLuaABtXbVvW4ipqk3Yz0bBGmUpykdT7O8NEso9HgDK8g6dv5UlzqNQasbGdeDJTGCN6-Viz8bmOIoUlN_LZrInKnzOBhbg-voXEbywLYRQwSKIOZ3DO8rRP_hOjixjvcBsQjUKpZo40lMTI4NSIUsbir77nS4Tt17UsNgR38q8tn0CqKzRmzDHce89n">
+<span class="font-body-md text-body-md text-on-surface">Binary Wizards</span>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+<div class="pt-4 mt-6 border-t border-outline-variant/30 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">You have 5 more specialized awards to assign before publishing.</p>
+<img class="w-full h-32 object-cover rounded-lg border border-outline-variant/10 mb-2" data-alt="A sophisticated 3D render of crystalline awards and trophies sitting on a glass surface. The scene is illuminated with a soft indigo glow reflecting the brand's secondary color. The background is a clean, minimalist studio environment with high-key lighting, maintaining a professional academic aesthetic for a tech competition awards dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjygDPPmjpdv_Qpw7CLOymQyjox9HSScS_48J2haZdBD588ihuRCYRO51ifQq8CwPjUD23n7JHHV2rwfmEu5IEIGxO2UUdh1K3f94Q8IxNTNn81ibo6XjsRmiXnFeshCPDD5Qhukch6bOQlJj35SkS8VaK-CtS0xc9oT8zRQKyGV14SfVcxpqJyEknZ-_F93yUM_7zwpO6bscnTnEr5zdcI6KDfj6rKrvcAD7y_HdapKHSyWe7PLjipSxnMDUR_MYvm8N8o4spMl50">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB - suppressed as per mandate for Detail/Dashboard screens -->
+</body></html>
+
+<!-- Organizer Dashboard - Category Management -->
+

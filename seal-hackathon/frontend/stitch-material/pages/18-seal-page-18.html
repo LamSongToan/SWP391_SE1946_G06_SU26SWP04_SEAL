@@ -1,0 +1,382 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-high": "#dce9ff",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed-variant": "#004e5c",
+            "on-surface": "#0b1c30",
+            "surface-container-lowest": "#ffffff",
+            "surface-container": "#e5eeff",
+            "surface-container-low": "#eff4ff",
+            "tertiary-fixed-dim": "#4cd7f6",
+            "on-secondary-fixed": "#25005a",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "tertiary-container": "#006a7c",
+            "surface-bright": "#f8f9ff",
+            "surface-dim": "#cbdbf5",
+            "secondary-fixed": "#eaddff",
+            "tertiary-fixed": "#acedff",
+            "secondary-container": "#8a4cfc",
+            "outline": "#777587",
+            "inverse-primary": "#c3c0ff",
+            "on-error": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "on-secondary": "#ffffff",
+            "background": "#f8f9ff",
+            "on-secondary-container": "#fffbff",
+            "surface-tint": "#4d44e3",
+            "surface-container-highest": "#d3e4fe",
+            "primary": "#3525cd",
+            "on-tertiary-container": "#93e8ff",
+            "on-surface-variant": "#464555",
+            "surface": "#f8f9ff",
+            "secondary": "#712ae2",
+            "on-primary-fixed-variant": "#3323cc",
+            "primary-container": "#4f46e5",
+            "secondary-fixed-dim": "#d2bbff",
+            "primary-fixed-dim": "#c3c0ff",
+            "inverse-on-surface": "#eaf1ff",
+            "primary-fixed": "#e2dfff",
+            "on-error-container": "#93000a",
+            "on-tertiary-fixed": "#001f26",
+            "on-primary-container": "#dad7ff",
+            "inverse-surface": "#213145",
+            "outline-variant": "#c7c4d8",
+            "on-primary": "#ffffff",
+            "on-background": "#0b1c30",
+            "surface-variant": "#d3e4fe",
+            "on-primary-fixed": "#0f0069",
+            "tertiary": "#00505f"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin-mobile": "16px",
+            "container-max": "1280px",
+            "gutter": "24px",
+            "margin-desktop": "32px",
+            "stack-sm": "12px",
+            "stack-md": "24px",
+            "stack-lg": "48px",
+            "base": "8px"
+          },
+          "fontFamily": {
+            "headline-md": ["Inter"],
+            "headline-lg": ["Inter"],
+            "title-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "display": ["Inter"],
+            "body-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+            "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-surface">
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col h-screen sticky left-0 top-0 w-64 bg-surface-container-low border-r border-outline-variant py-stack-md px-4 gap-stack-sm z-50">
+<div class="flex flex-col gap-1 px-4 mb-stack-lg">
+<h1 class="font-headline-md text-headline-md font-black tracking-tight text-primary">SEAL Hub</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Participant Portal</p>
+</div>
+<nav class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-high rounded-lg transition-transform duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-high rounded-lg transition-transform duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="font-label-md text-label-md">Notifications</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-high rounded-lg transition-transform duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-md text-label-md">My Teams</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold transition-transform duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined sx-0001" data-icon="event_available">event_available</span>
+<span class="font-label-md text-label-md">Event Participation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-high rounded-lg transition-transform duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span class="font-label-md text-label-md">Submissions</span>
+</a>
+</nav>
+<div class="mt-auto px-4 pb-4">
+<button class="w-full py-3 px-4 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-semibold hover:opacity-90 active:scale-95 transition-all">
+          Browse Events
+        </button>
+</div>
+</aside>
+<main class="flex-grow flex flex-col min-w-0">
+<!-- TopNavBar -->
+<header class="bg-surface shadow-sm sticky top-0 z-40 w-full h-16 flex items-center justify-between px-margin-desktop max-w-container-max mx-auto">
+<div class="flex items-center gap-stack-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">SEAL</span>
+<div class="hidden md:flex items-center bg-surface-container rounded-full px-4 py-2 w-96 border border-outline-variant focus-within:ring-2 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-outline mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none outline-none w-full text-body-md font-body-md text-on-surface focus:ring-0" placeholder="Search events or submissions..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all" data-icon="help">help</button>
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all" data-icon="settings">settings</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant ml-2">
+<img alt="Participant Profile" data-alt="A professional headshot of a young student technologist with a confident expression, set against a blurred academic background. The lighting is crisp and natural, following a clean, light-mode modern corporate aesthetic with soft blue and white tones. The photo is tightly cropped and has a high-quality, professional studio feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2o0tI--rQlE7EdRzYHjLHg_xvp88TsG2ljwHN4EV18NXSDAs4QpBWN2kLUhVahu_98kPVytcWxBWNlLdE3TABG0wUyNtpwYFVkeay8n9zAvE2jOaWvyG7mJMApMfY_wvL9ozkR1Ofw053QrJ9Yz2XyTMPbGUoZE5AwMhr7LemgIJ_wn0gx22aFNvMQJp8_bM5C9gc-A5hUWn-lZ__llmWhkXnnb6-6yDNpEmRG4kDT0Brqym8mSfqbzl0Scm8PUswhyoN2n4S1R7i">
+</div>
+</div>
+</header>
+<div class="p-margin-desktop max-w-container-max mx-auto w-full flex flex-col gap-stack-lg">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Event Participation</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your current registrations and track your competition progress.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 border-1.5 border-primary text-primary rounded-lg font-label-md text-label-md font-semibold hover:bg-surface-container-low transition-all">
+              Download Schedule
+            </button>
+</div>
+</section>
+<!-- Bento Layout for Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- Register Category Section -->
+<div class="lg:col-span-8 flex flex-col gap-stack-md">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30">
+<div class="flex justify-between items-center mb-stack-md">
+<h3 class="font-title-lg text-title-lg text-on-surface">Register Category</h3>
+<span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-label-sm font-label-sm uppercase">Next: Hackathon Spring '24</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md">Select your specialization track for the upcoming competition. Each track offers unique mentorship and prize pools.</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-sm">
+<!-- AI Track -->
+<div class="p-4 rounded-lg border border-outline-variant hover:border-primary hover:bg-surface-container-low transition-all cursor-pointer group flex flex-col h-full">
+<div class="bg-primary/10 w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-primary transition-all">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary" data-icon="psychology">psychology</span>
+</div>
+<h4 class="font-label-md text-label-md font-bold mb-1">AI &amp; Machine Learning</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4 flex-grow">Develop generative models and predictive analytics for urban sustainability.</p>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Register <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<!-- Web3 Track -->
+<div class="p-4 rounded-lg border border-outline-variant hover:border-primary hover:bg-surface-container-low transition-all cursor-pointer group flex flex-col h-full">
+<div class="bg-secondary/10 w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-secondary transition-all">
+<span class="material-symbols-outlined text-secondary group-hover:text-on-secondary" data-icon="token">token</span>
+</div>
+<h4 class="font-label-md text-label-md font-bold mb-1">Web3 &amp; Blockchain</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4 flex-grow">Architect decentralized governance protocols and smart contract systems.</p>
+<button class="text-secondary font-label-md text-label-md flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Register <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<!-- Cloud Track -->
+<div class="p-4 rounded-lg border border-outline-variant hover:border-primary hover:bg-surface-container-low transition-all cursor-pointer group flex flex-col h-full">
+<div class="bg-tertiary-container w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-tertiary transition-all">
+<span class="material-symbols-outlined text-on-tertiary-container group-hover:text-on-tertiary" data-icon="cloud">cloud</span>
+</div>
+<h4 class="font-label-md text-label-md font-bold mb-1">Cloud Architecture</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4 flex-grow">Build scalable, resilient microservices using edge computing paradigms.</p>
+<button class="text-tertiary font-label-md text-label-md flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Register <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- View Results Section -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30">
+<div class="flex justify-between items-center mb-stack-md">
+<h3 class="font-title-lg text-title-lg text-on-surface">Performance History</h3>
+<button class="text-primary font-label-md text-label-md hover:underline">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="p-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Event Name</th>
+<th class="p-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Standing</th>
+<th class="p-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Category</th>
+<th class="p-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Certification</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<tr class="border-b border-outline-variant/20 hover:bg-surface-bright transition-colors">
+<td class="p-3 font-semibold">Global AI Challenge 2023</td>
+<td class="p-3">
+<span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-bold">Top 5%</span>
+</td>
+<td class="p-3">Machine Learning</td>
+<td class="p-3">
+<button class="flex items-center gap-1 text-primary hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="workspace_premium">workspace_premium</span>
+                          View
+                        </button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/20 hover:bg-surface-bright transition-colors">
+<td class="p-3 font-semibold">Hack-the-System Winter '23</td>
+<td class="p-3">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant rounded text-xs font-bold">Finalist</span>
+</td>
+<td class="p-3">Cybersecurity</td>
+<td class="p-3">
+<button class="flex items-center gap-1 text-primary hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="workspace_premium">workspace_premium</span>
+                          View
+                        </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- View Timeline Section (Side Column) -->
+<div class="lg:col-span-4 flex flex-col gap-stack-md">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-outline-variant/30 flex flex-col h-full">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-stack-md">Competition Roadmap</h3>
+<div class="relative flex-grow">
+<!-- Vertical Line -->
+<div class="absolute left-4 top-2 bottom-2 w-0.5 bg-outline-variant"></div>
+<div class="flex flex-col gap-8 relative">
+<!-- Step 1: Registration -->
+<div class="flex gap-6 items-start">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center z-10 shrink-0 shadow-sm shadow-primary/40">
+<span class="material-symbols-outlined text-on-primary text-sm sx-0001" data-icon="check">check</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md font-bold text-on-surface">Registration Open</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Jan 15 â€” Feb 10, 2024</p>
+<p class="font-body-md text-body-md mt-1">Status: Completed</p>
+</div>
+</div>
+<!-- Step 2: Sprint 1 -->
+<div class="flex gap-6 items-start">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center z-10 shrink-0 ring-4 ring-surface-container-low shadow-sm">
+<span class="material-symbols-outlined text-on-primary-container text-sm" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md font-bold text-primary">Sprint 1: Ideation</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Feb 15 â€” Feb 28, 2024</p>
+<div class="mt-2 w-full bg-surface-container rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full sx-0001"></div>
+</div>
+<p class="font-label-sm text-label-sm mt-1 text-primary">6 days remaining</p>
+</div>
+</div>
+<!-- Step 3: Sprint 2 -->
+<div class="flex gap-6 items-start">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center z-10 shrink-0 border-2 border-outline-variant">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="code">code</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md font-bold text-outline">Sprint 2: MVP Development</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Mar 01 â€” Mar 15, 2024</p>
+</div>
+</div>
+<!-- Step 4: Final Pitch -->
+<div class="flex gap-6 items-start">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center z-10 shrink-0 border-2 border-outline-variant">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="campaign">campaign</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md font-bold text-outline">Grand Finale &amp; Pitch</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Mar 25, 2024</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-stack-md pt-stack-md border-t border-outline-variant">
+<div class="bg-primary/5 p-4 rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="info">info</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Ensure your team submission is uploaded before the Sprint 1 deadline to qualify for bonus points.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mentorship/Quick Links Section -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="bg-surface-container p-6 rounded-xl flex items-center gap-4 transition-all hover:translate-y-[-2px] hover:shadow-md cursor-pointer">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="record_voice_over">record_voice_over</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Mentorship</p>
+<h5 class="font-label-md text-label-md font-bold">Find a Mentor</h5>
+</div>
+</div>
+<div class="bg-surface-container p-6 rounded-xl flex items-center gap-4 transition-all hover:translate-y-[-2px] hover:shadow-md cursor-pointer">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="menu_book">menu_book</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Resources</p>
+<h5 class="font-label-md text-label-md font-bold">Project Toolkit</h5>
+</div>
+</div>
+<div class="bg-surface-container p-6 rounded-xl flex items-center gap-4 transition-all hover:translate-y-[-2px] hover:shadow-md cursor-pointer">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="forum">forum</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Community</p>
+<h5 class="font-label-md text-label-md font-bold">Discord Server</h5>
+</div>
+</div>
+<div class="bg-surface-container p-6 rounded-xl flex items-center gap-4 transition-all hover:translate-y-[-2px] hover:shadow-md cursor-pointer">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="support">support</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Support</p>
+<h5 class="font-label-md text-label-md font-bold">Help Desk</h5>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+<!-- Footer Info (Subtle) -->
+<footer class="lg:ml-64 p-margin-desktop text-center border-t border-outline-variant/20">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Â© 2024 SEAL Hub. Empowering the next generation of technological innovators. All rights reserved.</p>
+</footer>
+</body></html>
+
+<!-- Participant Dashboard - Submissions -->
+

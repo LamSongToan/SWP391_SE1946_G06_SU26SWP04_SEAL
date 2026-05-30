@@ -1,0 +1,7 @@
+package com.seal.hackathon.auth.repository;
+
+import com.seal.hackathon.auth.entity.StudentProfileEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface StudentProfileRepository extends JpaRepository<StudentProfileEntity, Integer> {
+}

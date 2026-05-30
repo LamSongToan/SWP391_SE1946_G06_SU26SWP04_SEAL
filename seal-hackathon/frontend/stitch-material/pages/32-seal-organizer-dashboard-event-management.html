@@ -1,0 +1,376 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Organizer Dashboard - Event Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#c3c0ff",
+                    "tertiary": "#00505f",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#e5eeff",
+                    "on-tertiary": "#ffffff",
+                    "secondary": "#712ae2",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#006a7c",
+                    "primary-container": "#4f46e5",
+                    "inverse-surface": "#213145",
+                    "outline-variant": "#c7c4d8",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "outline": "#777587",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "surface-dim": "#cbdbf5",
+                    "on-error-container": "#93000a",
+                    "primary": "#3525cd",
+                    "surface-container-high": "#dce9ff",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#d3e4fe",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-primary-fixed": "#0f0069",
+                    "secondary-fixed": "#eaddff",
+                    "tertiary-fixed": "#acedff",
+                    "on-primary-container": "#dad7ff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#f8f9ff",
+                    "surface": "#f8f9ff",
+                    "primary-fixed": "#e2dfff",
+                    "on-secondary-fixed": "#25005a",
+                    "surface-variant": "#d3e4fe",
+                    "secondary-container": "#8a4cfc",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-tertiary-fixed": "#001f26",
+                    "on-background": "#0b1c30",
+                    "surface-container-low": "#eff4ff",
+                    "on-surface-variant": "#464555",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#fffbff",
+                    "background": "#f8f9ff",
+                    "surface-tint": "#4d44e3",
+                    "on-surface": "#0b1c30",
+                    "on-tertiary-container": "#93e8ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "container-max": "1280px",
+                    "stack-lg": "48px",
+                    "base": "8px",
+                    "stack-md": "24px",
+                    "margin-desktop": "32px",
+                    "stack-sm": "12px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-surface">
+<!-- Side Navigation -->
+<aside class="h-full w-72 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-low shadow-sm z-50 flex flex-col py-base">
+<div class="px-6 py-8">
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">SEAL</h1>
+<p class="text-label-md font-label-md text-on-surface-variant">Hackathon Manager</p>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Event Management (Active) -->
+<a class="flex items-center px-6 py-3 text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-primary-container/10 transition-colors font-label-md text-label-md translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="event">event</span>
+<span>Event Management</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="reorder">reorder</span>
+<span>Round Management</span>
+</a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="category">category</span>
+<span>Category Management</span>
+</a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="rule">rule</span>
+<span>Criteria Management</span>
+</a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="how_to_reg">how_to_reg</span>
+<span>User Approval</span>
+</a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="upload_file">upload_file</span>
+<span>Submission Management</span>
+</a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="military_tech">military_tech</span>
+<span>Ranking &amp; Awards</span>
+</a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="monitoring">monitoring</span>
+<span>Research Dashboard</span>
+</a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="analytics">analytics</span>
+<span>Reports</span>
+</a>
+</nav>
+<div class="mt-auto px-6 py-4">
+<div class="flex items-center gap-3 bg-surface-container rounded-xl p-3">
+<img alt="Organizer Profile" class="w-10 h-10 rounded-full object-cover bg-primary-container" data-alt="A professional headshot of a young university hackathon organizer wearing a modern tech vest, smiling confidently in a bright, contemporary office environment with soft focus engineering sketches in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOewXDG9ahB0MpcdesFYaWCqCGWDBeMebjOxiOssvv-2oo3E22E8E3Mom_CJixv4MiLY-eeUCs3fcyqdKRlq3onFcYhbg35okS4bf81Mh1LlyuLcV9Y3wmnLHbRnkHo4bLGb34vU2tec5ZI_rpJAqdpK50Yqunx3iNn0eBexyf0_LJfFFwqfjHcICVhicX9wT30tQ8hFpnlaUQhlIhn8YWvcN4-C6bJhExuNZKNUF3aq264FPMOVTlXa0phbR_mEV8FPI2NfeyxJiT">
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md text-on-surface font-bold truncate">Alex Chen</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Lead Organizer</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-72 min-h-screen">
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface dark:bg-surface shadow-sm z-40 flex justify-between items-center px-margin-desktop h-16">
+<div class="flex items-center w-1/2">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 font-body-md text-body-md focus:ring-2 focus:ring-primary" placeholder="Search events, participants..." type="text">
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant"></div>
+<h2 class="font-title-lg text-title-lg text-primary">SEAL Dashboard</h2>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-stack-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Event Management</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Design, launch, and monitor your upcoming hackathons.</p>
+</div>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-label-md text-label-md flex items-center gap-2 transition-all hover:translate-y-[-2px] shadow-md">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                    Create Event
+                </button>
+</div>
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl custom-shadow-l1 flex items-center gap-4 border-l-4 border-primary">
+<div class="bg-primary-container/10 p-3 rounded-lg text-primary">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Active Events</p>
+<p class="font-display text-headline-lg text-on-surface">4</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl custom-shadow-l1 flex items-center gap-4 border-l-4 border-secondary">
+<div class="bg-secondary-container/10 p-3 rounded-lg text-secondary">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Drafts</p>
+<p class="font-display text-headline-lg text-on-surface">2</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl custom-shadow-l1 flex items-center gap-4 border-l-4 border-tertiary">
+<div class="bg-tertiary-container/10 p-3 rounded-lg text-tertiary">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Total Participants</p>
+<p class="font-display text-headline-lg text-on-surface">1,280</p>
+</div>
+</div>
+</div>
+<!-- Bento Grid List -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Large Featured Event Card -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl custom-shadow-l1 overflow-hidden group hover:translate-y-[-2px] transition-all">
+<div class="relative h-48">
+<img class="w-full h-full object-cover" data-alt="A wide cinematic shot of a vibrant hackathon venue filled with students collaborating around glowing laptops. The scene is bathed in professional indigo and violet studio lighting, with large screens in the background displaying complex code and SEAL event branding. The atmosphere is energetic, modern, and high-tech." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABNZ1oDIrdh-YF5tnXZ3vJnOlDqGkaG22SinhunFB7yWG7ZAWyeLUUNlpFPhubo5-jcRIRswMl9McnOw9xwPYmE-A260VBUpstSQ35lusV_rHRz866cR_xDBfr0RtrhMDK0YKBuLuw9_qvJ_pCEWefnDdUnz2a4kXcGj361qxnSAYLrPCWOhkph8AxuE1wrbuEpIFu5eAcxeoPN1n4ISWpLJLnj28WV8u4Wk_DRUKiizjzosp0MxjPkTHpOiWL6Fsroe5zmPnR4Pu3">
+<div class="absolute top-4 left-4">
+<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-label-sm font-label-sm border border-green-200">IN PROGRESS</span>
+</div>
+</div>
+<div class="p-stack-md flex justify-between items-start">
+<div class="space-y-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">SEAL Summer Hackathon 2024</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Annual student-led innovation sprint for engineering students. Currently in the 'Registration' phase.</p>
+<div class="flex items-center gap-6 pt-2">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-body-md" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-md text-label-md">June 15-18, 2024</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-body-md" data-icon="location_on">location_on</span>
+<span class="font-label-md text-label-md">Main Auditorium</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 justify-center">
+<span class="material-symbols-outlined text-body-md" data-icon="settings">settings</span>
+                                Edit Event
+                            </button>
+<button class="bg-transparent border border-primary text-primary px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 justify-center hover:bg-primary-container/10">
+<span class="material-symbols-outlined text-body-md" data-icon="schedule">schedule</span>
+                                Timeline
+                            </button>
+</div>
+</div>
+<div class="px-stack-md pb-stack-md">
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full sx-0001"></div>
+</div>
+<div class="flex justify-between mt-2 font-label-sm text-label-sm text-on-surface-variant">
+<span>Registration Progress</span>
+<span>832 / 1200 Participants</span>
+</div>
+</div>
+</div>
+<!-- Side Smaller Cards -->
+<div class="col-span-12 lg:col-span-4 space-y-gutter">
+<!-- AI Challenge Card -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl custom-shadow-l1 hover:translate-y-[-2px] transition-all">
+<div class="flex justify-between items-start mb-4">
+<span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-label-sm font-label-sm border border-blue-200">PUBLISHED</span>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-2">AI Innovation Challenge</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Competitive coding challenge focused on generative model optimization.</p>
+<div class="mt-4 pt-4 border-t border-outline-variant flex justify-between">
+<div class="flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOdKay0Lm-bpD6SMckuf6Sv5k66li-andklfzDKm-sRSmwvYfBRmk5Vbqk0Ga2_n-NHNw9U603Hxo34YKkLE_NP-n-4WRi8Qd3Mq9r8BR9VJ-2SwH86GO3HlaW4quhcZ-FX_kWFvzRlBXDrm-4I1dQ0J219z-yU806KS9AEnWUgLNKVnacHLp1CO0a29MPNel0hI6IpHk_JnD7nC6ZuNdHYP9SBUFkm-1qyqaFV15tlKteg8PvP3m0fyOTjLOuFP_-nYQQesqfUZN5">
+<img class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8_5VW8Fd2IDPSpSCm-mIdEBAufcCT2pJO8xLEpuEODboGxZNpYviPdi6XTbAKVjNUOLU2vxFJ_li37ZglojElGJWzHtsv_YDHyGGxlEvU7LkKrQgJ3OxXgREMhgOnJWHoxVLNCslzzEe_0zGfsShcWSvpfVqIapswm9Sm_F2Ti9lrCW3Ms_vDfNee0wGzQJksv28v-dBsyF3tFc2cHEEMmPAw766QRPBjipcVs1KjeEfF3g1cPEow6H533KZGDJmMNoDWbrmUC-CW">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-[10px] border-2 border-surface-container-lowest font-bold text-on-surface-variant">+12</div>
+</div>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
+                                View Entries
+                                <span class="material-symbols-outlined text-label-md" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Draft Event Card -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl custom-shadow-l1 border-2 border-dashed border-outline-variant group">
+<div class="flex justify-between items-start mb-4">
+<span class="bg-surface-container text-on-surface-variant px-3 py-1 rounded-full text-label-sm font-label-sm">DRAFT</span>
+</div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-2">CyberSecurity Sprint</h4>
+<p class="font-body-md text-body-md text-on-surface-variant italic">Configuration incomplete. Missing scoring criteria.</p>
+<div class="mt-6">
+<button class="w-full bg-primary-container text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 justify-center transition-transform active:scale-95">
+<span class="material-symbols-outlined text-body-md" data-icon="publish">publish</span>
+                                Publish Event
+                            </button>
+</div>
+</div>
+</div>
+<!-- Secondary Table Section -->
+<div class="col-span-12 bg-surface-container-lowest rounded-xl custom-shadow-l1 mt-stack-md">
+<div class="p-stack-md border-b border-surface-container flex justify-between items-center">
+<h3 class="font-title-lg text-title-lg text-on-surface">Archived &amp; Recurring Events</h3>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Filter by:</span>
+<select class="bg-surface-container-low border-none rounded-lg font-label-md py-1 px-3 focus:ring-1 focus:ring-primary">
+<option>All Statuses</option>
+<option>Completed</option>
+<option>Cancelled</option>
+</select>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-6 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Event Name</th>
+<th class="px-6 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Date</th>
+<th class="px-6 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Participants</th>
+<th class="px-6 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4">
+<div class="font-label-md text-label-md text-on-surface font-bold">Web3 Global Jam</div>
+<div class="text-label-sm text-on-surface-variant">Blockchain Development</div>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">Feb 12, 2024</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">450</td>
+<td class="px-6 py-4">
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-1 rounded text-[10px] font-bold">COMPLETED</span>
+</td>
+<td class="px-6 py-4">
+<button class="text-primary hover:text-secondary font-label-md text-label-md">Duplicate</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4">
+<div class="font-label-md text-label-md text-on-surface font-bold">IoT Smart Cities</div>
+<div class="text-label-sm text-on-surface-variant">Hardware &amp; Software</div>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">Jan 05, 2024</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface-variant">215</td>
+<td class="px-6 py-4">
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-1 rounded text-[10px] font-bold">COMPLETED</span>
+</td>
+<td class="px-6 py-4">
+<button class="text-primary hover:text-secondary font-label-md text-label-md">Duplicate</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (FAB) - Suppression logic: Suppressed as per Task (Specific view context) -->
+</body></html>
+
+<!-- Organizer Dashboard - Submission Management -->
+

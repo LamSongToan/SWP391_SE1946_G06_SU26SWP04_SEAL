@@ -1,0 +1,401 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d3e4fe",
+                    "primary": "#3525cd",
+                    "on-secondary-fixed": "#25005a",
+                    "on-primary-fixed": "#0f0069",
+                    "tertiary": "#00505f",
+                    "surface-container": "#e5eeff",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-error": "#ffffff",
+                    "on-background": "#0b1c30",
+                    "surface-container-low": "#eff4ff",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e2dfff",
+                    "surface-bright": "#f8f9ff",
+                    "primary-container": "#4f46e5",
+                    "on-secondary-container": "#fffbff",
+                    "surface-container-high": "#dce9ff",
+                    "background": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "inverse-surface": "#213145",
+                    "surface-tint": "#4d44e3",
+                    "outline": "#777587",
+                    "tertiary-container": "#006a7c",
+                    "on-tertiary-container": "#93e8ff",
+                    "on-tertiary-fixed": "#001f26",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#464555",
+                    "secondary-fixed": "#eaddff",
+                    "on-surface": "#0b1c30",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-primary-container": "#dad7ff",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "surface-dim": "#cbdbf5",
+                    "secondary": "#712ae2",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#8a4cfc",
+                    "inverse-primary": "#c3c0ff",
+                    "tertiary-fixed": "#acedff",
+                    "outline-variant": "#c7c4d8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "12px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "stack-md": "24px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "stack-lg": "48px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="text-on-surface bg-background">
+<!-- SideNavBar -->
+<aside class="h-full w-72 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-low shadow-sm flex flex-col py-base z-50">
+<div class="px-6 py-8 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="shield">shield</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">SEAL</h1>
+<p class="text-label-sm text-on-surface-variant">Hackathon Manager</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+                Event Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+                Round Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+                Category Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="rule">rule</span>
+                Criteria Management
+            </a>
+<!-- Active Tab: User Approval -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-primary-container/10 font-label-md text-label-md translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+                User Approval
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+                Submission Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+                Ranking &amp; Awards
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+                Research Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Reports
+            </a>
+</nav>
+<div class="px-6 py-4 mt-auto border-t border-outline-variant/30">
+<div class="flex items-center gap-3">
+<img alt="Organizer" class="w-10 h-10 rounded-full" data-alt="A professional headshot of a software engineering lead in a clean, high-key office environment. The lighting is soft and natural, emphasizing a modern corporate aesthetic. The background is a minimalist studio with subtle cool tones and soft focus depth, representing an authoritative yet approachable hackathon organizer identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhhgI2u8tOBHeml7Rf4qFE5pDXQwkzgNwx8zixpkT-0YGDW2-JU95E18C438YYCCbKOvxTyWCmjTnSftXY7mXO7BwaoueY3cDiNygXo1Gz9uBfYxgGo78hopOFmz70NJA3fL-3X3u3-CjpipzIuT13DF7t5NGiwRmdlwyh29Tu21cuKM_ozWmw02fTiOmG2kJfQHUjnpLb0G50RYVgo1l95b_jXOne26uS6inCEUzTYnbB1gY5BodJ8y7wkpQN9_GdBoZZuSBwo7aZ">
+<div>
+<p class="text-label-md font-bold text-on-surface">Alex Chen</p>
+<p class="text-label-sm text-on-surface-variant">Lead Organizer</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface dark:bg-surface shadow-sm flex justify-between items-center px-margin-desktop h-16 z-40">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary text-label-md" placeholder="Search users, IDs, or roles..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help">help</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<p class="font-title-lg text-title-lg text-primary dark:text-primary-fixed font-bold">SEAL Dashboard</p>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-72 pt-16 min-h-screen">
+<div class="max-w-[1280px] mx-auto p-margin-desktop space-y-stack-lg">
+<!-- Page Header -->
+<div class="flex flex-col gap-2">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">User Approval &amp; Access Control</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Verify participants, invite industry experts, and configure system-wide permissions.</p>
+</div>
+<!-- Dashboard Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Approve Participants (Table) - Left 8 columns -->
+<section class="col-span-12 lg:col-span-8 space-y-stack-md">
+<div class="bg-surface-container-lowest rounded-xl canvas-shadow p-stack-md">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-title-lg text-title-lg text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="pending_actions">pending_actions</span>
+                                Pending Registrations
+                            </h3>
+<div class="flex gap-2">
+<button class="text-label-md font-label-md px-4 py-2 border-1.5 border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Bulk Reject</button>
+<button class="text-label-md font-label-md px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition-colors">Bulk Approve</button>
+</div>
+</div>
+<div class="overflow-hidden">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-label-sm font-label-sm uppercase tracking-wider text-on-surface-variant">
+<tr>
+<th class="px-4 py-3"><input class="rounded text-primary focus:ring-primary" type="checkbox"></th>
+<th class="px-4 py-3">Student Name</th>
+<th class="px-4 py-3">University ID</th>
+<th class="px-4 py-3">Verification</th>
+<th class="px-4 py-3 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-4 py-4"><input class="rounded text-primary" type="checkbox"></td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary font-bold text-xs">JS</div>
+<div>
+<p class="text-label-md font-bold">Jordan Smith</p>
+<p class="text-xs text-on-surface-variant">Computer Science, MIT</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-label-md text-on-surface-variant">ID-99283-MIT</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined text-[14px] mr-1" data-icon="check_circle">check_circle</span> Verified
+                                            </span>
+</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined" data-icon="close">close</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="check">check</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-4 py-4"><input class="rounded text-primary" type="checkbox"></td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary font-bold text-xs">EL</div>
+<div>
+<p class="text-label-md font-bold">Elena Lopez</p>
+<p class="text-xs text-on-surface-variant">Design, Stanford</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-label-md text-on-surface-variant">ID-77210-STF</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-error/10 text-error">
+<span class="material-symbols-outlined text-[14px] mr-1" data-icon="warning">warning</span> Flagged ID
+                                            </span>
+</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined" data-icon="close">close</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="check">check</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-4 py-4"><input class="rounded text-primary" type="checkbox"></td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-tertiary-container/20 flex items-center justify-center text-tertiary font-bold text-xs">MW</div>
+<div>
+<p class="text-label-md font-bold">Marcus Wong</p>
+<p class="text-xs text-on-surface-variant">Eng, Georgia Tech</p>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-label-md text-on-surface-variant">ID-44122-GT</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] mr-1" data-icon="schedule">schedule</span> Pending
+                                            </span>
+</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined" data-icon="close">close</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="check">check</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Manage Roles -->
+<div class="bg-surface-container-lowest rounded-xl canvas-shadow p-stack-md">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="admin_panel_settings">admin_panel_settings</span>
+                            Manage Permissions
+                        </h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="p-4 rounded-lg border border-outline-variant/30 hover:border-primary/50 transition-colors">
+<p class="text-label-md font-bold mb-2">Participants</p>
+<p class="text-xs text-on-surface-variant mb-4">Submit projects, view leaderboards, chat with team.</p>
+<button class="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
+                                    Edit Rules <span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="p-4 rounded-lg border border-outline-variant/30 hover:border-primary/50 transition-colors">
+<p class="text-label-md font-bold mb-2">Mentors</p>
+<p class="text-xs text-on-surface-variant mb-4">View submissions, provide feedback, assist teams.</p>
+<button class="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
+                                    Edit Rules <span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="p-4 rounded-lg border border-outline-variant/30 hover:border-primary/50 transition-colors">
+<p class="text-label-md font-bold mb-2">Judges</p>
+<p class="text-xs text-on-surface-variant mb-4">Score projects, finalize rankings, view private notes.</p>
+<button class="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
+                                    Edit Rules <span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Create Guest Judge & Profile - Right 4 columns -->
+<aside class="col-span-12 lg:col-span-4 space-y-stack-md">
+<!-- Guest Judge Invite Form -->
+<div class="bg-primary text-white rounded-xl canvas-shadow p-stack-md relative overflow-hidden">
+<!-- Decorative Background Pattern -->
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white rounded-full"></div>
+<div class="absolute -right-20 -top-20 w-64 h-64 border-4 border-white rounded-full"></div>
+</div>
+<h3 class="font-title-lg text-title-lg mb-2 flex items-center gap-2 relative">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+                            Invite Guest Judge
+                        </h3>
+<p class="text-on-primary-container text-xs mb-6 relative">Bring in industry experts to evaluate the hackathon submissions.</p>
+<form class="space-y-4 relative">
+<div>
+<label class="block text-xs font-bold mb-1">Full Name</label>
+<input class="w-full bg-white/10 border-white/20 rounded-lg text-sm placeholder:text-white/50 focus:ring-white focus:border-white" placeholder="e.g. Dr. Sarah Jenkins" type="text">
+</div>
+<div>
+<label class="block text-xs font-bold mb-1">Professional Email</label>
+<input class="w-full bg-white/10 border-white/20 rounded-lg text-sm placeholder:text-white/50 focus:ring-white focus:border-white" placeholder="sarah@techcorp.com" type="email">
+</div>
+<div>
+<label class="block text-xs font-bold mb-1">Organization / Title</label>
+<input class="w-full bg-white/10 border-white/20 rounded-lg text-sm placeholder:text-white/50 focus:ring-white focus:border-white" placeholder="CTO, Tech Solutions" type="text">
+</div>
+<div class="pt-2">
+<button class="w-full bg-white text-primary font-bold py-2.5 rounded-lg hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2" type="button">
+                                    Send Invitation
+                                    <span class="material-symbols-outlined text-[18px]" data-icon="send">send</span>
+</button>
+</div>
+</form>
+</div>
+<!-- Visual Summary / Metric Card -->
+<div class="bg-surface-container-lowest rounded-xl canvas-shadow p-stack-md flex flex-col items-center text-center">
+<div class="w-24 h-24 mb-4 rounded-full border-8 border-primary/10 flex items-center justify-center">
+<span class="text-headline-md font-bold text-primary">82%</span>
+</div>
+<h4 class="text-label-md font-bold text-on-surface">Verification Progress</h4>
+<p class="text-xs text-on-surface-variant mt-1 px-4">425 of 520 participants have been successfully verified through University IDs.</p>
+<div class="w-full h-2 bg-surface-container mt-6 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[82%]"></div>
+</div>
+</div>
+<!-- Recent Activity -->
+<div class="bg-surface-container-lowest rounded-xl canvas-shadow p-stack-md">
+<h3 class="text-label-md font-bold text-on-surface mb-4">Recent Verifications</h3>
+<div class="space-y-4">
+<div class="flex items-start gap-3">
+<div class="w-2 h-2 mt-1.5 rounded-full bg-primary"></div>
+<p class="text-xs text-on-surface"><span class="font-bold">David Ray</span> was approved for Category: AI &amp; Robotics.</p>
+</div>
+<div class="flex items-start gap-3">
+<div class="w-2 h-2 mt-1.5 rounded-full bg-primary"></div>
+<p class="text-xs text-on-surface"><span class="font-bold">Sofia Vergara</span> invited as Guest Judge (Industry).</p>
+</div>
+<div class="flex items-start gap-3">
+<div class="w-2 h-2 mt-1.5 rounded-full bg-error"></div>
+<p class="text-xs text-on-surface"><span class="font-bold">James Bond</span> registration rejected: Invalid ID format.</p>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</div>
+</main>
+<!-- FAB Suppression: Not rendered on User Approval screen per instructions -->
+</body></html>
+
+<!-- Organizer Dashboard - Criteria Management -->
+

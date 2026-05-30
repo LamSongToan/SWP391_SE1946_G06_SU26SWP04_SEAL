@@ -1,0 +1,406 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Fall 2023: Decentralized Trust | Archive</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#e2dfff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#006a7c",
+                        "surface-tint": "#4d44e3",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c3c0ff",
+                        "surface": "#f8f9ff",
+                        "outline-variant": "#c7c4d8",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "secondary-container": "#8a4cfc",
+                        "on-surface": "#0b1c30",
+                        "surface-variant": "#d3e4fe",
+                        "surface-bright": "#f8f9ff",
+                        "on-secondary-container": "#fffbff",
+                        "on-tertiary-fixed": "#001f26",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#dad7ff",
+                        "on-secondary-fixed": "#25005a",
+                        "on-background": "#0b1c30",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "primary": "#3525cd",
+                        "on-primary-fixed": "#0f0069",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#dce9ff",
+                        "outline": "#777587",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#acedff",
+                        "tertiary": "#00505f",
+                        "surface-container": "#e5eeff",
+                        "secondary-fixed": "#eaddff",
+                        "inverse-surface": "#213145",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-surface-variant": "#464555",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "on-tertiary-container": "#93e8ff",
+                        "primary-container": "#4f46e5",
+                        "surface-dim": "#cbdbf5",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "secondary": "#712ae2",
+                        "background": "#f8f9ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-secondary-fixed-variant": "#5a00c6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "stack-lg": "48px",
+                        "stack-sm": "12px",
+                        "base": "8px",
+                        "stack-md": "24px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="canvas-bg font-body-md text-on-background m-0 p-0 overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-inverse-surface shadow-sm docked full-width top-0 z-50 fixed w-full border-none">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-20">
+<div class="font-headline-md text-headline-md font-bold tracking-tight text-primary dark:text-primary-fixed-dim">SEAL</div>
+<div class="hidden md:flex items-center gap-stack-md h-full">
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 font-label-md text-label-md" href="#">About</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 font-label-md text-label-md" href="#">Upcoming Events</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-1 font-bold font-label-md text-label-md" href="#">Past Events</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 font-label-md text-label-md" href="#">Awards</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-medium hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 font-label-md text-label-md" href="#">Contact</a>
+</div>
+<div class="flex gap-base">
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md text-primary border-[1.5px] border-primary hover:bg-primary-fixed transition-all">Sign In</button>
+<button class="px-6 py-2 rounded-lg font-label-md text-label-md bg-primary text-on-primary hover:opacity-90 transition-all">Register</button>
+</div>
+</div>
+</nav>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="relative w-full overflow-hidden h-[450px] md:h-[500px] flex items-center bg-inverse-surface">
+<div class="absolute inset-0 z-0 opacity-40">
+<img class="w-full h-full object-cover" data-alt="A sophisticated digital visualization representing decentralized networks with glowing interconnected nodes and geometric data structures. The lighting is deep indigo and electric purple, creating a futuristic and authoritative atmosphere suitable for a software engineering event archive. The image features high-contrast sharp lines and a visionary architectural aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZAWNqoMsr3k5s8BtCKC4j1LZUWXz-G2ewDFMfSfwIcMHaJjJarq6sJS5W810MIquP7qEgbj6vF6AazLSIjZQxThBWnqpCsHTG1G9IbBEwfjDSVZR2Si7kEp3CH61GaBR8-zmUSTxGphCEVJKeoNpSQrWp36Vs_yyvCq9AVarFOtbigGQG1sl1nlnW9F2abAX6duLado8cd16h5sY6VohA0OxRYK8M1HUgkpvVC7b38GzTNq6lmXxFHR3ZzTFreLgepBunVJ6_PdUK">
+</div>
+<div class="absolute inset-0 bg-gradient-to-r from-inverse-surface via-inverse-surface/80 to-transparent z-10"></div>
+<div class="relative z-20 px-margin-desktop max-w-container-max mx-auto w-full">
+<div class="flex flex-col gap-stack-sm max-w-2xl">
+<span class="font-label-sm text-label-sm text-primary-fixed-dim tracking-[0.2em] uppercase">Archive: Fall 2023 Edition</span>
+<h1 class="font-display text-display text-on-primary leading-tight">SEAL Fall 2023:<br>Decentralized Trust</h1>
+<p class="font-body-lg text-body-lg text-surface-variant mt-4">Exploring the frontiers of blockchain architecture and distributed consensus in modern enterprise software.</p>
+<div class="mt-8 flex items-center gap-stack-md p-6 bg-white/10 backdrop-blur-md rounded-xl border border-white/10">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-surface-variant uppercase opacity-70">Grand Champion</span>
+<span class="font-headline-md text-headline-md text-on-primary">Team Axiom Systems</span>
+</div>
+<div class="h-12 w-[1px] bg-white/20"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-surface-variant uppercase opacity-70">Project Title</span>
+<span class="font-title-lg text-title-lg text-secondary-fixed">LedgerLink Pro</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Content Grid -->
+<div class="max-w-container-max mx-auto px-margin-desktop py-stack-lg">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Technical Categories -->
+<div class="md:col-span-8 bg-surface-container-lowest p-stack-md rounded-xl card-elevation card-hover transition-all flex flex-col gap-stack-md">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">terminal</span>
+                            Technology Focus
+                        </h2>
+<span class="font-label-sm text-label-sm px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full">4 Core Streams</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-stack-sm">
+<div class="p-4 border border-outline-variant rounded-lg bg-surface flex gap-4 items-start">
+<div class="p-2 bg-secondary-container/10 text-secondary-container rounded-lg">
+<span class="material-symbols-outlined">token</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Smart Contracts</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Scalable Solidity patterns and security audits for high-frequency trading.</p>
+</div>
+</div>
+<div class="p-4 border border-outline-variant rounded-lg bg-surface flex gap-4 items-start">
+<div class="p-2 bg-tertiary-container/10 text-tertiary-container rounded-lg">
+<span class="material-symbols-outlined">storage</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">IPFS Protocols</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Distributed storage optimization and content-addressable data structures.</p>
+</div>
+</div>
+<div class="p-4 border border-outline-variant rounded-lg bg-surface flex gap-4 items-start">
+<div class="p-2 bg-primary-container/10 text-primary-container rounded-lg">
+<span class="material-symbols-outlined">security</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">ZK Proofs</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Zero-knowledge implementation for privacy-preserving verifiable computation.</p>
+</div>
+</div>
+<div class="p-4 border border-outline-variant rounded-lg bg-surface flex gap-4 items-start">
+<div class="p-2 bg-secondary-container/10 text-secondary-container rounded-lg">
+<span class="material-symbols-outlined">hub</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Consensus Engines</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Byzantine Fault Tolerance improvements in private subnetworks.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Final Rankings -->
+<div class="md:col-span-4 bg-primary text-on-primary p-stack-md rounded-xl shadow-lg flex flex-col gap-stack-md relative overflow-hidden">
+<div class="absolute -right-12 -top-12 opacity-10">
+<span class="material-symbols-outlined text-[160px] sx-0001">emoji_events</span>
+</div>
+<div class="relative z-10">
+<h2 class="font-headline-md text-headline-md mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">leaderboard</span>
+                            Leaderboard
+                        </h2>
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between p-4 bg-white/10 rounded-lg border border-white/20">
+<div class="flex items-center gap-3">
+<span class="font-headline-md text-headline-md text-secondary-fixed">01</span>
+<span class="font-title-lg text-title-lg">Axiom Systems</span>
+</div>
+<span class="font-label-md text-label-md bg-on-primary text-primary px-3 py-1 rounded-full">Winner</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+<div class="flex items-center gap-3">
+<span class="font-headline-md text-headline-md opacity-60">02</span>
+<span class="font-title-lg text-title-lg">ChainReact</span>
+</div>
+<span class="font-label-md text-label-md">94.2 pts</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+<div class="flex items-center gap-3">
+<span class="font-headline-md text-headline-md opacity-60">03</span>
+<span class="font-title-lg text-title-lg">Hash Guardians</span>
+</div>
+<span class="font-label-md text-label-md">91.8 pts</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+<div class="flex items-center gap-3">
+<span class="font-headline-md text-headline-md opacity-60">04</span>
+<span class="font-title-lg text-title-lg">Vault Labs</span>
+</div>
+<span class="font-label-md text-label-md">88.5 pts</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Event Rounds -->
+<div class="md:col-span-5 bg-surface-container-lowest p-stack-md rounded-xl card-elevation card-hover transition-all flex flex-col gap-stack-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined">account_tree</span>
+                        Tournament Structure
+                    </h2>
+<div class="flex flex-col gap-stack-sm">
+<div class="relative pl-8 border-l-2 border-primary/20 pb-4">
+<div class="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-primary ring-4 ring-primary-fixed"></div>
+<h4 class="font-title-lg text-title-lg text-primary">Preliminary Rounds</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">32 teams competing in 4 parallel tracks. Technical assessment on core consensus logic.</p>
+</div>
+<div class="relative pl-8 border-l-2 border-primary/20 pb-4">
+<div class="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-primary ring-4 ring-primary-fixed"></div>
+<h4 class="font-title-lg text-title-lg text-primary">The Crucible (Semis)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Top 8 teams enfrenting rigorous stress tests and edge-case security scenarios.</p>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-secondary-container ring-4 ring-secondary-fixed"></div>
+<h4 class="font-title-lg text-title-lg text-secondary">Grand Final</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Live pitch and system demo before the Industry Advisory Board.</p>
+</div>
+</div>
+</div>
+<!-- Recap & Announcements -->
+<div class="md:col-span-7 bg-surface-container-lowest p-stack-md rounded-xl card-elevation card-hover transition-all flex flex-col gap-stack-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined">campaign</span>
+                        Archive Highlights
+                    </h2>
+<div class="space-y-4">
+<div class="flex gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex-shrink-0 w-12 h-12 rounded bg-tertiary-container/10 flex items-center justify-center text-tertiary-container">
+<span class="material-symbols-outlined">history</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-primary uppercase font-bold">Oct 12, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Milestone</span>
+</div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Record Breaking Turnout</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Fall 2023 marked the highest participation in SEAL history with over 450 engineering students from across the region.</p>
+</div>
+</div>
+<div class="flex gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex-shrink-0 w-12 h-12 rounded bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">verified</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-primary uppercase font-bold">Oct 15, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Tech Recap</span>
+</div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Open Source Initiative</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">The winning architecture by Axiom Systems has been formally published as a reference implementation for decentralized audit trails.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Rules & Guidelines -->
+<div class="md:col-span-12 bg-white p-stack-md rounded-xl card-elevation border-t-4 border-primary">
+<div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Fall 2023 Competition Framework</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">The rigorous standards upheld during the Decentralized Trust challenge.</p>
+</div>
+<button class="flex items-center gap-2 px-6 py-3 rounded-lg border border-outline text-on-surface hover:bg-surface transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined">download</span>
+                            Download Full Guidelines (PDF)
+                        </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-md">
+<div class="space-y-3">
+<h4 class="font-label-md text-label-md uppercase text-primary font-bold">I. Originality</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">All logic must be authored during the event. Use of established libraries is permitted if clearly documented.</p>
+</div>
+<div class="space-y-3">
+<h4 class="font-label-md text-label-md uppercase text-primary font-bold">II. Security Mandate</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Projects containing critical vulnerabilities (re-entrancy, overflow) were disqualified from final consideration.</p>
+</div>
+<div class="space-y-3">
+<h4 class="font-label-md text-label-md uppercase text-primary font-bold">III. Infrastructure</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Participants were limited to the provided private testnet cluster to ensure a level playing field for compute resources.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Historical Timeline Section -->
+<section class="bg-surface-container py-stack-lg border-y border-outline-variant/30">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-12 text-center">Historical Timeline</h2>
+<div class="relative">
+<div class="absolute left-1/2 -translate-x-1/2 w-1 bg-outline-variant h-full hidden md:block"></div>
+<div class="space-y-12">
+<!-- Left item -->
+<div class="relative flex flex-col md:flex-row md:justify-between items-center w-full">
+<div class="md:w-5/12 text-center md:text-right">
+<h4 class="font-title-lg text-title-lg text-primary">Announcement</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Call for entries and theme reveal: "Decentralized Trust in Enterprise".</p>
+</div>
+<div class="hidden md:flex absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-4 border-primary z-10 items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-primary">campaign</span>
+</div>
+<div class="md:w-5/12 font-label-md text-label-md text-on-surface-variant md:text-left mt-2 md:mt-0">Aug 15, 2023</div>
+</div>
+<!-- Right item -->
+<div class="relative flex flex-col md:flex-row-reverse md:justify-between items-center w-full">
+<div class="md:w-5/12 text-center md:text-left">
+<h4 class="font-title-lg text-title-lg text-primary">Registration Deadline</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Finalization of 120 participating teams and mentor matching.</p>
+</div>
+<div class="hidden md:flex absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-4 border-primary z-10 items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-primary">person_add</span>
+</div>
+<div class="md:w-5/12 font-label-md text-label-md text-on-surface-variant md:text-right mt-2 md:mt-0">Sep 30, 2023</div>
+</div>
+<!-- Left item -->
+<div class="relative flex flex-col md:flex-row md:justify-between items-center w-full">
+<div class="md:w-5/12 text-center md:text-right">
+<h4 class="font-title-lg text-title-lg text-secondary">Main Event</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">72-hour intensive sprint at the Central Engineering Hub.</p>
+</div>
+<div class="hidden md:flex absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-secondary text-on-secondary z-10 items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">code</span>
+</div>
+<div class="md:w-5/12 font-label-md text-label-md text-on-surface-variant md:text-left mt-2 md:mt-0">Oct 12-15, 2023</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-inverse-surface border-t border-outline-variant dark:border-outline full-width bottom-0">
+<div class="w-full py-stack-md px-margin-desktop max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-stack-sm">
+<div class="flex flex-col gap-2 items-center md:items-start">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">SEAL</div>
+<p class="font-body-md text-body-md text-on-surface-variant dark:text-outline-variant">Â© 2024 Software Engineering Agile League. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-stack-md">
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Sponsorship</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">University Relations</a>
+</div>
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all cursor-pointer">
+<span class="material-symbols-outlined text-lg">share</span>
+</div>
+<div class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all cursor-pointer">
+<span class="material-symbols-outlined text-lg">mail</span>
+</div>
+</div>
+</div>
+</footer>
+</body></html>
+
+<!-- Awards -->
+

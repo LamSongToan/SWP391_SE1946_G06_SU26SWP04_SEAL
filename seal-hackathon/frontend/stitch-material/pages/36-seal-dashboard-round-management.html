@@ -1,0 +1,458 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Dashboard - Round Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d3e4fe",
+                        "primary": "#3525cd",
+                        "on-secondary-fixed": "#25005a",
+                        "on-primary-fixed": "#0f0069",
+                        "tertiary": "#00505f",
+                        "surface-container": "#e5eeff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-error": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "surface-container-low": "#eff4ff",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#e2dfff",
+                        "surface-bright": "#f8f9ff",
+                        "primary-container": "#4f46e5",
+                        "on-secondary-container": "#fffbff",
+                        "surface-container-high": "#dce9ff",
+                        "background": "#f8f9ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "surface": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "inverse-surface": "#213145",
+                        "surface-tint": "#4d44e3",
+                        "outline": "#777587",
+                        "tertiary-container": "#006a7c",
+                        "on-tertiary-container": "#93e8ff",
+                        "on-tertiary-fixed": "#001f26",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#464555",
+                        "secondary-fixed": "#eaddff",
+                        "on-surface": "#0b1c30",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-primary-container": "#dad7ff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-dim": "#cbdbf5",
+                        "secondary": "#712ae2",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#8a4cfc",
+                        "inverse-primary": "#c3c0ff",
+                        "tertiary-fixed": "#acedff",
+                        "outline-variant": "#c7c4d8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "12px",
+                        "container-max": "1280px",
+                        "base": "8px",
+                        "stack-md": "24px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "stack-lg": "48px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- Sidebar Navigation -->
+<aside class="h-full w-72 fixed left-0 top-0 bg-surface-container-low shadow-sm flex flex-col py-base z-50">
+<div class="px-6 py-8 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined sx-0001">shield_with_heart</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-primary">SEAL</h1>
+<p class="text-label-sm text-on-surface-variant">Hackathon Manager</p>
+</div>
+</div>
+<nav class="flex-1 px-4 sidebar-scroll overflow-y-auto space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span>Event Management</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-primary-container/10 transition-transform duration-200 translate-x-1 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+<span>Round Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+<span>Category Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="rule">rule</span>
+<span>Criteria Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+<span>User Approval</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span>Submission Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+<span>Ranking &amp; Awards</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span>Research Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Reports</span>
+</a>
+</nav>
+<div class="mt-auto px-4 py-6 border-t border-outline-variant/20">
+<div class="flex items-center gap-3 px-4 py-2">
+<img alt="Organizer Profile" class="w-10 h-10 rounded-full bg-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm0veG1H7YZtjQWs-9IM9GgNOUQbqwrBrohiNqwJG5-mEAI2p4Yv8TDkM1Mg1eehCMnBly0crjHlzrtINIW_9K4ENbmgociUwJH4zOnbok_Y75nSfEmacAuxdt6HvCrfYo5P6RhI9A46SV10Od5cJMmA7l_y5VBUBprlFhLGm9OegdcmkMkPRDefNqxoVNV4WrC80R7xmp1N0gG68SvkZLEjzkpUNF5b9m7CvtnJVqH27qrouch0SrQhOz5sWs6qVhpV1HTC7x8YGW">
+<div class="overflow-hidden">
+<p class="text-label-md font-bold truncate">Alex Rivera</p>
+<p class="text-label-sm text-on-surface-variant truncate">Lead Organizer</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface flex justify-between items-center px-margin-desktop shadow-sm z-40">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-label-md focus:ring-2 focus:ring-primary" placeholder="Search rounds, judges, or rules..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="hover:bg-surface-container rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container rounded-full p-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-primary" data-icon="help">help</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-72 pt-16 p-margin-desktop">
+<div class="max-w-container-max mx-auto space-y-stack-lg">
+<!-- Page Header -->
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Round Management</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage the competitive flow for <span class="font-bold text-primary">Global Innovation Hack 2024</span>.</p>
+</div>
+<button class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-label-md shadow-md hover:translate-y-[-2px] transition-all">
+<span class="material-symbols-outlined sx-0001">add_circle</span>
+                    Create Round
+                </button>
+</div>
+<!-- Dashboard Layout (Bento Style) -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Active Rounds Column -->
+<div class="col-span-12 lg:col-span-8 space-y-stack-md">
+<!-- Round Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/30 hover:translate-y-[-2px] transition-all">
+<div class="flex justify-between items-start mb-6">
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined font-bold">looks_one</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg">Preliminary Screening</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+<span class="text-label-sm text-on-surface-variant">â€¢ Ends in 4 hours</span>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Rule Configuration -->
+<div class="bg-surface-container-low p-4 rounded-lg space-y-3">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="font-label-md uppercase tracking-wider">Rules</span>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-label-sm">
+<span class="text-on-surface-variant">Type</span>
+<span class="font-bold">PDF + GitHub</span>
+</div>
+<div class="flex justify-between text-label-sm">
+<span class="text-on-surface-variant">Time Limit</span>
+<span class="font-bold">24 Hours</span>
+</div>
+</div>
+<button class="w-full py-2 mt-2 border border-primary/20 text-primary font-label-sm rounded-lg hover:bg-primary/5 transition-colors">Configure Rules</button>
+</div>
+<!-- Advancement Configuration -->
+<div class="bg-surface-container-low p-4 rounded-lg space-y-3">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+<span class="font-label-md uppercase tracking-wider">Advancement</span>
+</div>
+<div class="space-y-2 text-center py-1">
+<div class="text-headline-md font-bold text-primary">40%</div>
+<div class="text-label-sm text-on-surface-variant">of top teams move forward</div>
+</div>
+<button class="w-full py-2 mt-2 border border-primary/20 text-primary font-label-sm rounded-lg hover:bg-primary/5 transition-colors">Adjust Target</button>
+</div>
+<!-- Judge Assignment -->
+<div class="bg-surface-container-low p-4 rounded-lg space-y-3">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+<span class="font-label-md uppercase tracking-wider">Judges</span>
+</div>
+<div class="flex -space-x-2 overflow-hidden py-1">
+<img alt="Judge" class="inline-block h-8 w-8 rounded-full ring-2 ring-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVgbXfn4s23lHPHbbl2USxjNdS7zUU_ljj4y61edz6k25Tt-8V2bR5gqIC8Faym8YtenIof1-CNFTbeYzJgZhjRD0BkFI4wDikBPaG5OjP0eEhLp6yoQe-SuXPE3TsOf_X9zl5G07BOVDd5oZh0zDjOJ5O7Pa8V4IxwRBq2OcDNAInIu6YnVBJcw6wBxwCdZNL2GyjY9MoWLZ_Bip9ZxYXOnsjkH2S258hUOeOgRlQoCjM4iri8RtUQAVAxL2SaTgSfvPUkql2XzxG">
+<img alt="Judge" class="inline-block h-8 w-8 rounded-full ring-2 ring-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtie1WsJnlvOJZUvyWC2s0ErUHb0XAMx9GE6NvJp0QV-ywOI0SOVgJh2HSSJHrflGIpC5Nz6JdzMbWV9yL16BCFdUHcq3Y6W0OYLt90o-4DTQvmIjFlbvhu-FqdkvrGgxowSltU2eu1x93pyrkR8nYYbs9AWT2EBhsfxoAMb_dFyPRYkU6Znh5oa91Fgq-NBMfe1Itm2CEJ9WKr4ybA9Fx0oXRQCYY0Pb6ReeHelMA5StJ-rdDx0TcFURQoHIwS12EtkeKfboTdVbS">
+<img alt="Judge" class="inline-block h-8 w-8 rounded-full ring-2 ring-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrs_sBLyvKIcCwuRr8iRqvth5BXnNZZ2bgHHEmhBNHnuNaakeGLSQ-U1JSkd-8d6gNevEXWXDVdPPK1FiqPv7p3uGJESngAm3TcRgUKJP_1sdSiucPDvsJXjMH_pONKU37ZiMImqJoZeQhg8aE12Q8TokZd0vbgb6W_rmVaMNtstBp5KHloJOB-nDepjg_kNJxAxqj7q2ibyLD1AwgEvQIZMzXn5PrfeuyHvVS2Jsaa6_JkM22ZbPN05SnGzePV8YOL1Cyh4FI7Ny1">
+<div class="h-8 w-8 rounded-full ring-2 ring-white bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-primary">+8</div>
+</div>
+<button class="w-full py-2 mt-2 border border-primary/20 text-primary font-label-sm rounded-lg hover:bg-primary/5 transition-colors">Assign Judges</button>
+</div>
+</div>
+</div>
+<!-- Round Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/30 opacity-80">
+<div class="flex justify-between items-start mb-6">
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined font-bold">looks_two</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg">Semi-Finals Pitch</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Draft</span>
+<span class="text-label-sm text-on-surface-variant">â€¢ Opens Oct 15</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-center h-32 border-2 border-dashed border-outline-variant/30 rounded-lg">
+<button class="text-primary font-label-md hover:underline">Complete Setup</button>
+</div>
+</div>
+</div>
+<!-- Judge Workload & Selection Column -->
+<div class="col-span-12 lg:col-span-4 space-y-stack-md">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+<div class="p-6 border-b border-outline-variant/20">
+<h3 class="font-title-lg text-title-lg">Available Judges</h3>
+<p class="text-label-sm text-on-surface-variant mt-1">Assign judges to active rounds based on workload.</p>
+</div>
+<div class="p-4">
+<div class="relative mb-4">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant/20 rounded-lg text-label-sm" placeholder="Filter by expertise..." type="text">
+</div>
+<div class="space-y-4">
+<!-- Judge Row -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Dr. Sarah Miller" class="w-10 h-10 rounded-full bg-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmpv_Z86FJlgpi1D93S8jMHCzMd6tVwV3cd2Km5fNfLnDKEeW4E8J4_vd9v9JFiTTaSuuMu7UijL1lrbxX7L6N6g2W00A3mhKfbiYBkV7TvdJgkQBCpQltIlOHFUCp4JaL4_pPbXk0BQkdm04tan2IUE34vbEaNyTy5hJ46sxDV_7FZDNNtc2IVeglhqqBbGVhUit33LN8e5mZmtrgec0CZCmAfHZ4E6t0jvwppH9kvFDCWmk_862rB0Izn6Rny22HY7ANSmYbRIMJ">
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+</div>
+<div>
+<p class="text-label-md font-bold">Dr. Sarah Miller</p>
+<p class="text-[11px] text-on-surface-variant uppercase tracking-tighter">AI Specialist</p>
+</div>
+</div>
+<div class="text-right">
+<div class="text-label-sm font-medium text-primary">2/5</div>
+<div class="w-16 h-1.5 bg-surface-container-high rounded-full mt-1">
+<div class="w-2/5 h-full bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Judge Row -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="James K." class="w-10 h-10 rounded-full bg-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRPKeFpDXaprDNCkPyR2vx9aCmoRxlPhoPyk098YgDzsspzeKTfBocUBOstqz6Y-oXZqQd8KAedUWYh5NoHIn509RP13qOjyBGBgx6MGjNs-i2lcsfO3ZT-dS3BV4yNQ5mCh-o6JiITRCquWVoaYrVqx77ILL11WDgQAiFeOBIUFLX9s2IFlyANlrBK_T2H1sHGw94Z472-Poqdbcx6EK8NFcSDEz4A0ghHnPHCgAuc-lzQeM-D2zsxn4ti9RYMnwepbh7lxl6O-0u">
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-yellow-500 border-2 border-white rounded-full"></span>
+</div>
+<div>
+<p class="text-label-md font-bold">James K.</p>
+<p class="text-[11px] text-on-surface-variant uppercase tracking-tighter">Venture Partner</p>
+</div>
+</div>
+<div class="text-right">
+<div class="text-label-sm font-medium text-error">5/5</div>
+<div class="w-16 h-1.5 bg-surface-container-high rounded-full mt-1">
+<div class="w-full h-full bg-error rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Judge Row -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Linda Wang" class="w-10 h-10 rounded-full bg-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAv6-podnDnle0iXql76iOdLRyxNIZUImxo2OkeTDKcve29cyx0owq41E1c3kea3K54c90TSXe945Sct0XI_tEBA30hu8k9II4a8EgzzW-fmIuT3e3_zcX9jrS1TOPrgtIXg29PNjHu-ih3egnE1QGcTuDviReGpHc9VTbFaOYc_uh4HqnkgxedW-AzLAE0RDhaU5K_0OXICAqbdgsgHesXqR-Ht8lac-8ndp4K9WVnyIqyDzLUXyvoM7ETAjXdQxfbtc5yksH8Qcrm">
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+</div>
+<div>
+<p class="text-label-md font-bold">Linda Wang</p>
+<p class="text-[11px] text-on-surface-variant uppercase tracking-tighter">SWE @ Google</p>
+</div>
+</div>
+<div class="text-right">
+<div class="text-label-sm font-medium text-primary">0/5</div>
+<div class="w-16 h-1.5 bg-surface-container-high rounded-full mt-1">
+<div class="w-0 h-full bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-3 mt-4 text-primary font-label-md hover:bg-primary/5 rounded-lg border border-primary/20 transition-all">
+                                View Detailed Directory
+                            </button>
+</div>
+</div>
+<!-- Quick Insight Card -->
+<div class="bg-primary-container p-6 rounded-xl text-white shadow-lg relative overflow-hidden">
+<div class="relative z-10">
+<h4 class="font-title-lg text-title-lg mb-2">Round Logic Tip</h4>
+<p class="text-label-sm opacity-90 leading-relaxed">Increasing the advancement percentage to 50% for the Preliminary round usually yields higher quality finals but requires 2 extra judges to manage the load.</p>
+</div>
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-10 rotate-12 pointer-events-none">lightbulb</span>
+</div>
+</div>
+</div>
+<!-- Visualization Section -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/30">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-title-lg text-title-lg">Tournament Flow Visualization</h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-label-sm text-on-surface-variant">Qualified</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-surface-container-highest"></span>
+<span class="text-label-sm text-on-surface-variant">Eliminated</span>
+</div>
+</div>
+</div>
+<div class="relative h-64 w-full flex items-center justify-between px-12">
+<!-- Flow Line Background -->
+<div class="absolute top-1/2 left-0 w-full h-0.5 bg-outline-variant/20 -translate-y-1/2"></div>
+<!-- Round 1 Node -->
+<div class="relative z-10 flex flex-col items-center gap-4">
+<div class="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-white shadow-xl ring-8 ring-primary/10">
+<div class="text-center">
+<p class="text-xs font-bold uppercase">Start</p>
+<p class="text-lg font-bold">120</p>
+</div>
+</div>
+<p class="text-label-md font-bold">Registration</p>
+</div>
+<!-- Arrow -->
+<span class="material-symbols-outlined text-outline-variant/40">arrow_forward</span>
+<!-- Round 2 Node -->
+<div class="relative z-10 flex flex-col items-center gap-4">
+<div class="w-24 h-24 rounded-full bg-primary flex items-center justify-center text-white shadow-xl ring-8 ring-primary/10">
+<div class="text-center">
+<p class="text-xs font-bold uppercase">Round 1</p>
+<p class="text-2xl font-bold">48</p>
+</div>
+</div>
+<p class="text-label-md font-bold">Preliminary</p>
+</div>
+<!-- Arrow -->
+<span class="material-symbols-outlined text-outline-variant/40">arrow_forward</span>
+<!-- Round 3 Node -->
+<div class="relative z-10 flex flex-col items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-surface-container-low border-2 border-outline-variant flex items-center justify-center text-on-surface-variant">
+<div class="text-center">
+<p class="text-[10px] font-bold uppercase">Semi</p>
+<p class="text-lg font-bold">12</p>
+</div>
+</div>
+<p class="text-label-md font-medium text-on-surface-variant">Semi-Finals</p>
+</div>
+<!-- Arrow -->
+<span class="material-symbols-outlined text-outline-variant/40">arrow_forward</span>
+<!-- Final Node -->
+<div class="relative z-10 flex flex-col items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-surface-container-low border-2 border-outline-variant flex items-center justify-center text-on-surface-variant">
+<div class="text-center">
+<p class="text-[10px] font-bold uppercase">Final</p>
+<p class="text-lg font-bold">3</p>
+</div>
+</div>
+<p class="text-label-md font-medium text-on-surface-variant">Grand Finale</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button - Supressed based on guidelines for Detail screens, but here it acts as the "Create Round" shortcut for the dashboard -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 bg-secondary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[28px] sx-0001">add</span>
+</button>
+</div>
+</body></html>
+
+

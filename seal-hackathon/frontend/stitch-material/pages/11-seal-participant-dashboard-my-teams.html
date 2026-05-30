@@ -1,0 +1,332 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Participant Dashboard - My Teams</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#fffbff",
+                        "on-surface-variant": "#464555",
+                        "on-surface": "#0b1c30",
+                        "tertiary-container": "#006a7c",
+                        "error": "#ba1a1a",
+                        "secondary": "#712ae2",
+                        "on-tertiary-fixed": "#001f26",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed": "#e2dfff",
+                        "primary-container": "#4f46e5",
+                        "outline-variant": "#c7c4d8",
+                        "secondary-container": "#8a4cfc",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "inverse-surface": "#213145",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#00505f",
+                        "on-background": "#0b1c30",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "on-secondary-fixed": "#25005a",
+                        "surface-container-high": "#dce9ff",
+                        "surface": "#f8f9ff",
+                        "on-error": "#ffffff",
+                        "outline": "#777587",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-dim": "#cbdbf5",
+                        "tertiary-fixed": "#acedff",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-primary-fixed": "#0f0069",
+                        "surface-tint": "#4d44e3",
+                        "primary": "#3525cd",
+                        "on-primary-container": "#dad7ff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container-low": "#eff4ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary-container": "#93e8ff",
+                        "background": "#f8f9ff",
+                        "secondary-fixed": "#eaddff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary-fixed-variant": "#004e5c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "48px",
+                        "stack-sm": "12px",
+                        "container-max": "1280px",
+                        "base": "8px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "stack-md": "24px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "display": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background font-body-md text-on-background min-h-screen">
+<header class="fixed top-0 z-50 w-full h-16 bg-surface dark:bg-inverse-surface shadow-sm border-b border-outline-variant flex justify-between items-center px-margin-desktop">
+<div class="flex items-center gap-gutter">
+<span class="font-display text-headline-md font-bold text-primary dark:text-primary-fixed-dim">SEAL</span>
+<div class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant w-96">
+<span class="material-symbols-outlined text-on-surface-variant mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-md w-full p-0" placeholder="Search teams or events..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors duration-200">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors duration-200">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-outline-variant">
+<img alt="Participant Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young adult student with a friendly expression, set against a clean, neutral studio background. The lighting is soft and even, highlighting a modern, academic aesthetic. The individual is wearing a smart-casual navy blue sweater that complements the indigo-themed UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCML9SXYYJZfcHtJ2IoYVFWSlw3p0t2KzFAtUEOAd3uHH_n2ENpgjVdcqX2iojUhoD3IK6oU53cOPT-W7z6GJXwMmwK5-_46PqFAFhZIaCO-sXNaF4fELI3Y8QiUPAnerga06qiGo5YFeJHvYfWD72ViAD8qfmZbhGav5iTRe74nCvIm_WZce4ltl6UVn5AR0OGwQA8nhKxn3ZMVrMmUxJdNxQu78QtP0W4nOKrMZSUac06fGl0NwFBxE6tEMinowDYCLi_JVTsbh66">
+</div>
+</div>
+</header>
+<div class="flex pt-16">
+<aside class="fixed left-0 top-0 hidden lg:flex flex-col py-stack-md bg-surface-container-low dark:bg-surface-dim border-r border-outline-variant h-screen w-72 z-40">
+<div class="px-6 mb-stack-lg mt-4">
+<h2 class="font-display text-title-lg font-black text-primary dark:text-primary-fixed-dim">SEAL Participant</h2>
+<p class="font-body-md text-on-surface-variant text-sm">Agile League Dashboard</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md">Profile</span>
+</a>
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-label-md">Notifications</span>
+</a>
+<a class="flex items-center gap-stack-sm bg-primary-container text-on-primary-container rounded-xl px-4 py-3 mx-2 scale-98 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md font-bold">My Teams</span>
+</a>
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-label-md">Event Participation</span>
+</a>
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+<span class="font-label-md">Submissions</span>
+</a>
+</nav>
+<div class="px-4 mt-auto pb-8">
+<button class="w-full py-4 bg-primary text-white rounded-xl font-label-md font-bold shadow-lg hover:bg-opacity-90 active:scale-95 transition-all">
+                    Register for New Event
+                </button>
+</div>
+</aside>
+<main class="flex-1 lg:ml-72 min-h-[calc(100vh-64px)] p-margin-desktop max-w-container-max mx-auto">
+<section class="flex flex-col md:flex-row md:items-end justify-between mb-stack-lg gap-4">
+<div>
+<nav class="flex text-label-sm text-on-surface-variant mb-2 gap-2">
+<span>Dashboard</span>
+<span>/</span>
+<span class="text-primary font-bold">My Teams</span>
+</nav>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Team Management</h1>
+<p class="text-body-lg text-on-surface-variant mt-1">Manage your hackathon squads and event progress.</p>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-3 border-[1.5px] border-primary text-primary font-bold rounded-xl hover:bg-primary-container hover:bg-opacity-10 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined">group_add</span>
+                        Join Team
+                    </button>
+<button class="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 shadow-level-1 active:scale-95 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined">add_circle</span>
+                        Create Team
+                    </button>
+</div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
+<div class="bg-white rounded-xl shadow-level-1 card-hover transition-all p-stack-md flex flex-col border border-outline-variant/30">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white sx-0001">terminal</span>
+</div>
+<span class="bg-green-100 text-green-800 text-label-sm px-3 py-1 rounded-full font-bold">ACTIVE</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-1">Byte Busters</h3>
+<p class="text-label-md text-on-surface-variant mb-6 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                        SEAL Summer 2024
+                    </p>
+<div class="flex -space-x-3 mb-6">
+<img alt="Member 1" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A portrait of a male developer with glasses, smiling confidently. Soft bokeh background of a modern workspace. The lighting reflects a clean corporate aesthetic with warm highlights on his face. High-quality professional photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCewIqjEYcQ5knH_B9ngRaWYCs5CU_XNsbUt823lNu74aQnSb2B7p-_WyjLmTD8quCjMsVAp7Abjb2KGHLndqhFVD-D9vUSQb1iO3ST_cpv4AD60F8GDdTgGg5CuLFNt3Ho_lakKLAIFghl1XGy92VRYEsl32seCvZTTc6Kv-TJTQZ1w3k0P7hnKNCfRe2ATuwADnhUHTrapZS6N0UnAoBr1bOey5bVPSIsaHXHkkQMaCoEheSB1VLadeoyALTX71h6aYAKhF3dbeGu">
+<img alt="Member 2" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A close-up of a young woman with a creative professional appearance, featuring vibrant soft lighting. The background is a blurred minimalist office environment. The image emphasizes a clean, sophisticated, and collaborative team spirit." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCu2OUD2AW3ZbNqNSDWyspMbmTUePZIK0hLLhdMwRvhotJ23KBd1l_uJpcUieBDxVLDI9VfqBdc_kGdcud_gGY3ufNvRco9VZJkrUn40NB8DG_qOCXVCyyJxkSMhlZk9kWCBlf5V12mkuBPqdZwm2DcxDNqwlQjQycqfTJCM30mUUswBGV9tvmDMBJOcUAdsNWu0xaGoapEGy3Jw-jbXKkDQYE1t7zFEXzPwWw2IK3gWPGXlCotrl66eNVpdbHC-1bK4H6bJA-woGfS">
+<img alt="Member 3" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A profile photo of a young professional man in a tech-focused setting. The lighting is crisp and bright, characteristic of a light-mode modern UI. The shot is high-definition, showcasing a systematic and visionary brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAoJtnYh0eSxKkphlTHYousuxAvH4BIbImdUOUnK2LZ-Q6421Ylp8N6QxlPO4fPWshfbVncrTNX9jvkusTK4914hsW46SrjiHm89hBc5nXVjm2p0y_msq6u2SqH2c9SPlocu2MNWApncP_iekcmVtybk_1RSgxq3Nut5_DFP4OPG0QSz6zvtocXAUPtzmrXnO4WnHFShEgzCA2T1jmy597aNIywIweWINklyEE66dcWcFVVD377IUpCxawZu1owSvAokPm3vq8un2Y">
+<div class="w-10 h-10 rounded-full border-2 border-white bg-surface-container flex items-center justify-center text-label-sm font-bold text-on-surface-variant">
+                            +1
+                        </div>
+</div>
+<div class="mt-auto">
+<div class="h-1 bg-outline-variant rounded-full mb-4 overflow-hidden">
+<div class="h-full bg-primary w-3/4 rounded-full"></div>
+</div>
+<div class="flex justify-between text-label-sm mb-4">
+<span class="text-on-surface-variant">Milestone: MVP Finish</span>
+<span class="text-primary font-bold">75%</span>
+</div>
+<button class="w-full py-3 bg-white border border-primary text-primary font-bold rounded-xl hover:bg-primary hover:text-white transition-colors duration-200 flex items-center justify-center gap-2">
+                            View Team Detail
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-level-1 card-hover transition-all p-stack-md flex flex-col border border-outline-variant/30">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-secondary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white sx-0001">developer_board</span>
+</div>
+<span class="bg-blue-100 text-blue-800 text-label-sm px-3 py-1 rounded-full font-bold">PLANNING</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-1">Logic Gate</h3>
+<p class="text-label-md text-on-surface-variant mb-6 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                        SEAL Hackathon Oct
+                    </p>
+<div class="flex -space-x-3 mb-6">
+<img alt="Member 4" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A portrait of a focused woman with a laptop in a brightly lit academic hall. The aesthetic is authoritative and systematic. The lighting is natural and bright, emphasizing a modern corporate and minimalist style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTIZqkjwhXqAgdZ1kDEeOze-oz6Iawwd4JNzmdAMY1pUGlSpoT5QXTgtzkLMC7WAK9iK1A8DDwXSllQJI90IWcOUAzgoeykGvvlNUwI5O6sDi4-XIE-ap5c1StTLon8bJ9cWbBlkvn43XFiSdzx_JudjzsaaciXJoZG_9kmayxXQqRBH8mCVhNSlLyRcBwLNTwknn0tHyP99v2XytJxj8uz4h8_9z6AaIQllgT1h5tHJRYs0_ThvxTgBx3mz0lYX2-AHcuHIOCeIOc">
+<img alt="Member 5" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A professional headshot of a young man with a visionary look, posed against a soft gray background. The lighting is high-key and professional. The image quality is sharp, fitting a high-end SaaS platform aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1mA7c6_rQOycsKoWA_-ZQDyEOZ-t40HCl39V3HJopOEEHmrY97WY73gGKnRJf7y2_z2hYWJzEZcYj66j8ORmeUuNkgC_EM5GGOFZwS1nbMcRQfDEvFUaltXFJnic8kKUDZLg5fpSYVR_YQnNFcxgmsuwlw8WvephJ87mDEexwzC6-aKMBvBffYLKcZotcSSUl-_Q9Cwg7Mk0jRh7zIUIxkPlFzaq3ojGsqYZ9AagNDMmlD_tO-vN9xFztU2kotcfH37rwBAxlfVuG">
+<div class="w-10 h-10 rounded-full border-2 border-white bg-surface-container flex items-center justify-center text-label-sm font-bold text-on-surface-variant">
+                            2/5
+                        </div>
+</div>
+<div class="mt-auto">
+<div class="h-1 bg-outline-variant rounded-full mb-4 overflow-hidden">
+<div class="h-full bg-secondary w-1/5 rounded-full"></div>
+</div>
+<div class="flex justify-between text-label-sm mb-4">
+<span class="text-on-surface-variant">Milestone: Team Formation</span>
+<span class="text-secondary font-bold">20%</span>
+</div>
+<button class="w-full py-3 bg-white border border-primary text-primary font-bold rounded-xl hover:bg-primary hover:text-white transition-colors duration-200 flex items-center justify-center gap-2">
+                            View Team Detail
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-level-1 card-hover transition-all p-stack-md flex flex-col border border-outline-variant/30">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-tertiary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white sx-0001">cloud_sync</span>
+</div>
+<span class="bg-on-tertiary-container/20 text-tertiary text-label-sm px-3 py-1 rounded-full font-bold">COMPLETED</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-1">Cloud Runners</h3>
+<p class="text-label-md text-on-surface-variant mb-6 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                        SEAL Cloud-Native '23
+                    </p>
+<div class="flex -space-x-3 mb-6">
+<img alt="Member 6" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A portrait of a male engineer in a creative studio setting with blue and white ambient lighting. The mood is systematic and authoritative. The photo has high clarity and a modern, minimalist feel, perfect for a professional tech dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6KTQLjutbr3mvBJBTHlRT2IaV2UNlXsY43P0gLR0HKf9VyRMShgn3SsPdZWDqy-SDfWWU6YB693MU5RuPcacVpd3jM7NFTPFA_dY0NKJmBZ6s9qwtH62byhKOoc2LcHdc8qiRzek2GgJa5aROXNnFuISj_ghBXhgRr3ffzpSlX7p2dNYqF6SY4sHTLc_xeDGn8IwGPxqq2FP-hNoV-4e7sB6AxfoiA9Dp9IavEiRMYZ2Ph6Q7noJqQ1bUmSXnmJIZO1dfslQO7RID">
+<img alt="Member 7" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A smiling woman in a professional workspace, with soft, diffused sunlight filtering through. The setting is clean and high-end. The color palette is composed of soft blues and whites, echoing an academic modern style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWgIbWknKYNl23liUD8IQhvHCo36rN-y_NYINr0VfgX46BfuJiQ7q3ykFNW0I4-1FCeoGVVl8rMWuRp1GX7WeMV6MXayhJqCRQqrXDM9Q6ozu3SVLDULXjzzeLyvQwK0jKBtA8o6j-ujbvyOe64hJvAiAqFcEWVLwaXcWhLyisupe0NuJdFqvC5P31umi_c-OkAmMtbomrevxeO_FitQYe3Ja0u-XsMZpd2y8E_NIrMvL9G2X0RByLtaoRshlFSiy8mx8hO7n7m-t9">
+<img alt="Member 8" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="A professional portrait of a man looking forward with a systematic and determined expression. Background is a clean, modern lab setting. The lighting is precise, emphasizing a corporate academic innovation vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHCBpqbZIqTJYsTz4AdjGbjt_bZ85c2lrb1yKoiMl3v7AJC-NO1_R-ehpmSCO3aFA64m90JZkwgv-H1KhCs5DBYZlNyiI2sQxT2e5qav0_U03JGXDF2KDDT7QFtIv8p6jaX_QhhNj3_qkf2I0jKodXH9vb-y6WrDqbc6l-OuapAR0S93mzlv6c6H7OaweyiD7p2VBMk0U_nVhqBRGpnxg8jhT5wI8cp8OxuE1pAWqjl4RdJIfCoT26Mr7abLfaJ2qOBdBxB5gx9fCZ">
+<div class="w-10 h-10 rounded-full border-2 border-white bg-surface-container flex items-center justify-center text-label-sm font-bold text-on-surface-variant">
+                            5/5
+                        </div>
+</div>
+<div class="mt-auto">
+<div class="h-1 bg-outline-variant rounded-full mb-4 overflow-hidden">
+<div class="h-full bg-tertiary w-full rounded-full"></div>
+</div>
+<div class="flex justify-between text-label-sm mb-4">
+<span class="text-on-surface-variant">Milestone: Final Submission</span>
+<span class="text-tertiary font-bold">100%</span>
+</div>
+<button class="w-full py-3 bg-white border border-primary text-primary font-bold rounded-xl hover:bg-primary hover:text-white transition-colors duration-200 flex items-center justify-center gap-2">
+                            View Team Detail
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-container-low border-2 border-dashed border-outline-variant rounded-xl p-stack-md flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container transition-all group">
+<div class="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">add</span>
+</div>
+<h4 class="font-title-lg text-on-surface mb-2">New Team Collaboration</h4>
+<p class="text-label-md text-on-surface-variant max-w-[200px]">Start a new journey or invite members to your idea.</p>
+</div>
+</div>
+<section class="mt-stack-lg">
+<div class="bg-inverse-surface rounded-2xl p-8 text-white relative overflow-hidden flex flex-col md:flex-row items-center gap-gutter">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
+<div class="relative z-10 flex-1">
+<h2 class="font-headline-md mb-2">Upcoming Competition: Global AI Sprint</h2>
+<p class="text-on-primary-container text-opacity-80 mb-6 max-w-2xl">The most anticipated event of the semester is opening registrations. Find your teammates early to secure a spot in the Logic Track.</p>
+<div class="flex gap-4">
+<button class="px-6 py-2 bg-white text-primary font-bold rounded-lg text-label-md">Learn More</button>
+<button class="px-6 py-2 border border-white text-white font-bold rounded-lg text-label-md">Set Reminder</button>
+</div>
+</div>
+<div class="relative z-10 w-full md:w-auto">
+<div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-xl flex flex-col items-center">
+<span class="font-display text-headline-lg mb-1">12</span>
+<span class="text-label-sm uppercase tracking-widest opacity-80">Days Left</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="lg:ml-72 bg-surface p-margin-desktop border-t border-outline-variant mt-stack-lg">
+<div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-gutter text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="font-display font-black text-primary">SEAL</span>
+<span class="text-label-sm">Â© 2024 Agile League. All rights reserved.</span>
+</div>
+<div class="flex gap-margin-desktop">
+<a class="text-label-sm hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-label-sm hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-label-sm hover:text-primary transition-colors" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>
+
+<!-- Judge Dashboard - Assigned Submissions -->
+

@@ -1,0 +1,345 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d3e4fe",
+                    "primary": "#3525cd",
+                    "on-secondary-fixed": "#25005a",
+                    "on-primary-fixed": "#0f0069",
+                    "tertiary": "#00505f",
+                    "surface-container": "#e5eeff",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-error": "#ffffff",
+                    "on-background": "#0b1c30",
+                    "surface-container-low": "#eff4ff",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e2dfff",
+                    "surface-bright": "#f8f9ff",
+                    "primary-container": "#4f46e5",
+                    "on-secondary-container": "#fffbff",
+                    "surface-container-high": "#dce9ff",
+                    "background": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "inverse-surface": "#213145",
+                    "surface-tint": "#4d44e3",
+                    "outline": "#777587",
+                    "tertiary-container": "#006a7c",
+                    "on-tertiary-container": "#93e8ff",
+                    "on-tertiary-fixed": "#001f26",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#464555",
+                    "secondary-fixed": "#eaddff",
+                    "on-surface": "#0b1c30",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-primary-container": "#dad7ff",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "surface-dim": "#cbdbf5",
+                    "secondary": "#712ae2",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#8a4cfc",
+                    "inverse-primary": "#c3c0ff",
+                    "tertiary-fixed": "#acedff",
+                    "outline-variant": "#c7c4d8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "12px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "stack-md": "24px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "stack-lg": "48px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar Shell -->
+<nav class="h-full w-72 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-low shadow-sm flex flex-col py-base z-50 overflow-y-auto">
+<div class="px-6 py-8">
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">SEAL</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Hackathon Manager</p>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="event">event</span>
+                Event Management
+            </a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="reorder">reorder</span>
+                Round Management
+            </a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="category">category</span>
+                Category Management
+            </a>
+<!-- Active State: Criteria Management -->
+<a class="flex items-center px-6 py-3 text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-primary-container/10 font-label-md text-label-md translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined mr-3 sx-0001" data-icon="rule">rule</span>
+                Criteria Management
+            </a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="how_to_reg">how_to_reg</span>
+                User Approval
+            </a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="upload_file">upload_file</span>
+                Submission Management
+            </a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="military_tech">military_tech</span>
+                Ranking &amp; Awards
+            </a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="monitoring">monitoring</span>
+                Research Dashboard
+            </a>
+<a class="flex items-center px-6 py-3 text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="analytics">analytics</span>
+                Reports
+            </a>
+</div>
+</nav>
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface dark:bg-surface shadow-sm flex justify-between items-center px-margin-desktop z-40">
+<div class="flex items-center">
+<h2 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">SEAL Dashboard</h2>
+</div>
+<div class="flex items-center space-x-4">
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 text-on-surface-variant transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full p-2 text-on-surface-variant transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="flex items-center ml-4 cursor-pointer hover:bg-surface-container rounded-full p-1 pr-4 transition-colors">
+<img alt="Organizer Profile" class="w-8 h-8 rounded-full border border-outline-variant mr-3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOsUBlpPgW-1zwwIitccyaj415pk2m0jh74JhPIp4udWMcXClQT_As2WLYhuf09f0RQAYZ6iTZSyLmOUg9iuv8jakTv7qVHBg5SGYC5svA5DlZwP0UrqIWCRy_M1cIlRd3BtEPO8d8N43xjqf2XZlQCbY9A4FXXd4Nbg0e1H9LP4c8dpe1hrJsTG-3jHDPhk0OuFB7JgXQQFn0UyhLRFaF77njHn2j7H0vCm6vIy_9Pt_Z_GX4gFp-vHflZOyb0QcbxP5Frqr8bBf0">
+<span class="font-label-md text-label-md text-on-surface">Alex River</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-72 mt-16 p-margin-desktop max-w-container-max mx-auto">
+<!-- Header Actions -->
+<div class="flex justify-between items-end mb-stack-lg">
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-2">Criteria Management</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Define evaluation standards and weights for competitive integrity.</p>
+</div>
+<button class="bg-primary text-white px-6 py-3 rounded-lg font-label-md text-label-md flex items-center shadow-sm hover:translate-y-[-2px] transition-transform">
+<span class="material-symbols-outlined mr-2" data-icon="add">add</span>
+                Create Criteria Template
+            </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Configure Weight Section -->
+<section class="col-span-12 lg:col-span-7 bg-surface-container-lowest p-stack-md rounded-xl card-shadow border border-outline-variant/10">
+<div class="flex items-center justify-between mb-stack-md">
+<h4 class="font-title-lg text-title-lg text-on-surface">Global Weight Configuration</h4>
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm text-label-sm">Total: 100%</span>
+</div>
+<div class="space-y-stack-md">
+<!-- Weight Item: Technical -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">Technical Implementation</label>
+<span class="font-label-md text-label-md font-bold text-primary">40%</span>
+</div>
+<input class="w-full h-2 bg-surface-container-high rounded-lg appearance-none cursor-pointer custom-slider" max="100" min="0" type="range" value="40">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Code quality, stack choice, and architecture stability.</p>
+</div>
+<!-- Weight Item: UX/UI -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">UX/UI Design</label>
+<span class="font-label-md text-label-md font-bold text-primary">25%</span>
+</div>
+<input class="w-full h-2 bg-surface-container-high rounded-lg appearance-none cursor-pointer custom-slider" max="100" min="0" type="range" value="25">
+<p class="font-label-sm text-label-sm text-on-surface-variant">User flow, visual polish, and accessibility standards.</p>
+</div>
+<!-- Weight Item: Business Value -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">Business &amp; Viability</label>
+<span class="font-label-md text-label-md font-bold text-primary">20%</span>
+</div>
+<input class="w-full h-2 bg-surface-container-high rounded-lg appearance-none cursor-pointer custom-slider" max="100" min="0" type="range" value="20">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Market fit, monetization strategy, and problem-solving.</p>
+</div>
+<!-- Weight Item: Presentation -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">Pitch &amp; Presentation</label>
+<span class="font-label-md text-label-md font-bold text-primary">15%</span>
+</div>
+<input class="w-full h-2 bg-surface-container-high rounded-lg appearance-none cursor-pointer custom-slider" max="100" min="0" type="range" value="15">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Clarity of thought and demonstration effectiveness.</p>
+</div>
+</div>
+<div class="mt-stack-lg pt-stack-md border-t border-outline-variant flex justify-end space-x-4">
+<button class="px-6 py-2 border-1.5 border-primary text-primary border rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-colors">Reset Defaults</button>
+<button class="px-6 py-2 bg-primary text-white rounded-lg font-label-md text-label-md shadow-sm">Save Weights</button>
+</div>
+</section>
+<!-- Event Mapping Card -->
+<aside class="col-span-12 lg:col-span-5 flex flex-col space-y-gutter">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl card-shadow border border-outline-variant/10">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-stack-md">Current Hackathon Mapping</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Active Event: <span class="text-on-surface font-bold">Global AI Sprint 2024</span></p>
+<div class="space-y-stack-sm">
+<!-- Round 1 -->
+<div class="p-4 bg-surface rounded-lg border border-outline-variant/50 flex items-center justify-between">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-primary mr-3" data-icon="filter_1">filter_1</span>
+<div>
+<p class="font-label-md text-label-md font-bold">Initial Screening</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Tech + Business Only</p>
+</div>
+</div>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<!-- Round 2 -->
+<div class="p-4 bg-surface rounded-lg border border-outline-variant/50 flex items-center justify-between">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-primary mr-3" data-icon="filter_2">filter_2</span>
+<div>
+<p class="font-label-md text-label-md font-bold">Semi-Finals</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Full Standard Criteria</p>
+</div>
+</div>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<!-- Round 3 -->
+<div class="p-4 bg-primary-container text-white rounded-lg border-none flex items-center justify-between shadow-md">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-white mr-3 sx-0001" data-icon="trophy">trophy</span>
+<div>
+<p class="font-label-md text-label-md font-bold">Grand Finale</p>
+<p class="font-label-sm text-label-sm text-on-primary-container">Innovation Focus (X2 Weight)</p>
+</div>
+</div>
+<button class="text-white hover:bg-white/20 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-highest p-stack-md rounded-xl relative overflow-hidden group">
+<div class="relative z-10">
+<h5 class="font-title-lg text-title-lg text-primary mb-2">Need Help?</h5>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">Read our guide on how to balance hackathon criteria for maximum innovation.</p>
+<a class="inline-flex items-center font-label-md text-label-md text-primary font-bold group-hover:underline" href="#">
+                            Open Guide
+                            <span class="material-symbols-outlined text-sm ml-1" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-9xl text-primary/5 group-hover:text-primary/10 transition-colors" data-icon="menu_book">menu_book</span>
+</div>
+</aside>
+</div>
+<!-- Saved Templates Section -->
+<section class="mt-stack-lg">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-stack-md">Saved Templates</h4>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Template 1 -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl card-shadow border border-outline-variant/10 hover:translate-y-[-4px] transition-transform cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 bg-tertiary-fixed rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant" data-icon="code">code</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="more_vert">more_vert</span>
+</div>
+<h5 class="font-label-md text-label-md font-bold text-on-surface">Standard Dev Template</h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4">Used in 12 events</p>
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 bg-surface-container rounded font-label-sm text-label-sm">Tech (50%)</span>
+<span class="px-2 py-0.5 bg-surface-container rounded font-label-sm text-label-sm">UI (30%)</span>
+</div>
+</div>
+<!-- Template 2 -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl card-shadow border border-outline-variant/10 hover:translate-y-[-4px] transition-transform cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 bg-secondary-fixed rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-fixed-variant" data-icon="lightbulb">lightbulb</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="more_vert">more_vert</span>
+</div>
+<h5 class="font-label-md text-label-md font-bold text-on-surface">Ideation Phase</h5>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4">Used in 5 events</p>
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 bg-surface-container rounded font-label-sm text-label-sm">Concept (70%)</span>
+<span class="px-2 py-0.5 bg-surface-container rounded font-label-sm text-label-sm">Pitch (30%)</span>
+</div>
+</div>
+<!-- Template 3 -->
+<div class="bg-surface-container-lowest p-stack-md rounded-xl card-shadow border border-outline-variant/10 hover:translate-y-[-4px] transition-transform cursor-pointer border-dashed border-2 border-outline flex flex-col items-center justify-center text-center opacity-60">
+<span class="material-symbols-outlined text-4xl mb-2" data-icon="add_circle">add_circle</span>
+<p class="font-label-md text-label-md">Save current as new template</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Illustrative Background Element -->
+<div class="fixed bottom-0 right-0 p-12 -z-10 opacity-20 pointer-events-none">
+<img alt="Settings Pattern" class="w-64 h-64 grayscale opacity-30" data-alt="A sophisticated digital pattern composed of interlocking gears and abstract nodes, rendered in a minimalist line-art style. The color palette is restricted to soft indigo and cool grays, aligning with a professional light-mode SaaS dashboard. The composition is clean and airy, reinforcing an atmosphere of precision, engineering excellence, and systematic organization." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAYkkLcH1PpARFPXnzo2dA2iMCDRs7Pm0vWJ8EAw3XSRKtxGg3sseWCfoIVoM8XQMkwvyfcqYWzPNmbDU-LFAYLrccUiCMlMz4na05yBzu7QTpwBnw-0gcHTt7iKGof0eGGbiZxeqNuJNVKzifyVFsblkWxj1k6m4g5JzeRV946X1-PQkrKyhtdKLrBWwncsPPI8TTjV_ouBM426jCB5K9NCEumw0jM_OLigNBALotYeKG4kIImcCzJuirV4SYg62gieJqdUc2ivS8">
+</div>
+</body></html>
+
+<!-- Organizer Dashboard - Reports -->
+

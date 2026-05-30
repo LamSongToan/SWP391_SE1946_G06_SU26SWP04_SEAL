@@ -1,0 +1,429 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#c7c4d8",
+                        "on-secondary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#eaddff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "tertiary-fixed": "#acedff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-tertiary-fixed": "#001f26",
+                        "secondary-container": "#8a4cfc",
+                        "outline": "#777587",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "background": "#f8f9ff",
+                        "surface-variant": "#d3e4fe",
+                        "primary-fixed": "#e2dfff",
+                        "on-tertiary-container": "#93e8ff",
+                        "on-surface-variant": "#464555",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-surface": "#213145",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#006a7c",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "primary": "#3525cd",
+                        "on-primary-container": "#dad7ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "secondary": "#712ae2",
+                        "tertiary": "#00505f",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-primary-fixed": "#0f0069",
+                        "surface-tint": "#4d44e3",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-surface": "#0b1c30",
+                        "primary-container": "#4f46e5",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#e5eeff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-secondary-fixed": "#25005a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "stack-lg": "48px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "stack-sm": "12px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="fixed left-0 top-0 h-full w-64 z-50 bg-background border-r border-outline-variant/20 flex flex-col p-4 gap-stack-md">
+<div class="flex flex-col gap-1 mb-4">
+<h1 class="font-display text-headline-md text-primary tracking-tight">SEAL Mentor</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Hackathon Edition</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<!-- Assigned Categories (Inactive) -->
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="font-label-md text-label-md">Assigned Categories</span>
+</a>
+<!-- Team Progress (Active) -->
+<a class="flex items-center gap-base bg-secondary-container text-on-secondary-container rounded-lg px-4 py-2 font-bold scale-98 transition-all" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label-md text-label-md">Team Progress</span>
+</a>
+<!-- Mentoring Notes (Inactive) -->
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-md text-label-md">Mentoring Notes</span>
+</a>
+<!-- Team Discussions (Inactive) -->
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">forum</span>
+<span class="font-label-md text-label-md">Team Discussions</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-2 border-t border-outline-variant/20 pt-4">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg mb-4 hover:opacity-90 transition-opacity">
+                Support Request
+            </button>
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-base text-on-surface-variant px-4 py-2 hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen overflow-y-auto">
+<!-- TopAppBar Component -->
+<header class="sticky top-0 z-40 bg-surface-container-lowest shadow-sm flex justify-between items-center px-margin-desktop h-16 w-full border-b border-outline-variant/20">
+<div class="flex items-center gap-gutter flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/50 rounded-full py-2 pl-10 pr-4 font-body-md text-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Search teams, tags, or categories..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-stack-md">
+<div class="flex items-center gap-base">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">help_outline</span>
+</button>
+</div>
+<button class="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-all active:scale-95">
+<span class="material-symbols-outlined">add</span>
+                    New Note
+                </button>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-primary/20">
+<img alt="Mentor Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a senior software engineer acting as a mentor, featuring a friendly smile and modern spectacles. The portrait is captured in a high-end corporate studio with soft, directional lighting and a clean, minimalist background in shades of light blue and white. The overall style is authoritative yet approachable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCp69gmeeSKA1kfwMhlOhnFXrM6Mqa1P41Z8xpRpBe-2Zs1toyf7Z3yeDdKpu3Qv0AskN1mHh4c1vmKpDkMUBqZCqjWIX6dvvtrecYPecPInJdvCUlMV3r4M14YgTG0D8ywrTRpWWuLZaK17AcDSeZiJ4_NmKIG3Rgsh390mYFqrpBYoNvkyolSastBffqx1BaUTcPuT4sOamxDvK6fcVGtAj3-kXaRr52lrS1wAH4THUUpJ1nAP7iDQY5B3pwPFjiMIo4PBuO8Aw_">
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-margin-desktop max-w-container-max mx-auto w-full flex flex-col gap-stack-lg">
+<!-- Page Header & Filters -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+<div class="flex flex-col gap-2">
+<h2 class="font-headline-lg text-headline-lg text-on-background">Team Progress</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Monitoring 12 active hackathon teams across 4 technical categories.</p>
+</div>
+<div class="flex items-center gap-base">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+                        Category
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">bolt</span>
+                        Health Status
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg font-label-md text-label-md hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">sort</span>
+                        Sort by Progress
+                    </button>
+</div>
+</section>
+<!-- Teams Bento Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+<!-- Team Card 1: On Track -->
+<article class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-transparent hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+<div class="flex justify-between items-start mb-6">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Fintech Innovators</span>
+<h3 class="font-title-lg text-title-lg">Team Hyperion</h3>
+</div>
+<div class="px-3 py-1 bg-green-100 text-green-800 rounded-full flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-green-600"></div>
+<span class="font-label-sm text-label-sm">On Track</span>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Progress Tracking -->
+<div class="space-y-4">
+<div class="flex justify-between items-end mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Overall Progress</span>
+<span class="font-label-md text-label-md text-primary font-bold">85%</span>
+</div>
+<div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full sx-0001"></div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-2">
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">Ideation</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">MVP</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-outline-variant rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-center opacity-60">Final Polish</span>
+</div>
+</div>
+</div>
+<!-- Stack & Members -->
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">React</span>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">Go</span>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">PostgreSQL</span>
+</div>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-surface-dim flex items-center justify-center font-label-sm text-[10px]">JD</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-primary-container flex items-center justify-center font-label-sm text-[10px]">ML</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-secondary-container flex items-center justify-center font-label-sm text-[10px]">+2</div>
+</div>
+</div>
+</div>
+</article>
+<!-- Team Card 2: At Risk -->
+<article class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-transparent hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+<div class="flex justify-between items-start mb-6">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Sustainability Portal</span>
+<h3 class="font-title-lg text-title-lg">EcoStream</h3>
+</div>
+<div class="px-3 py-1 bg-red-100 text-red-800 rounded-full flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-red-600"></div>
+<span class="font-label-sm text-label-sm">At Risk</span>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Progress Tracking -->
+<div class="space-y-4">
+<div class="flex justify-between items-end mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Overall Progress</span>
+<span class="font-label-md text-label-md text-error font-bold">32%</span>
+</div>
+<div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full sx-0001"></div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-2">
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">Ideation</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-outline-variant rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-center opacity-60">MVP</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-outline-variant rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-center opacity-60">Final Polish</span>
+</div>
+</div>
+</div>
+<!-- Stack & Members -->
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">Vue.js</span>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">Python</span>
+</div>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-tertiary-fixed-dim flex items-center justify-center font-label-sm text-[10px]">AS</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-secondary-fixed flex items-center justify-center font-label-sm text-[10px]">KP</div>
+</div>
+</div>
+</div>
+</article>
+<!-- Team Card 3: Needs Review -->
+<article class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-transparent hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+<div class="flex justify-between items-start mb-6">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Web3 Gaming</span>
+<h3 class="font-title-lg text-title-lg">Solana Quest</h3>
+</div>
+<div class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-orange-600 animate-pulse"></div>
+<span class="font-label-sm text-label-sm">Needs Mentor</span>
+</div>
+</div>
+<div class="space-y-6">
+<div class="space-y-4">
+<div class="flex justify-between items-end mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Overall Progress</span>
+<span class="font-label-md text-label-md text-secondary font-bold">58%</span>
+</div>
+<div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full sx-0001"></div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-2">
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">Ideation</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-secondary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">MVP</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-outline-variant rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-center opacity-60">Final Polish</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">Next.js</span>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">Rust</span>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">Solana SDK</span>
+</div>
+<button class="text-primary font-label-sm text-label-sm hover:underline">View Notes</button>
+</div>
+</div>
+</article>
+<!-- Team Card 4: High Performer -->
+<article class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05),0_2px_4px_-2px_rgba(0,0,0,0.05)] border border-transparent hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+<div class="flex justify-between items-start mb-6">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest">AI Analytics</span>
+<h3 class="font-title-lg text-title-lg">NeuralNode</h3>
+</div>
+<div class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full flex items-center gap-1">
+<div class="w-2 h-2 rounded-full bg-blue-600"></div>
+<span class="font-label-sm text-label-sm">Excelling</span>
+</div>
+</div>
+<div class="space-y-6">
+<div class="space-y-4">
+<div class="flex justify-between items-end mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Overall Progress</span>
+<span class="font-label-md text-label-md text-primary font-bold">92%</span>
+</div>
+<div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full sx-0001"></div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-2">
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">Ideation</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">MVP</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="h-1 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface text-center">Final Polish</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">PyTorch</span>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">FastAPI</span>
+<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant rounded text-xs font-medium">Redis</span>
+</div>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-on-tertiary-container flex items-center justify-center font-label-sm text-[10px]">TR</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-inverse-primary flex items-center justify-center font-label-sm text-[10px]">LM</div>
+</div>
+</div>
+</div>
+</article>
+</section>
+<!-- Technical Mentoring Summary Section -->
+<section class="bg-surface-container-low rounded-xl p-stack-md flex flex-col md:flex-row gap-gutter items-center">
+<div class="flex-1 space-y-2">
+<h3 class="font-title-lg text-title-lg text-on-surface">Weekly Mentor Insight</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">The "Fintech" category is seeing the most technical friction this week, particularly with integration testing. Consider scheduling a group office hour for teams working with complex APIs.</p>
+</div>
+<div class="flex gap-stack-md border-l border-outline-variant/30 pl-gutter">
+<div class="text-center">
+<p class="font-display text-headline-md text-primary">4</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Review Calls</p>
+</div>
+<div class="text-center">
+<p class="font-display text-headline-md text-secondary">12</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Pull Requests</p>
+</div>
+<div class="text-center">
+<p class="font-display text-headline-md text-tertiary">98%</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Uptime Avg</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- FAB (Suppressed based on context: Details/Transactional Screen) -->
+<!-- Not rendering FAB here as it's a dashboard management view -->
+</body></html>
+
+<!-- Mentor Dashboard - Team Discussions -->
+

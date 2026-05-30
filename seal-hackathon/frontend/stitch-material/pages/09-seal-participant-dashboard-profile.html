@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL Participant Dashboard - Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#8a4cfc",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "primary": "#3525cd",
+                        "on-secondary-container": "#fffbff",
+                        "on-surface-variant": "#464555",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#93e8ff",
+                        "background": "#f8f9ff",
+                        "primary-container": "#4f46e5",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-bright": "#f8f9ff",
+                        "secondary": "#712ae2",
+                        "surface-container": "#e5eeff",
+                        "on-surface": "#0b1c30",
+                        "secondary-fixed": "#eaddff",
+                        "on-primary-container": "#dad7ff",
+                        "surface-variant": "#d3e4fe",
+                        "primary-fixed": "#e2dfff",
+                        "on-secondary-fixed": "#25005a",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "outline": "#777587",
+                        "on-background": "#0b1c30",
+                        "tertiary-container": "#006a7c",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface": "#f8f9ff",
+                        "on-tertiary-fixed": "#001f26",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "outline-variant": "#c7c4d8",
+                        "surface-dim": "#cbdbf5",
+                        "inverse-primary": "#c3c0ff",
+                        "tertiary-fixed": "#acedff",
+                        "tertiary": "#00505f",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#4d44e3",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "margin-desktop": "32px",
+                        "stack-md": "24px",
+                        "stack-lg": "48px",
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "stack-sm": "12px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 z-50 w-full h-16 flex justify-between items-center px-margin-desktop bg-surface shadow-sm border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<span class="font-display text-headline-md font-bold text-primary">SEAL</span>
+<div class="hidden md:flex ml-8 items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-md font-label-md w-64" placeholder="Search competitions..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors" data-icon="settings">settings</button>
+<div class="h-10 w-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container border-2 border-surface shadow-sm overflow-hidden">
+<img alt="Participant Profile" class="w-full h-full object-cover" data-alt="A clean, professional headshot of a young male software engineer with a friendly expression. He is photographed in a bright, modern office setting with soft, natural lighting. The image maintains a high-key aesthetic with a focus on professional clarity and a modern corporate feel, aligning with the SEAL league's academic prestige." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCd_Ct3TSKQaSIapriBPy2sla7V-u-H3RLI9tB5jCEU4wCrxeINeY9w07UqVHMPBm2kAbZpv3FYQc7U2vm37S7dopttjI529mh2DegffXTokQ1TiU_bVATY8XCX3IpMmP3RV25q4vSD4aEmpZuHa406DnPOmsXQxauxxOh_DAv56G7v_-7yiYs6-gfRUMaQbbi7vufgpligPxH_72sDevk6fTFnz0g_FPHFY0JwACPByDMo3qOyTJB51CzIRUm9Vx52gOdpXOnz0TS3">
+</div>
+</div>
+</header>
+<div class="flex pt-16 min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 hidden lg:flex flex-col w-72 h-[calc(100vh-64px)] bg-surface-container-low border-r border-outline-variant py-stack-md">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]" data-icon="shield">shield</span>
+</div>
+<div>
+<p class="font-display text-title-lg font-black text-primary leading-none">SEAL Participant</p>
+<p class="font-body-md text-label-sm text-on-surface-variant">Agile League Dashboard</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Profile (Active) -->
+<a class="flex items-center gap-stack-sm bg-primary-container text-on-primary-container rounded-xl px-4 py-3 mx-4 font-label-md transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="">Profile</span>
+</a>
+<!-- Notifications -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 mx-4 font-label-md transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="">Notifications</span>
+</a>
+<!-- My Teams -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 mx-4 font-label-md transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="">My Teams</span>
+</a>
+<!-- Event Participation -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 mx-4 font-label-md transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="">Event Participation</span>
+</a>
+<!-- Submissions -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 mx-4 font-label-md transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span class="">Submissions</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full py-4 px-4 bg-primary text-white rounded-xl font-label-md flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                    Register for New Event
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-72 p-margin-mobile md:p-margin-desktop bg-background">
+<div class="max-w-container-max mx-auto space-y-stack-md">
+<!-- Profile Header Card (Asymmetric Layout) -->
+<section class="bg-surface-container-lowest rounded-xl shadow-level-1 overflow-hidden">
+<div class="bg-primary relative h-24">
+<div class="absolute inset-0 opacity-20 sx-0001"></div>
+</div>
+<div class="px-stack-md pb-stack-md relative">
+<div class="flex flex-col md:flex-row gap-6 items-end md:items-center mt-6">
+<div class="relative">
+<div class="w-32 h-32 rounded-2xl border-4 border-surface shadow-lg overflow-hidden bg-white">
+<img alt="Alex Nguyen Profile" class="w-full h-full object-cover" data-alt="A highly detailed close-up portrait of Alex Nguyen, a 22-year-old student with a focused and intelligent expression. He has short dark hair and is wearing a modern charcoal hoodie. The background is a blurred university campus with architectural lines of a library. The lighting is crisp and cool-toned, emphasizing professional academic excellence and technical readiness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVYdML0Bqdtzhq5vpVt7tFT5ztZelkO7VDhUpoamjkIyR9Pv3bzs-8yJWH3GV_CYbpgHMkK_toEDMdt_OjqHTdv-WTkkcT67akBLtlgkTdtqpPTeQ-JoZLDdbHhNU3VCZlHZEPlRi0Zr3wpQbRO6W0MwZt1PGy5zl-UX7H7kji0cARJakA7nQLs4Q6-KVz6iLRHe6S7Hy3beHlsuVvuHuuDOJzyk21_fuqmR0ky6hcVoKKbIFxvm8WqAdjJngoCaI8an1UZ0RDfFT3">
+</div>
+</div>
+<div class="flex-1 text-center md:text-left">
+<h1 class="font-headline-md text-headline-md text-on-surface mb-1">Alex Nguyen</h1>
+<p class="font-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="school">school</span>
+                                    Stanford University â€¢ Computer Science
+                                </p>
+</div>
+<div class="w-full md:w-auto">
+<button class="w-full md:w-auto px-6 py-2.5 bg-primary text-white font-label-md rounded-lg flex items-center justify-center gap-2 transition-all hover:translate-y-[-2px]">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+                                    Edit Profile
+                                </button>
+</div>
+</div>
+<div class="mt-8 max-w-2xl">
+<h2 class="font-label-sm text-label-sm uppercase text-outline mb-2">Bio</h2>
+<p class="font-body-md text-on-surface-variant">
+                                Passionate about building scalable distributed systems and agile team dynamics. Currently focusing on Go and Cloud Infrastructure. 3-time hackathon winner with a focus on social impact engineering.
+                            </p>
+</div>
+</div>
+</section>
+<!-- Stats Grid (Bento Grid Style) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-stack-md">
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-level-1 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-primary mb-2 text-[32px]" data-icon="analytics">analytics</span>
+<p class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Academic GPA</p>
+<p class="font-display text-[40px] font-bold text-on-surface">3.92</p>
+<div class="mt-2 text-label-sm text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-semibold">Top 5% in Major</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-level-1 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-secondary mb-2 text-[32px]" data-icon="workspace_premium">workspace_premium</span>
+<p class="font-label-sm text-label-sm text-outline uppercase tracking-wider">SEAL Rank</p>
+<p class="font-display text-[40px] font-bold text-on-surface">Platinum I</p>
+<div class="mt-2 text-label-sm text-secondary bg-secondary-container/10 px-2 py-0.5 rounded-full font-semibold">Division: Agile Sprints</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md rounded-xl shadow-level-1 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-tertiary-container mb-2 text-[32px]" data-icon="credit_score">credit_score</span>
+<p class="font-label-sm text-label-sm text-outline uppercase tracking-wider">League Credits</p>
+<p class="font-display text-[40px] font-bold text-on-surface">1,450</p>
+<div class="mt-2 text-label-sm text-on-tertiary-fixed-variant bg-tertiary-fixed px-2 py-0.5 rounded-full font-semibold">Ready for redemption</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-md">
+<!-- Technical Skills (6 columns) -->
+<section class="lg:col-span-7 bg-surface-container-lowest p-stack-md rounded-xl shadow-level-1">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-title-lg text-on-surface">Technical Arsenal</h3>
+<button class="text-primary font-label-md hover:underline">Manage Skills</button>
+</div>
+<div class="flex flex-wrap gap-3">
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">React</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">TypeScript</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">Go (Golang)</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">System Design</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">Agile Scrum</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">PostgreSQL</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">Docker</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">Kubernetes</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">Tailwind CSS</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">CI/CD Pipelines</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">Python</span>
+<span class="skill-tag px-4 py-2 rounded-lg font-label-md">Redis</span>
+</div>
+</section>
+<!-- Recent Activity (5 columns) -->
+<section class="lg:col-span-5 bg-surface-container-lowest p-stack-md rounded-xl shadow-level-1">
+<h3 class="font-headline-md text-title-lg text-on-surface mb-6">Recent Activity</h3>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="assignment_turned_in">assignment_turned_in</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Submitted Sprint 4 Deliverables</p>
+<p class="font-label-sm text-outline">Agile Hackathon 2024 â€¢ 2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]" data-icon="group_add">group_add</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Joined Team "Byte Busters"</p>
+<p class="font-label-sm text-outline">Cloud Engineering Meet â€¢ Yesterday</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]" data-icon="military_tech">military_tech</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Earned "Clean Code" Badge</p>
+<p class="font-label-sm text-outline">Submission Review â€¢ 3 days ago</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-3 text-primary font-label-md hover:bg-surface-container-low rounded-lg transition-colors border border-outline-variant">
+                            View Full History
+                        </button>
+</section>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation Bar -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface shadow-[0_-4px_10px_rgba(0,0,0,0.05)] h-16 flex items-center justify-around z-50">
+<button class="flex flex-col items-center text-primary transition-all">
+<span class="material-symbols-outlined sx-0001" data-icon="person">person</span>
+<span class="text-[10px] font-label-md">Profile</span>
+</button>
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-[10px] font-label-md">Teams</span>
+</button>
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="text-[10px] font-label-md">Events</span>
+</button>
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="text-[10px] font-label-md">Alerts</span>
+</button>
+</nav>
+
+
+</body></html>
+
+<!-- Participant Dashboard - Notifications -->
+

@@ -1,0 +1,391 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL | Software Engineering Agile League</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "inverse-surface": "#213145",
+                        "secondary-container": "#8a4cfc",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-surface": "#0b1c30",
+                        "inverse-primary": "#c3c0ff",
+                        "tertiary-container": "#006a7c",
+                        "outline": "#777587",
+                        "secondary": "#712ae2",
+                        "primary": "#3525cd",
+                        "outline-variant": "#c7c4d8",
+                        "surface": "#f8f9ff",
+                        "tertiary-fixed": "#acedff",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#464555",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "primary-container": "#4f46e5",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed": "#001f26",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "surface-container-high": "#dce9ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-fixed": "#0f0069",
+                        "tertiary": "#00505f",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#4d44e3",
+                        "primary-fixed": "#e2dfff",
+                        "on-secondary-container": "#fffbff",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#93e8ff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-low": "#eff4ff",
+                        "background": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "on-background": "#0b1c30",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#eaddff",
+                        "on-secondary-fixed": "#25005a",
+                        "on-primary-container": "#dad7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "stack-md": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "stack-sm": "12px",
+                        "container-max": "1280px",
+                        "margin-desktop": "32px",
+                        "stack-lg": "48px"
+                    },
+                    "fontFamily": {
+                        "display": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface shadow-sm border-b border-outline-variant/30 h-20">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-full">
+<div class="flex items-center gap-12">
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">SEAL</span>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-label-md text-label-md" href="#">About SEAL</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-label-md text-label-md" href="#">Upcoming Events</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-label-md text-label-md" href="#">Past Events</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-label-md text-label-md" href="#">Awards</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-label-md text-label-md" href="#">Contact</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary font-semibold px-6 py-2 hover:bg-primary/5 rounded-lg transition-colors font-label-md text-label-md">Login</button>
+<button class="bg-primary text-white font-semibold px-6 py-2 rounded-lg shadow-sm hover:bg-primary-container transition-all active:scale-95 font-label-md text-label-md">Register</button>
+</div>
+</div>
+</nav>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="relative overflow-hidden bg-surface py-stack-lg min-h-[716px] flex items-center">
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary to-transparent"></div>
+<div class="absolute -bottom-24 -left-24 w-96 h-96 bg-secondary-container rounded-full blur-3xl"></div>
+</div>
+<div class="relative w-full px-margin-desktop max-w-container-max mx-auto grid md:grid-cols-2 gap-12 items-center">
+<div class="space-y-stack-md">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">school</span>
+                        FPT University Academic League
+                    </div>
+<h1 class="font-display text-display text-on-surface leading-tight">
+                        Elevate Your <span class="text-primary">Engineering</span> Journey.
+                    </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        Join the Software Engineering Agile League at FPT University. A premier ecosystem for student developers to compete, innovate, and master agile methodologies.
+                    </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<div class="flex items-center gap-3 px-4 py-3 bg-white border border-outline-variant/30 rounded-xl shadow-sm">
+<span class="material-symbols-outlined text-primary">eco</span>
+<span class="font-label-md text-label-md font-semibold">Spring</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 bg-white border border-outline-variant/30 rounded-xl shadow-sm">
+<span class="material-symbols-outlined text-primary">wb_sunny</span>
+<span class="font-label-md text-label-md font-semibold">Summer</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 bg-white border border-outline-variant/30 rounded-xl shadow-sm">
+<span class="material-symbols-outlined text-primary">potted_plant</span>
+<span class="font-label-md text-label-md font-semibold">Fall</span>
+</div>
+</div>
+</div>
+<div class="hidden md:block">
+<div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+<img class="w-full aspect-[4/3] object-cover" data-alt="A group of diverse university students collaborating in a high-tech modern hackathon environment. The scene is brightly lit with a clean, academic white-mode aesthetic, featuring students gathered around sleek workstations with code on multiple monitors. The lighting is soft and professional, highlighting a focused yet creative atmosphere with subtle indigo and white color accents consistent with a high-end SaaS platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYq0oll6FK0xFT7Ys_fyZvMl7Tg3N29D4f8TDj9ZxJyR4AtRjq-8eJH8U3SXQjrBkt5nmxeFG2-WxQMjFTpEryHbNy9zWDjS4YJ3ofOU186wNaaUi0l7d73rmrh9Hogz9PLvTrxDA6bvtXmEHV8OhLa8ZjB0TaS1P3VKolu6XmDzLkt_nWDgbwqHOCpEfK4my_XxEf23KF4s5THu7Zk7J4kXQK7P7EkrzdwxmuhGwuZiK-qQmUllXY2GRWWPSlYlRfPw4Rzw87Fu-P">
+</div>
+</div>
+</div>
+</section>
+<!-- Upcoming Events (Dashboard Grid) -->
+<section class="py-stack-lg bg-surface-container-low">
+<div class="px-margin-desktop max-w-container-max mx-auto">
+<div class="flex justify-between items-end mb-stack-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Upcoming Events</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">The road to innovation starts here.</p>
+</div>
+<a class="text-primary font-semibold flex items-center gap-1 hover:underline" href="#">
+                        View All Events <span class="material-symbols-outlined">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Event Card 1 (Active/Primary) -->
+<div class="level-1-card p-stack-md border-t-4 border-primary">
+<div class="flex justify-between items-start mb-6">
+<span class="px-2 py-1 bg-primary/10 text-primary rounded text-[10px] font-bold uppercase tracking-wider">Summer 2024</span>
+<span class="text-on-surface-variant font-medium font-label-sm text-label-sm">In 24 Days</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">SEAL Summer Hackathon</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Theme: Sustainable Smart City Solutions using Microservices.</p>
+<div class="space-y-4 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[20px]">calendar_today</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Preliminary Round</p>
+<p class="font-label-md text-label-md font-bold text-on-surface">July 15, 2024</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[20px]">emoji_events</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Final Grand Round</p>
+<p class="font-label-md text-label-md font-bold text-on-surface">August 02, 2024</p>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-primary-container transition-all">Register Team</button>
+</div>
+<!-- Event Card 2 -->
+<div class="level-1-card p-stack-md border-t-4 border-outline-variant">
+<div class="flex justify-between items-start mb-6">
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant rounded text-[10px] font-bold uppercase tracking-wider">Workshop</span>
+<span class="text-on-surface-variant font-medium font-label-sm text-label-sm">June 10, 2024</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Agile &amp; Scrum Mastery</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Technical deep-dive into high-velocity engineering teams.</p>
+<div class="mb-8">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-white bg-surface-container-high flex items-center justify-center text-[10px] font-bold">JD</div>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-surface-container-high flex items-center justify-center text-[10px] font-bold text-primary">AL</div>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-primary text-white flex items-center justify-center text-[10px] font-bold">+120</div>
+</div>
+<p class="mt-2 font-label-sm text-label-sm text-on-surface-variant italic">Join 120+ students attending</p>
+</div>
+<button class="w-full border-1.5 border-primary text-primary font-bold py-3 rounded-lg hover:bg-primary/5 transition-all">Save My Seat</button>
+</div>
+<!-- Event Card 3 -->
+<div class="level-1-card p-stack-md border-t-4 border-outline-variant">
+<div class="flex justify-between items-start mb-6">
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant rounded text-[10px] font-bold uppercase tracking-wider">Fall 2024</span>
+<span class="text-on-surface-variant font-medium font-label-sm text-label-sm">Coming Soon</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">SEAL Fall Open</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">The premier league finale for the academic year 2024.</p>
+<div class="flex flex-col gap-2 mb-8">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Interest Gauge</p>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full sx-0001"></div>
+</div>
+<p class="text-right font-label-sm text-label-sm text-primary font-bold">65% Capacity Notified</p>
+</div>
+<button class="w-full text-on-surface-variant border border-outline-variant font-bold py-3 rounded-lg hover:bg-surface-container transition-all">Notify Me</button>
+</div>
+</div>
+</div>
+</section>
+<!-- About SEAL Section -->
+<section class="py-stack-lg bg-surface">
+<div class="px-margin-desktop max-w-container-max mx-auto">
+<div class="grid md:grid-cols-2 gap-16 items-center">
+<div class="grid grid-cols-2 gap-4">
+<div class="level-1-card p-6 bg-primary/5 border border-primary/10">
+<span class="material-symbols-outlined text-primary text-[40px] mb-4">account_balance</span>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-2">Department Led</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Guided by the FPT University Software Engineering faculty for academic excellence.</p>
+</div>
+<div class="level-1-card p-6 mt-8">
+<span class="material-symbols-outlined text-primary text-[40px] mb-4">bolt</span>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-2">Agile Focus</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Bridging the gap between classroom theory and industry-grade agile production.</p>
+</div>
+<div class="level-1-card p-6 -mt-8">
+<span class="material-symbols-outlined text-primary text-[40px] mb-4">group_work</span>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-2">PDP Support</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Collaborative organization by the Personal Development Program office.</p>
+</div>
+<div class="level-1-card p-6 bg-secondary-container/5 border border-secondary-container/10">
+<span class="material-symbols-outlined text-secondary text-[40px] mb-4">verified</span>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-2">Industry Ready</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Projects are evaluated by top tech leads from our global partner network.</p>
+</div>
+</div>
+<div class="space-y-6">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">The Academic Backbone of Innovation</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                            SEAL is not just a competition; it is a meticulously designed pedagogical framework. Organized by the <strong>Software Engineering Department</strong> and <strong>PDP</strong>, we foster a culture of rapid iteration and excellence.
+                        </p>
+<ul class="space-y-4">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary sx-0001">check_circle</span>
+<span class="font-body-md text-body-md">Standardized SCRUM assessment for all teams</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary sx-0001">check_circle</span>
+<span class="font-body-md text-body-md">Mentorship from senior faculty and tech partners</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary sx-0001">check_circle</span>
+<span class="font-body-md text-body-md">Curriculum-aligned project challenges</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- Past Events & Awards (Statistics) -->
+<section class="py-stack-lg bg-inverse-surface text-inverse-on-surface overflow-hidden relative">
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<div class="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#3525cd,transparent)]"></div>
+</div>
+<div class="relative px-margin-desktop max-w-container-max mx-auto text-center">
+<h2 class="font-headline-lg text-headline-lg mb-12">SEAL Global Impact</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-16">
+<div class="space-y-2">
+<p class="text-[48px] font-extrabold text-primary-fixed-dim">500+</p>
+<p class="font-label-md text-label-md opacity-80 uppercase tracking-widest">Participants</p>
+</div>
+<div class="space-y-2">
+<p class="text-[48px] font-extrabold text-primary-fixed-dim">50+</p>
+<p class="font-label-md text-label-md opacity-80 uppercase tracking-widest">Active Teams</p>
+</div>
+<div class="space-y-2">
+<p class="text-[48px] font-extrabold text-primary-fixed-dim">30+</p>
+<p class="font-label-md text-label-md opacity-80 uppercase tracking-widest">Partner Universities</p>
+</div>
+<div class="space-y-2">
+<p class="text-[48px] font-extrabold text-primary-fixed-dim">12</p>
+<p class="font-label-md text-label-md opacity-80 uppercase tracking-widest">Successful Leagues</p>
+</div>
+</div>
+<div class="grid md:grid-cols-2 gap-gutter text-left">
+<div class="level-1-card bg-surface-container-highest/10 border border-white/10 p-stack-md backdrop-blur-sm">
+<h4 class="font-title-lg text-title-lg mb-6">Recent Growth Metrics</h4>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between mb-2">
+<span class="font-label-md text-label-md">Team Diversity</span>
+<span class="font-label-md text-label-md">85%</span>
+</div>
+<div class="h-2 bg-white/10 rounded-full">
+<div class="h-full bg-primary-fixed-dim rounded-full sx-0001"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<span class="font-label-md text-label-md">Project Completion Rate</span>
+<span class="font-label-md text-label-md">94%</span>
+</div>
+<div class="h-2 bg-white/10 rounded-full">
+<div class="h-full bg-tertiary-fixed-dim rounded-full sx-0001"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="level-1-card bg-surface-container-highest/10 border border-white/10 p-stack-md backdrop-blur-sm">
+<h4 class="font-title-lg text-title-lg mb-4">Elite Hall of Fame</h4>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-fixed">trophy</span>
+<span class="font-body-md">Team "Nexus Devs"</span>
+</div>
+<span class="text-primary-fixed-dim font-bold">Spring '24 Champions</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant">military_tech</span>
+<span class="font-body-md">Team "Agile Architects"</span>
+</div>
+<span class="text-primary-fixed-dim font-bold">Most Innovative Award</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container border-t border-outline-variant/20 w-full py-stack-lg">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto gap-stack-md">
+<div class="flex flex-col items-center md:items-start gap-4">
+<span class="font-title-lg text-title-lg font-bold text-on-surface">SEAL</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-center md:text-left max-w-md">
+                    Â© 2024 Software Engineering Agile League (SEAL). FPT University Department of Software Engineering.
+                </p>
+</div>
+<div class="flex gap-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-sm text-label-sm" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-sm text-label-sm" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-sm text-label-sm" href="#">Support Center</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-sm text-label-sm" href="#">Faculty Portal</a>
+</div>
+</div>
+</footer>
+</body></html>
+
+<!-- Past Events Archive -->
+

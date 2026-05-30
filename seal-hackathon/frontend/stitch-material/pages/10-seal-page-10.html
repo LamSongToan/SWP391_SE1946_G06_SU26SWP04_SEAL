@@ -1,0 +1,338 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-container-high": "#dce9ff",
+                        "on-surface": "#0b1c30",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "on-secondary-fixed": "#25005a",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f8f9ff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#eaddff",
+                        "tertiary": "#00505f",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed": "#001f26",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-container": "#e5eeff",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#464555",
+                        "inverse-on-surface": "#eaf1ff",
+                        "background": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "outline-variant": "#c7c4d8",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#006a7c",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#e2dfff",
+                        "surface-tint": "#4d44e3",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "secondary": "#712ae2",
+                        "on-tertiary-container": "#93e8ff",
+                        "on-primary-container": "#dad7ff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "primary": "#3525cd",
+                        "on-primary-fixed": "#0f0069",
+                        "secondary-container": "#8a4cfc",
+                        "on-secondary-container": "#fffbff",
+                        "on-background": "#0b1c30",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "primary-container": "#4f46e5",
+                        "tertiary-fixed": "#acedff",
+                        "outline": "#777587",
+                        "on-tertiary-fixed-variant": "#004e5c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "24px",
+                        "stack-lg": "48px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "stack-sm": "12px",
+                        "margin-desktop": "32px"
+                    }
+                }
+            }
+        }
+    </script>
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- SideNavBar (Persistent) -->
+<aside class="fixed left-0 top-0 hidden lg:flex flex-col py-stack-md bg-surface-container-low dark:bg-surface-dim border-r border-outline-variant h-screen w-72 z-40">
+<div class="px-6 mb-8">
+<h1 class="font-display text-title-lg font-black text-primary dark:text-primary-fixed-dim">SEAL</h1>
+<p class="text-on-surface-variant font-label-md text-[14px]">Agile League Dashboard</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<!-- Profile -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-[14px]">Profile</span>
+</a>
+<!-- Notifications (ACTIVE) -->
+<a class="flex items-center gap-stack-sm bg-primary-container text-on-primary-container rounded-xl px-4 py-3 mx-2 scale-98 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined sx-0001">notifications</span>
+<span class="font-label-md text-[14px]">Notifications</span>
+</a>
+<!-- My Teams -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-[14px]">My Teams</span>
+</a>
+<!-- Event Participation -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-label-md text-[14px]">Event Participation</span>
+</a>
+<!-- Submissions -->
+<a class="flex items-center gap-stack-sm text-on-surface-variant dark:text-outline-variant px-4 py-3 mx-2 hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-200" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+<span class="font-label-md text-[14px]">Submissions</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full py-3 bg-primary text-white rounded-xl font-label-md text-[14px] hover:opacity-90 transition-opacity">
+                Register for New Event
+            </button>
+</div>
+</aside>
+<!-- Main Wrapper -->
+<div class="lg:pl-72 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 bg-surface dark:bg-inverse-surface shadow-sm border-b border-outline-variant h-16 w-full flex justify-between items-center px-margin-desktop">
+<div class="flex items-center gap-4">
+<div class="md:hidden">
+<span class="material-symbols-outlined text-primary">menu</span>
+</div>
+<div class="bg-surface-container border border-outline-variant rounded-full px-4 py-1.5 flex items-center gap-2 max-w-md">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 lg:w-64" placeholder="Search competitions..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors duration-200 p-2 rounded-full">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border border-surface"></span>
+</button>
+<button class="hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors duration-200 p-2 rounded-full">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">settings</span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant">
+<img alt="Participant Profile" class="w-8 h-8 rounded-full border border-primary-container" data-alt="A professional studio portrait of a young adult software engineering student in a clean, minimalist setting. The person has a focused and confident expression, wearing a smart-casual dark polo shirt. The lighting is bright and even, reflecting a high-end corporate light-mode aesthetic with a blurred tech office background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJvBDpILkZDbfWijCa9HJPxX1yu23IiIttWBAqmOxBHiVFZemNMUnIp9E8wv0Ez-zZchsnVevxi_I89W-QrI-hQd14FNgJpRQx27rQxv13ibXF06aWT9sypOjVntsUCs8CAWEgnE3zPDRe69tzwV6XW0gFZO82xGlntbXd__1BePpjxPnJWkfUDwijG3MYPgdtvQrC1cov5rSmLZ8lqrPUI7kmh2GFcmWsk31jOeofO9K2c1LpvwopuKSCO8VF2H4vRLUSTPH7cg5s">
+<div class="hidden sm:block">
+<p class="font-label-md text-[14px] text-on-surface font-bold">Alex Rivers</p>
+<p class="text-[12px] text-on-surface-variant">Lvl 4 Contributor</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 bg-surface-bright p-margin-desktop lg:p-stack-lg max-w-container-max mx-auto w-full">
+<!-- Notifications Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-stack-md">
+<div>
+<h2 class="font-headline-md text-[24px] text-on-surface font-semibold tracking-tight">Notifications</h2>
+<p class="text-on-surface-variant text-[16px] font-body-md mt-1">Stay updated with your teams and event progress.</p>
+</div>
+<button class="flex items-center gap-2 text-primary font-label-md text-[14px] px-4 py-2 hover:bg-primary-fixed rounded-lg transition-colors">
+<span class="material-symbols-outlined text-[20px]">done_all</span>
+                    Mark all as read
+                </button>
+</div>
+<!-- Content Area: White Container -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden border border-outline-variant/30">
+<!-- Filters Tabs -->
+<div class="flex items-center gap-2 px-6 py-4 border-b border-outline-variant bg-white">
+<button class="px-4 py-1.5 rounded-full bg-primary text-white font-label-md text-[14px]">All</button>
+<button class="px-4 py-1.5 rounded-full hover:bg-surface-container-low text-on-surface-variant font-label-md text-[14px] transition-colors">Unread</button>
+<button class="px-4 py-1.5 rounded-full hover:bg-surface-container-low text-on-surface-variant font-label-md text-[14px] transition-colors">Teams</button>
+<button class="px-4 py-1.5 rounded-full hover:bg-surface-container-low text-on-surface-variant font-label-md text-[14px] transition-colors">Events</button>
+<button class="px-4 py-1.5 rounded-full hover:bg-surface-container-low text-on-surface-variant font-label-md text-[14px] transition-colors">System</button>
+</div>
+<!-- Notification List -->
+<div class="divide-y divide-outline-variant/30">
+<!-- Item 1: Team Invite (Unread) -->
+<div class="group relative flex gap-4 p-6 bg-surface-container-low/50 hover:bg-surface-container hover:translate-y-[-1px] transition-all duration-200">
+<div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white sx-0001">group</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-title-lg text-[16px] text-on-surface font-bold truncate">Team Invite Received</h4>
+<span class="w-2 h-2 bg-primary rounded-full"></span>
+</div>
+<p class="text-on-surface-variant text-[14px] leading-relaxed mb-2">
+<span class="font-semibold text-primary">Byte Busters</span> invited you to join their team for SEAL Summer 2024.
+                            </p>
+<div class="flex items-center gap-4">
+<span class="text-outline text-[12px] font-label-sm">2 hours ago</span>
+<div class="flex gap-2">
+<button class="text-[12px] font-bold text-white bg-primary px-3 py-1 rounded-md hover:shadow-md transition-all">Accept</button>
+<button class="text-[12px] font-bold text-on-surface-variant border border-outline-variant px-3 py-1 rounded-md hover:bg-white transition-all">Decline</button>
+</div>
+</div>
+</div>
+<div class="opacity-0 group-hover:opacity-100 flex gap-2 self-start transition-opacity">
+<button class="p-2 text-outline hover:text-primary transition-colors" title="Mark as read">
+<span class="material-symbols-outlined text-[20px]">drafts</span>
+</button>
+<button class="p-2 text-outline hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Event Update (Read) -->
+<div class="group relative flex gap-4 p-6 hover:bg-surface-container-low transition-all duration-200">
+<div class="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white sx-0001">event_note</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-title-lg text-[16px] text-on-surface font-bold truncate">Rulebook Updated</h4>
+</div>
+<p class="text-on-surface-variant text-[14px] leading-relaxed mb-2">
+                                The Rulebook for SEAL Summer 2024 has been updated. Please review Section 4.2 for new submission guidelines.
+                            </p>
+<span class="text-outline text-[12px] font-label-sm">Yesterday, 4:30 PM</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 flex gap-2 self-start transition-opacity">
+<button class="p-2 text-outline hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Item 3: Submission Confirmation (Unread) -->
+<div class="group relative flex gap-4 p-6 bg-surface-container-low/50 hover:bg-surface-container transition-all duration-200">
+<div class="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white sx-0001">verified</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-title-lg text-[16px] text-on-surface font-bold truncate">Submission Verified</h4>
+<span class="w-2 h-2 bg-primary rounded-full"></span>
+</div>
+<p class="text-on-surface-variant text-[14px] leading-relaxed mb-2">
+                                Your <span class="font-medium text-on-surface">Sprint 4 deliverables</span> have been successfully verified by the judging panel.
+                            </p>
+<span class="text-outline text-[12px] font-label-sm">May 14, 2024</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 flex gap-2 self-start transition-opacity">
+<button class="p-2 text-outline hover:text-primary transition-colors" title="Mark as read">
+<span class="material-symbols-outlined text-[20px]">drafts</span>
+</button>
+<button class="p-2 text-outline hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Item 4: Milestone Badge (Read) -->
+<div class="group relative flex gap-4 p-6 hover:bg-surface-container-low transition-all duration-200">
+<div class="w-12 h-12 rounded-xl bg-secondary-fixed-dim flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-secondary-fixed sx-0001">workspace_premium</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-title-lg text-[16px] text-on-surface font-bold truncate">New Badge Earned</h4>
+</div>
+<p class="text-on-surface-variant text-[14px] leading-relaxed mb-2">
+                                Congratulations! You've earned the <span class="text-secondary font-bold">"Clean Code"</span> badge for maintaining zero linting errors across 5 repositories.
+                            </p>
+<span class="text-outline text-[12px] font-label-sm">May 12, 2024</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 flex gap-2 self-start transition-opacity">
+<button class="p-2 text-outline hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Item 5: System Maintenance (Read) -->
+<div class="group relative flex gap-4 p-6 hover:bg-surface-container-low transition-all duration-200">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-outline">settings_suggest</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-title-lg text-[16px] text-on-surface font-bold truncate">Scheduled Maintenance</h4>
+</div>
+<p class="text-on-surface-variant text-[14px] leading-relaxed mb-2">
+                                The SEAL Participant portal will be undergoing scheduled maintenance this Sunday from 2:00 AM to 4:00 AM UTC.
+                            </p>
+<span class="text-outline text-[12px] font-label-sm">May 10, 2024</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 flex gap-2 self-start transition-opacity">
+<button class="p-2 text-outline hover:text-error transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Pagination/Load More -->
+<div class="bg-surface p-4 flex justify-center border-t border-outline-variant/30">
+<button class="text-primary font-label-md text-[14px] flex items-center gap-2 hover:underline">
+                        View older notifications
+                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Contextual Stats Card (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mt-stack-md">
+<div class="bg-primary-container text-white p-6 rounded-xl shadow-sm">
+<h5 class="font-label-md text-[14px] opacity-80 mb-2 uppercase tracking-wider">Unread Messages</h5>
+<p class="font-display text-[32px] font-bold">02</p>
+<div class="mt-4 flex items-center gap-2 text-[12px] bg-white/10 w-fit px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px]">info</span>
+                        Action required for 1 team invite
+                    </div>
+</div>
+<div class="bg-surface-container-highest p-6 rounded-xl border border-outline-variant/30 flex flex-col justify-between">
+<div>
+<h5 class="font-label-md text-[14px] text-on-surface-variant mb-2 uppercase tracking-wider">Notification Preferences</h5>
+<p class="font-body-md text-[14px]">Manage how you receive alerts via email or push.</p>
+</div>
+<button class="mt-4 text-primary font-bold text-[14px] flex items-center gap-1">
+                        Configure Settings <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<div class="bg-surface-container-highest p-6 rounded-xl border border-outline-variant/30">
+<h5 class="font-label-md text-[14px] text-on-surface-variant mb-2 uppercase tracking-wider">Recent Activity</h5>
+<div class="flex items-center gap-3 mt-3">
+<div class="w-1 h-10 bg-primary rounded-full"></div>
+<div>
+<p class="font-label-md text-[13px] text-on-surface">Rulebook access</p>
+<p class="text-[11px] text-outline">Last accessed 10 mins ago</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
+
+<!-- Participant Dashboard - My Teams -->
+

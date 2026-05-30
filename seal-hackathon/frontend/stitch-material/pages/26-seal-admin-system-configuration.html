@@ -1,0 +1,403 @@
+﻿<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SEAL Admin - System Configuration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#464555",
+                        "primary-container": "#4f46e5",
+                        "primary": "#3525cd",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#006a7c",
+                        "on-primary-container": "#dad7ff",
+                        "inverse-surface": "#213145",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "on-secondary-fixed": "#25005a",
+                        "tertiary-fixed": "#acedff",
+                        "surface-container": "#e5eeff",
+                        "tertiary-fixed-dim": "#4cd7f6",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-tertiary-fixed": "#001f26",
+                        "on-tertiary-container": "#93e8ff",
+                        "secondary-container": "#8a4cfc",
+                        "outline-variant": "#c7c4d8",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-variant": "#d3e4fe",
+                        "background": "#f8f9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-dim": "#cbdbf5",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-low": "#eff4ff",
+                        "primary-fixed": "#e2dfff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-tint": "#4d44e3",
+                        "surface-container-high": "#dce9ff",
+                        "surface": "#f8f9ff",
+                        "on-primary-fixed": "#0f0069",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "on-surface": "#0b1c30",
+                        "on-secondary-container": "#fffbff",
+                        "secondary": "#712ae2",
+                        "on-tertiary-fixed-variant": "#004e5c",
+                        "on-background": "#0b1c30",
+                        "outline": "#777587",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#00505f",
+                        "secondary-fixed": "#eaddff",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary-fixed-dim": "#c3c0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "12px",
+                        "container-max": "1280px",
+                        "margin-desktop": "32px",
+                        "base": "8px",
+                        "stack-lg": "48px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "stack-md": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "display": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="text-on-background">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-inverse-surface shadow-sm flex flex-col py-base z-50">
+<div class="px-6 py-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">SEAL Admin</h1>
+<p class="text-label-sm text-on-surface-variant">Hackathon Management</p>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant hover:bg-primary-container/5 dark:hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="font-label-md text-label-md">User Management</span>
+</a>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant hover:bg-primary-container/5 dark:hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">shield_person</span>
+<span class="font-label-md text-label-md">Permission Management</span>
+</a>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant hover:bg-primary-container/5 dark:hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">description</span>
+<span class="font-label-md text-label-md">System Logs</span>
+</a>
+<a class="flex items-center px-4 py-3 rounded-lg text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-primary-container/10 translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined mr-3">settings_suggest</span>
+<span class="font-label-md text-label-md">System Configuration</span>
+</a>
+</nav>
+<div class="mt-auto px-4 space-y-2 pb-8">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-3 px-4 rounded-lg font-label-md mb-6 hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                New Event
+            </button>
+<a class="flex items-center px-4 py-2 rounded-lg text-on-surface-variant hover:bg-primary-container/5 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">help_outline</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+<a class="flex items-center px-4 py-2 rounded-lg text-on-surface-variant hover:bg-primary-container/5 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">logout</span>
+<span class="font-label-md text-label-md">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-16 px-margin-desktop ml-64 w-[calc(100%-16rem)] bg-surface dark:bg-surface sticky top-0 z-40 shadow-sm">
+<div class="flex items-center bg-surface-container-high rounded-full px-4 py-1.5 w-96">
+<span class="material-symbols-outlined text-outline mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-md w-full text-on-surface" placeholder="Search configurations..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant">
+<div class="text-right hidden sm:block">
+<p class="font-label-md text-label-md text-on-surface">Admin User</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">System Architect</p>
+</div>
+<img alt="Administrator Profile" class="w-8 h-8 rounded-full bg-primary-fixed" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXTABl8anFad5BZQbeJqmwvCvXyFbeUyqGsnYrr8eoHed6YfG_XVbWf7yHeRZRLTU3sh_pKYItnVKZcqId-b1r-HDPhF4ulcbw72QFOYX1p2n8f2zlmJSRoEco9neJBYasa7tgnWGJ8KH4uSbly5hMe_L51acfdpPPDAiT4K4W8sYVDD6Y3EWlLyvFiZ4Yr6YCMnK8BS4OyZeffqfbXfAoN17OO49XaT0UCvUCNHo0jMc7bAbunZWMcLeNkDq0UMzjozINKu_56gNN"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 p-margin-desktop bg-background min-h-[calc(100vh-64px)]">
+<div class="max-w-container-max mx-auto">
+<!-- Page Header -->
+<div class="mb-stack-lg flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">System Configuration</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Manage global environment variables, security protocols, and third-party integrations.</p>
+</div>
+<div class="flex gap-stack-sm">
+<button class="px-6 py-2.5 border-[1.5px] border-primary text-primary rounded-lg font-label-md hover:bg-primary/5 transition-all">
+                        Reset to Defaults
+                    </button>
+<button class="px-6 py-2.5 bg-primary text-on-primary rounded-lg font-label-md shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                        Update Configuration
+                    </button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Navigation Tabs (Vertical for settings) -->
+<nav class="lg:col-span-3 space-y-1">
+<a class="flex items-center justify-between p-4 rounded-xl bg-primary-container text-on-primary-container font-semibold shadow-sm" href="#api">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">api</span>
+<span>Integrations</span>
+</div>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 rounded-xl hover:bg-surface-container transition-colors text-on-surface-variant" href="#email">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">mail</span>
+<span>Email SMTP</span>
+</div>
+</a>
+<a class="flex items-center justify-between p-4 rounded-xl hover:bg-surface-container transition-colors text-on-surface-variant" href="#security">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">security</span>
+<span>Security &amp; MFA</span>
+</div>
+</a>
+<a class="flex items-center justify-between p-4 rounded-xl hover:bg-surface-container transition-colors text-on-surface-variant" href="#branding">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">palette</span>
+<span>Brand Settings</span>
+</div>
+</a>
+</nav>
+<!-- Settings Canvas -->
+<div class="lg:col-span-9 space-y-gutter">
+<!-- University API Integration -->
+<section class="bg-surface-container-lowest p-stack-md rounded-2xl card-shadow border border-surface-container" id="api">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">University API Integration</h3>
+<p class="text-label-sm text-on-surface-variant font-normal">Connect to the central student information system.</p>
+</div>
+</div>
+<button class="text-primary font-label-md flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-sm">sync</span>
+                                Test Connection
+                            </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant uppercase">Endpoint URL</label>
+<input class="w-full px-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-body-md" type="text" value="https://api.university.edu/v2/students"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant uppercase">API Client ID</label>
+<input class="w-full px-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-body-md" type="text" value="SEAL_PROD_8842-X"/>
+</div>
+<div class="space-y-2 md:col-span-2">
+<label class="font-label-sm text-on-surface-variant uppercase">Secret Token</label>
+<div class="relative">
+<input class="w-full px-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-body-md" type="password" value="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"/>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-on-surface-variant cursor-pointer">visibility</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Email SMTP Settings -->
+<section class="bg-surface-container-lowest p-stack-md rounded-2xl card-shadow border border-surface-container" id="email">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">forward_to_inbox</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Email SMTP Gateway</h3>
+<p class="text-label-sm text-on-surface-variant font-normal">Configure outgoing mail for notifications and magic links.</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter">Verified</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-md">
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant uppercase">SMTP Host</label>
+<input class="w-full px-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary outline-none text-body-md" placeholder="smtp.provider.com" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant uppercase">Port</label>
+<input class="w-full px-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary outline-none text-body-md" type="text" value="587"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant uppercase">Encryption</label>
+<select class="w-full px-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary outline-none text-body-md appearance-none">
+<option>STARTTLS</option>
+<option>SSL/TLS</option>
+<option>None</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Security Policies -->
+<section class="bg-surface-container-lowest p-stack-md rounded-2xl card-shadow border border-surface-container" id="security">
+<div class="mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Security &amp; Access Control</h3>
+<p class="text-label-sm text-on-surface-variant font-normal">Define password complexity and multi-factor requirements.</p>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
+<div>
+<p class="font-label-md text-on-surface">Mandatory Multi-Factor Authentication</p>
+<p class="text-[12px] text-on-surface-variant">Require MFA for all administrative accounts.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-4 border border-outline-variant rounded-xl">
+<label class="font-label-sm text-on-surface-variant uppercase mb-2 block">Min. Password Length</label>
+<div class="flex items-center gap-4">
+<input class="flex-1 accent-primary" max="24" min="8" type="range" value="12"/>
+<span class="font-bold text-primary">12 chars</span>
+</div>
+</div>
+<div class="p-4 border border-outline-variant rounded-xl">
+<label class="font-label-sm text-on-surface-variant uppercase mb-2 block">Session Timeout</label>
+<select class="w-full bg-transparent border-none focus:ring-0 font-label-md text-on-surface">
+<option>30 Minutes</option>
+<option>1 Hour</option>
+<option>4 Hours</option>
+<option>8 Hours</option>
+</select>
+</div>
+</div>
+</div>
+</section>
+<!-- Branding Section (Bento Style) -->
+<section class="space-y-4" id="branding">
+<div class="flex items-center gap-3 px-2">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">brush</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Brand Customization</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="md:col-span-1 bg-surface-container-lowest p-6 rounded-2xl card-shadow border border-surface-container flex flex-col items-center text-center">
+<label class="font-label-sm text-on-surface-variant uppercase mb-4 block w-full text-left">Primary Logo</label>
+<div class="w-32 h-32 rounded-2xl bg-surface-container flex items-center justify-center border-2 border-dashed border-outline-variant mb-4">
+<img alt="Brand Logo Preview" class="w-20" data-alt="A clean, minimalist vector logo for a technology platform named SEAL. The design is geometric, using sharp lines and a deep indigo color palette on a white background. It conveys a sense of security, professionalism, and high-tech infrastructure for an academic environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5IxbkUDcxCLtiIKRJuGDgf1Dk6QIA2jeyVJaWYqv77wsHiHinH-aEHcXHA6B_l4PcmVTsY2DMSYu4S2b-0b-R8LPa2NXTVwSNqRpTOYciuK2yTPT5FLHcjyd2C09XRS0mfZZa0Xq0_KAxSt4Ihan7S_8Ns_3j2BvqTj8dPNPu5llRUehKf2rmmbozyH-RuHK_6RYTXajpyC7TVwH4eEFJiKvOxD8a8y-r-gRDsgas6_W5a0V0_sORY5KJyFHqJuG6XW3ae2yRNADj"/>
+</div>
+<button class="text-primary font-label-md">Change Image</button>
+</div>
+<div class="md:col-span-2 bg-surface-container-lowest p-6 rounded-2xl card-shadow border border-surface-container">
+<label class="font-label-sm text-on-surface-variant uppercase mb-4 block">Visual Identity</label>
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<span class="text-body-md text-on-surface">Primary Accent Color</span>
+<div class="flex items-center gap-3">
+<span class="text-label-md font-mono text-on-surface-variant">#3525CD</span>
+<div class="w-10 h-10 rounded-full bg-primary ring-4 ring-primary-container/10"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-body-md text-on-surface">Secondary Surface</span>
+<div class="flex items-center gap-3">
+<span class="text-label-md font-mono text-on-surface-variant">#F8F9FF</span>
+<div class="w-10 h-10 rounded-full bg-background border border-outline-variant"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-body-md text-on-surface">Typography System</span>
+<select class="border-none bg-surface-container rounded-lg px-4 py-2 font-label-md text-on-surface">
+<option>Inter (Default)</option>
+<option>Roboto</option>
+<option>Open Sans</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Danger Zone -->
+<section class="bg-error-container/20 p-stack-md rounded-2xl border border-error/20 mt-stack-lg">
+<div class="flex items-center gap-3 mb-4 text-error">
+<span class="material-symbols-outlined">report</span>
+<h3 class="font-title-lg text-title-lg">Danger Zone</h3>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<p class="font-label-md text-on-surface">Wipe All Configuration</p>
+<p class="text-[12px] text-on-surface-variant">Irreversibly reset all system variables to factory settings.</p>
+</div>
+<button class="px-4 py-2 bg-error text-on-error rounded-lg font-label-md hover:opacity-90">Reset System</button>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>
+
+<!-- Organizer Dashboard - User Approval -->
+

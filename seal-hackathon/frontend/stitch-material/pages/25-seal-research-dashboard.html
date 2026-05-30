@@ -1,0 +1,429 @@
+﻿<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEAL - Research Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary": "#712ae2",
+                  "surface-container-highest": "#d3e4fe",
+                  "surface-bright": "#f8f9ff",
+                  "secondary-fixed": "#eaddff",
+                  "on-primary-container": "#dad7ff",
+                  "surface-container": "#e5eeff",
+                  "on-surface": "#0b1c30",
+                  "on-tertiary-container": "#93e8ff",
+                  "primary-container": "#4f46e5",
+                  "background": "#f8f9ff",
+                  "on-tertiary-fixed-variant": "#004e5c",
+                  "on-background": "#0b1c30",
+                  "outline": "#777587",
+                  "surface-variant": "#d3e4fe",
+                  "primary-fixed": "#e2dfff",
+                  "on-secondary-fixed": "#25005a",
+                  "surface-container-high": "#dce9ff",
+                  "on-primary-fixed": "#0f0069",
+                  "secondary-container": "#8a4cfc",
+                  "tertiary-fixed-dim": "#4cd7f6",
+                  "on-tertiary": "#ffffff",
+                  "inverse-on-surface": "#eaf1ff",
+                  "on-surface-variant": "#464555",
+                  "on-error-container": "#93000a",
+                  "on-secondary-container": "#fffbff",
+                  "on-secondary-fixed-variant": "#5a00c6",
+                  "primary": "#3525cd",
+                  "outline-variant": "#c7c4d8",
+                  "surface-container-low": "#eff4ff",
+                  "surface-dim": "#cbdbf5",
+                  "surface-tint": "#4d44e3",
+                  "on-primary-fixed-variant": "#3323cc",
+                  "error": "#ba1a1a",
+                  "on-secondary": "#ffffff",
+                  "inverse-primary": "#c3c0ff",
+                  "tertiary-fixed": "#acedff",
+                  "tertiary": "#00505f",
+                  "secondary-fixed-dim": "#d2bbff",
+                  "primary-fixed-dim": "#c3c0ff",
+                  "on-primary": "#ffffff",
+                  "inverse-surface": "#213145",
+                  "tertiary-container": "#006a7c",
+                  "surface-container-lowest": "#ffffff",
+                  "on-error": "#ffffff",
+                  "error-container": "#ffdad6",
+                  "surface": "#f8f9ff",
+                  "on-tertiary-fixed": "#001f26"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "container-max": "1280px",
+                  "margin-desktop": "32px",
+                  "stack-md": "24px",
+                  "stack-lg": "48px",
+                  "margin-mobile": "16px",
+                  "base": "8px",
+                  "stack-sm": "12px",
+                  "gutter": "24px"
+          },
+          "fontFamily": {
+                  "body-md": ["Inter"],
+                  "label-md": ["Inter"],
+                  "title-lg": ["Inter"],
+                  "body-lg": ["Inter"],
+                  "headline-md": ["Inter"],
+                  "label-sm": ["Inter"],
+                  "headline-lg-mobile": ["Inter"],
+                  "headline-lg": ["Inter"],
+                  "display": ["Inter"]
+          },
+          "fontSize": {
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                  "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                  "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                  "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                  "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+          }
+        },
+      },
+    }
+  </script>
+
+<link rel="stylesheet" href="../styles/seal-material.css">
+</head>
+<body class="bg-background text-on-background font-body-md">
+<!-- SideNavBar -->
+<aside class="h-full w-72 fixed left-0 top-0 bg-surface-container-low shadow-sm flex flex-col py-base z-50">
+<div class="px-6 py-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">SEAL</h1>
+<p class="text-on-surface-variant font-label-md text-label-md">Hackathon Manager</p>
+</div>
+<nav class="flex-1 overflow-y-auto px-2 space-y-1 scrollbar-hide">
+<!-- Nav Item 1 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="event">event</span>
+        Event Management
+      </a>
+<!-- Nav Item 2 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="reorder">reorder</span>
+        Round Management
+      </a>
+<!-- Nav Item 3 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="category">category</span>
+        Category Management
+      </a>
+<!-- Nav Item 4 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="rule">rule</span>
+        Criteria Management
+      </a>
+<!-- Nav Item 5 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="how_to_reg">how_to_reg</span>
+        User Approval
+      </a>
+<!-- Nav Item 6 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="upload_file">upload_file</span>
+        Submission Management
+      </a>
+<!-- Nav Item 7 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="military_tech">military_tech</span>
+        Ranking &amp; Awards
+      </a>
+<!-- Nav Item 8 (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-primary-container/10 font-label-md text-label-md translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined sx-0001" data-icon="monitoring">monitoring</span>
+        Research Dashboard
+      </a>
+<!-- Nav Item 9 -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="analytics">analytics</span>
+        Reports
+      </a>
+</nav>
+<div class="px-6 py-4 mt-auto border-t border-outline-variant/30">
+<div class="flex items-center gap-3">
+<img alt="SEAL Brand Logo" class="w-8 h-8 rounded bg-primary/10 p-1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbtE2BWNbm-U-vl4Djx0la1GhdmZkbI_fCAE0O1cZnOhLAu2OCsifFeBA0bd1tYBrt3Wx6wOjn-FkGYgT4xncing7iY3FCkIxBcdKwXXC0EtLUTIZktqJQXj5djjg0KOfm4noKC0lxubd4YN5mwi0Fiv0OVazyLTIBwh84fEzSdnvBe8rpG9YmMxlLy1B-rxWa7sk-rtV7up0bLTUH43xMI5xhvvwZUbE2PWFu1UYAbdxwA4dziyHQXD1X3ZD1IZNhVvEcWP4cWHLQ">
+<div class="overflow-hidden">
+<p class="text-on-surface font-label-md text-label-md truncate">ACM SEAL 2024</p>
+<p class="text-on-surface-variant font-label-sm text-label-sm">Standard Edition</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-288px)] h-16 bg-surface shadow-sm flex justify-between items-center px-margin-desktop z-40">
+<div class="flex items-center flex-1">
+<div class="relative w-96 max-w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 text-label-md focus:ring-2 focus:ring-primary/20" placeholder="Search analytics, judges, or metrics..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container rounded-full p-2 text-on-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container rounded-full p-2 text-on-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="font-label-md text-label-md text-on-surface">Dr. Elena Volkov</p>
+<p class="text-on-surface-variant font-label-sm text-label-sm">Lead Research Organizer</p>
+</div>
+<img alt="Organizer Profile" class="w-10 h-10 rounded-full border-2 border-primary-container/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIEfEDnGOMnMNdlP6ICnQw3HO9G2EfGhbK94oTbEn7LhSs9qCUl2neA44YkPYQdvLr9x1NyJortaTTOrfVxG6TNZl91EUTvKsAL95-iAh3Mhc6-AT4xKsFHzNhIMC-f9Nd7jSQRJsM_5JX2hLZwN5hXWyx2Bif0oDKgKyWAEiKjv0PqcJRsiuqYVucXT-SA5JFo6DNPxRLCXTal_OztMxV8xPVK4MTEPmIUfKBbBCCYJ-1X0hwIQ-Jvgrj8nNcCxNUBjzZbIR9SRHF">
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-72 pt-16 min-h-screen">
+<div class="max-w-container-max mx-auto p-margin-desktop">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-gutter mb-stack-lg">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Research Analytics Dashboard</h2>
+<p class="text-on-surface-variant font-body-lg text-body-lg mt-1 max-w-2xl">Deep-dive into scoring consistency, judge variance, and reliability metrics across the hackathon lifespan.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 border-[1.5px] border-primary text-primary px-6 py-3 rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="filter_list">filter_list</span>
+            Adjust Parameters
+          </button>
+<button class="flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-lg font-label-md text-label-md shadow-sm hover:shadow-md active:translate-y-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="download">download</span>
+            Export CSV
+          </button>
+</div>
+</section>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Reliability Analytics (Large Area Chart) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-outline-variant/20">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Reliability Analytics</h3>
+<p class="text-on-surface-variant font-label-sm text-label-sm">Mean Consistency Score (MCS) over Rounds</p>
+</div>
+<div class="flex bg-surface-container rounded-lg p-1">
+<button class="px-3 py-1 bg-surface-container-lowest text-primary font-label-sm text-label-sm rounded shadow-sm">Daily</button>
+<button class="px-3 py-1 text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container-high rounded transition-colors">By Round</button>
+</div>
+</div>
+<div class="h-80 w-full relative flex items-end justify-between gap-1 pt-8 pb-4 px-2">
+<!-- Simulated Area Chart -->
+<div class="absolute inset-x-0 bottom-0 top-8 flex flex-col justify-between pointer-events-none">
+<div class="border-t border-dashed border-outline-variant/30 w-full"></div>
+<div class="border-t border-dashed border-outline-variant/30 w-full"></div>
+<div class="border-t border-dashed border-outline-variant/30 w-full"></div>
+<div class="border-t border-dashed border-outline-variant/30 w-full"></div>
+</div>
+<!-- Bars/Points representing the curve -->
+<div class="flex-1 h-2/5 bg-primary/10 rounded-t-sm relative group">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-surface"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-[10px] px-2 py-1 rounded whitespace-nowrap transition-opacity">R1: 0.82 MCS</div>
+</div>
+<div class="flex-1 h-3/5 bg-primary/10 rounded-t-sm relative group">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-surface"></div>
+</div>
+<div class="flex-1 h-4/5 bg-primary/10 rounded-t-sm relative group">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-surface"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-[10px] px-2 py-1 rounded whitespace-nowrap transition-opacity">Peak Consistency</div>
+</div>
+<div class="flex-1 h-2/3 bg-primary/10 rounded-t-sm relative group">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-surface"></div>
+</div>
+<div class="flex-1 h-4/5 bg-primary/20 rounded-t-sm relative group">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-surface"></div>
+</div>
+<div class="flex-1 h-[90%] bg-primary/30 rounded-t-sm relative group border-t-2 border-primary">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary border-2 border-surface"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-[10px] px-2 py-1 rounded whitespace-nowrap transition-opacity">Current: 0.94 MCS</div>
+</div>
+</div>
+<div class="flex justify-between px-4 mt-2">
+<span class="text-on-surface-variant font-label-sm text-label-sm">Round 1</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Round 2</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Round 3</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Semi-Final</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Final</span>
+</div>
+</div>
+<!-- Key Metrics Cards -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
+<div class="flex-1 bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-outline-variant/20 flex flex-col justify-center">
+<span class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-2">Overall Cronbach Alpha</span>
+<div class="flex items-baseline gap-2">
+<span class="font-display text-[48px] leading-tight text-primary">0.89</span>
+<span class="text-green-600 font-label-md text-label-md flex items-center bg-green-50 px-2 rounded-full">
+<span class="material-symbols-outlined text-[16px]" data-icon="arrow_upward">arrow_upward</span> 4%
+              </span>
+</div>
+<p class="text-on-surface-variant font-label-md text-label-md mt-2 italic">Highly reliable correlation across judge cohorts.</p>
+</div>
+<div class="flex-1 bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-outline-variant/20 flex flex-col justify-center">
+<span class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-2">Standard Deviation</span>
+<div class="flex items-baseline gap-2">
+<span class="font-display text-[48px] leading-tight text-secondary">Â±1.42</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full mt-4 overflow-hidden">
+<div class="h-full bg-secondary w-[15%] sx-0001"></div>
+</div>
+<p class="text-on-surface-variant font-label-md text-label-md mt-2">Variance within acceptable academic bounds.</p>
+</div>
+</div>
+<!-- Judge Variance Analysis -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-outline-variant/20">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-title-lg text-title-lg text-on-surface">Judge Variance Matrix</h3>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container p-1 rounded-full" data-icon="info">info</span>
+</div>
+<div class="space-y-4">
+<!-- Judge Row -->
+<div class="flex items-center gap-4">
+<div class="w-32 flex-shrink-0">
+<p class="font-label-md text-label-md text-on-surface">Prof. Chen</p>
+<p class="text-on-surface-variant font-label-sm text-label-sm">"The Critic"</p>
+</div>
+<div class="flex-1 h-8 bg-surface-container rounded-lg flex items-center px-4 relative">
+<div class="h-1 w-full bg-outline-variant/30 rounded-full"></div>
+<!-- Distribution Points -->
+<div class="absolute left-[15%] w-2 h-2 rounded-full bg-primary/40"></div>
+<div class="absolute left-[22%] w-3 h-3 rounded-full bg-primary/60"></div>
+<div class="absolute left-[30%] w-4 h-4 rounded-full bg-primary shadow-sm border-2 border-surface"></div>
+<div class="absolute left-[45%] w-2 h-2 rounded-full bg-primary/40"></div>
+</div>
+<div class="w-16 text-right">
+<span class="bg-primary/10 text-primary font-label-sm text-label-sm px-2 py-0.5 rounded">-12%</span>
+</div>
+</div>
+<!-- Judge Row -->
+<div class="flex items-center gap-4">
+<div class="w-32 flex-shrink-0">
+<p class="font-label-md text-label-md text-on-surface">Dr. Aris</p>
+<p class="text-on-surface-variant font-label-sm text-label-sm">"The Mentor"</p>
+</div>
+<div class="flex-1 h-8 bg-surface-container rounded-lg flex items-center px-4 relative">
+<div class="h-1 w-full bg-outline-variant/30 rounded-full"></div>
+<div class="absolute left-[65%] w-2 h-2 rounded-full bg-secondary/40"></div>
+<div class="absolute left-[78%] w-4 h-4 rounded-full bg-secondary shadow-sm border-2 border-surface"></div>
+<div class="absolute left-[85%] w-3 h-3 rounded-full bg-secondary/60"></div>
+<div class="absolute left-[92%] w-2 h-2 rounded-full bg-secondary/40"></div>
+</div>
+<div class="w-16 text-right">
+<span class="bg-secondary/10 text-secondary font-label-sm text-label-sm px-2 py-0.5 rounded">+18%</span>
+</div>
+</div>
+<!-- Judge Row -->
+<div class="flex items-center gap-4">
+<div class="w-32 flex-shrink-0">
+<p class="font-label-md text-label-md text-on-surface">Eng. Sarah J.</p>
+<p class="text-on-surface-variant font-label-sm text-label-sm">"Balanced"</p>
+</div>
+<div class="flex-1 h-8 bg-surface-container rounded-lg flex items-center px-4 relative">
+<div class="h-1 w-full bg-outline-variant/30 rounded-full"></div>
+<div class="absolute left-[40%] w-3 h-3 rounded-full bg-tertiary/40"></div>
+<div class="absolute left-[48%] w-4 h-4 rounded-full bg-tertiary shadow-sm border-2 border-surface"></div>
+<div class="absolute left-[52%] w-4 h-4 rounded-full bg-tertiary shadow-sm border-2 border-surface"></div>
+<div class="absolute left-[60%] w-3 h-3 rounded-full bg-tertiary/40"></div>
+</div>
+<div class="w-16 text-right">
+<span class="bg-tertiary-container/10 text-tertiary font-label-sm text-label-sm px-2 py-0.5 rounded">+0.5%</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-outline-variant/20 flex items-center justify-between">
+<p class="text-on-surface-variant font-label-sm text-label-sm italic">Showing variance against global mean score across 450 submissions.</p>
+<button class="text-primary font-label-md text-label-md hover:underline">View Detailed Matrix</button>
+</div>
+</div>
+<!-- Calibration Results -->
+<div class="col-span-12 lg:col-span-5 bg-surface-container-lowest rounded-xl p-stack-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-outline-variant/20">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-6">Calibration Results Summary</h3>
+<div class="space-y-6">
+<div class="flex items-start gap-4 p-4 bg-surface-container-low rounded-lg border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="verified">verified</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Calibration Pass: Phase A</p>
+<p class="text-on-surface-variant font-label-sm text-label-sm mt-1">94% of judges fall within Â±1 standard deviation of the rubric anchor points.</p>
+</div>
+</div>
+<div class="flex items-start gap-4 p-4 bg-surface-container-low rounded-lg border-l-4 border-error">
+<span class="material-symbols-outlined text-error mt-1" data-icon="report">report</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Anomaly Detected: 'Impact' Criterion</p>
+<p class="text-on-surface-variant font-label-sm text-label-sm mt-1">High divergence in 'Social Impact' scores. Rubric clarification required for Round 3.</p>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="text-on-surface font-label-md text-label-md">Rubric Alignment Progress</span>
+<span class="text-primary font-label-sm text-label-sm">88%</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000 sx-0001"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-3 border border-outline-variant/40 rounded-lg text-center">
+<p class="text-on-surface-variant font-label-sm text-label-sm">Anchor Projects</p>
+<p class="font-title-lg text-title-lg text-on-surface">12</p>
+</div>
+<div class="p-3 border border-outline-variant/40 rounded-lg text-center">
+<p class="text-on-surface-variant font-label-sm text-label-sm">Active Calibrators</p>
+<p class="font-title-lg text-title-lg text-on-surface">32</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Raw Data Export CTA Section -->
+<div class="col-span-12 mt-stack-md">
+<div class="bg-primary p-stack-md rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+<div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 opacity-10">
+<span class="material-symbols-outlined text-[320px]" data-icon="database">database</span>
+</div>
+<div class="relative z-10 text-center md:text-left">
+<h4 class="font-headline-md text-headline-md text-on-primary">Need raw scoring data for external analysis?</h4>
+<p class="text-on-primary-container font-body-md text-body-md max-w-xl mt-2">Download the anonymized dataset including per-criterion judge scores, metadata, and timestamps for SPSS or R integration.</p>
+</div>
+<div class="relative z-10">
+<button class="bg-surface-container-lowest text-primary px-8 py-4 rounded-xl font-label-md text-label-md font-bold shadow-lg hover:bg-surface-container-low transition-colors flex items-center gap-3">
+<span class="material-symbols-outlined sx-0001" data-icon="table_chart">table_chart</span>
+                Download Research Bundle (.zip)
+              </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Info -->
+<footer class="ml-72 p-stack-md border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-4 text-on-surface-variant font-label-sm text-label-sm">
+<div>Â© 2024 SEAL Academic Research Suite. Version 4.2.1-stable</div>
+<div class="flex gap-6">
+<a class="hover:text-primary transition-colors" href="#">Privacy Protocol</a>
+<a class="hover:text-primary transition-colors" href="#">System Health</a>
+<a class="hover:text-primary transition-colors" href="#">Methodology Documentation</a>
+</div>
+</footer>
+</body></html>
+
+<!-- Admin System - System Configuration -->
+
