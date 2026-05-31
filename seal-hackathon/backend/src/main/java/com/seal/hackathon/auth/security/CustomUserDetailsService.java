@@ -1,6 +1,7 @@
 package com.seal.hackathon.auth.security;
 
 import com.seal.hackathon.auth.entity.UserEntity;
+import com.seal.hackathon.auth.entity.UserStatus;
 import com.seal.hackathon.auth.repository.UserRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -32,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .username(user.getEmail())
                 .password(user.getPasswordHash())
                 .authorities(mapAuthorities(user))
-                .disabled(!Boolean.TRUE.equals(user.getApproved()))
+                .disabled(!Boolean.TRUE.equals(user.getApproved()) || !UserStatus.ACTIVE.isActiveValue(user.getStatus()))
                 .build();
     }
 

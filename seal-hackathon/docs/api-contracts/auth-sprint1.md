@@ -46,7 +46,7 @@ For external student:
     "userId": 1,
     "username": "an.student",
     "email": "an.student.demo@gmail.com",
-    "status": "PENDING",
+    "status": "PendingApproval",
     "message": "Registered successfully. Account is pending coordinator approval."
   }
 }
@@ -78,7 +78,7 @@ Endpoint: `POST /api/auth/login`
     "email": "an.student.demo@gmail.com",
     "username": "an.student",
     "fullName": "Nguyen Van An",
-    "status": "APPROVED",
+    "status": "Active",
     "roles": [
       "STUDENT"
     ]

@@ -55,7 +55,7 @@ public class UserEntity {
     @PrePersist
     public void prePersist() {
         if (this.status == null) {
-            this.status = UserStatus.PENDING.name();
+            this.status = UserStatus.PENDING_APPROVAL.getDbValue();
         }
         if (this.approved == null) {
             this.approved = Boolean.FALSE;

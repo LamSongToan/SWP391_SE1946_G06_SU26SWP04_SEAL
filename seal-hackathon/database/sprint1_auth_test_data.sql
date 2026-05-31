@@ -4,7 +4,7 @@ GO
 -- Approve account for login testing in Sprint 1
 -- Replace email as needed
 UPDATE [Users]
-SET status = 'Approved',
+SET status = 'Active',
     is_approved = 1
 WHERE email = 'an@fpt.edu.vn';
 GO

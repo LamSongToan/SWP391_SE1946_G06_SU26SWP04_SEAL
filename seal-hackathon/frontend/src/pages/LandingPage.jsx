@@ -10,6 +10,7 @@ import {
   Container,
   Grid2,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import PublicIcon from "@mui/icons-material/Public";
@@ -67,53 +68,48 @@ export default function LandingPage() {
 
   return (
     <PublicShell>
-      <Box sx={{ background: "linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%)", pb: 4 }}>
-        <Container maxWidth="xl" sx={{ pt: { xs: 5, md: 7 } }}>
-          <Card sx={{ borderRadius: 4, overflow: "hidden" }}>
-            <CardContent sx={{ p: { xs: 3, md: 5 } }}>
+      <Box sx={{ pt: { xs: 4, md: 5 }, pb: 3 }}>
+        <Container maxWidth="xl">
+          <Card sx={{ overflow: "hidden", position: "relative" }}>
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(135deg, rgba(13,94,166,0.12), rgba(15,157,143,0.08))",
+              }}
+            />
+            <CardContent sx={{ p: { xs: 3, md: 5 }, position: "relative" }}>
               <Grid2 alignItems="center" container spacing={4}>
-                <Grid2 size={{ xs: 12, md: 6.5 }}>
-                  <Chip
-                    color="primary"
-                    label="Software Engineering Agile League"
-                    sx={{ bgcolor: "primary.50", color: "primary.main", fontWeight: 700, mb: 2 }}
-                    variant="filled"
-                  />
-                  <Typography sx={{ mb: 2 }} variant="h1">
-                    Elevate Your <Box component="span" sx={{ color: "primary.main" }}>Engineering</Box> Journey
+                <Grid2 size={{ xs: 12, md: 6.6 }}>
+                  <Chip color="primary" label="Software Engineering Agile League" sx={{ mb: 2.5, fontWeight: 700 }} />
+                  <Typography variant="h1" sx={{ mb: 2 }}>
+                    Build. Compete. Ship.
+                    <Box component="span" sx={{ color: "primary.main" }}> SEAL Hackathon Platform</Box>
                   </Typography>
-                  <Typography color="text.secondary" sx={{ fontSize: 20, mb: 3 }}>
-                    Join the Software Engineering Agile League at FPT University. Build real products,
-                    compete in multi-round hackathons, and get scored by mentors and judges.
+                  <Typography color="text.secondary" sx={{ fontSize: { xs: 16, md: 20 }, mb: 3 }}>
+                    One platform for multi-round hackathon operations: user approval, event setup, track management,
+                    round progression, and transparent scoring.
                   </Typography>
 
-                  <Stack
-                    direction="row"
-                    justifyContent={{ xs: "center", md: "flex-start" }}
-                    spacing={1.5}
-                    sx={{ mb: 2.5 }}
-                  >
-                    <Button component={RouterLink} size="large" to="/login" variant="contained">
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2.5 }}>
+                    <Button component={RouterLink} size="large" to="/register" variant="contained">
+                      Join as Participant
+                    </Button>
+                    <Button component={RouterLink} size="large" to="/login" variant="outlined">
                       Sign In
                     </Button>
-                    <Button component={RouterLink} size="large" to="/register" variant="outlined">
-                      Create Account
-                    </Button>
                   </Stack>
 
-                  <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
-                    <Chip icon={<PublicIcon />} label="Spring" />
-                    <Chip icon={<PublicIcon />} label="Summer" />
-                    <Chip icon={<PublicIcon />} label="Fall" />
-                  </Stack>
-
-                  <Stack direction="row" spacing={1.25} sx={{ flexWrap: "wrap", mt: 1 }}>
-                    <Chip color="primary" label={`${events.length} upcoming events`} variant="outlined" />
-                    <Chip color="secondary" label={`${totalRounds} configured rounds`} variant="outlined" />
+                  <Stack direction="row" flexWrap="wrap" gap={1}>
+                    <Chip icon={<PublicIcon />} label="Spring" variant="outlined" />
+                    <Chip icon={<PublicIcon />} label="Summer" variant="outlined" />
+                    <Chip icon={<PublicIcon />} label="Fall" variant="outlined" />
+                    <Chip color="primary" label={`${events.length} events`} />
+                    <Chip color="secondary" label={`${totalRounds} rounds`} />
                   </Stack>
                 </Grid2>
 
-                <Grid2 size={{ xs: 12, md: 5.5 }}>
+                <Grid2 size={{ xs: 12, md: 5.4 }}>
                   <Box
                     component="img"
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYq0oll6FK0xFT7Ys_fyZvMl7Tg3N29D4f8TDj9ZxJyR4AtRjq-8eJH8U3SXQjrBkt5nmxeFG2-WxQMjFTpEryHbNy9zWDjS4YJ3ofOU186wNaaUi0l7d73rmrh9Hogz9PLvTrxDA6bvtXmEHV8OhLa8ZjB0TaS1P3VKolu6XmDzLkt_nWDgbwqHOCpEfK4my_XxEf23KF4s5THu7Zk7J4kXQK7P7EkrzdwxmuhGwuZiK-qQmUllXY2GRWWPSlYlRfPw4Rzw87Fu-P"
@@ -148,46 +144,34 @@ export default function LandingPage() {
         {!loading && !error && events.length === 0 ? (
           <Card>
             <CardContent>
-              <Typography sx={{ mb: 1 }} variant="h6">
-                There is no event in database yet
-              </Typography>
+              <Typography sx={{ mb: 1 }} variant="h6">There is no event in database yet</Typography>
               <Typography color="text.secondary" sx={{ mb: 2 }}>
                 When coordinators create events and rounds, this section auto-renders event cards.
               </Typography>
-              <Button component={RouterLink} to="/register" variant="outlined">
-                Create Account
-              </Button>
+              <Button component={RouterLink} to="/register" variant="outlined">Create Account</Button>
             </CardContent>
           </Card>
         ) : null}
 
         {!loading && !error && events.length > 0 ? (
           <Grid2 container spacing={2}>
-            {events.map((event, idx) => (
+            {events.map((event) => (
               <Grid2 key={event.eventId} size={{ xs: 12, md: 6, lg: 4 }}>
-                <Card sx={{ borderTop: idx === 0 ? "4px solid #1565c0" : undefined }}>
+                <Card>
                   <CardContent>
                     <Stack alignItems="center" direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                      <Chip
-                        color={idx === 0 ? "primary" : "default"}
-                        label={`${event.season} ${event.year}`}
-                        size="small"
-                      />
-                      <Typography color="text.secondary" variant="caption">
-                        {getScheduleLabel(event.startDate)}
-                      </Typography>
+                      <Chip color="primary" label={`${event.season} ${event.year}`} size="small" />
+                      <Typography color="text.secondary" variant="caption">{getScheduleLabel(event.startDate)}</Typography>
                     </Stack>
 
-                    <Typography sx={{ mb: 1.2 }} variant="h6">
-                      {event.name}
-                    </Typography>
+                    <Typography sx={{ mb: 1.2 }} variant="h6">{event.name}</Typography>
 
                     <Typography color="text.secondary" sx={{ mb: 1.5 }}>
                       {event.description || "Event description will be updated soon."}
                     </Typography>
 
                     <Stack spacing={0.5} sx={{ mb: 2 }}>
-                      {(event.rounds || []).slice(0, 2).map((round) => (
+                      {(event.rounds || []).slice(0, 3).map((round) => (
                         <Typography key={`${event.eventId}-${round.roundOrder}`} variant="body2">
                           {round.roundName}: {formatDate(round.submissionDeadline)}
                         </Typography>
@@ -209,6 +193,7 @@ export default function LandingPage() {
       </Container>
 
       <Container id="about" maxWidth="xl" sx={{ pt: 5 }}>
+        <Typography variant="h3" sx={{ mb: 2 }}>About SEAL</Typography>
         <Grid2 container spacing={2}>
           {[
             ["Department Led", "Guided by FPT Software Engineering faculty for academic rigor and practical outcomes."],
@@ -232,14 +217,14 @@ export default function LandingPage() {
         <Typography sx={{ mb: 2 }} variant="h3">How It Works</Typography>
         <Grid2 container spacing={2}>
           {[
-            ["01", "Create Account", "Register with student details and wait for approval."],
-            ["02", "Build Team", "Form 3-5 members and join a track that fits your idea."],
-            ["03", "Submit and Compete", "Submit project links by round deadline and get scored."],
+            ["01", "Create Account", "Register with student details and wait for coordinator approval."],
+            ["02", "Join Event", "Create team and select a track in your preferred event."],
+            ["03", "Compete by Rounds", "Submit project URLs by deadline and progress by ranking rules."],
           ].map(([index, title, desc]) => (
             <Grid2 key={title} size={{ xs: 12, md: 4 }}>
               <Card>
                 <CardContent>
-                  <Chip label={index} sx={{ mb: 1 }} />
+                  <Chip label={index} sx={{ mb: 1 }} color="secondary" />
                   <Typography sx={{ mb: 1 }} variant="h6">{title}</Typography>
                   <Typography color="text.secondary">{desc}</Typography>
                 </CardContent>
@@ -249,11 +234,9 @@ export default function LandingPage() {
         </Grid2>
       </Container>
 
-      <Box id="impact" sx={{ background: "linear-gradient(120deg,#0d3b66,#14538c)", color: "#fff", mt: 6, py: 6 }}>
+      <Box id="impact" sx={{ background: "linear-gradient(120deg,#0d5ea6,#0f9d8f)", color: "#fff", mt: 6, py: 6 }}>
         <Container maxWidth="xl">
-          <Typography align="center" sx={{ mb: 2.5 }} variant="h3">
-            SEAL Global Impact
-          </Typography>
+          <Typography align="center" sx={{ mb: 2.5 }} variant="h3">SEAL Global Impact</Typography>
           <Grid2 container spacing={2}>
             {[
               ["500+", "Participants", <GroupsIcon key="g" />],
@@ -262,7 +245,7 @@ export default function LandingPage() {
               ["12", "Successful Leagues", <EmojiEventsIcon key="e" />],
             ].map(([num, label, icon]) => (
               <Grid2 key={label} size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card sx={{ bgcolor: "rgba(255,255,255,0.12)", color: "#fff", borderColor: "rgba(255,255,255,0.2)" }}>
+                <Card sx={{ bgcolor: "rgba(255,255,255,0.14)", color: "#fff", borderColor: "rgba(255,255,255,0.25)" }}>
                   <CardContent sx={{ textAlign: "center" }}>
                     <Box sx={{ mb: 1, opacity: 0.9 }}>{icon}</Box>
                     <Typography sx={{ fontWeight: 800 }} variant="h4">{num}</Typography>
@@ -274,6 +257,34 @@ export default function LandingPage() {
           </Grid2>
         </Container>
       </Box>
+
+      <Container id="contact" maxWidth="xl" sx={{ pt: 5 }}>
+        <Card>
+          <CardContent>
+            <Grid2 container spacing={2} alignItems="center">
+              <Grid2 size={{ xs: 12, md: 6 }}>
+                <Typography variant="h3" sx={{ mb: 1 }}>Contact SEAL Team</Typography>
+                <Typography color="text.secondary" sx={{ mb: 2 }}>
+                  Reach out to coordinators for participation guidance, technical issues, and event operations.
+                </Typography>
+                <Stack spacing={0.7}>
+                  <Typography>Email: seal@fpt.edu.vn</Typography>
+                  <Typography>Location: FPT University HCMC</Typography>
+                  <Typography>Support Hours: Mon-Sat, 08:00 - 17:00</Typography>
+                </Stack>
+              </Grid2>
+              <Grid2 size={{ xs: 12, md: 6 }}>
+                <Stack spacing={1.2}>
+                  <TextField label="Your Name" fullWidth />
+                  <TextField label="Email" type="email" fullWidth />
+                  <TextField label="Message" multiline rows={3} fullWidth />
+                  <Button variant="contained">Send Message</Button>
+                </Stack>
+              </Grid2>
+            </Grid2>
+          </CardContent>
+        </Card>
+      </Container>
     </PublicShell>
   );
 }

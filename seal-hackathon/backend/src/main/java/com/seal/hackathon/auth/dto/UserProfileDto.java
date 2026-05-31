@@ -1,0 +1,19 @@
+package com.seal.hackathon.auth.dto;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record UserProfileDto(
+        Integer userId,
+        String username,
+        String email,
+        String fullName,
+        String status,
+        Boolean approved,
+        LocalDateTime createdAt,
+        List<String> roles,
+        String studentType,
+        String studentCode,
+        String universityName
+) {
+}

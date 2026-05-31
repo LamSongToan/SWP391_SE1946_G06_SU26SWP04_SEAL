@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record UserApprovalRequest(
         @NotNull Integer userId,
-        // Allowed: APPROVED, REJECTED, PENDING, DISABLED
+        // Allowed: ACTIVE, REJECTED, PENDING_APPROVAL, SUSPENDED
         @NotBlank String action,
         String reason
 ) {}
