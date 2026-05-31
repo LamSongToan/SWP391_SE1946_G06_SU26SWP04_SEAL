@@ -40,6 +40,23 @@ CREATE TABLE UserRole (
     FOREIGN KEY (user_id) REFERENCES [Users](user_id) ON DELETE CASCADE
 );
 
+CREATE TABLE TokenBlacklist (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE PasswordResetToken (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    used BIT DEFAULT 0,
+    created_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES [Users](user_id) ON DELETE CASCADE
+);
+
 -- =======================================================
 -- 2. CORE SUB-PROFILES (Reusing user_role_id as PK & FK)
 -- =======================================================
@@ -124,6 +141,8 @@ CREATE TABLE Team (
     track_id INT NOT NULL,
     user_role_id INT NOT NULL, -- TEAM LEADER
     team_name NVARCHAR(100) NOT NULL,
+    join_code VARCHAR(12) NOT NULL UNIQUE
+        DEFAULT UPPER(LEFT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 8)),
     status VARCHAR(50) DEFAULT 'Active',
     created_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (track_id) REFERENCES Track(track_id) ON DELETE CASCADE,
@@ -137,6 +156,20 @@ CREATE TABLE TeamMember (
     PRIMARY KEY (team_id, user_role_id),
     FOREIGN KEY (team_id) REFERENCES Team(team_id) ON DELETE NO ACTION,
     FOREIGN KEY (user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION
+);
+
+CREATE TABLE TeamInvitation (
+    invitation_id INT IDENTITY(1,1) PRIMARY KEY,
+    team_id INT NOT NULL,
+    invitee_user_role_id INT NOT NULL,
+    invited_by_user_role_id INT NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    created_at DATETIME DEFAULT GETDATE(),
+    responded_at DATETIME NULL,
+    CHECK (status IN ('Pending', 'Accepted', 'Rejected', 'Cancelled')),
+    FOREIGN KEY (team_id) REFERENCES Team(team_id) ON DELETE CASCADE,
+    FOREIGN KEY (invitee_user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION,
+    FOREIGN KEY (invited_by_user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION
 );
 
 CREATE TABLE TrackMentor (
@@ -283,4 +316,56 @@ CREATE TABLE AuditLog (
     timestamp DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (user_id) REFERENCES [Users](user_id) ON DELETE CASCADE
 );
+GO
+
+-- =======================================================
+-- 7. TEAM VALIDATION GUARDS
+-- =======================================================
+CREATE OR ALTER TRIGGER TR_TeamMember_ValidateRules
+ON TeamMember
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT tm.team_id
+        FROM TeamMember tm
+        JOIN (SELECT DISTINCT team_id FROM inserted) changed ON changed.team_id = tm.team_id
+        GROUP BY tm.team_id
+        HAVING COUNT(*) > 5
+    )
+        THROW 50001, 'A team cannot contain more than 5 members.', 1;
+
+    IF EXISTS (
+        SELECT tm.user_role_id, tr.event_id
+        FROM TeamMember tm
+        JOIN Team t ON t.team_id = tm.team_id
+        JOIN Track tr ON tr.track_id = t.track_id
+        JOIN (SELECT DISTINCT user_role_id FROM inserted) changed ON changed.user_role_id = tm.user_role_id
+        GROUP BY tm.user_role_id, tr.event_id
+        HAVING COUNT(*) > 1
+    )
+        THROW 50002, 'A student can belong to only one team in the same event.', 1;
+END;
+GO
+
+CREATE OR ALTER TRIGGER TR_Submission_ValidateTeamSize
+ON Submission
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        WHERE (
+            SELECT COUNT(*)
+            FROM TeamMember tm
+            WHERE tm.team_id = i.team_id
+        ) NOT BETWEEN 3 AND 5
+    )
+        THROW 50003, 'A submission requires a valid team with 3 to 5 members.', 1;
+END;
 GO
