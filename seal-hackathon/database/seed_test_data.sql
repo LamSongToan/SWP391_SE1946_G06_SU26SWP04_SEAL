@@ -11,11 +11,12 @@ VALUES
 ('toan.coordinator', 'toan.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Toan Tran', 'Active', 1),
 ('kiet.mentor', 'kiet.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Kiet Le', 'Active', 1),
 ('ngon.judge', 'ngon.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Ngon Pham', 'Active', 1),
-('linh.student', 'linh.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Linh Vo', 'Active', 1);
+('linh.student', 'linh.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Linh Vo', 'Active', 1),
+('mai.student', 'mai.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Mai Nguyen', 'Active', 1);
 GO
 
 INSERT INTO UserRole (user_id, role_type)
-SELECT user_id, 'Student' FROM [Users] WHERE username IN ('an.student', 'linh.student');
+SELECT user_id, 'Student' FROM [Users] WHERE username IN ('an.student', 'linh.student', 'mai.student');
 INSERT INTO UserRole (user_id, role_type)
 SELECT user_id, 'Coordinator' FROM [Users] WHERE username = 'toan.coordinator';
 INSERT INTO UserRole (user_id, role_type)
@@ -35,6 +36,12 @@ SELECT ur.user_role_id, 'EXTERNAL', 'EXT2026-01', N'Ho Chi Minh University of Te
 FROM UserRole ur
 JOIN [Users] u ON u.user_id = ur.user_id
 WHERE u.username = 'linh.student' AND ur.role_type = 'Student';
+
+INSERT INTO StudentProfile (user_role_id, student_type, student_code, university_name)
+SELECT ur.user_role_id, 'FPT', 'SE181002', N'FPT University HCMC'
+FROM UserRole ur
+JOIN [Users] u ON u.user_id = ur.user_id
+WHERE u.username = 'mai.student' AND ur.role_type = 'Student';
 
 INSERT INTO CoordinatorProfile (user_role_id, staff_type)
 SELECT ur.user_role_id, 'SE Dept'
@@ -106,6 +113,12 @@ DECLARE @student_member_role_id INT = (
     JOIN [Users] u ON u.user_id = ur.user_id
     WHERE u.username = 'linh.student' AND ur.role_type = 'Student'
 );
+DECLARE @student_third_member_role_id INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'mai.student' AND ur.role_type = 'Student'
+);
 DECLARE @mentor_role_id INT = (
     SELECT TOP 1 ur.user_role_id
     FROM UserRole ur
@@ -140,7 +153,10 @@ VALUES (@track_web_id, @student_leader_role_id, N'SEAL Coders');
 
 DECLARE @team_id INT = (SELECT TOP 1 team_id FROM Team WHERE team_name = N'SEAL Coders' ORDER BY team_id DESC);
 INSERT INTO TeamMember (team_id, user_role_id)
-VALUES (@team_id, @student_leader_role_id), (@team_id, @student_member_role_id);
+VALUES
+(@team_id, @student_leader_role_id),
+(@team_id, @student_member_role_id),
+(@team_id, @student_third_member_role_id);
 
 INSERT INTO Submission (team_id, round_id, repository_url, demo_url, slide_url, status)
 VALUES (

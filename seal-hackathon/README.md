@@ -16,6 +16,16 @@ Implemented modules:
 - JWT authentication setup
 - Role-based authorization demo
 
+## Team Management
+
+Implemented modules:
+- Create a team in one event category
+- Invite a registered student by username or email
+- Accept or reject invitations, or join by team code
+- Remove members, cancel invitations, leave or delete an unused team
+- Enforce one team per student per event and 3-5 member readiness rules
+- Configure round advancement as top N teams per category
+
 API docs after backend starts:
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 
@@ -38,6 +48,9 @@ API docs after backend starts:
 3. Run `database/seed_test_data.sql` for sample users and event data.
 4. Update backend DB credentials in:
    - `backend/src/main/resources/application.properties`
+
+For an existing database created before the team-management module, run:
+- `database/team_management_migration.sql`
 
 ### 2) Backend
 

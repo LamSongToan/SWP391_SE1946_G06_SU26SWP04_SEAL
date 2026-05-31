@@ -266,10 +266,11 @@ export default function RoundManagementPanel() {
                 fullWidth
               />
               <TextField
-                label="Promotion Rule Top N"
+                label="Teams promoted per category"
                 type="number"
                 value={form.promotionRuleTopN}
                 onChange={onChange("promotionRuleTopN")}
+                helperText="Top N teams in each category advance to the next round."
                 fullWidth
               />
             </Stack>

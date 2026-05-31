@@ -46,6 +46,7 @@ import RoundManagementPanel from "../components/coordinator/RoundManagementPanel
 import TrackManagementPanel from "../components/coordinator/TrackManagementPanel";
 import UserProfilePanel from "../components/profile/UserProfilePanel";
 import ChangePasswordPage from "./ChangePasswordPage";
+import TeamManagementPanel from "../components/team/TeamManagementPanel";
 
 const DRAWER_WIDTH = 292;
 
@@ -106,7 +107,7 @@ export default function DashboardPage() {
     }
 
     if (activeKey === "teams") {
-      return placeholderCard("My Teams", "Team Management module will be integrated in a later sprint.");
+      return <TeamManagementPanel />;
     }
     if (activeKey === "submissions") {
       return placeholderCard("Submissions", "Submission module will be integrated in a later sprint.");
