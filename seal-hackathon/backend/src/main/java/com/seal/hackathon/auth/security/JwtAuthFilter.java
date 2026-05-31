@@ -1,5 +1,6 @@
 package com.seal.hackathon.auth.security;
 
+import com.seal.hackathon.auth.repository.TokenBlacklistRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,10 +20,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
-    public JwtAuthFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+    public JwtAuthFilter(JwtService jwtService,
+                         CustomUserDetailsService userDetailsService,
+                         TokenBlacklistRepository tokenBlacklistRepository) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.tokenBlacklistRepository = tokenBlacklistRepository;
     }
 
     @Override
@@ -40,6 +45,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             username = jwtService.extractUsername(jwtToken);
         } catch (Exception ex) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Check if token has been blacklisted (logged out)
+        String tokenHash = jwtService.hashToken(jwtToken);
+        if (tokenBlacklistRepository.existsByTokenHash(tokenHash)) {
             filterChain.doFilter(request, response);
             return;
         }

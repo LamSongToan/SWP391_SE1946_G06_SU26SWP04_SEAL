@@ -8,7 +8,9 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
@@ -66,5 +68,27 @@ public class JwtService {
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    /**
+     * SHA-256 hash of the raw JWT — stored in TokenBlacklist.
+     * Avoids storing the full token in the DB.
+     */
+    public String hashToken(String rawToken) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(rawToken.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hashBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 not available", e);
+        }
+    }
+
+    /**
+     * Extract expiration as LocalDateTime for blacklist TTL.
+     */
+    public java.time.LocalDateTime extractExpirationAsLocalDateTime(String token) {
+        Date expDate = extractClaim(token, Claims::getExpiration);
+        return expDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
     }
 }
