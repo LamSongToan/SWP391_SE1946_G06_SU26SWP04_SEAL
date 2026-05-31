@@ -2,16 +2,23 @@ package com.seal.hackathon.event.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "Round")
 public class RoundEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "round_id")
     private Integer roundId;
 
@@ -27,23 +34,6 @@ public class RoundEntity {
     @Column(name = "submission_deadline", nullable = false)
     private LocalDateTime submissionDeadline;
 
-    public Integer getRoundId() {
-        return roundId;
-    }
-
-    public Integer getEventId() {
-        return eventId;
-    }
-
-    public String getRoundName() {
-        return roundName;
-    }
-
-    public Integer getRoundOrder() {
-        return roundOrder;
-    }
-
-    public LocalDateTime getSubmissionDeadline() {
-        return submissionDeadline;
-    }
+    @Column(name = "promotion_rule_top_n", nullable = false)
+    private Integer promotionRuleTopN;
 }

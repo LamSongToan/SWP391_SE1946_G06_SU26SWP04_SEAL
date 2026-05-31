@@ -26,8 +26,8 @@ CREATE TABLE [Users] (
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     full_name NVARCHAR(150) NOT NULL,
-    status VARCHAR(50) DEFAULT 'Pending',
-    CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Disabled')),
+    status VARCHAR(50) DEFAULT 'PendingApproval',
+    CHECK (status IN ('PendingApproval', 'Active', 'Rejected', 'Suspended')),
     is_approved BIT DEFAULT 0,
     created_at DATETIME DEFAULT GETDATE()
 );
@@ -82,15 +82,18 @@ CREATE TABLE HackathonEvent (
     year INT NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    status VARCHAR(50) DEFAULT 'Upcoming',
-    description NVARCHAR(MAX)
+    status VARCHAR(50) DEFAULT 'Draft',
+    CHECK (status IN ('Draft', 'Configured', 'RegistrationOpen', 'Ongoing', 'Scoring', 'ResultPublished', 'Closed', 'Cancelled')),
+    description NVARCHAR(MAX),
+    CONSTRAINT UQ_HackathonEvent_Year_Season UNIQUE (year, season)
 );
 
 CREATE TABLE Track (
     track_id INT IDENTITY(1,1) PRIMARY KEY,
     event_id INT NOT NULL,
     name NVARCHAR(100) NOT NULL, 
-    FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE,
+    CONSTRAINT UQ_Track_Event_Name UNIQUE (event_id, name)
 );
 
 CREATE TABLE Round (
@@ -100,7 +103,8 @@ CREATE TABLE Round (
     round_order INT NOT NULL,
     submission_deadline DATETIME NOT NULL,
     promotion_rule_top_n INT NOT NULL,
-    FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE,
+    CONSTRAINT UQ_Round_Event_Order UNIQUE (event_id, round_order)
 );
 
 CREATE TABLE ScoringCriteria (

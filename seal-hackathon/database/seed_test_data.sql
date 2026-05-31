@@ -7,11 +7,11 @@ GO
 -- =======================================================
 INSERT INTO [Users] (username, email, password_hash, full_name, status, is_approved)
 VALUES
-('an.student', 'an.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Nguyen Van An', 'Approved', 1),
-('toan.coordinator', 'toan.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Toan Tran', 'Approved', 1),
-('kiet.mentor', 'kiet.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Kiet Le', 'Approved', 1),
-('ngon.judge', 'ngon.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Ngon Pham', 'Approved', 1),
-('linh.student', 'linh.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Linh Vo', 'Approved', 1);
+('an.student', 'an.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Nguyen Van An', 'Active', 1),
+('toan.coordinator', 'toan.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Toan Tran', 'Active', 1),
+('kiet.mentor', 'kiet.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Kiet Le', 'Active', 1),
+('ngon.judge', 'ngon.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Ngon Pham', 'Active', 1),
+('linh.student', 'linh.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Linh Vo', 'Active', 1);
 GO
 
 INSERT INTO UserRole (user_id, role_type)
@@ -59,7 +59,7 @@ GO
 -- Seed event, track, rounds, criteria
 -- =======================================================
 INSERT INTO HackathonEvent (name, season, year, start_date, end_date, status, description)
-VALUES (N'SEAL Summer 2026', 'Summer', 2026, '2026-06-15', '2026-07-20', 'Upcoming', N'Official seeded event for sprint integration testing');
+VALUES (N'SEAL Summer 2026', 'Summer', 2026, '2026-06-15', '2026-07-20', 'RegistrationOpen', N'Official seeded event for sprint integration testing');
 GO
 
 DECLARE @event_id INT = (SELECT TOP 1 event_id FROM HackathonEvent WHERE name = N'SEAL Summer 2026' ORDER BY event_id DESC);

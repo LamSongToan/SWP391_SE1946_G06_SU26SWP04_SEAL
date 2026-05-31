@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
+  Box,
   Button,
-  Card,
-  CardContent,
-  Container,
   Grid2,
   Link,
   MenuItem,
@@ -13,8 +11,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { http } from "../api/http";
+import PersonAddAltRoundedIcon from "@mui/icons-material/PersonAddAltRounded";
 import PublicShell from "../components/layout/PublicShell";
+import { http } from "../api/http";
 
 const INITIAL_FORM = {
   username: "",
@@ -51,122 +50,85 @@ export default function RegisterPage() {
 
   return (
     <PublicShell>
-      <Container maxWidth="md" sx={{ py: 8 }}>
-        <Card>
-          <CardContent sx={{ p: 3.5 }}>
-            <Typography sx={{ mb: 0.5 }} variant="h4">
-              SEAL Register
+      <Box className="ms-auth-screen">
+        <Box className="ms-auth-panel">
+          <Box>
+            <Typography component="h1">Create an account for SEAL event operations.</Typography>
+            <Typography sx={{ mt: 2 }}>
+              Participant profiles enter an approval workflow before joining protected dashboard modules.
             </Typography>
-            <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-              Create a student account for SEAL hackathon.
-            </Typography>
+          </Box>
+          <Box className="ms-auth-meta">
+            <Box className="ms-auth-meta-item"><strong>Profile</strong><span>Student Info</span></Box>
+            <Box className="ms-auth-meta-item"><strong>Status</strong><span>Pending Review</span></Box>
+            <Box className="ms-auth-meta-item"><strong>Season</strong><span>Multi Event</span></Box>
+          </Box>
+        </Box>
 
-            <form onSubmit={onSubmit}>
-              <Grid2 container spacing={2}>
-                <Grid2 size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Username"
-                    onChange={(e) => setForm({ ...form, username: e.target.value })}
-                    required
-                    value={form.username}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Full Name"
-                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                    required
-                    value={form.fullName}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    required
-                    type="email"
-                    value={form.email}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    required
-                    type="password"
-                    value={form.password}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label="Student Type"
-                    onChange={(e) => setForm({ ...form, studentType: e.target.value })}
-                    required
-                    select
-                    value={form.studentType}
-                  >
-                    <MenuItem value="FPT">FPT</MenuItem>
-                    <MenuItem value="EXTERNAL">External</MenuItem>
-                  </TextField>
-                </Grid2>
+        <Box className="ms-auth-form-wrap">
+          <Box className="ms-auth-form-card is-wide">
+              <span className="ms-auth-header">
+                <PersonAddAltRoundedIcon sx={{ fontSize: 16 }} />
+                Participant Registration
+              </span>
 
-                {form.studentType === "FPT" ? (
+              <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>Create Account</Typography>
+              <Typography color="text.secondary" sx={{ mb: 2.5 }}>
+                Complete the form to request system access.
+              </Typography>
+
+              <form onSubmit={onSubmit}>
+                <Grid2 container spacing={1.4}>
                   <Grid2 size={{ xs: 12, md: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="FPT Student Code"
-                      onChange={(e) => setForm({ ...form, fptStudentCode: e.target.value })}
-                      required
-                      value={form.fptStudentCode}
-                    />
+                    <TextField fullWidth label="Username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} required />
                   </Grid2>
-                ) : (
-                  <>
+                  <Grid2 size={{ xs: 12, md: 6 }}>
+                    <TextField fullWidth label="Full Name" value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} required />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12, md: 6 }}>
+                    <TextField fullWidth label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12, md: 6 }}>
+                    <TextField fullWidth label="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12, md: 6 }}>
+                    <TextField fullWidth select label="Student Type" value={form.studentType} onChange={(event) => setForm({ ...form, studentType: event.target.value })} required>
+                      <MenuItem value="FPT">FPT</MenuItem>
+                      <MenuItem value="EXTERNAL">External</MenuItem>
+                    </TextField>
+                  </Grid2>
+
+                  {form.studentType === "FPT" ? (
                     <Grid2 size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="External Student Code"
-                        onChange={(e) => setForm({ ...form, externalStudentCode: e.target.value })}
-                        required
-                        value={form.externalStudentCode}
-                      />
+                      <TextField fullWidth label="FPT Student Code" value={form.fptStudentCode} onChange={(event) => setForm({ ...form, fptStudentCode: event.target.value })} required />
                     </Grid2>
-                    <Grid2 size={{ xs: 12 }}>
-                      <TextField
-                        fullWidth
-                        label="University"
-                        onChange={(e) => setForm({ ...form, externalUniversity: e.target.value })}
-                        required
-                        value={form.externalUniversity}
-                      />
-                    </Grid2>
-                  </>
-                )}
-              </Grid2>
+                  ) : (
+                    <>
+                      <Grid2 size={{ xs: 12, md: 6 }}>
+                        <TextField fullWidth label="External Student Code" value={form.externalStudentCode} onChange={(event) => setForm({ ...form, externalStudentCode: event.target.value })} required />
+                      </Grid2>
+                      <Grid2 size={{ xs: 12 }}>
+                        <TextField fullWidth label="University" value={form.externalUniversity} onChange={(event) => setForm({ ...form, externalUniversity: event.target.value })} required />
+                      </Grid2>
+                    </>
+                  )}
+                </Grid2>
 
-              <Stack spacing={1.2} sx={{ mt: 2 }}>
-                {error ? <Alert severity="error">{error}</Alert> : null}
-                {success ? <Alert severity="success">{success}</Alert> : null}
-                <Button disabled={loading} size="large" type="submit" variant="contained">
-                  {loading ? "Submitting..." : "Register"}
-                </Button>
-              </Stack>
-            </form>
+                <Stack spacing={1.2} sx={{ mt: 2 }}>
+                  {error ? <Alert severity="error">{error}</Alert> : null}
+                  {success ? <Alert severity="success">{success}</Alert> : null}
+                  <Button disabled={loading} size="large" type="submit" variant="contained">
+                    {loading ? "Submitting..." : "Register"}
+                  </Button>
+                </Stack>
+              </form>
 
-            <Typography color="text.secondary" sx={{ mt: 2 }}>
-              Already registered?{" "}
-              <Link component={RouterLink} to="/login">
-                Go to login
-              </Link>
-            </Typography>
-          </CardContent>
-        </Card>
-      </Container>
+              <Typography color="text.secondary" sx={{ mt: 2 }}>
+                Already registered? <Link component={RouterLink} to="/login">Go to login</Link>
+              </Typography>
+          </Box>
+        </Box>
+      </Box>
     </PublicShell>
   );
 }

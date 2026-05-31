@@ -71,7 +71,9 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setFullName(request.fullName().trim());
         user.setApproved(autoApproveNewUser);
-        user.setStatus(autoApproveNewUser ? UserStatus.APPROVED.name() : UserStatus.PENDING.name());
+        user.setStatus(autoApproveNewUser
+                ? UserStatus.ACTIVE.getDbValue()
+                : UserStatus.PENDING_APPROVAL.getDbValue());
 
         UserRoleEntity role = new UserRoleEntity();
         role.setUser(user);
@@ -113,8 +115,8 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
 
-        if (!Boolean.TRUE.equals(user.getApproved()) || !UserStatus.APPROVED.name().equalsIgnoreCase(user.getStatus())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Your account has not been approved yet");
+        if (!Boolean.TRUE.equals(user.getApproved()) || !UserStatus.ACTIVE.isActiveValue(user.getStatus())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Tài khoản chưa được phê duyệt hoặc đã bị khóa");
         }
 
         return buildAuthResponse(user);

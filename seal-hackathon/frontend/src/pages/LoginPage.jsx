@@ -1,27 +1,28 @@
 import { useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
-  Container,
   Link,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import { authStorage, http } from "../api/http";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
 import PublicShell from "../components/layout/PublicShell";
-import { useLocation } from "react-router-dom";
+import { authStorage, http } from "../api/http";
+
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const location = useLocation();
+
   const successMessage = location.state?.message || "";
+
   const loginByPassword = async (event) => {
     event.preventDefault();
     setError("");
@@ -39,54 +40,74 @@ export default function LoginPage() {
 
   return (
     <PublicShell>
-      <Container maxWidth="sm" sx={{ py: 8 }}>
-        <Card>
-          <CardContent sx={{ p: 3.5 }}>
-            <Typography sx={{ mb: 0.5 }} variant="h4">
-              SEAL Login
+      <Box className="ms-auth-screen">
+        <Box className="ms-auth-panel">
+          <Box>
+            <span className="ms-auth-header" style={{ color: "#fff" }}>
+              <SecurityRoundedIcon sx={{ fontSize: 18 }} />
+              Coordinator Workspace
+            </span>
+            <Typography component="h1">
+              Manage SEAL operations from one focused workspace.
             </Typography>
-            <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-              Sign in using username and password.
+            <Typography sx={{ mt: 2 }}>
+              Sign in to review participant accounts, prepare event seasons, organize categories and keep each round on track.
             </Typography>
+          </Box>
+          <Box className="ms-auth-meta">
+            <Box className="ms-auth-meta-item"><strong>Review</strong><span>Accounts</span></Box>
+            <Box className="ms-auth-meta-item"><strong>Plan</strong><span>Events</span></Box>
+            <Box className="ms-auth-meta-item"><strong>Operate</strong><span>Rounds</span></Box>
+          </Box>
+        </Box>
 
-            <Box component="form" onSubmit={loginByPassword}>
-              <Stack spacing={2}>
-                <TextField
-                  label="Username"
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  required
-                  value={form.username}
-                />
-                <TextField
-                  label="Password"
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  required
-                  type="password"
-                  value={form.password}
-                />
-                <Button disabled={loading} size="large" type="submit" variant="contained">
-                  {loading ? "Signing in..." : "Sign in"}
-                </Button>
-              </Stack>
-            </Box>
-            {successMessage && <Alert severity="success" sx={{ mt: 2 }}>{successMessage}</Alert>}
+        <Box className="ms-auth-form-wrap">
+          <Box className="ms-auth-form-card">
+              <span className="ms-auth-header">
+                <LoginRoundedIcon sx={{ fontSize: 16 }} />
+                SEAL Operations Portal
+              </span>
 
-            {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
+              <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>Sign In</Typography>
+              <Typography color="text.secondary" sx={{ mb: 2.5 }}>
+                Continue to your assigned dashboard and daily coordination tools.
+              </Typography>
 
-            <Typography color="text.secondary" sx={{ mt: 2 }}>
-              No account?{" "}
-              <Link component={RouterLink} to="/register">
-                Create account
-              </Link>
-            </Typography>
-            <Typography color="text.secondary" sx={{ mt: 1 }}>
-              <Link component={RouterLink} to="/forgot-password">
-                Forgot password?
-              </Link>
-            </Typography>
-          </CardContent>
-        </Card>
-      </Container>
+              <Box component="form" onSubmit={loginByPassword}>
+                <Stack spacing={1.4}>
+                  <TextField
+                    label="Username"
+                    value={form.username}
+                    onChange={(event) => setForm({ ...form, username: event.target.value })}
+                    required
+                    fullWidth
+                  />
+                  <TextField
+                    label="Password"
+                    type="password"
+                    value={form.password}
+                    onChange={(event) => setForm({ ...form, password: event.target.value })}
+                    required
+                    fullWidth
+                  />
+                  <Button type="submit" variant="contained" size="large" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign in"}
+                  </Button>
+                </Stack>
+              </Box>
+
+              {successMessage ? <Alert severity="success" sx={{ mt: 2 }}>{successMessage}</Alert> : null}
+              {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
+
+              <Typography color="text.secondary" sx={{ mt: 2 }}>
+                No account? <Link component={RouterLink} to="/register">Create account</Link>
+              </Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.8 }}>
+                <Link component={RouterLink} to="/forgot-password">Forgot password?</Link>
+              </Typography>
+          </Box>
+        </Box>
+      </Box>
     </PublicShell>
   );
 }

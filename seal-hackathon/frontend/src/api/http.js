@@ -29,10 +29,21 @@ export const logout = async () => {
 };
 export const http = axios.create({
   baseURL: BASE_URL,
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+export function getApiErrorMessage(error, fallback = "Request failed") {
+  if (error?.code === "ECONNABORTED") {
+    return "Request timed out. Please check whether the backend is running and try Refresh.";
+  }
+  if (!error?.response && error?.message === "Network Error") {
+    return "Cannot connect to backend. Please check http://localhost:8080.";
+  }
+  return error?.response?.data?.message || error?.message || fallback;
+}
 
 http.interceptors.request.use((config) => {
   const auth = authStorage.get();

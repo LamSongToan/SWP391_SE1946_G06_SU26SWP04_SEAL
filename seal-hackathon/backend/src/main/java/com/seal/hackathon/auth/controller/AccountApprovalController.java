@@ -1,6 +1,7 @@
 package com.seal.hackathon.auth.controller;
 
 import com.seal.hackathon.auth.dto.PendingUserDto;
+import com.seal.hackathon.auth.dto.UpdateManagedUserRequest;
 import com.seal.hackathon.auth.dto.UserApprovalRequest;
 import com.seal.hackathon.auth.service.AccountApprovalService;
 import com.seal.hackathon.common.ApiResponse;
@@ -34,6 +35,12 @@ public class AccountApprovalController {
         return ResponseEntity.ok(ApiResponse.ok("All users fetched", approvalService.listAllUsers()));
     }
 
+    // GET /api/coordinator/users/{userId}
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<PendingUserDto>> getUserDetails(@PathVariable Integer userId) {
+        return ResponseEntity.ok(ApiResponse.ok("User details fetched", approvalService.getUserById(userId)));
+    }
+
     // POST /api/coordinator/users/action
     @PostMapping("/action")
     public ResponseEntity<ApiResponse<PendingUserDto>> processAction(
@@ -41,5 +48,14 @@ public class AccountApprovalController {
         PendingUserDto updated = approvalService.processAction(
                 request.userId(), request.action(), request.reason());
         return ResponseEntity.ok(ApiResponse.ok("User status updated to " + request.action(), updated));
+    }
+
+    // PUT /api/coordinator/users/{userId}
+    @PutMapping("/{userId}")
+    public ResponseEntity<ApiResponse<PendingUserDto>> updateManagedUser(
+            @PathVariable Integer userId,
+            @Valid @RequestBody UpdateManagedUserRequest request) {
+        PendingUserDto updated = approvalService.updateManagedUser(userId, request);
+        return ResponseEntity.ok(ApiResponse.ok("User updated", updated));
     }
 }

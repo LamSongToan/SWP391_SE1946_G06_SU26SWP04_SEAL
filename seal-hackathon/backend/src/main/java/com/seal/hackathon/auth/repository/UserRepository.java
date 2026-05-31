@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     Optional<UserEntity> findByUsernameIgnoreCase(String username);
 
     List<UserEntity> findByStatus(String status, Sort sort);
+
+    List<UserEntity> findByStatusIn(List<String> statuses, Sort sort);
 }

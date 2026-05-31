@@ -79,7 +79,7 @@ class AuthServiceTest {
         });
 
         var response = authService.register(request);
-        Assertions.assertEquals("PENDING", response.status());
+        Assertions.assertEquals("PendingApproval", response.status());
     }
 
     @Test
@@ -88,7 +88,7 @@ class AuthServiceTest {
         user.setUsername("an.user");
         user.setEmail("a@fpt.edu.vn");
         user.setPasswordHash("hash");
-        user.setStatus(UserStatus.PENDING.name());
+        user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
         user.setApproved(false);
 
         UserRoleEntity roleEntity = new UserRoleEntity();
@@ -102,6 +102,6 @@ class AuthServiceTest {
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
                 () -> authService.login(new LoginRequest("an.user", "12345678")));
-        Assertions.assertTrue(ex.getMessage().contains("not been approved"));
+        Assertions.assertTrue(ex.getMessage().contains("chưa được phê duyệt"));
     }
 }
