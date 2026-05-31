@@ -15,7 +15,18 @@ export const authStorage = {
     localStorage.removeItem(AUTH_STORAGE_KEY);
   },
 };
-
+export const logout = async () => {
+  const auth = authStorage.get();
+  if (auth?.accessToken) {
+    try {
+      await http.post("/api/auth/logout", { accessToken: auth.accessToken });
+    } catch {
+      // best-effort — clear locally regardless
+    }
+  }
+  authStorage.clear();
+  window.location.href = "/login";
+};
 export const http = axios.create({
   baseURL: BASE_URL,
   headers: {

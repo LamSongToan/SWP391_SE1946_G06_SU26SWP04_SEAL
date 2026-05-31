@@ -14,13 +14,14 @@ import {
 } from "@mui/material";
 import { authStorage, http } from "../api/http";
 import PublicShell from "../components/layout/PublicShell";
-
+import { useLocation } from "react-router-dom";
 export default function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const location = useLocation();
+  const successMessage = location.state?.message || "";
   const loginByPassword = async (event) => {
     event.preventDefault();
     setError("");
@@ -68,6 +69,7 @@ export default function LoginPage() {
                 </Button>
               </Stack>
             </Box>
+            {successMessage && <Alert severity="success" sx={{ mt: 2 }}>{successMessage}</Alert>}
 
             {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
@@ -75,6 +77,11 @@ export default function LoginPage() {
               No account?{" "}
               <Link component={RouterLink} to="/register">
                 Create account
+              </Link>
+            </Typography>
+            <Typography color="text.secondary" sx={{ mt: 1 }}>
+              <Link component={RouterLink} to="/forgot-password">
+                Forgot password?
               </Link>
             </Typography>
           </CardContent>
