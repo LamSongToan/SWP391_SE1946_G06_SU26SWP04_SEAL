@@ -15,6 +15,7 @@ export const authStorage = {
     localStorage.removeItem(AUTH_STORAGE_KEY);
   },
 };
+
 export const logout = async () => {
   const auth = authStorage.get();
   if (auth?.accessToken) {
@@ -30,19 +31,18 @@ export const logout = async () => {
 
 export const http = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 15000, // Tăng nhẹ timeout lên 15s để bao dung hơn cho gói cloud free lúc khởi động
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-
 export function getApiErrorMessage(error, fallback = "Request failed") {
   if (error?.code === "ECONNABORTED") {
-    return "Request timed out. Please check whether the backend is running and try Refresh.";
+    return "Request timed out. The server is taking too long to respond. Please try Refreshing.";
   }
   if (!error?.response && error?.message === "Network Error") {
-    return "Cannot connect to backend. Please check http://localhost:8080.";
+    return "Cannot connect to backend. The live server might be waking up from automatic sleep mode (takes ~1 minute). Please wait a moment and try again.";
   }
   return error?.response?.data?.message || error?.message || fallback;
 }
