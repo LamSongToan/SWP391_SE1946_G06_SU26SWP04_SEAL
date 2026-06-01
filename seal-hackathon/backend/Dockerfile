@@ -21,4 +21,4 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # Câu lệnh chạy ứng dụng: Ép hệ thống luôn bật cấu hình 'prod' để đọc file application-prod.properties kết nối Azure SQL
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
+ENTRYPOINT ["java", "-Xmx300m", "-Xms300m", "-jar", "-Dspring.profiles.active=prod", "-Dserver.port=${PORT:8080}", "app.jar"]
