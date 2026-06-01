@@ -5,17 +5,59 @@ IF COL_LENGTH('Team', 'join_code') IS NULL
 BEGIN
     ALTER TABLE Team
     ADD join_code VARCHAR(12) NULL;
+END
+GO
 
+UPDATE Team
+SET join_code = UPPER(LEFT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 8))
+WHERE join_code IS NULL;
+GO
+
+IF EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID('Team')
+      AND name = 'join_code'
+      AND is_nullable = 1
+)
+BEGIN
     UPDATE Team
     SET join_code = UPPER(LEFT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 8))
     WHERE join_code IS NULL;
 
     ALTER TABLE Team
     ALTER COLUMN join_code VARCHAR(12) NOT NULL;
+END
+GO
 
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes i
+    JOIN sys.index_columns ic
+      ON ic.object_id = i.object_id
+     AND ic.index_id = i.index_id
+    JOIN sys.columns c
+      ON c.object_id = ic.object_id
+     AND c.column_id = ic.column_id
+    WHERE i.object_id = OBJECT_ID('Team')
+      AND i.is_unique = 1
+      AND c.name = 'join_code'
+)
+BEGIN
     ALTER TABLE Team
     ADD CONSTRAINT UQ_Team_JoinCode UNIQUE (join_code);
+END
+GO
 
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns c
+    JOIN sys.default_constraints dc
+      ON dc.object_id = c.default_object_id
+    WHERE c.object_id = OBJECT_ID('Team')
+      AND c.name = 'join_code'
+)
+BEGIN
     ALTER TABLE Team
     ADD CONSTRAINT DF_Team_JoinCode
         DEFAULT UPPER(LEFT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 8)) FOR join_code;

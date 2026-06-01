@@ -22,7 +22,7 @@ Implemented modules:
 - Create a team in one event category
 - Invite a registered student by username or email
 - Accept or reject invitations, or join by team code
-- Remove members, cancel invitations, leave or delete an unused team
+- Remove members, transfer leadership, cancel invitations, leave or disband an unused team
 - Enforce one team per student per event and 3-5 member readiness rules
 - Configure round advancement as top N teams per category
 
@@ -51,6 +51,9 @@ API docs after backend starts:
 
 For an existing database created before the team-management module, run:
 - `database/team_management_migration.sql`
+
+Detailed database setup notes:
+- `database/README.md`
 
 ### 2) Backend
 
