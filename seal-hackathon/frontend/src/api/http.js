@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL;
 const AUTH_STORAGE_KEY = "seal_auth";
 
 export const authStorage = {
@@ -27,6 +27,7 @@ export const logout = async () => {
   authStorage.clear();
   window.location.href = "/login";
 };
+
 export const http = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -34,6 +35,7 @@ export const http = axios.create({
     "Content-Type": "application/json",
   },
 });
+
 
 export function getApiErrorMessage(error, fallback = "Request failed") {
   if (error?.code === "ECONNABORTED") {

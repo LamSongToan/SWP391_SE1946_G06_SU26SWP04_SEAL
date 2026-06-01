@@ -80,3 +80,22 @@ TBD
 - `main`
 - `develop`
 - `feature/*`
+
+# Đồ án Môn học: SWP391 - SE1946 - Nhóm 06
+
+## 📝 Đề tài: SEAL Hackathon Management System
+Hệ thống quản lý các cuộc thi Hackathon dành cho sinh viên, hỗ trợ đăng ký, quản lý đội thi, gửi lời mời và phê duyệt thành viên.
+
+## 👥 Thành viên nhóm & Phân công nhiệm vụ
+1. **Nguyễn Văn A** (Trưởng nhóm) - Làm Backend (Auth, Team Management), Cấu hình Azure SQL & Render Deployment.
+2. **Trần Thị B** - Làm Frontend ReactJS (Giao diện Auth, Dashboard), Kết nối API.
+3. **Lê Văn C** - Làm Frontend ReactJS (Giao diện Quản lý nhóm, Lời mời).
+4. **Phạm Văn D** - Thiết kế Cơ sở dữ liệu SQL Server, Viết file Script Data Test.
+5. **Hoàng Thị E** - Viết Tài liệu (API Contracts, Meeting Notes, Figma Mockup).
+
+## 🌐 Đường link Sản phẩm trực tuyến (Production)
+- **Website (Frontend)**: [https://onrender.com](https://onrender.com)
+- **Hệ thống API (Backend)**: [https://onrender.com](https://onrender.com)
+
+---
+👉 *Để xem hướng dẫn chi tiết cách cài đặt và chạy mã nguồn dưới máy Local, vui lòng truy cập vào thư mục con:* `[seal-hackathon/README.md](./seal-hackathon/README.md)`
