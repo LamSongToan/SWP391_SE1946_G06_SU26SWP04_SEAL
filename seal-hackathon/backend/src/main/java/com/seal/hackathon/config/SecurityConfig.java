@@ -46,14 +46,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+
+        // SỬA TẠI ĐÂY: Liệt kê chính xác các đường link được phép truy cập hệ thống
+        configuration.setAllowedOrigins(List.of(
+                "https://frontend-swp391-se1946-g06-su26swp04-seal.onrender.com", // Điền link Frontend Render thực tế
+                "http://localhost:5173" //
+        ));
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(false);
 
+        // Cho phép truyền nhận Token/Cookie an toàn giữa Frontend và Backend trực tuyến
+        configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }
