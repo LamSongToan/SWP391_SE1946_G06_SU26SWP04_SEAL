@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -9,29 +9,76 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
+import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
 import PublicShell from "../components/layout/PublicShell";
-import { http } from "../api/http";
+import { http, passwordResetStorage } from "../api/http";
+
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ resetToken: "", newPassword: "", confirmPassword: "" });
+  const location = useLocation();
+  const resetContext = useMemo(
+    () => location.state?.passwordReset || passwordResetStorage.get(),
+    [location.state]
+  );
+
+  const [form, setForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const validate = (nextForm) => {
+    const nextErrors = {};
+
+    if (!nextForm.newPassword) {
+      nextErrors.newPassword = "New password is required";
+    } else if (!PASSWORD_REGEX.test(nextForm.newPassword)) {
+      nextErrors.newPassword =
+        "Password must include at least one letter, one number, one special character, and be 8-72 characters";
+    }
+
+    if (!nextForm.confirmPassword) {
+      nextErrors.confirmPassword = "Confirm new password is required";
+    } else if (nextForm.confirmPassword !== nextForm.newPassword) {
+      nextErrors.confirmPassword = "Passwords do not match";
+    }
+
+    return nextErrors;
+  };
+
+  const setFormField = (key, value) => {
+    const nextForm = { ...form, [key]: value };
+    setForm(nextForm);
+    setFieldErrors(validate(nextForm));
+  };
 
   const onSubmit = async (event) => {
     event.preventDefault();
     setError("");
-    if (form.newPassword !== form.confirmPassword) {
-      setError("Passwords do not match");
+
+    if (!resetContext?.email || !resetContext?.otp) {
+      setError("OTP verification is required before setting a new password.");
       return;
     }
+
+    const nextErrors = validate(form);
+    setFieldErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
+
     setLoading(true);
     try {
       await http.post("/api/auth/reset-password", {
-        resetToken: form.resetToken,
+        email: resetContext.email,
+        otp: resetContext.otp,
         newPassword: form.newPassword,
       });
+      passwordResetStorage.clear();
       navigate("/login", { state: { message: "Password reset successfully. Please log in." } });
     } catch (err) {
       setError(err?.response?.data?.message || "Reset failed");
@@ -40,68 +87,61 @@ export default function ResetPasswordPage() {
     }
   };
 
+  const isSubmitDisabled = loading || Object.values(validate(form)).some(Boolean) || !resetContext?.email || !resetContext?.otp;
+
   return (
     <PublicShell>
-      <Box className="ms-auth-screen">
-        <Box className="ms-auth-panel">
-          <Box>
-            <Typography component="h1">Set a new password and return to operations.</Typography>
-            <Typography sx={{ mt: 2 }}>
-              Use the token issued by password recovery to update credentials for the next login.
-            </Typography>
+      <Box
+        className="ms-auth-form-wrap"
+        sx={{ minHeight: "calc(100vh - 74px)", px: { xs: 2, md: 3 } }}
+      >
+        <Box className="ms-auth-form-card">
+          <span className="ms-auth-header">
+            <LockResetRoundedIcon sx={{ fontSize: 16 }} />
+            New Password
+          </span>
+          <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>Set New Password</Typography>
+          <Typography color="text.secondary" sx={{ mb: 2.5 }}>
+            Choose a strong password for <strong>{resetContext?.email || "your account"}</strong>.
+          </Typography>
+
+          <Box component="form" onSubmit={onSubmit}>
+            <Stack spacing={1.4}>
+              <TextField
+                label="New Password"
+                type="password"
+                value={form.newPassword}
+                onChange={(event) => setFormField("newPassword", event.target.value)}
+                error={Boolean(fieldErrors.newPassword)}
+                helperText={
+                  fieldErrors.newPassword ||
+                  "At least 8 characters, including a letter, a number, and a special character."
+                }
+                required
+              />
+              <TextField
+                label="Confirm New Password"
+                type="password"
+                value={form.confirmPassword}
+                onChange={(event) => setFormField("confirmPassword", event.target.value)}
+                error={Boolean(fieldErrors.confirmPassword)}
+                helperText={fieldErrors.confirmPassword || " "}
+                required
+              />
+              <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>
+                {loading ? "Resetting..." : "Reset Password"}
+              </Button>
+            </Stack>
           </Box>
-          <Box className="ms-auth-meta">
-            <Box className="ms-auth-meta-item"><strong>Token</strong><span>Required</span></Box>
-            <Box className="ms-auth-meta-item"><strong>Password</strong><span>Confirmed</span></Box>
-            <Box className="ms-auth-meta-item"><strong>Session</strong><span>Re-login</span></Box>
-          </Box>
-        </Box>
 
-        <Box className="ms-auth-form-wrap">
-          <Box className="ms-auth-form-card">
-              <span className="ms-auth-header">
-                <KeyRoundedIcon sx={{ fontSize: 16 }} />
-                Credential Recovery
-              </span>
-              <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>Reset Password</Typography>
-              <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-                Enter token and choose a new password.
-              </Typography>
+          {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
-              <Box component="form" onSubmit={onSubmit}>
-                <Stack spacing={1.4}>
-                  <TextField
-                    label="Reset Token"
-                    value={form.resetToken}
-                    onChange={(event) => setForm({ ...form, resetToken: event.target.value })}
-                    required
-                  />
-                  <TextField
-                    label="New Password"
-                    type="password"
-                    value={form.newPassword}
-                    onChange={(event) => setForm({ ...form, newPassword: event.target.value })}
-                    required
-                  />
-                  <TextField
-                    label="Confirm New Password"
-                    type="password"
-                    value={form.confirmPassword}
-                    onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}
-                    required
-                  />
-                  <Button type="submit" variant="contained" size="large" disabled={loading}>
-                    {loading ? "Resetting..." : "Reset Password"}
-                  </Button>
-                </Stack>
-              </Box>
-
-              {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-
-              <Typography color="text.secondary" sx={{ mt: 2 }}>
-                <Link component={RouterLink} to="/login">Back to login</Link>
-              </Typography>
-          </Box>
+          <Typography color="text.secondary" sx={{ mt: 2 }}>
+            Need to verify OTP again? <Link component={RouterLink} to="/verify-reset-otp">Back to OTP verification</Link>
+          </Typography>
+          <Typography color="text.secondary" sx={{ mt: 0.8 }}>
+            <Link component={RouterLink} to="/login">Back to login</Link>
+          </Typography>
         </Box>
       </Box>
     </PublicShell>

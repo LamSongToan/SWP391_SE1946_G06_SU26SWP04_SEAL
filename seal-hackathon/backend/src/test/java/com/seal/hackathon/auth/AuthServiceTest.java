@@ -1,5 +1,6 @@
 package com.seal.hackathon.auth;
 
+import com.seal.hackathon.auth.dto.GoogleLoginRequest;
 import com.seal.hackathon.auth.dto.LoginRequest;
 import com.seal.hackathon.auth.dto.RegisterRequest;
 import com.seal.hackathon.auth.entity.RoleType;
@@ -12,6 +13,7 @@ import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.security.CustomUserDetailsService;
 import com.seal.hackathon.auth.security.JwtService;
 import com.seal.hackathon.auth.service.AuthService;
+import com.seal.hackathon.auth.service.GoogleIdentityService;
 import com.seal.hackathon.common.ApiException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +45,8 @@ class AuthServiceTest {
     private JwtService jwtService;
     @Mock
     private CustomUserDetailsService userDetailsService;
+    @Mock
+    private GoogleIdentityService googleIdentityService;
 
     @InjectMocks
     private AuthService authService;
@@ -61,6 +65,34 @@ class AuthServiceTest {
 
         ApiException ex = Assertions.assertThrows(ApiException.class, () -> authService.register(request));
         Assertions.assertTrue(ex.getMessage().contains("fptStudentCode"));
+    }
+
+    @Test
+    void register_shouldRejectInvalidFptStudentCodeFormat() {
+        RegisterRequest request = new RegisterRequest(
+                "an.user", "a@gmail.com", "Seal@2026", "An", StudentType.FPT,
+                "AB123456", null, null
+        );
+        when(userRepository.existsByUsernameIgnoreCase("an.user")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("a@gmail.com")).thenReturn(false);
+
+        ApiException ex = Assertions.assertThrows(ApiException.class, () -> authService.register(request));
+        Assertions.assertTrue(ex.getMessage().contains("FPT student code must have 8 characters"));
+    }
+
+    @Test
+    void register_shouldRejectDuplicateFptStudentCode() {
+        RegisterRequest request = new RegisterRequest(
+                "an.user", "a@gmail.com", "Seal@2026", "An", StudentType.FPT,
+                "SE123456", null, null
+        );
+        when(userRepository.existsByUsernameIgnoreCase("an.user")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("a@gmail.com")).thenReturn(false);
+        when(studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCase(
+                "SE123456", "FPT University HCMC")).thenReturn(true);
+
+        ApiException ex = Assertions.assertThrows(ApiException.class, () -> authService.register(request));
+        Assertions.assertTrue(ex.getMessage().contains("already exists"));
     }
 
     @Test
@@ -97,11 +129,28 @@ class AuthServiceTest {
         roles.add(roleEntity);
         user.setUserRoles(roles);
 
-        when(userRepository.findByUsernameIgnoreCase("an.user")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailIgnoreCase("a@fpt.edu.vn")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("12345678", "hash")).thenReturn(true);
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
-                () -> authService.login(new LoginRequest("an.user", "12345678")));
-        Assertions.assertTrue(ex.getMessage().contains("chưa được phê duyệt"));
+                () -> authService.login(new LoginRequest("a@fpt.edu.vn", "12345678")));
+        Assertions.assertTrue(ex.getMessage().contains("not approved"));
+    }
+
+    @Test
+    void googleLogin_shouldRequireRegistrationWhenEmailDoesNotExist() {
+        when(googleIdentityService.verifyIdToken("google-token"))
+                .thenReturn(new GoogleIdentityService.GoogleUserProfile(
+                        "new.student@gmail.com",
+                        "New Student",
+                        "https://example.com/avatar.png"
+                ));
+        when(userRepository.findByEmailIgnoreCase("new.student@gmail.com")).thenReturn(Optional.empty());
+
+        var response = authService.loginWithGoogle(new GoogleLoginRequest("google-token"));
+
+        Assertions.assertTrue(response.registrationRequired());
+        Assertions.assertNull(response.auth());
+        Assertions.assertEquals("new.student@gmail.com", response.email());
     }
 }

@@ -3,6 +3,7 @@ package com.seal.hackathon.auth.service;
 import com.seal.hackathon.auth.dto.PendingUserDto;
 import com.seal.hackathon.auth.dto.UpdateManagedUserRequest;
 import com.seal.hackathon.auth.entity.RoleType;
+import com.seal.hackathon.auth.entity.StudentProfileEntity;
 import com.seal.hackathon.auth.entity.UserEntity;
 import com.seal.hackathon.auth.entity.UserStatus;
 import com.seal.hackathon.auth.entity.UserRoleEntity;
@@ -163,6 +164,7 @@ public class AccountApprovalService {
         List<String> roles = user.getUserRoles().stream()
                 .map(r -> normalizeRole(r.getRoleType()))
                 .toList();
+        StudentProfileEntity studentProfile = studentProfileRepository.findByUserRoleUserUserId(user.getUserId()).orElse(null);
         return new PendingUserDto(
                 user.getUserId(),
                 user.getUsername(),
@@ -170,7 +172,10 @@ public class AccountApprovalService {
                 user.getFullName(),
                 user.getStatus(),
                 roles,
-                user.getCreatedAt());
+                user.getCreatedAt(),
+                studentProfile != null ? studentProfile.getStudentType() : null,
+                studentProfile != null ? studentProfile.getStudentCode() : null,
+                studentProfile != null ? studentProfile.getUniversityName() : null);
     }
 
     private UserStatus parseStatus(String rawStatus) {

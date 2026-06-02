@@ -12,7 +12,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
+  Grid2,
   InputLabel,
   MenuItem,
   OutlinedInput,
@@ -42,19 +44,37 @@ function normalizeStatus(status) {
   const value = String(status || "").trim().toUpperCase();
   if (value === "APPROVED") return "ACTIVE";
   if (value === "PENDING") return "PENDING_APPROVAL";
+  if (value === "PENDINGAPPROVAL") return "PENDING_APPROVAL";
   if (value === "DISABLED") return "SUSPENDED";
   return value.replace(/\s+/g, "_");
+}
+
+function RegistrationInfoRow({ label, value }) {
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.4 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontWeight: 600 }}>
+        {value || "N/A"}
+      </Typography>
+    </Box>
+  );
 }
 
 export default function AccountApprovalPanel() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("ALL");
 
   const [actionDialog, setActionDialog] = useState(null);
   const [reason, setReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewUser, setReviewUser] = useState(null);
 
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -68,23 +88,33 @@ export default function AccountApprovalPanel() {
     roles: [],
   });
 
+  const pendingUsers = users.filter((user) => normalizeStatus(user.status) === "PENDING_APPROVAL");
+  const managedUsers = users.filter((user) => normalizeStatus(user.status) !== "PENDING_APPROVAL");
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const url = filter === "PENDING" ? "/api/coordinator/users/pending" : "/api/coordinator/users";
-      const response = await http.get(url);
+      const response = await http.get("/api/coordinator/users");
       setUsers(response.data?.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load users");
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const runAction = async (userId, action, actionReason = null) => {
+    await http.post("/api/coordinator/users/action", {
+      userId,
+      action,
+      reason: actionReason,
+    });
+  };
 
   const openDialog = (userId, action) => {
     setActionDialog({ userId, action });
@@ -101,13 +131,10 @@ export default function AccountApprovalPanel() {
     setActionLoading(true);
     setError("");
     try {
-      await http.post("/api/coordinator/users/action", {
-        userId: actionDialog.userId,
-        action: actionDialog.action,
-        reason: reason || null,
-      });
+      await runAction(actionDialog.userId, actionDialog.action, reason || null);
       closeActionDialog();
-      fetchUsers();
+      setReviewDialogOpen(false);
+      await fetchUsers();
     } catch (err) {
       setError(err?.response?.data?.message || "Action failed");
     } finally {
@@ -115,7 +142,21 @@ export default function AccountApprovalPanel() {
     }
   };
 
-  const actionLabel = { ACTIVE: "Activate", REJECTED: "Reject", SUSPENDED: "Suspend", PENDING_APPROVAL: "Re-review" };
+  const approveDirectly = async (userId) => {
+    setActionLoading(true);
+    setError("");
+    try {
+      await runAction(userId, "ACTIVE");
+      setReviewDialogOpen(false);
+      await fetchUsers();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Approve failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const actionLabel = { ACTIVE: "Approve", REJECTED: "Reject", SUSPENDED: "Suspend", PENDING_APPROVAL: "Re-review" };
   const actionColor = { ACTIVE: "success", REJECTED: "error", SUSPENDED: "warning", PENDING_APPROVAL: "warning" };
 
   const fillEditForm = (user) => {
@@ -126,6 +167,34 @@ export default function AccountApprovalPanel() {
       status: user?.status || "PendingApproval",
       roles: user?.roles || [],
     });
+  };
+
+  const loadUserDetails = async (userId) => {
+    const response = await http.get(`/api/coordinator/users/${userId}`);
+    return response.data?.data;
+  };
+
+  const openReview = async (user) => {
+    setReviewDialogOpen(true);
+    setReviewLoading(true);
+    setReviewError("");
+    setReviewUser(user);
+    try {
+      const latest = await loadUserDetails(user.userId);
+      setReviewUser(latest || user);
+    } catch (err) {
+      setReviewError(err?.response?.data?.message || "Failed to load latest registration details.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const closeReview = () => {
+    if (actionLoading) return;
+    setReviewDialogOpen(false);
+    setReviewLoading(false);
+    setReviewError("");
+    setReviewUser(null);
   };
 
   const openDetails = async (user) => {
@@ -143,8 +212,7 @@ export default function AccountApprovalPanel() {
     }
 
     try {
-      const response = await http.get(`/api/coordinator/users/${userId}`);
-      const data = response.data?.data;
+      const data = await loadUserDetails(userId);
       fillEditForm(data || user);
     } catch (err) {
       setDetailError(err?.response?.data?.message || "Failed to load latest user details. Showing table data instead.");
@@ -194,92 +262,168 @@ export default function AccountApprovalPanel() {
         <Box>
           <Typography className="ms-section-title" variant="h5">Account Management</Typography>
           <Typography className="ms-section-subtitle">
-            Review approvals and maintain account details, status, and role assignment.
+            Review pending registrations, approve accounts quickly, and keep user details manageable afterward.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
-          <Button size="small" variant={filter === "ALL" ? "contained" : "outlined"} onClick={() => setFilter("ALL")}>All Users</Button>
-          <Button size="small" variant={filter === "PENDING" ? "contained" : "outlined"} onClick={() => setFilter("PENDING")}>Pending Only</Button>
-          <Button size="small" onClick={fetchUsers} disabled={loading}>Refresh</Button>
-        </Stack>
+        <Button size="small" onClick={fetchUsers} disabled={loading}>Refresh</Button>
       </Stack>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
       {loading ? (
         <Box sx={{ textAlign: "center", py: 4 }}><CircularProgress /></Box>
-      ) : users.length === 0 ? (
-        <Card className="ms-data-card">
-          <CardContent>
-            <Typography color="text.secondary">
-              {filter === "PENDING" ? "No pending accounts." : "No users found."}
-            </Typography>
-          </CardContent>
-        </Card>
       ) : (
-        <Card className="ms-data-card">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Roles</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Registered</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.userId} hover>
-                  <TableCell>
-                    <Stack direction="row" spacing={1.2} alignItems="center">
-                      <Avatar sx={{ bgcolor: "primary.main", width: 34, height: 34 }}>
-                        {(user.fullName || user.username || "U").charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Box>
-                        <Typography sx={{ fontWeight: 700 }}>{user.fullName}</Typography>
-                        <Typography variant="caption" color="text.secondary">@{user.username}</Typography>
-                      </Box>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                      {user.roles.map((role) => (
-                        <Chip key={role} label={role} size="small" variant="outlined" />
-                      ))}
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={user.status} size="small" color={STATUS_COLOR[normalizeStatus(user.status)] || "default"} />
-                  </TableCell>
-                  <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-GB") : "N/A"}</TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap">
-                      <Button size="small" variant="outlined" onClick={() => openDetails(user)}>Details</Button>
-                      {normalizeStatus(user.status) === "PENDING_APPROVAL" && (
-                        <>
-                          <Button size="small" color="success" variant="outlined" onClick={() => openDialog(user.userId, "ACTIVE")}>Activate</Button>
-                          <Button size="small" color="error" variant="outlined" onClick={() => openDialog(user.userId, "REJECTED")}>Reject</Button>
-                        </>
-                      )}
-                      {normalizeStatus(user.status) === "REJECTED" && (
-                        <>
-                          <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "PENDING_APPROVAL")}>Re-review</Button>
-                          <Button size="small" color="success" variant="outlined" onClick={() => openDialog(user.userId, "ACTIVE")}>Activate</Button>
-                        </>
-                      )}
-                      {normalizeStatus(user.status) === "ACTIVE" && (
-                        <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "SUSPENDED")}>Suspend</Button>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+        <Stack spacing={2.2}>
+          <Card className="ms-data-card">
+            <CardContent>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", md: "center" }}
+                spacing={1}
+                sx={{ mb: 1.6 }}
+              >
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>Pending Approval</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Newly registered accounts waiting for coordinator review and approval.
+                  </Typography>
+                </Box>
+                <Chip color="warning" label={`${pendingUsers.length} pending`} />
+              </Stack>
+
+              {pendingUsers.length === 0 ? (
+                <Typography color="text.secondary">No pending accounts right now.</Typography>
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>User</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Roles</TableCell>
+                      <TableCell>Registered</TableCell>
+                      <TableCell align="right">Approval Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {pendingUsers.map((user) => (
+                      <TableRow key={user.userId} hover>
+                        <TableCell>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <Avatar sx={{ bgcolor: "primary.main", width: 34, height: 34 }}>
+                              {(user.fullName || user.username || "U").charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box>
+                              <Typography sx={{ fontWeight: 700 }}>{user.fullName}</Typography>
+                              <Typography variant="caption" color="text.secondary">@{user.username}</Typography>
+                            </Box>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                            {user.roles.map((role) => (
+                              <Chip key={role} label={role} size="small" variant="outlined" />
+                            ))}
+                          </Stack>
+                        </TableCell>
+                        <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-GB") : "N/A"}</TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row" spacing={0.6} justifyContent="flex-end" flexWrap="wrap">
+                            <Button size="small" variant="outlined" onClick={() => openReview(user)}>
+                              Detail
+                            </Button>
+                            <Button size="small" color="success" variant="contained" onClick={() => approveDirectly(user.userId)}>
+                              Approve
+                            </Button>
+                            <Button size="small" color="error" variant="outlined" onClick={() => openDialog(user.userId, "REJECTED")}>
+                              Reject
+                            </Button>
+                            <Button size="small" variant="text" onClick={() => openDetails(user)}>
+                              Manage
+                            </Button>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="ms-data-card">
+            <CardContent sx={{ p: 0 }}>
+              <Box sx={{ px: 2.2, py: 1.8 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>Managed Accounts</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Approved, suspended, or previously reviewed accounts. Use Details to update status or roles later.
+                </Typography>
+              </Box>
+              {managedUsers.length === 0 ? (
+                <Box sx={{ px: 2.2, pb: 2.2 }}>
+                  <Typography color="text.secondary">No managed accounts yet.</Typography>
+                </Box>
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>User</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Roles</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Registered</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {managedUsers.map((user) => (
+                      <TableRow key={user.userId} hover>
+                        <TableCell>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <Avatar sx={{ bgcolor: "primary.main", width: 34, height: 34 }}>
+                              {(user.fullName || user.username || "U").charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box>
+                              <Typography sx={{ fontWeight: 700 }}>{user.fullName}</Typography>
+                              <Typography variant="caption" color="text.secondary">@{user.username}</Typography>
+                            </Box>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                            {user.roles.map((role) => (
+                              <Chip key={role} label={role} size="small" variant="outlined" />
+                            ))}
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={user.status} size="small" color={STATUS_COLOR[normalizeStatus(user.status)] || "default"} />
+                        </TableCell>
+                        <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-GB") : "N/A"}</TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap">
+                            <Button size="small" variant="outlined" onClick={() => openDetails(user)}>Details</Button>
+                            {normalizeStatus(user.status) === "REJECTED" && (
+                              <>
+                                <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "PENDING_APPROVAL")}>Re-review</Button>
+                                <Button size="small" color="success" variant="outlined" onClick={() => approveDirectly(user.userId)}>Approve</Button>
+                              </>
+                            )}
+                            {normalizeStatus(user.status) === "ACTIVE" && (
+                              <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "SUSPENDED")}>Suspend</Button>
+                            )}
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </Stack>
       )}
 
       <Dialog open={Boolean(actionDialog)} onClose={closeActionDialog} maxWidth="xs" fullWidth>
@@ -308,6 +452,88 @@ export default function AccountApprovalPanel() {
           >
             {actionLoading ? "Processing..." : (actionDialog ? actionLabel[actionDialog.action] : "Save")}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={reviewDialogOpen} onClose={closeReview} maxWidth="sm" fullWidth>
+        <DialogTitle>Pending Registration Details</DialogTitle>
+        <DialogContent>
+          {reviewLoading ? (
+            <Box sx={{ py: 3, textAlign: "center" }}><CircularProgress /></Box>
+          ) : (
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              {reviewError ? <Alert severity="warning">{reviewError}</Alert> : null}
+
+              {reviewUser ? (
+                <>
+                  <Box>
+                    <Typography variant="h6" sx={{ mb: 0.5 }}>{reviewUser.fullName}</Typography>
+                    <Typography color="text.secondary">{reviewUser.email}</Typography>
+                    <Typography variant="caption" color="text.secondary">@{reviewUser.username}</Typography>
+                  </Box>
+
+                  <Divider />
+
+                  <Grid2 container spacing={2}>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
+                      <RegistrationInfoRow label="Student Type" value={reviewUser.studentType} />
+                    </Grid2>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
+                      <RegistrationInfoRow label="Student Code" value={reviewUser.studentCode} />
+                    </Grid2>
+                    <Grid2 size={{ xs: 12 }}>
+                      <RegistrationInfoRow label="University" value={reviewUser.universityName} />
+                    </Grid2>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
+                      <RegistrationInfoRow
+                        label="Registered On"
+                        value={reviewUser.createdAt ? new Date(reviewUser.createdAt).toLocaleString("en-GB") : "N/A"}
+                      />
+                    </Grid2>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.4 }}>
+                          Roles
+                        </Typography>
+                        <Stack direction="row" spacing={0.6} flexWrap="wrap">
+                          {(reviewUser.roles || []).map((role) => (
+                            <Chip key={role} label={role} size="small" variant="outlined" />
+                          ))}
+                        </Stack>
+                      </Box>
+                    </Grid2>
+                  </Grid2>
+
+                  <Alert severity="info">
+                    This dialog is for reviewing submitted registration data. Use <strong>Manage</strong> later if you need to edit username, roles, or status manually.
+                  </Alert>
+                </>
+              ) : null}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReview} disabled={actionLoading}>Close</Button>
+          {reviewUser ? (
+            <>
+              <Button
+                color="error"
+                variant="outlined"
+                onClick={() => openDialog(reviewUser.userId, "REJECTED")}
+                disabled={actionLoading}
+              >
+                Reject
+              </Button>
+              <Button
+                color="success"
+                variant="contained"
+                onClick={() => approveDirectly(reviewUser.userId)}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Approving..." : "Approve"}
+              </Button>
+            </>
+          ) : null}
         </DialogActions>
       </Dialog>
 

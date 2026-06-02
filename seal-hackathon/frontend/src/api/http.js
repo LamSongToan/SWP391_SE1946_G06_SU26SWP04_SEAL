@@ -2,6 +2,8 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
 const AUTH_STORAGE_KEY = "seal_auth";
+const GOOGLE_REGISTRATION_STORAGE_KEY = "seal_google_registration";
+const PASSWORD_RESET_STORAGE_KEY = "seal_password_reset";
 
 export const authStorage = {
   get() {
@@ -13,6 +15,32 @@ export const authStorage = {
   },
   clear() {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+  },
+};
+
+export const googleRegistrationStorage = {
+  get() {
+    const raw = sessionStorage.getItem(GOOGLE_REGISTRATION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  },
+  set(payload) {
+    sessionStorage.setItem(GOOGLE_REGISTRATION_STORAGE_KEY, JSON.stringify(payload));
+  },
+  clear() {
+    sessionStorage.removeItem(GOOGLE_REGISTRATION_STORAGE_KEY);
+  },
+};
+
+export const passwordResetStorage = {
+  get() {
+    const raw = sessionStorage.getItem(PASSWORD_RESET_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  },
+  set(payload) {
+    sessionStorage.setItem(PASSWORD_RESET_STORAGE_KEY, JSON.stringify(payload));
+  },
+  clear() {
+    sessionStorage.removeItem(PASSWORD_RESET_STORAGE_KEY);
   },
 };
 
@@ -36,6 +64,23 @@ export const http = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+export function resolveAssetUrl(value) {
+  if (!value) {
+    return "";
+  }
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+  if (value.startsWith("/")) {
+    try {
+      return `${new URL(BASE_URL || window.location.origin).origin}${value}`;
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
 
 export function getApiErrorMessage(error, fallback = "Request failed") {
   if (error?.code === "ECONNABORTED") {
@@ -61,7 +106,8 @@ http.interceptors.response.use(
     const requestUrl = error?.config?.url || "";
     const isAuthRequest =
       requestUrl.includes("/api/auth/login") ||
-      requestUrl.includes("/api/auth/register");
+      requestUrl.includes("/api/auth/register") ||
+      requestUrl.includes("/api/auth/google");
 
     if (error?.response?.status === 401 && !isAuthRequest) {
       authStorage.clear();

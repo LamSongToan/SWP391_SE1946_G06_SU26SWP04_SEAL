@@ -1,29 +1,25 @@
 package com.seal.hackathon.auth.dto;
 
 import com.seal.hackathon.auth.entity.StudentType;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record RegisterRequest(
+public record GoogleRegisterRequest(
         @NotBlank
         @Size(min = 4, max = 50)
         @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "username only allows letters, numbers, dot, underscore and hyphen")
         String username,
-        @NotBlank @Email String email,
         @NotBlank
-        @Size(min = 8, max = 72)
-        @Pattern(
-                regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,72}$",
-                message = "password must include at least one letter, one number, and one special character"
-        )
-        String password,
-        @NotBlank @Size(max = 150) String fullName,
-        @NotNull StudentType studentType,
+        @Size(max = 150)
+        String fullName,
+        @NotNull
+        StudentType studentType,
         String fptStudentCode,
         String externalStudentCode,
-        String externalUniversity
+        String externalUniversity,
+        @NotBlank
+        String idToken
 ) {
 }

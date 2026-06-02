@@ -7,4 +7,12 @@ import java.util.Optional;
 
 public interface StudentProfileRepository extends JpaRepository<StudentProfileEntity, Integer> {
     Optional<StudentProfileEntity> findByUserRoleUserUserId(Integer userId);
+
+    boolean existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCase(String studentCode, String universityName);
+
+    boolean existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCaseAndUserRoleUserUserIdNot(
+            String studentCode,
+            String universityName,
+            Integer userId
+    );
 }

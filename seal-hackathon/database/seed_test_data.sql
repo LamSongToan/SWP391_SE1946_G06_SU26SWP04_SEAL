@@ -2,17 +2,17 @@ USE SEAL_Hackathon_G06;
 GO
 
 -- =======================================================
--- Seed users (for username/email login system testing)
--- Password for all seeded users: 12345678.
+-- Seed users (for email login system testing)
+-- Password for all seeded users: Seal@2026.
 -- =======================================================
-INSERT INTO [Users] (username, email, password_hash, full_name, status, is_approved)
+INSERT INTO [Users] (username, email, password_hash, full_name, avatar_url, bio, status, is_approved)
 VALUES
-('an.student', 'an.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Nguyen Van An', 'Active', 1),
-('toan.coordinator', 'toan.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Toan Tran', 'Active', 1),
-('kiet.mentor', 'kiet.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Kiet Le', 'Active', 1),
-('ngon.judge', 'ngon.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Ngon Pham', 'Active', 1),
-('linh.student', 'linh.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Linh Vo', 'Active', 1),
-('mai.student', 'mai.seal.demo@gmail.com', '$2a$10$jUuOtXfkqWe7x1UqYkoXUe9lRGaLzeikx0UFIxEUwV2cHrUuJVUi.', N'Mai Nguyen', 'Active', 1);
+('an.student', 'an.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Nguyen Van An', NULL, N'FPT Software Engineering student focused on product execution and team coordination.', 'Active', 1),
+('toan.coordinator', 'toan.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Toan Tran', NULL, N'Coordinator for event operations, participant approval, and seasonal planning.', 'Active', 1),
+('kiet.mentor', 'kiet.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Kiet Le', NULL, N'Mentor supporting web architecture, product direction, and technical tradeoffs.', 'Active', 1),
+('ngon.judge', 'ngon.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Ngon Pham', NULL, N'Guest judge reviewing implementation quality, product value, and presentation.', 'Active', 1),
+('linh.student', 'linh.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Linh Vo', NULL, N'External student interested in cross-university collaboration and applied software delivery.', 'Active', 1),
+('mai.student', 'mai.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Mai Nguyen', NULL, N'FPT student with interest in frontend polish, user experience, and rapid iteration.', 'Active', 1);
 GO
 
 INSERT INTO UserRole (user_id, role_type)

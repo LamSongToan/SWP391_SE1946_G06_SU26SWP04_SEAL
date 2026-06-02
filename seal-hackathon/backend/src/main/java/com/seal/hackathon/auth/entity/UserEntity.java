@@ -40,6 +40,12 @@ public class UserEntity {
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(name = "bio", length = 500)
+    private String bio;
+
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 

@@ -43,14 +43,16 @@ The migration adds:
 After running `seed_test_data.sql`, all seeded accounts use:
 
 ```text
-Password: 12345678
+Password: Seal@2026
 ```
 
-| Username | Role |
-| --- | --- |
-| `an.student` | Student |
-| `linh.student` | Student |
-| `mai.student` | Student |
-| `toan.coordinator` | Coordinator |
-| `kiet.mentor` | Mentor |
-| `ngon.judge` | Judge |
+Use the `email` column below for login. `username` remains in the system only as profile data.
+
+| Username | Email | Role |
+| --- | --- | --- |
+| `an.student` | `an.seal.demo@gmail.com` | Student |
+| `linh.student` | `linh.seal.demo@gmail.com` | Student |
+| `mai.student` | `mai.seal.demo@gmail.com` | Student |
+| `toan.coordinator` | `toan.seal.demo@gmail.com` | Coordinator |
+| `kiet.mentor` | `kiet.seal.demo@gmail.com` | Mentor |
+| `ngon.judge` | `ngon.seal.demo@gmail.com` | Judge |

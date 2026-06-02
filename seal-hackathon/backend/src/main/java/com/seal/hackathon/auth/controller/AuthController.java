@@ -36,24 +36,43 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Login successful", authService.login(request)));
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<GoogleLoginResponse>> loginWithGoogle(
+            @Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Google sign-in processed", authService.loginWithGoogle(request)));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody LogoutRequest request) {
         logoutService.logout(request.accessToken());
         return ResponseEntity.ok(ApiResponse.ok("Logged out successfully", null));
     }
 
+    @PostMapping("/register/google")
+    public ResponseEntity<ApiResponse<RegisterResponse>> registerWithGoogle(
+            @Valid @RequestBody GoogleRegisterRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Google registration completed", authService.registerWithGoogle(request)));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<ForgotPasswordResponse>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
-        ForgotPasswordResponse data = passwordService.forgotPassword(request.username());
-        return ResponseEntity.ok(ApiResponse.ok("Reset token generated", data));
+        ForgotPasswordResponse data = passwordService.forgotPassword(request.email());
+        return ResponseEntity.ok(ApiResponse.ok("Password reset OTP sent", data));
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
-        passwordService.resetPassword(request.resetToken(), request.newPassword());
+        passwordService.resetPassword(request.email(), request.otp(), request.newPassword());
         return ResponseEntity.ok(ApiResponse.ok("Password reset successfully", null));
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public ResponseEntity<ApiResponse<Void>> verifyResetOtp(
+            @Valid @RequestBody VerifyResetOtpRequest request) {
+        passwordService.verifyResetOtp(request.email(), request.otp());
+        return ResponseEntity.ok(ApiResponse.ok("OTP verified successfully", null));
     }
 
     @PostMapping("/change-password")

@@ -22,7 +22,7 @@ export default function PublicShell({ children }) {
   const location = useLocation();
   const isLogin = location.pathname === "/login";
   const isRegister = location.pathname === "/register";
-  const isAuthPage = ["/login", "/register", "/forgot-password", "/reset-password"].includes(location.pathname);
+  const isAuthPage = ["/login", "/register", "/forgot-password", "/verify-reset-otp", "/reset-password"].includes(location.pathname);
 
   return (
     <Box className={`ms-public-shell${isAuthPage ? " is-auth" : ""}`}>

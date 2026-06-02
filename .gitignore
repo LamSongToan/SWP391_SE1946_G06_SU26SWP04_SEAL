@@ -17,6 +17,8 @@ pnpm-debug.log*
 !.env.example
 !.env.development
 !.env.production
+**/local-mail.env.ps1
+**/local-mail.properties
 *.pem
 *.key
 *.p12
@@ -63,6 +65,7 @@ replay_pid*
 **/test-results/
 **/playwright-report/
 **/.nyc_output/
+**/uploads/
 
 # ===== Docker =====
 **/.docker/

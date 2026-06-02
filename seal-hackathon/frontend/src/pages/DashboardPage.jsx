@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AppBar,
   Avatar,
@@ -27,7 +27,6 @@ import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import AltRouteRoundedIcon from "@mui/icons-material/AltRouteRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
@@ -39,7 +38,9 @@ import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
 import ViewModuleRoundedIcon from "@mui/icons-material/ViewModuleRounded";
 import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
-import { authStorage, logout } from "../api/http";
+import PermIdentityRoundedIcon from "@mui/icons-material/PermIdentityRounded";
+import { authStorage, http, logout, resolveAssetUrl } from "../api/http";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import AccountApprovalPanel from "../components/coordinator/AccountApprovalPanel";
 import EventManagementPanel from "../components/coordinator/EventManagementPanel";
 import RoundManagementPanel from "../components/coordinator/RoundManagementPanel";
@@ -63,27 +64,83 @@ const COORDINATOR_CORE_NAV = [
 ];
 
 const ACCOUNT_NAV = [
-  { key: "account", label: "Account Setting", icon: <SettingsRoundedIcon fontSize="small" /> },
+  { key: "account", label: "Profile", icon: <PermIdentityRoundedIcon fontSize="small" /> },
   { key: "password", label: "Change Password", icon: <LockRoundedIcon fontSize="small" /> },
 ];
 
 export default function DashboardPage() {
   const auth = authStorage.get();
-  const currentRole = auth?.roles?.includes("COORDINATOR") ? "COORDINATOR" : "STUDENT";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentRole = useMemo(() => {
+    const roles = auth?.roles || [];
+    if (roles.includes("COORDINATOR")) return "COORDINATOR";
+    if (roles.includes("MENTOR")) return "MENTOR";
+    if (roles.includes("JUDGE")) return "JUDGE";
+    if (roles.includes("STUDENT")) return "STUDENT";
+    return roles[0] || "USER";
+  }, [auth?.roles]);
+  const [profileSummary, setProfileSummary] = useState(null);
 
-  const [activeKey, setActiveKey] = useState(currentRole === "COORDINATOR" ? "users" : "account");
+  const [activeKey, setActiveKey] = useState("account");
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const coreNavItems = useMemo(
-    () => (currentRole === "COORDINATOR" ? COORDINATOR_CORE_NAV : STUDENT_CORE_NAV),
+    () => {
+      if (currentRole === "COORDINATOR") return COORDINATOR_CORE_NAV;
+      if (currentRole === "STUDENT") return STUDENT_CORE_NAV;
+      return [];
+    },
     [currentRole]
   );
+  const allowedNavKeys = useMemo(
+    () => new Set([...coreNavItems, ...ACCOUNT_NAV].map((item) => item.key)),
+    [coreNavItems]
+  );
+  const sectionParam = searchParams.get("section");
 
   const pageTitle = useMemo(() => {
     const allItems = [...coreNavItems, ...ACCOUNT_NAV];
     return allItems.find((item) => item.key === activeKey)?.label || "Dashboard";
   }, [coreNavItems, activeKey]);
+
+  useEffect(() => {
+    const nextKey = sectionParam && allowedNavKeys.has(sectionParam) ? sectionParam : "account";
+    if (activeKey !== nextKey) {
+      setActiveKey(nextKey);
+    }
+    if (sectionParam !== nextKey) {
+      setSearchParams({ section: nextKey }, { replace: true });
+    }
+  }, [activeKey, allowedNavKeys, sectionParam, setSearchParams]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProfileSummary = async () => {
+      try {
+        const response = await http.get("/api/users/me");
+        if (mounted) {
+          setProfileSummary(response.data?.data || null);
+        }
+      } catch {
+        if (mounted) {
+          setProfileSummary(null);
+        }
+      }
+    };
+
+    const handleProfileUpdated = (event) => {
+      setProfileSummary(event.detail || null);
+    };
+
+    loadProfileSummary();
+    window.addEventListener("seal-profile-updated", handleProfileUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("seal-profile-updated", handleProfileUpdated);
+    };
+  }, []);
 
   const placeholderCard = (title, description) => (
     <Card className="ms-data-card">
@@ -118,9 +175,10 @@ export default function DashboardPage() {
   const openProfileMenu = (event) => setProfileMenuAnchor(event.currentTarget);
   const closeProfileMenu = () => setProfileMenuAnchor(null);
 
-  const jumpAccount = (key) => {
-    setActiveKey(key);
+  const jumpToSection = (key) => {
+    setSearchParams({ section: key });
     closeProfileMenu();
+    setMobileOpen(false);
   };
 
   const runLogout = () => {
@@ -129,15 +187,19 @@ export default function DashboardPage() {
   };
 
   const onSelectNav = (key) => {
-    setActiveKey(key);
-    setMobileOpen(false);
+    jumpToSection(key);
   };
 
   const sidePanel = (
     <Box className="ms-sidebar-inner">
       <Box className="ms-sidebar-spacer" />
 
-      <Box className="ms-brand">
+      <Box
+        className="ms-brand"
+        component={RouterLink}
+        to="/dashboard?section=account"
+        sx={{ textDecoration: "none", color: "inherit" }}
+      >
         <Box className="ms-brand-badge">
           <DomainVerificationRoundedIcon fontSize="small" />
         </Box>
@@ -168,27 +230,6 @@ export default function DashboardPage() {
         </List>
       </Box>
 
-      <Box sx={{ mt: "auto", p: 2 }}>
-        <Button
-          onClick={openProfileMenu}
-          className="ms-profile-btn"
-          sx={{ justifyContent: "flex-start", py: 1.2, px: 1.2, textTransform: "none" }}
-          fullWidth
-        >
-          <Avatar sx={{ width: 40, height: 40, bgcolor: "#0f172a", mr: 1.1 }}>
-            {(auth?.username || "U").slice(0, 2).toUpperCase()}
-          </Avatar>
-          <Box sx={{ minWidth: 0, flexGrow: 1, textAlign: "left" }}>
-            <Typography sx={{ fontWeight: 700, color: "inherit", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {auth?.username || "Unknown"}
-            </Typography>
-            <Typography className="ms-profile-hint" sx={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {auth?.email || ""}
-            </Typography>
-          </Box>
-          <ExpandMoreRoundedIcon sx={{ color: "#9fb2d7" }} />
-        </Button>
-      </Box>
     </Box>
   );
 
@@ -220,11 +261,11 @@ export default function DashboardPage() {
         transformOrigin={{ horizontal: "right", vertical: "bottom" }}
         anchorOrigin={{ horizontal: "right", vertical: "top" }}
       >
-        <MenuItem onClick={() => jumpAccount("account")}>
-          <ListItemIcon><SettingsRoundedIcon fontSize="small" /></ListItemIcon>
-          Account Setting
+        <MenuItem onClick={() => jumpToSection("account")}>
+          <ListItemIcon><PermIdentityRoundedIcon fontSize="small" /></ListItemIcon>
+          Profile
         </MenuItem>
-        <MenuItem onClick={() => jumpAccount("password")}>
+        <MenuItem onClick={() => jumpToSection("password")}>
           <ListItemIcon><LockRoundedIcon fontSize="small" /></ListItemIcon>
           Change Password
         </MenuItem>
@@ -259,6 +300,44 @@ export default function DashboardPage() {
               <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
                 <Chip className="ms-chip" size="small" icon={<TuneRoundedIcon />} label={`Role: ${currentRole}`} variant="outlined" />
                 <Chip className="ms-chip" size="small" label={`${coreNavItems.length} modules`} variant="outlined" />
+                <Button
+                  onClick={openProfileMenu}
+                  sx={{
+                    minWidth: 0,
+                    maxWidth: { xs: 46, sm: 220 },
+                    height: 44,
+                    px: { xs: 0.75, sm: 1.1 },
+                    py: 0.5,
+                    gap: 0.9,
+                    borderRadius: 999,
+                    textTransform: "none",
+                    color: "text.primary",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    backgroundColor: "background.paper",
+                    boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
+                    "&:hover": {
+                      backgroundColor: "#f8fafc",
+                      borderColor: "#d7deea",
+                    },
+                  }}
+                >
+                  <Avatar
+                    src={resolveAssetUrl(profileSummary?.avatarUrl) || undefined}
+                    sx={{ width: 30, height: 30, bgcolor: "#0f172a" }}
+                  >
+                    {(auth?.username || "U").slice(0, 2).toUpperCase()}
+                  </Avatar>
+                  <Box sx={{ display: { xs: "none", sm: "block" }, minWidth: 0, flex: 1, textAlign: "left" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: 13, lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {profileSummary?.fullName || auth?.username || "Unknown"}
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: "text.secondary", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      @{profileSummary?.username || auth?.username || ""}
+                    </Typography>
+                  </Box>
+                  <ExpandMoreRoundedIcon sx={{ color: "#64748b", fontSize: 18, display: { xs: "none", sm: "block" } }} />
+                </Button>
               </Stack>
             </Toolbar>
           </Container>
@@ -272,44 +351,46 @@ export default function DashboardPage() {
             <span style={{ color: "#1d2638", fontWeight: 600 }}>{pageTitle}</span>
           </Box>
 
-          <Box className="ms-dashboard-strip">
-            <Box className="ms-stat-card">
-              <Stack direction="row" spacing={1.2} alignItems="center">
-                <AccountCircleRoundedIcon color="primary" />
-                <Box>
-                  <Typography className="ms-stat-label">Current User</Typography>
-                  <Typography className="ms-stat-value">{auth?.username || "N/A"}</Typography>
-                </Box>
-              </Stack>
+          {activeKey !== "account" ? (
+            <Box className="ms-dashboard-strip">
+              <Box className="ms-stat-card">
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                  <AccountCircleRoundedIcon color="primary" />
+                  <Box>
+                    <Typography className="ms-stat-label">Current User</Typography>
+                    <Typography className="ms-stat-value">{profileSummary?.username || auth?.username || "N/A"}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+              <Box className="ms-stat-card">
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                  <VerifiedUserRoundedIcon color="success" />
+                  <Box>
+                    <Typography className="ms-stat-label">Role</Typography>
+                    <Typography className="ms-stat-value">{currentRole}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+              <Box className="ms-stat-card">
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                  <ViewModuleRoundedIcon color="secondary" />
+                  <Box>
+                    <Typography className="ms-stat-label">Modules</Typography>
+                    <Typography className="ms-stat-value">{coreNavItems.length}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+              <Box className="ms-stat-card">
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                  <FactCheckRoundedIcon color="warning" />
+                  <Box>
+                    <Typography className="ms-stat-label">Active Module</Typography>
+                    <Typography className="ms-stat-value">{pageTitle}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
             </Box>
-            <Box className="ms-stat-card">
-              <Stack direction="row" spacing={1.2} alignItems="center">
-                <VerifiedUserRoundedIcon color="success" />
-                <Box>
-                  <Typography className="ms-stat-label">Role</Typography>
-                  <Typography className="ms-stat-value">{currentRole}</Typography>
-                </Box>
-              </Stack>
-            </Box>
-            <Box className="ms-stat-card">
-              <Stack direction="row" spacing={1.2} alignItems="center">
-                <ViewModuleRoundedIcon color="secondary" />
-                <Box>
-                  <Typography className="ms-stat-label">Modules</Typography>
-                  <Typography className="ms-stat-value">{coreNavItems.length}</Typography>
-                </Box>
-              </Stack>
-            </Box>
-            <Box className="ms-stat-card">
-              <Stack direction="row" spacing={1.2} alignItems="center">
-                <FactCheckRoundedIcon color="warning" />
-                <Box>
-                  <Typography className="ms-stat-label">Active Module</Typography>
-                  <Typography className="ms-stat-value">{pageTitle}</Typography>
-                </Box>
-              </Stack>
-            </Box>
-          </Box>
+          ) : null}
 
           {renderContent()}
         </Container>

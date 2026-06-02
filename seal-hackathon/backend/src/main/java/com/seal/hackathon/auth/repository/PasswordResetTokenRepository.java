@@ -12,6 +12,8 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     Optional<PasswordResetTokenEntity> findByToken(String token);
 
+    Optional<PasswordResetTokenEntity> findTopByUserUserIdAndUsedFalseOrderByCreatedAtDesc(Integer userId);
+
     @Modifying
     @Query("UPDATE PasswordResetTokenEntity p SET p.used = true WHERE p.user.userId = :userId AND p.used = false")
     void invalidateAllForUser(@Param("userId") Integer userId);

@@ -9,7 +9,7 @@ export default function ProtectedRoute({ children, requiredRole }) {
   }
 
   if (requiredRole && !auth?.roles?.includes(requiredRole)) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard?section=account" replace />;
   }
 
   return children;

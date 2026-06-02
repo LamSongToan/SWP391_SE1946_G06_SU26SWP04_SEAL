@@ -26,6 +26,8 @@ CREATE TABLE [Users] (
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     full_name NVARCHAR(150) NOT NULL,
+    avatar_url VARCHAR(500) NULL,
+    bio NVARCHAR(500) NULL,
     status VARCHAR(50) DEFAULT 'PendingApproval',
     CHECK (status IN ('PendingApproval', 'Active', 'Rejected', 'Suspended')),
     is_approved BIT DEFAULT 0,
@@ -67,6 +69,10 @@ CREATE TABLE StudentProfile (
     university_name NVARCHAR(150) NOT NULL,
     FOREIGN KEY (user_role_id) REFERENCES UserRole(user_role_id) ON DELETE NO ACTION
 );
+
+CREATE UNIQUE INDEX UX_StudentProfile_University_StudentCode
+ON StudentProfile(university_name, student_code)
+WHERE student_code IS NOT NULL;
 
 CREATE TABLE MentorProfile (
     user_role_id INT PRIMARY KEY,

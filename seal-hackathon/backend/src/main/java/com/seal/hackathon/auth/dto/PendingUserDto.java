@@ -10,5 +10,8 @@ public record PendingUserDto(
         String fullName,
         String status,
         List<String> roles,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String studentType,
+        String studentCode,
+        String universityName
 ) {}

@@ -8,6 +8,8 @@ public record UserProfileDto(
         String username,
         String email,
         String fullName,
+        String avatarUrl,
+        String bio,
         String status,
         Boolean approved,
         LocalDateTime createdAt,
