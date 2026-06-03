@@ -413,6 +413,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [eventDialogError, setEventDialogError] = useState("");
 
   const [eventDialog, setEventDialog] = useState({ open: false, mode: "create", eventId: null });
   const [eventForm, setEventForm] = useState(EMPTY_EVENT_FORM);
@@ -688,6 +689,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
   };
 
   const openCreateEvent = () => {
+    setEventDialogError("");
     setEventDialog({ open: true, mode: "create", eventId: null });
     const nextForm = {
       ...EMPTY_EVENT_FORM,
@@ -703,6 +705,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
 
   const closeEventDialog = () => {
     if (saving) return;
+    setEventDialogError("");
     setEventDialog({ open: false, mode: "create", eventId: null });
     const nextForm = {
       ...EMPTY_EVENT_FORM,
@@ -867,12 +870,12 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
       if (eventDialog.mode === "create") {
         setInitialRoundTouched((prev) => prev.map((item) => ({ ...item, submissionDeadlineParts: true })));
       }
-      setError(initialRoundError || eventValidation.errors.startDate || eventValidation.errors.endDate);
+      setEventDialogError(initialRoundError || eventValidation.errors.startDate || eventValidation.errors.endDate);
       return;
     }
 
     setSaving(true);
-    setError("");
+    setEventDialogError("");
     try {
       const eventPayload = {
         name: eventForm.name,
@@ -900,10 +903,10 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
       } else {
         await http.put(`/api/coordinator/events/${eventDialog.eventId}`, eventPayload);
         closeEventDialog();
-        await refreshEventList();
-      }
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to save event"));
+          await refreshEventList();
+        }
+      } catch (err) {
+      setEventDialogError(getApiErrorMessage(err, "Failed to save event"));
     } finally {
       setSaving(false);
     }
@@ -1532,6 +1535,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
         <DialogTitle>{eventDialog.mode === "create" ? "Create Event" : "Edit Event"}</DialogTitle>
         <DialogContent>
           <Stack spacing={1.5} sx={{ pt: 1 }}>
+            {eventDialogError ? <Alert severity="error">{eventDialogError}</Alert> : null}
             <TextField label="Event Name" value={eventForm.name} onChange={onEventChange("name")} fullWidth />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
               <TextField select label="Season" value={eventForm.season} onChange={onEventChange("season")} fullWidth>
