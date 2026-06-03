@@ -10,4 +10,6 @@ public interface TrackRepository extends JpaRepository<TrackEntity, Integer> {
     List<TrackEntity> findByEventIdOrderByTrackIdAsc(Integer eventId);
 
     boolean existsByEventIdAndNameIgnoreCase(Integer eventId, String name);
+
+    long countByEventId(Integer eventId);
 }

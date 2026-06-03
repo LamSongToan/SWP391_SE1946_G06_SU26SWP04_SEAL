@@ -15,6 +15,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
@@ -27,6 +28,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { http, resolveAssetUrl } from "../../api/http";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
+const PROFILE_DRAFT_STORAGE_KEY = "seal-profile-draft";
 
 const EMPTY_FORM = {
   username: "",
@@ -38,7 +40,33 @@ const EMPTY_FORM = {
   universityName: "",
 };
 
-export default function UserProfilePanel() {
+function readProfileDraft() {
+  try {
+    const raw = sessionStorage.getItem(PROFILE_DRAFT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearProfileDraft() {
+  sessionStorage.removeItem(PROFILE_DRAFT_STORAGE_KEY);
+}
+
+function toFormFromProfile(profile) {
+  return {
+    username: profile?.username || "",
+    fullName: profile?.fullName || "",
+    avatarUrl: profile?.avatarUrl || "",
+    bio: profile?.bio || "",
+    studentType: profile?.studentType || "",
+    studentCode: profile?.studentCode || "",
+    universityName: profile?.universityName || "",
+  };
+}
+
+export default function UserProfilePanel({ onDirtyChange = () => {} }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [teams, setTeams] = useState([]);
@@ -48,9 +76,9 @@ export default function UserProfilePanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [editMode, setEditMode] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const editMode = searchParams.get("mode") === "edit";
 
   const isStudent = useMemo(() => profile?.roles?.includes("STUDENT"), [profile]);
   const roleHighlights = useMemo(() => {
@@ -88,6 +116,25 @@ export default function UserProfilePanel() {
     () => Array.from(new Map((teams || []).map((team) => [team.eventId, team])).values()),
     [teams]
   );
+  const displayProfile = editMode
+    ? {
+        fullName: form.fullName,
+        username: form.username,
+        avatarUrl: form.avatarUrl,
+        bio: form.bio,
+        studentType: form.studentType,
+        studentCode: form.studentCode,
+        universityName: form.universityName,
+      }
+    : {
+        fullName: profile?.fullName || "",
+        username: profile?.username || "",
+        avatarUrl: profile?.avatarUrl || "",
+        bio: profile?.bio || "",
+        studentType: profile?.studentType || "",
+        studentCode: profile?.studentCode || "",
+        universityName: profile?.universityName || "",
+      };
 
   const emitProfileUpdated = (data) => {
     window.dispatchEvent(new CustomEvent("seal-profile-updated", { detail: data }));
@@ -95,15 +142,7 @@ export default function UserProfilePanel() {
 
   const applyProfileData = (data, message = "") => {
     setProfile(data);
-    setForm({
-      username: data?.username || "",
-      fullName: data?.fullName || "",
-      avatarUrl: data?.avatarUrl || "",
-      bio: data?.bio || "",
-      studentType: data?.studentType || "",
-      studentCode: data?.studentCode || "",
-      universityName: data?.universityName || "",
-    });
+    setForm(toFormFromProfile(data));
     emitProfileUpdated(data);
     if (message) {
       setSuccess(message);
@@ -174,6 +213,96 @@ export default function UserProfilePanel() {
 
   const hasClientErrors = Object.values(collectClientErrors()).some(Boolean);
   const isSaveDisabled = saving || uploadingAvatar || hasClientErrors;
+  const profileDirty = useMemo(() => {
+    if (!profile) return false;
+    return JSON.stringify({
+      username: form.username.trim(),
+      fullName: form.fullName.trim(),
+      avatarUrl: form.avatarUrl || "",
+      bio: form.bio || "",
+    }) !== JSON.stringify({
+      username: profile.username || "",
+      fullName: profile.fullName || "",
+      avatarUrl: profile.avatarUrl || "",
+      bio: profile.bio || "",
+    });
+  }, [form.avatarUrl, form.bio, form.fullName, form.username, profile]);
+
+  useEffect(() => {
+    if (!profile?.email) return;
+    const savedDraft = readProfileDraft();
+    if (savedDraft?.owner !== profile.email || !savedDraft?.form) return;
+    setForm((prev) => ({
+      ...prev,
+      ...savedDraft.form,
+      studentType: profile.studentType || prev.studentType || "",
+      studentCode: profile.studentCode || prev.studentCode || "",
+      universityName: profile.universityName || prev.universityName || "",
+    }));
+  }, [profile?.email, profile?.studentCode, profile?.studentType, profile?.universityName]);
+
+  useEffect(() => {
+    if (editMode || !profile) return;
+    const savedDraft = readProfileDraft();
+    if (savedDraft?.owner === profile.email) return;
+    setForm(toFormFromProfile(profile));
+    setTouched({});
+    setFieldErrors({});
+  }, [editMode, profile]);
+
+  useEffect(() => {
+    const isDirty = editMode && profileDirty;
+    onDirtyChange(isDirty);
+    if (!profile?.email) return;
+
+    if (editMode && profileDirty) {
+      sessionStorage.setItem(
+        PROFILE_DRAFT_STORAGE_KEY,
+        JSON.stringify({
+          owner: profile.email,
+          form: {
+            username: form.username,
+            fullName: form.fullName,
+            avatarUrl: form.avatarUrl,
+            bio: form.bio,
+          },
+        })
+      );
+    } else if (editMode && !profileDirty) {
+      clearProfileDraft();
+    }
+  }, [editMode, form.avatarUrl, form.bio, form.fullName, form.username, onDirtyChange, profile?.email, profileDirty]);
+
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
+
+  useEffect(() => {
+    const handleDiscardDraft = () => {
+      clearProfileDraft();
+      setTouched({});
+      setFieldErrors({});
+      setError("");
+      setSuccess("");
+      if (profile) {
+        setForm(toFormFromProfile(profile));
+      } else {
+        setForm(EMPTY_FORM);
+      }
+    };
+
+    window.addEventListener("seal-discard-profile-draft", handleDiscardDraft);
+    return () => window.removeEventListener("seal-discard-profile-draft", handleDiscardDraft);
+  }, [profile]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (!(editMode && profileDirty)) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [editMode, profileDirty]);
 
   const onChange = (key) => (event) => {
     const rawValue = event.target.value;
@@ -214,19 +343,12 @@ export default function UserProfilePanel() {
   };
 
   const cancelEdit = () => {
-    setEditMode(false);
+    clearProfileDraft();
+    setSearchParams({ section: "account" });
     setTouched({});
     setFieldErrors({});
     if (profile) {
-      setForm({
-        username: profile.username || "",
-        fullName: profile.fullName || "",
-        avatarUrl: profile.avatarUrl || "",
-        bio: profile.bio || "",
-        studentType: profile.studentType || "",
-        studentCode: profile.studentCode || "",
-        universityName: profile.universityName || "",
-      });
+      setForm(toFormFromProfile(profile));
     }
   };
 
@@ -255,7 +377,8 @@ export default function UserProfilePanel() {
       };
       const response = await http.put("/api/users/me", payload);
       applyProfileData(response.data?.data, "Profile updated successfully");
-      setEditMode(false);
+      clearProfileDraft();
+      setSearchParams({ section: "account" });
     } catch (err) {
       const nextFieldErrors = getFieldErrors(err);
       setFieldErrors(nextFieldErrors);
@@ -359,10 +482,10 @@ export default function UserProfilePanel() {
                     onChange={onAvatarFileChange}
                   />
                   <Avatar
-                    src={resolveAssetUrl(form.avatarUrl) || undefined}
+                    src={resolveAssetUrl(displayProfile.avatarUrl) || undefined}
                     sx={{ width: 180, height: 180, bgcolor: "primary.main", fontSize: 56 }}
                   >
-                    {(form.fullName || form.username || "U").trim().charAt(0).toUpperCase()}
+                    {(displayProfile.fullName || displayProfile.username || "U").trim().charAt(0).toUpperCase()}
                   </Avatar>
                   <Box
                     className="profile-avatar-overlay"
@@ -408,28 +531,28 @@ export default function UserProfilePanel() {
 
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-                    {form.fullName || "Unnamed User"}
+                    {displayProfile.fullName || "Unnamed User"}
                   </Typography>
                   <Typography variant="h6" color="text.secondary" sx={{ mt: 0.4, fontWeight: 500 }}>
-                    @{form.username || "username"}
+                    @{displayProfile.username || "username"}
                   </Typography>
                 </Box>
 
                 <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
-                  {form.bio?.trim() || "Add a short bio so mentors, judges, and coordinators can quickly understand who you are."}
+                  {displayProfile.bio?.trim() || "Add a short bio so mentors, judges, and coordinators can quickly understand who you are."}
                 </Typography>
 
                 <Stack spacing={1}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<EditRoundedIcon />}
-                    onClick={() => {
-                      setEditMode(true);
-                      setSuccess("");
-                      setError("");
-                    }}
-                    fullWidth
-                  >
+                    <Button
+                      variant="outlined"
+                      startIcon={<EditRoundedIcon />}
+                      onClick={() => {
+                        setSearchParams({ section: "account", mode: "edit" });
+                        setSuccess("");
+                        setError("");
+                      }}
+                      fullWidth
+                    >
                     Edit profile
                   </Button>
                   <Button
@@ -437,7 +560,7 @@ export default function UserProfilePanel() {
                     color="inherit"
                     startIcon={<DeleteOutlineRoundedIcon />}
                     onClick={onRemoveAvatar}
-                    disabled={uploadingAvatar || !form.avatarUrl}
+                    disabled={uploadingAvatar || !displayProfile.avatarUrl}
                     fullWidth
                   >
                     Remove avatar
@@ -485,15 +608,15 @@ export default function UserProfilePanel() {
                         <Typography variant="body2" color="text.secondary">
                           Type
                         </Typography>
-                        <Typography variant="body1">{form.studentType || "N/A"}</Typography>
+                        <Typography variant="body1">{displayProfile.studentType || "N/A"}</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           Student Code
                         </Typography>
-                        <Typography variant="body1">{form.studentCode || "N/A"}</Typography>
+                        <Typography variant="body1">{displayProfile.studentCode || "N/A"}</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           University
                         </Typography>
-                        <Typography variant="body1">{form.universityName || "N/A"}</Typography>
+                        <Typography variant="body1">{displayProfile.universityName || "N/A"}</Typography>
                       </Stack>
                     </Box>
                   </>

@@ -10,4 +10,6 @@ public interface RoundRepository extends JpaRepository<RoundEntity, Integer> {
     List<RoundEntity> findByEventIdOrderByRoundOrderAsc(Integer eventId);
 
     Optional<RoundEntity> findByEventIdAndRoundOrder(Integer eventId, Integer roundOrder);
+
+    long countByEventId(Integer eventId);
 }

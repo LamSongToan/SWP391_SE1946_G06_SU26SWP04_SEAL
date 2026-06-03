@@ -32,6 +32,7 @@ export default function VerifyResetOtpPage() {
     otpDigits: Array(OTP_LENGTH).fill(""),
   });
   const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendingOtp, setResendingOtp] = useState(false);
@@ -66,8 +67,14 @@ export default function VerifyResetOtpPage() {
 
   const setFormField = (key, value) => {
     const nextForm = { ...form, [key]: value };
+    const nextTouched = { ...touched, [key]: true };
+    const nextErrors = validate(nextForm);
+    const visibleErrors = Object.fromEntries(
+      Object.entries(nextErrors).map(([field, message]) => [field, nextTouched[field] ? message : ""])
+    );
     setForm(nextForm);
-    setFieldErrors(validate(nextForm));
+    setTouched(nextTouched);
+    setFieldErrors(visibleErrors);
   };
 
   const updateOtpDigit = (index, value) => {
@@ -80,8 +87,11 @@ export default function VerifyResetOtpPage() {
         nextDigits[i] = chars[i] || "";
       }
       const nextForm = { ...form, otpDigits: nextDigits };
+      const nextTouched = { ...touched, otp: true };
+      const nextErrors = validate(nextForm);
       setForm(nextForm);
-      setFieldErrors(validate(nextForm));
+      setTouched(nextTouched);
+      setFieldErrors({ ...fieldErrors, otp: nextTouched.otp ? nextErrors.otp : "" });
       const nextIndex = Math.min(chars.length, OTP_LENGTH - 1);
       otpInputRefs.current[nextIndex]?.focus();
       return;
@@ -89,8 +99,11 @@ export default function VerifyResetOtpPage() {
 
     nextDigits[index] = digitsOnly;
     const nextForm = { ...form, otpDigits: nextDigits };
+    const nextTouched = { ...touched, otp: true };
+    const nextErrors = validate(nextForm);
     setForm(nextForm);
-    setFieldErrors(validate(nextForm));
+    setTouched(nextTouched);
+    setFieldErrors({ ...fieldErrors, otp: nextTouched.otp ? nextErrors.otp : "" });
 
     if (digitsOnly && index < OTP_LENGTH - 1) {
       otpInputRefs.current[index + 1]?.focus();
@@ -98,6 +111,12 @@ export default function VerifyResetOtpPage() {
   };
 
   const handleOtpKeyDown = (index, event) => {
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault();
+      updateOtpDigit(index, event.key);
+      return;
+    }
+
     if (event.key === "Backspace" && !form.otpDigits[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
     }
@@ -109,8 +128,17 @@ export default function VerifyResetOtpPage() {
     }
   };
 
+  const selectOtpInput = (event) => {
+    const input = event.target;
+    window.requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  };
+
   const resendOtp = async () => {
     const emailError = validate({ ...form, otpDigits: Array(OTP_LENGTH).fill("1") }).email;
+    setTouched((current) => ({ ...current, email: true }));
     setFieldErrors((current) => ({ ...current, email: emailError }));
     if (emailError) {
       return;
@@ -144,6 +172,7 @@ export default function VerifyResetOtpPage() {
     setError("");
 
     const nextErrors = validate(form);
+    setTouched({ email: true, otp: true });
     setFieldErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
       return;
@@ -204,8 +233,8 @@ export default function VerifyResetOtpPage() {
                 type="email"
                 value={form.email}
                 onChange={(event) => setFormField("email", event.target.value.trim())}
-                error={Boolean(fieldErrors.email)}
-                helperText={fieldErrors.email || " "}
+                error={Boolean(touched.email && fieldErrors.email)}
+                helperText={(touched.email && fieldErrors.email) || " "}
                 required
               />
 
@@ -223,7 +252,13 @@ export default function VerifyResetOtpPage() {
                       value={digit}
                       onChange={(event) => updateOtpDigit(index, event.target.value)}
                       onKeyDown={(event) => handleOtpKeyDown(index, event)}
-                      error={Boolean(fieldErrors.otp)}
+                      onFocus={selectOtpInput}
+                      onClick={selectOtpInput}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        selectOtpInput(event);
+                      }}
+                      error={Boolean(touched.otp && fieldErrors.otp)}
                       inputProps={{
                         inputMode: "numeric",
                         pattern: "[0-9]*",
@@ -245,10 +280,10 @@ export default function VerifyResetOtpPage() {
                   ))}
                 </Stack>
                 <Typography
-                  color={fieldErrors.otp ? "error.main" : "text.secondary"}
+                  color={touched.otp && fieldErrors.otp ? "error.main" : "text.secondary"}
                   sx={{ mt: 1, minHeight: 20, fontSize: 12 }}
                 >
-                  {fieldErrors.otp || "Enter the 6-digit verification code sent to your email."}
+                  {(touched.otp && fieldErrors.otp) || "Enter the 6-digit verification code sent to your email."}
                 </Typography>
               </Box>
 

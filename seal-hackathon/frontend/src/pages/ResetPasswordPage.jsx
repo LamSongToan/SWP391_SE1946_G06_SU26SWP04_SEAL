@@ -28,6 +28,7 @@ export default function ResetPasswordPage() {
     confirmPassword: "",
   });
   const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -52,8 +53,14 @@ export default function ResetPasswordPage() {
 
   const setFormField = (key, value) => {
     const nextForm = { ...form, [key]: value };
+    const nextTouched = { ...touched, [key]: true };
+    const nextErrors = validate(nextForm);
+    const visibleErrors = Object.fromEntries(
+      Object.entries(nextErrors).map(([field, message]) => [field, nextTouched[field] ? message : ""])
+    );
     setForm(nextForm);
-    setFieldErrors(validate(nextForm));
+    setTouched(nextTouched);
+    setFieldErrors(visibleErrors);
   };
 
   const onSubmit = async (event) => {
@@ -66,6 +73,7 @@ export default function ResetPasswordPage() {
     }
 
     const nextErrors = validate(form);
+    setTouched({ newPassword: true, confirmPassword: true });
     setFieldErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
       return;
@@ -112,9 +120,9 @@ export default function ResetPasswordPage() {
                 type="password"
                 value={form.newPassword}
                 onChange={(event) => setFormField("newPassword", event.target.value)}
-                error={Boolean(fieldErrors.newPassword)}
+                error={Boolean(touched.newPassword && fieldErrors.newPassword)}
                 helperText={
-                  fieldErrors.newPassword ||
+                  (touched.newPassword && fieldErrors.newPassword) ||
                   "At least 8 characters, including a letter, a number, and a special character."
                 }
                 required
@@ -124,8 +132,8 @@ export default function ResetPasswordPage() {
                 type="password"
                 value={form.confirmPassword}
                 onChange={(event) => setFormField("confirmPassword", event.target.value)}
-                error={Boolean(fieldErrors.confirmPassword)}
-                helperText={fieldErrors.confirmPassword || " "}
+                error={Boolean(touched.confirmPassword && fieldErrors.confirmPassword)}
+                helperText={(touched.confirmPassword && fieldErrors.confirmPassword) || " "}
                 required
               />
               <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>
@@ -137,9 +145,6 @@ export default function ResetPasswordPage() {
           {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
           <Typography color="text.secondary" sx={{ mt: 2 }}>
-            Need to verify OTP again? <Link component={RouterLink} to="/verify-reset-otp">Back to OTP verification</Link>
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.8 }}>
             <Link component={RouterLink} to="/login">Back to login</Link>
           </Typography>
         </Box>

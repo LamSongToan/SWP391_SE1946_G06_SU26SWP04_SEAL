@@ -58,7 +58,7 @@ class PasswordServiceTest {
 
         ForgotPasswordResponse response = passwordService.forgotPassword("student@gmail.com");
 
-        Assertions.assertEquals("If that email exists, an OTP has been sent.", response.message());
+        Assertions.assertEquals("A password reset OTP has been sent to your email.", response.message());
         Assertions.assertEquals(10L, response.expiresInMinutes());
 
         ArgumentCaptor<PasswordResetTokenEntity> tokenCaptor = ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
@@ -71,6 +71,20 @@ class PasswordServiceTest {
         Assertions.assertEquals("student@gmail.com", mailCaptor.getValue().getAllRecipients()[0].toString());
         Assertions.assertEquals("SEAL Hackathon password reset verification code", mailCaptor.getValue().getSubject());
         Assertions.assertTrue(mailCaptor.getValue().getContent().toString().contains("Verification Code"));
+    }
+
+    @Test
+    void forgotPassword_shouldRejectUnregisteredEmail() {
+        when(userRepository.findByEmailIgnoreCase("missing@gmail.com")).thenReturn(Optional.empty());
+
+        ApiException exception = Assertions.assertThrows(
+                ApiException.class,
+                () -> passwordService.forgotPassword("missing@gmail.com")
+        );
+
+        Assertions.assertEquals("Email is not registered", exception.getMessage());
+        verify(resetTokenRepository, never()).save(any());
+        verify(mailSender, never()).send(any(MimeMessage.class));
     }
 
     @Test

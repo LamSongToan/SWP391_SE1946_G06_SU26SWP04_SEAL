@@ -59,15 +59,8 @@ public class PasswordService {
     @Transactional
     public ForgotPasswordResponse forgotPassword(String email) {
         String normalizedEmail = normalizeEmail(email);
-
-        // Do not reveal whether the email exists.
-        UserEntity user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElse(null);
-        if (user == null) {
-            return new ForgotPasswordResponse(
-                    "If that email exists, an OTP has been sent.",
-                    resetOtpExpiryMinutes
-            );
-        }
+        UserEntity user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Email is not registered"));
 
         ensureMailIsConfigured();
         resetTokenRepository.invalidateAllForUser(user.getUserId());
@@ -83,7 +76,7 @@ public class PasswordService {
         sendResetOtpEmail(user, otp);
 
         return new ForgotPasswordResponse(
-                "If that email exists, an OTP has been sent.",
+                "A password reset OTP has been sent to your email.",
                 resetOtpExpiryMinutes
         );
     }

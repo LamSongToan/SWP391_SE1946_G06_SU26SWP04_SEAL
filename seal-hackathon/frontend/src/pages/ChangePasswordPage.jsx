@@ -22,6 +22,7 @@ export default function ChangePasswordPage() {
     confirmPassword: "",
   });
   const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,8 +52,14 @@ export default function ChangePasswordPage() {
 
   const setFormField = (key, value) => {
     const nextForm = { ...form, [key]: value };
+    const nextTouched = { ...touched, [key]: true };
+    const nextErrors = validate(nextForm);
+    const visibleErrors = Object.fromEntries(
+      Object.entries(nextErrors).map(([field, message]) => [field, nextTouched[field] ? message : ""])
+    );
     setForm(nextForm);
-    setFieldErrors(validate(nextForm));
+    setTouched(nextTouched);
+    setFieldErrors(visibleErrors);
   };
 
   const onSubmit = async (event) => {
@@ -61,6 +68,7 @@ export default function ChangePasswordPage() {
     setSuccess("");
 
     const nextErrors = validate(form);
+    setTouched({ currentPassword: true, newPassword: true, confirmPassword: true });
     setFieldErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
       return;
@@ -74,6 +82,7 @@ export default function ChangePasswordPage() {
       });
       setSuccess("Password changed successfully. You will be logged out.");
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setTouched({});
       setFieldErrors({});
       setTimeout(() => logout(), 2000);
     } catch (err) {
@@ -104,8 +113,8 @@ export default function ChangePasswordPage() {
                 type="password"
                 value={form.currentPassword}
                 onChange={(event) => setFormField("currentPassword", event.target.value)}
-                error={Boolean(fieldErrors.currentPassword)}
-                helperText={fieldErrors.currentPassword || " "}
+                error={Boolean(touched.currentPassword && fieldErrors.currentPassword)}
+                helperText={(touched.currentPassword && fieldErrors.currentPassword) || " "}
                 required
               />
               <TextField
@@ -113,9 +122,9 @@ export default function ChangePasswordPage() {
                 type="password"
                 value={form.newPassword}
                 onChange={(event) => setFormField("newPassword", event.target.value)}
-                error={Boolean(fieldErrors.newPassword)}
+                error={Boolean(touched.newPassword && fieldErrors.newPassword)}
                 helperText={
-                  fieldErrors.newPassword ||
+                  (touched.newPassword && fieldErrors.newPassword) ||
                   "At least 8 characters, including a letter, a number, and a special character."
                 }
                 required
@@ -125,8 +134,8 @@ export default function ChangePasswordPage() {
                 type="password"
                 value={form.confirmPassword}
                 onChange={(event) => setFormField("confirmPassword", event.target.value)}
-                error={Boolean(fieldErrors.confirmPassword)}
-                helperText={fieldErrors.confirmPassword || " "}
+                error={Boolean(touched.confirmPassword && fieldErrors.confirmPassword)}
+                helperText={(touched.confirmPassword && fieldErrors.confirmPassword) || " "}
                 required
               />
               <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>

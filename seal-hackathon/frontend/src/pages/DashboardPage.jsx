@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AppBar,
   Avatar,
@@ -11,6 +11,7 @@ import {
   Divider,
   Drawer,
   IconButton,
+  InputAdornment,
   List,
   ListItemButton,
   ListItemIcon,
@@ -18,13 +19,12 @@ import {
   Menu,
   MenuItem,
   Stack,
+  TextField,
   Toolbar,
   Typography,
 } from "@mui/material";
 import ManageAccountsRoundedIcon from "@mui/icons-material/ManageAccountsRounded";
 import EventRoundedIcon from "@mui/icons-material/EventRounded";
-import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
-import AltRouteRoundedIcon from "@mui/icons-material/AltRouteRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
@@ -34,18 +34,14 @@ import DomainVerificationRoundedIcon from "@mui/icons-material/DomainVerificatio
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
-import ViewModuleRoundedIcon from "@mui/icons-material/ViewModuleRounded";
-import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
-import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
 import PermIdentityRoundedIcon from "@mui/icons-material/PermIdentityRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import { authStorage, http, logout, resolveAssetUrl } from "../api/http";
-import { Link as RouterLink, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import AccountApprovalPanel from "../components/coordinator/AccountApprovalPanel";
-import EventManagementPanel from "../components/coordinator/EventManagementPanel";
-import RoundManagementPanel from "../components/coordinator/RoundManagementPanel";
-import TrackManagementPanel from "../components/coordinator/TrackManagementPanel";
+import EventConfigurationPanel from "../components/coordinator/EventConfigurationPanel";
 import UserProfilePanel from "../components/profile/UserProfilePanel";
+import UserDirectoryPanel from "../components/user/UserDirectoryPanel";
 import ChangePasswordPage from "./ChangePasswordPage";
 import TeamManagementPanel from "../components/team/TeamManagementPanel";
 
@@ -58,15 +54,21 @@ const STUDENT_CORE_NAV = [
 
 const COORDINATOR_CORE_NAV = [
   { key: "users", label: "User Management", icon: <ManageAccountsRoundedIcon fontSize="small" /> },
-  { key: "events", label: "Event Management", icon: <EventRoundedIcon fontSize="small" /> },
-  { key: "tracks", label: "Category Management", icon: <CategoryRoundedIcon fontSize="small" /> },
-  { key: "rounds", label: "Round Management", icon: <AltRouteRoundedIcon fontSize="small" /> },
+  { key: "event-config", label: "Event Configuration", icon: <EventRoundedIcon fontSize="small" /> },
 ];
 
 const ACCOUNT_NAV = [
+  { key: "directory", label: "User Directory", icon: <SearchRoundedIcon fontSize="small" /> },
   { key: "account", label: "Profile", icon: <PermIdentityRoundedIcon fontSize="small" /> },
   { key: "password", label: "Change Password", icon: <LockRoundedIcon fontSize="small" /> },
 ];
+
+const EVENT_DRAFT_STORAGE_PREFIX = "seal-event-config-draft:";
+const PROFILE_DRAFT_STORAGE_KEY = "seal-profile-draft";
+
+function getEventDraftStorageKey(eventId) {
+  return `${EVENT_DRAFT_STORAGE_PREFIX}${eventId}`;
+}
 
 export default function DashboardPage() {
   const auth = authStorage.get();
@@ -84,6 +86,11 @@ export default function DashboardPage() {
   const [activeKey, setActiveKey] = useState("account");
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState(searchParams.get("query") || "");
+  const [hasUnsavedEventChanges, setHasUnsavedEventChanges] = useState(false);
+  const [hasUnsavedProfileChanges, setHasUnsavedProfileChanges] = useState(false);
+  const lastApprovedSearchRef = useRef(searchParams.toString());
+  const skipNextSearchGuardRef = useRef(false);
 
   const coreNavItems = useMemo(
     () => {
@@ -98,21 +105,114 @@ export default function DashboardPage() {
     [coreNavItems]
   );
   const sectionParam = searchParams.get("section");
+  const queryParam = searchParams.get("query") || "";
+  const normalizedSectionParam = useMemo(() => {
+    if (["events", "tracks", "rounds"].includes(sectionParam)) {
+      return "event-config";
+    }
+    return sectionParam;
+  }, [sectionParam]);
 
   const pageTitle = useMemo(() => {
     const allItems = [...coreNavItems, ...ACCOUNT_NAV];
     return allItems.find((item) => item.key === activeKey)?.label || "Dashboard";
   }, [coreNavItems, activeKey]);
 
+  const getUnsavedPromptForSearch = (searchString) => {
+    const params = new URLSearchParams(searchString);
+    const section = params.get("section") || "account";
+    if (section === "event-config" && hasUnsavedEventChanges) {
+      return "You have unsaved event changes. Leave this page without saving?";
+    }
+    if (section === "account" && hasUnsavedProfileChanges) {
+      return "You have unsaved profile changes. Leave this page without saving?";
+    }
+    return "";
+  };
+
+  const clearDraftForSearch = (searchString) => {
+    const params = new URLSearchParams(searchString);
+    const section = params.get("section") || "account";
+    if (section === "event-config") {
+      const eventId = params.get("eventId");
+      if (eventId) {
+        sessionStorage.removeItem(getEventDraftStorageKey(eventId));
+        window.dispatchEvent(new CustomEvent("seal-discard-event-draft", { detail: { eventId } }));
+      }
+      return;
+    }
+    if (section === "account") {
+      sessionStorage.removeItem(PROFILE_DRAFT_STORAGE_KEY);
+      window.dispatchEvent(new Event("seal-discard-profile-draft"));
+    }
+  };
+
+  const confirmLeaveCurrentView = () => {
+    const promptMessage = getUnsavedPromptForSearch(searchParams.toString());
+    if (!promptMessage) return true;
+    const discard = window.confirm(promptMessage);
+    if (discard) {
+      clearDraftForSearch(searchParams.toString());
+    }
+    return discard;
+  };
+
   useEffect(() => {
-    const nextKey = sectionParam && allowedNavKeys.has(sectionParam) ? sectionParam : "account";
+    const nextKey = normalizedSectionParam && allowedNavKeys.has(normalizedSectionParam) ? normalizedSectionParam : "account";
     if (activeKey !== nextKey) {
       setActiveKey(nextKey);
     }
-    if (sectionParam !== nextKey) {
-      setSearchParams({ section: nextKey }, { replace: true });
+    if (normalizedSectionParam !== nextKey || sectionParam !== normalizedSectionParam) {
+      const nextParams = { section: nextKey };
+      if (nextKey === "directory" && queryParam.trim()) {
+        nextParams.query = queryParam.trim();
+      }
+      setSearchParams(nextParams, { replace: true });
     }
-  }, [activeKey, allowedNavKeys, sectionParam, setSearchParams]);
+  }, [activeKey, allowedNavKeys, normalizedSectionParam, queryParam, sectionParam, setSearchParams]);
+
+  useEffect(() => {
+    const currentSearch = searchParams.toString();
+    const previousSearch = lastApprovedSearchRef.current;
+
+    if (skipNextSearchGuardRef.current) {
+      skipNextSearchGuardRef.current = false;
+      lastApprovedSearchRef.current = currentSearch;
+      return;
+    }
+
+    if (currentSearch === previousSearch) {
+      return;
+    }
+
+    const promptMessage = getUnsavedPromptForSearch(previousSearch);
+    if (promptMessage) {
+      const discard = window.confirm(promptMessage);
+      if (!discard) {
+        skipNextSearchGuardRef.current = true;
+        setSearchParams(previousSearch, { replace: true });
+        return;
+      }
+      clearDraftForSearch(previousSearch);
+    }
+
+    lastApprovedSearchRef.current = currentSearch;
+  }, [hasUnsavedEventChanges, hasUnsavedProfileChanges, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    setGlobalSearch(queryParam);
+  }, [queryParam]);
+
+  useEffect(() => {
+    const markSkipGuard = () => {
+      skipNextSearchGuardRef.current = true;
+    };
+
+    window.addEventListener("seal-skip-next-search-guard", markSkipGuard);
+    return () => {
+      window.removeEventListener("seal-skip-next-search-guard", markSkipGuard);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -152,14 +252,13 @@ export default function DashboardPage() {
   );
 
   const renderContent = () => {
-    if (activeKey === "account") return <UserProfilePanel />;
+    if (activeKey === "directory") return <UserDirectoryPanel currentRole={currentRole} initialQuery={queryParam} />;
+    if (activeKey === "account") return <UserProfilePanel onDirtyChange={setHasUnsavedProfileChanges} />;
     if (activeKey === "password") return <ChangePasswordPage />;
 
     if (currentRole === "COORDINATOR") {
       if (activeKey === "users") return <AccountApprovalPanel />;
-      if (activeKey === "events") return <EventManagementPanel />;
-      if (activeKey === "tracks") return <TrackManagementPanel />;
-      if (activeKey === "rounds") return <RoundManagementPanel />;
+      if (activeKey === "event-config") return <EventConfigurationPanel onDirtyChange={setHasUnsavedEventChanges} />;
       return null;
     }
 
@@ -176,8 +275,26 @@ export default function DashboardPage() {
   const closeProfileMenu = () => setProfileMenuAnchor(null);
 
   const jumpToSection = (key) => {
-    setSearchParams({ section: key });
+    if (!confirmLeaveCurrentView()) return;
+    const nextParams = { section: key };
+    if (key === "directory" && queryParam.trim()) {
+      nextParams.query = queryParam.trim();
+    }
+    skipNextSearchGuardRef.current = true;
+    setSearchParams(nextParams);
     closeProfileMenu();
+    setMobileOpen(false);
+  };
+
+  const submitGlobalSearch = (event) => {
+    event.preventDefault();
+    const nextParams = { section: "directory" };
+    if (globalSearch.trim()) {
+      nextParams.query = globalSearch.trim();
+    }
+    if (!confirmLeaveCurrentView()) return;
+    skipNextSearchGuardRef.current = true;
+    setSearchParams(nextParams);
     setMobileOpen(false);
   };
 
@@ -190,15 +307,22 @@ export default function DashboardPage() {
     jumpToSection(key);
   };
 
+  const goToProfileHome = () => {
+    if (!confirmLeaveCurrentView()) return;
+    skipNextSearchGuardRef.current = true;
+    setSearchParams({ section: "account" });
+    closeProfileMenu();
+    setMobileOpen(false);
+  };
+
   const sidePanel = (
     <Box className="ms-sidebar-inner">
       <Box className="ms-sidebar-spacer" />
 
       <Box
         className="ms-brand"
-        component={RouterLink}
-        to="/dashboard?section=account"
-        sx={{ textDecoration: "none", color: "inherit" }}
+        onClick={goToProfileHome}
+        sx={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
       >
         <Box className="ms-brand-badge">
           <DomainVerificationRoundedIcon fontSize="small" />
@@ -298,6 +422,31 @@ export default function DashboardPage() {
               </Stack>
 
               <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+                <Box
+                  component="form"
+                  onSubmit={submitGlobalSearch}
+                  sx={{ display: { xs: "none", md: "block" }, width: { md: 260, lg: 320 } }}
+                >
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={globalSearch}
+                    onChange={(event) => setGlobalSearch(event.target.value)}
+                    placeholder="Search users, teams, events..."
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchRoundedIcon sx={{ color: "#64748b", fontSize: 18 }} />
+                        </InputAdornment>
+                      ),
+                      sx: {
+                        height: 40,
+                        borderRadius: 999,
+                        backgroundColor: "#fff",
+                      },
+                    }}
+                  />
+                </Box>
                 <Chip className="ms-chip" size="small" icon={<TuneRoundedIcon />} label={`Role: ${currentRole}`} variant="outlined" />
                 <Chip className="ms-chip" size="small" label={`${coreNavItems.length} modules`} variant="outlined" />
                 <Button
@@ -350,47 +499,6 @@ export default function DashboardPage() {
             <span>/</span>
             <span style={{ color: "#1d2638", fontWeight: 600 }}>{pageTitle}</span>
           </Box>
-
-          {activeKey !== "account" ? (
-            <Box className="ms-dashboard-strip">
-              <Box className="ms-stat-card">
-                <Stack direction="row" spacing={1.2} alignItems="center">
-                  <AccountCircleRoundedIcon color="primary" />
-                  <Box>
-                    <Typography className="ms-stat-label">Current User</Typography>
-                    <Typography className="ms-stat-value">{profileSummary?.username || auth?.username || "N/A"}</Typography>
-                  </Box>
-                </Stack>
-              </Box>
-              <Box className="ms-stat-card">
-                <Stack direction="row" spacing={1.2} alignItems="center">
-                  <VerifiedUserRoundedIcon color="success" />
-                  <Box>
-                    <Typography className="ms-stat-label">Role</Typography>
-                    <Typography className="ms-stat-value">{currentRole}</Typography>
-                  </Box>
-                </Stack>
-              </Box>
-              <Box className="ms-stat-card">
-                <Stack direction="row" spacing={1.2} alignItems="center">
-                  <ViewModuleRoundedIcon color="secondary" />
-                  <Box>
-                    <Typography className="ms-stat-label">Modules</Typography>
-                    <Typography className="ms-stat-value">{coreNavItems.length}</Typography>
-                  </Box>
-                </Stack>
-              </Box>
-              <Box className="ms-stat-card">
-                <Stack direction="row" spacing={1.2} alignItems="center">
-                  <FactCheckRoundedIcon color="warning" />
-                  <Box>
-                    <Typography className="ms-stat-label">Active Module</Typography>
-                    <Typography className="ms-stat-value">{pageTitle}</Typography>
-                  </Box>
-                </Stack>
-              </Box>
-            </Box>
-          ) : null}
 
           {renderContent()}
         </Container>

@@ -2,6 +2,8 @@ package com.seal.hackathon.event.controller;
 
 import com.seal.hackathon.common.ApiResponse;
 import com.seal.hackathon.event.dto.EventManagementDto;
+import com.seal.hackathon.event.dto.EventConfigurationUpdateRequest;
+import com.seal.hackathon.event.dto.EventSetupCreateRequest;
 import com.seal.hackathon.event.dto.EventUpsertRequest;
 import com.seal.hackathon.event.dto.RoundManagementDto;
 import com.seal.hackathon.event.dto.RoundUpsertRequest;
@@ -43,11 +45,30 @@ public class CoordinatorEventController {
         return ResponseEntity.ok(ApiResponse.ok("Event created", eventManagementService.createEvent(request)));
     }
 
+    @PostMapping("/events/setup")
+    public ResponseEntity<ApiResponse<EventManagementDto>> createEventWithInitialConfiguration(
+            @Valid @RequestBody EventSetupCreateRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Event created with initial configuration",
+                eventManagementService.createEventWithInitialConfiguration(request)
+        ));
+    }
+
     @PutMapping("/events/{eventId}")
     public ResponseEntity<ApiResponse<EventManagementDto>> updateEvent(
             @PathVariable Integer eventId,
             @Valid @RequestBody EventUpsertRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Event updated", eventManagementService.updateEvent(eventId, request)));
+    }
+
+    @PutMapping("/events/{eventId}/configuration")
+    public ResponseEntity<ApiResponse<EventManagementDto>> updateEventConfiguration(
+            @PathVariable Integer eventId,
+            @Valid @RequestBody EventConfigurationUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Event configuration updated",
+                eventManagementService.updateEventConfiguration(eventId, request)
+        ));
     }
 
     @DeleteMapping("/events/{eventId}")
