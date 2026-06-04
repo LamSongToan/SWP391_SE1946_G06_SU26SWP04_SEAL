@@ -1,0 +1,732 @@
+{
+  "info": {
+    "_postman_id": "4bf6b07f-6f9a-4f0f-a85a-c5a8e2d5d001",
+    "name": "SEAL Hackathon API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for testing the SEAL Hackathon backend."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "{{baseUrl}}" }
+  ],
+  "item": [
+    {
+      "name": "01 Public",
+      "item": [
+        {
+          "name": "Get Upcoming Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/events/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public", "events", "upcoming"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Auth",
+      "item": [
+        {
+          "name": "Login Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.accessToken) {",
+                  "  pm.environment.set('accessToken', json.data.accessToken);",
+                  "}",
+                  "if (json?.data?.user?.userId) {",
+                  "  pm.environment.set('userId', json.data.user.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Coordinator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.accessToken) {",
+                  "  pm.environment.set('accessToken', json.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{coordinatorEmail}}\",\n  \"password\": \"{{coordinatorPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"test.student01\",\n  \"email\": \"test.student01@gmail.com\",\n  \"password\": \"Seal@2026\",\n  \"fullName\": \"Test Student 01\",\n  \"studentType\": \"FPT\",\n  \"fptStudentCode\": \"SE123456\",\n  \"externalStudentCode\": null,\n  \"externalUniversity\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Verify Reset OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"otp\": \"{{otp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-reset-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify-reset-otp"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"otp\": \"{{otp}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{studentPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accessToken\": \"{{accessToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"an.student\",\n  \"fullName\": \"Nguyen Van An\",\n  \"avatarUrl\": \"\",\n  \"bio\": \"Student at SEAL Hackathon\",\n  \"studentType\": null,\n  \"studentCode\": null,\n  \"universityName\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Remove Avatar",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me", "avatar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Coordinator - User Approval",
+      "item": [
+        {
+          "name": "Get Pending Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/users/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "users", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{userId}},\n  \"action\": \"ACTIVE\",\n  \"reason\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/users/action",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "users", "action"]
+            }
+          }
+        },
+        {
+          "name": "Reject User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{userId}},\n  \"action\": \"REJECTED\",\n  \"reason\": \"Incomplete registration information\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/users/action",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "users", "action"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Coordinator - Event Configuration",
+      "item": [
+        {
+          "name": "List Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "events"]
+            }
+          }
+        },
+        {
+          "name": "Create Event With Setup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.eventId) {",
+                  "  pm.environment.set('eventId', json.data.eventId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": {\n    \"name\": \"SEAL Fall 2026\",\n    \"season\": \"Fall\",\n    \"year\": 2026,\n    \"startDate\": \"2026-09-01\",\n    \"endDate\": \"2026-10-01\",\n    \"status\": \"Draft\",\n    \"description\": \"SEAL Fall Hackathon 2026\"\n  },\n  \"tracks\": [\n    { \"name\": \"AI\" },\n    { \"name\": \"Web\" }\n  ],\n  \"rounds\": [\n    {\n      \"roundName\": \"Elimination\",\n      \"roundOrder\": 1,\n      \"submissionDeadline\": \"2026-09-10T23:59:00\",\n      \"promotionRuleTopN\": 5\n    },\n    {\n      \"roundName\": \"Final\",\n      \"roundOrder\": 2,\n      \"submissionDeadline\": \"2026-09-25T23:59:00\",\n      \"promotionRuleTopN\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/events/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "events", "setup"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Tracks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.length) {",
+                  "  pm.environment.set('trackId', json.data[0].trackId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/events/{{eventId}}/tracks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "events", "{{eventId}}", "tracks"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Rounds",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/events/{{eventId}}/rounds",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "events", "{{eventId}}", "rounds"]
+            }
+          }
+        },
+        {
+          "name": "Update Whole Event Configuration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": {\n    \"name\": \"SEAL Fall 2026 Updated\",\n    \"season\": \"Fall\",\n    \"year\": 2026,\n    \"startDate\": \"2026-09-01\",\n    \"endDate\": \"2026-10-05\",\n    \"status\": \"Configured\",\n    \"description\": \"Updated description\"\n  },\n  \"tracks\": [\n    { \"trackId\": 1, \"name\": \"AI\" },\n    { \"trackId\": 2, \"name\": \"Web Platform\" }\n  ],\n  \"rounds\": [\n    {\n      \"roundId\": 1,\n      \"roundName\": \"Elimination\",\n      \"roundOrder\": 1,\n      \"submissionDeadline\": \"2026-09-12T23:59:00\",\n      \"promotionRuleTopN\": 5\n    },\n    {\n      \"roundId\": 2,\n      \"roundName\": \"Final\",\n      \"roundOrder\": 2,\n      \"submissionDeadline\": \"2026-09-28T23:59:00\",\n      \"promotionRuleTopN\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinator/events/{{eventId}}/configuration",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coordinator", "events", "{{eventId}}", "configuration"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Team Management",
+      "item": [
+        {
+          "name": "Get My Teams",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/teams/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams", "my"]
+            }
+          }
+        },
+        {
+          "name": "Get Registration Tracks By Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.length) {",
+                  "  pm.environment.set('trackId', json.data[0].trackId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/teams/events/{{eventId}}/tracks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams", "events", "{{eventId}}", "tracks"]
+            }
+          }
+        },
+        {
+          "name": "Create Team",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.teamId) {",
+                  "  pm.environment.set('teamId', json.data.teamId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackId\": {{trackId}},\n  \"teamName\": \"SEAL Coders\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams"]
+            }
+          }
+        },
+        {
+          "name": "Get Team Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/teams/{{teamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams", "{{teamId}}"]
+            }
+          }
+        },
+        {
+          "name": "Invite Student By Username",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"linh.student\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/teams/{{teamId}}/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams", "{{teamId}}", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "Get Team Invitations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.length) {",
+                  "  pm.environment.set('invitationId', json.data[0].invitationId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/teams/{{teamId}}/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams", "{{teamId}}", "invitations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Team Invitations",
+      "item": [
+        {
+          "name": "Get My Invitations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/team-invitations/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "team-invitations", "my"]
+            }
+          }
+        },
+        {
+          "name": "Accept Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/team-invitations/{{invitationId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "team-invitations", "{{invitationId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Reject Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/team-invitations/{{invitationId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "team-invitations", "{{invitationId}}", "reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 User Directory",
+      "item": [
+        {
+          "name": "Search User Directory",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/directory?query=an",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "directory"],
+              "query": [
+                { "key": "query", "value": "an" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Directory User Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/directory/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "directory", "{{userId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Authz Demo",
+      "item": [
+        {
+          "name": "Demo Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "demo", "me"]
+            }
+          }
+        },
+        {
+          "name": "Demo Student",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/student",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "demo", "student"]
+            }
+          }
+        },
+        {
+          "name": "Demo Coordinator",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/coordinator",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "demo", "coordinator"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
