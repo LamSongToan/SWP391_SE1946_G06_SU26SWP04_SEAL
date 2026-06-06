@@ -28,6 +28,7 @@ CREATE TABLE [Users] (
     full_name NVARCHAR(150) NOT NULL,
     avatar_url VARCHAR(500) NULL,
     bio NVARCHAR(500) NULL,
+    rejection_reason NVARCHAR(500) NULL,
     status VARCHAR(50) DEFAULT 'PendingApproval',
     CHECK (status IN ('PendingApproval', 'Active', 'Rejected', 'Suspended')),
     is_approved BIT DEFAULT 0,

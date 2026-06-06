@@ -16,6 +16,7 @@ import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
 import com.seal.hackathon.event.service.EventManagementService;
+import com.seal.hackathon.team.repository.TeamRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +44,8 @@ class EventManagementServiceTest {
     private TrackRepository trackRepository;
     @Mock
     private RoundRepository roundRepository;
+    @Mock
+    private TeamRepository teamRepository;
 
     @InjectMocks
     private EventManagementService eventManagementService;
@@ -337,6 +340,39 @@ class EventManagementServiceTest {
                 () -> eventManagementService.deleteTrack(99));
 
         Assertions.assertTrue(ex.getMessage().contains("at least one track"));
+    }
+
+    @Test
+    void deleteTrack_shouldRejectWhenTrackHasTeams() {
+        TrackEntity track = new TrackEntity();
+        track.setTrackId(99);
+        track.setEventId(7);
+
+        when(trackRepository.findById(99)).thenReturn(Optional.of(track));
+        when(trackRepository.countByEventId(7)).thenReturn(2L);
+        when(teamRepository.countByTrackTrackId(99)).thenReturn(1L);
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> eventManagementService.deleteTrack(99));
+
+        Assertions.assertTrue(ex.getMessage().contains("teams have registered"));
+    }
+
+    @Test
+    void updateEvent_shouldRejectStartingWithInvalidTeams() {
+        HackathonEventEntity event = new HackathonEventEntity();
+        event.setEventId(10);
+        event.setStatus(EventStatus.REGISTRATION_OPEN.getDbValue());
+
+        when(eventRepository.findById(10)).thenReturn(Optional.of(event));
+        when(eventRepository.existsByYearAndSeasonIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
+        when(roundRepository.findByEventIdOrderByRoundOrderAsc(10)).thenReturn(List.of());
+        when(teamRepository.countInvalidTeamSizesByEventId(10, 3, 5)).thenReturn(1L);
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> eventManagementService.updateEvent(10, newRequest("Fall", 2026, EventStatus.ONGOING.getDbValue())));
+
+        Assertions.assertTrue(ex.getMessage().contains("3 to 5 members"));
     }
 
     @Test

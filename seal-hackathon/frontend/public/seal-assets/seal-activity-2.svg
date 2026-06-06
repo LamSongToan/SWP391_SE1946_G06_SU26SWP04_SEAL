@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" role="img" aria-label="SEAL Hackathon team presentation visual">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#061322"/>
+      <stop offset=".55" stop-color="#123B63"/>
+      <stop offset="1" stop-color="#F37021"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" x2="1">
+      <stop offset="0" stop-color="#7BF35B"/>
+      <stop offset="1" stop-color="#18B984"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="960" fill="url(#bg)"/>
+  <g opacity=".14" stroke="#fff">
+    <path d="M0 90h1440M0 210h1440M0 330h1440M0 450h1440M0 570h1440M0 690h1440M0 810h1440M0 930h1440"/>
+    <path d="M90 0v960M210 0v960M330 0v960M450 0v960M570 0v960M690 0v960M810 0v960M930 0v960M1050 0v960M1170 0v960M1290 0v960M1410 0v960"/>
+  </g>
+  <rect x="145" y="160" width="790" height="450" rx="36" fill="#fff" opacity=".12"/>
+  <rect x="185" y="200" width="710" height="370" rx="24" fill="url(#screen)"/>
+  <text x="540" y="330" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="64" font-weight="900" fill="#fff">FINAL DEMO</text>
+  <text x="540" y="402" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800" fill="#071A2F">Product • Technology • Ranking</text>
+  <rect x="420" y="455" width="240" height="34" rx="17" fill="#fff" opacity=".9"/>
+  <text x="540" y="478" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#F37021">SEAL HACKATHON</text>
+  <g fill="#fff">
+    <circle cx="1010" cy="358" r="46"/><rect x="958" y="420" width="104" height="148" rx="38"/>
+    <circle cx="1140" cy="332" r="46"/><rect x="1088" y="394" width="104" height="174" rx="38"/>
+    <circle cx="1270" cy="358" r="46"/><rect x="1218" y="420" width="104" height="148" rx="38"/>
+  </g>
+  <g transform="translate(205 690)" fill="#fff">
+    <rect width="1030" height="120" rx="28" opacity=".14"/>
+    <circle cx="90" cy="58" r="28"/><circle cx="185" cy="58" r="28"/><circle cx="280" cy="58" r="28"/><circle cx="375" cy="58" r="28"/><circle cx="470" cy="58" r="28"/>
+    <rect x="560" y="32" width="360" height="24" rx="12" opacity=".9"/>
+    <rect x="560" y="70" width="260" height="18" rx="9" opacity=".55"/>
+  </g>
+</svg>

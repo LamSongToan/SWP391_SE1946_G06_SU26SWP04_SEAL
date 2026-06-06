@@ -46,6 +46,9 @@ public class UserEntity {
     @Column(name = "bio", length = 500)
     private String bio;
 
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 

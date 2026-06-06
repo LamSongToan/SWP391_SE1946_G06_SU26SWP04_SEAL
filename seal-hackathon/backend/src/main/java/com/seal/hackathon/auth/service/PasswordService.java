@@ -101,6 +101,9 @@ public class PasswordService {
 
     @Transactional
     public void changePassword(Authentication authentication, String currentPassword, String newPassword) {
+        if (authentication == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
         String email = authentication.getName();
         UserEntity user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));

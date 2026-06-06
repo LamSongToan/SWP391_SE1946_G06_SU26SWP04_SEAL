@@ -43,6 +43,15 @@ import "./team-management.css";
 
 const INITIAL_CREATE_FORM = { eventId: "", trackId: "", teamName: "" };
 
+function getTeamHealth(team = {}) {
+  return {
+    members: `${team.memberCount ?? (team.members || []).length ?? 0} / 5`,
+    submission: team.submissionStatus || team.latestSubmissionStatus || "Not submitted",
+    round: team.currentRoundName || team.roundName || "Round pending",
+    deadline: team.nextDeadline || team.submissionDeadline || "Deadline pending",
+  };
+}
+
 export default function TeamManagementPanel() {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTeamId = searchParams.get("teamId");
@@ -495,7 +504,10 @@ export default function TeamManagementPanel() {
             <Box className="team-card-body">
               <div><span>Track</span><strong>{team.trackName}</strong></div>
               <div><span>Team Leader</span><strong>{team.leaderName}</strong></div>
-              <div><span>Members</span><strong>{team.memberCount} / 5</strong></div>
+              <div><span>Members</span><strong>{getTeamHealth(team).members}</strong></div>
+              <div><span>Submission</span><strong>{getTeamHealth(team).submission}</strong></div>
+              <div><span>Current Round</span><strong>{getTeamHealth(team).round}</strong></div>
+              <div><span>Next Deadline</span><strong>{getTeamHealth(team).deadline}</strong></div>
             </Box>
             <Typography className="team-validation" color={team.membershipValid ? "success.main" : "warning.main"}>
               {team.validationMessage}
@@ -600,6 +612,7 @@ export default function TeamManagementPanel() {
         </Box>
       );
     }
+    const teamHealth = getTeamHealth(selectedTeam);
 
     return (
       <Stack spacing={2}>
@@ -634,7 +647,10 @@ export default function TeamManagementPanel() {
               </Box>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 <Chip label={`Track: ${selectedTeam.trackName}`} variant="outlined" />
-                <Chip label={`Members: ${selectedTeam.memberCount} / 5`} variant="outlined" />
+                <Chip label={`Members: ${teamHealth.members}`} variant="outlined" />
+                <Chip label={`Submission: ${teamHealth.submission}`} variant="outlined" />
+                <Chip label={`Round: ${teamHealth.round}`} variant="outlined" />
+                <Chip label={`Deadline: ${teamHealth.deadline}`} variant="outlined" />
                 <Chip label={`Leader: ${selectedTeam.leaderName}`} variant="outlined" />
               </Stack>
             </Stack>

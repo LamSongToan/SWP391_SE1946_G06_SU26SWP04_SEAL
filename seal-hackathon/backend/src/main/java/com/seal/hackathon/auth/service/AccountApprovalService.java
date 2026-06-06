@@ -71,12 +71,13 @@ public class AccountApprovalService {
 
         switch (normalizeAction(action)) {
             case "ACTIVE" -> {
-                if (currentStatus != UserStatus.PENDING_APPROVAL && currentStatus != UserStatus.REJECTED) {
+                if (currentStatus != UserStatus.PENDING_APPROVAL) {
                     throw new ApiException(HttpStatus.BAD_REQUEST,
-                            "Only PendingApproval or Rejected accounts can be activated. Current status: " + user.getStatus());
+                            "Only PendingApproval accounts can be activated. Current status: " + user.getStatus());
                 }
                 user.setStatus(UserStatus.ACTIVE.getDbValue());
                 user.setApproved(true);
+                user.setRejectionReason(null);
             }
             case "REJECTED" -> {
                 if (currentStatus != UserStatus.PENDING_APPROVAL) {
@@ -88,6 +89,7 @@ public class AccountApprovalService {
                 }
                 user.setStatus(UserStatus.REJECTED.getDbValue());
                 user.setApproved(false);
+                user.setRejectionReason(reason.trim());
             }
             case "PENDING_APPROVAL" -> {
                 if (currentStatus != UserStatus.REJECTED) {
@@ -96,6 +98,7 @@ public class AccountApprovalService {
                 }
                 user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
                 user.setApproved(false);
+                user.setRejectionReason(null);
             }
             case "SUSPENDED" -> {
                 if (currentStatus != UserStatus.ACTIVE) {
@@ -175,7 +178,8 @@ public class AccountApprovalService {
                 user.getCreatedAt(),
                 studentProfile != null ? studentProfile.getStudentType() : null,
                 studentProfile != null ? studentProfile.getStudentCode() : null,
-                studentProfile != null ? studentProfile.getUniversityName() : null);
+                studentProfile != null ? studentProfile.getUniversityName() : null,
+                user.getRejectionReason());
     }
 
     private UserStatus parseStatus(String rawStatus) {

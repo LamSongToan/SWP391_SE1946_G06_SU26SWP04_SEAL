@@ -1,27 +1,43 @@
 import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || BASE_URL;
 const AUTH_STORAGE_KEY = "seal_auth";
 const GOOGLE_REGISTRATION_STORAGE_KEY = "seal_google_registration";
 const PASSWORD_RESET_STORAGE_KEY = "seal_password_reset";
 
 export const authStorage = {
   get() {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      return null;
+    }
   },
-  set(payload) {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
+  set(payload, remember = true) {
+    const targetStorage = remember ? localStorage : sessionStorage;
+    const otherStorage = remember ? sessionStorage : localStorage;
+    otherStorage.removeItem(AUTH_STORAGE_KEY);
+    targetStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
   },
   clear() {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
   },
 };
 
 export const googleRegistrationStorage = {
   get() {
-    const raw = sessionStorage.getItem(GOOGLE_REGISTRATION_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = sessionStorage.getItem(GOOGLE_REGISTRATION_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      sessionStorage.removeItem(GOOGLE_REGISTRATION_STORAGE_KEY);
+      return null;
+    }
   },
   set(payload) {
     sessionStorage.setItem(GOOGLE_REGISTRATION_STORAGE_KEY, JSON.stringify(payload));
@@ -33,8 +49,13 @@ export const googleRegistrationStorage = {
 
 export const passwordResetStorage = {
   get() {
-    const raw = sessionStorage.getItem(PASSWORD_RESET_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = sessionStorage.getItem(PASSWORD_RESET_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      sessionStorage.removeItem(PASSWORD_RESET_STORAGE_KEY);
+      return null;
+    }
   },
   set(payload) {
     sessionStorage.setItem(PASSWORD_RESET_STORAGE_KEY, JSON.stringify(payload));
@@ -44,13 +65,49 @@ export const passwordResetStorage = {
   },
 };
 
+function decodeJwtPayload(token) {
+  if (!token || typeof token !== "string") {
+    return null;
+  }
+
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) {
+      return null;
+    }
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    return JSON.parse(window.atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+export function isAuthExpired(auth = authStorage.get()) {
+  if (!auth?.accessToken) {
+    return true;
+  }
+
+  const payload = decodeJwtPayload(auth.accessToken);
+  if (!payload?.exp) {
+    return false;
+  }
+
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  return payload.exp <= nowInSeconds;
+}
+
+export function isAuthSessionValid(auth = authStorage.get()) {
+  return Boolean(auth?.accessToken) && !isAuthExpired(auth);
+}
+
 export const logout = async () => {
   const auth = authStorage.get();
   if (auth?.accessToken) {
     try {
-      await http.post("/api/auth/logout", { accessToken: auth.accessToken });
+      await http.post("/api/auth/logout");
     } catch {
-      // best-effort — clear locally regardless
+      // Best effort only; always clear local auth state.
     }
   }
   authStorage.clear();
@@ -59,7 +116,7 @@ export const logout = async () => {
 
 export const http = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000, // Tăng nhẹ timeout lên 15s để bao dung hơn cho gói cloud free lúc khởi động
+  timeout: 15000, // Allow free cloud backends a little extra time to wake up.
   headers: {
     "Content-Type": "application/json",
   },
@@ -69,17 +126,21 @@ export function resolveAssetUrl(value) {
   if (!value) {
     return "";
   }
-  if (/^https?:\/\//i.test(value)) {
-    return value;
+  const normalizedValue = String(value).trim();
+  if (!normalizedValue) {
+    return "";
   }
-  if (value.startsWith("/")) {
-    try {
-      return `${new URL(BASE_URL || window.location.origin).origin}${value}`;
-    } catch {
-      return value;
-    }
+  if (/^(https?:|data:|blob:)/i.test(normalizedValue)) {
+    return normalizedValue;
   }
-  return value;
+
+  try {
+    const assetOrigin = new URL(ASSET_BASE_URL || BASE_URL || window.location.origin, window.location.origin).origin;
+    const assetPath = normalizedValue.startsWith("/") ? normalizedValue : `/${normalizedValue}`;
+    return `${assetOrigin}${assetPath}`;
+  } catch {
+    return normalizedValue;
+  }
 }
 
 export function getApiErrorMessage(error, fallback = "Request failed") {
@@ -93,8 +154,22 @@ export function getApiErrorMessage(error, fallback = "Request failed") {
 }
 
 http.interceptors.request.use((config) => {
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    if (typeof config.headers?.delete === "function") {
+      config.headers.delete("Content-Type");
+    } else if (config.headers) {
+      delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
+    }
+  }
+
   const auth = authStorage.get();
   if (auth?.accessToken) {
+    if (isAuthExpired(auth)) {
+      authStorage.clear();
+      window.location.href = "/login?sessionExpired=1";
+      return Promise.reject(new Error("Session expired"));
+    }
     config.headers.Authorization = `Bearer ${auth.accessToken}`;
   }
   return config;
@@ -111,7 +186,7 @@ http.interceptors.response.use(
 
     if (error?.response?.status === 401 && !isAuthRequest) {
       authStorage.clear();
-      window.location.href = "/login";
+      window.location.href = "/login?sessionExpired=1";
     }
     return Promise.reject(error);
   }

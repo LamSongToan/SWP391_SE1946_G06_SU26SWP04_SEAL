@@ -1,26 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
   Button,
+  Checkbox,
+  CircularProgress,
   Divider,
+  FormControlLabel,
   Grid2,
+  IconButton,
+  InputAdornment,
   Link,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import PersonAddAltRoundedIcon from "@mui/icons-material/PersonAddAltRounded";
-import PublicShell from "../components/layout/PublicShell";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import AuthVisualPanel from "../components/auth/AuthVisualPanel";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton";
 import { authStorage, googleRegistrationStorage, http } from "../api/http";
+import { brand } from "../styles/designTokens";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
 const FPT_STUDENT_CODE_REGEX = /^(SE|HE|DE|QE|CE)\d{6}$/;
+const APPROVAL_MESSAGE = "Account created successfully. Please wait for administrator approval.";
 
 const INITIAL_FORM = {
   username: "",
@@ -32,6 +40,43 @@ const INITIAL_FORM = {
   externalStudentCode: "",
   externalUniversity: "",
 };
+
+function getPasswordStrength(password) {
+  if (!password) return { score: 0, color: brand.colors.line, label: "" };
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Za-z]/.test(password) && /\d/.test(password)) score += 1;
+  if (/[^A-Za-z\d]/.test(password)) score += 1;
+  if (password.length >= 12) score += 1;
+  if (score <= 1) return { score: 1, color: brand.colors.danger, label: "Weak" };
+  if (score === 2) return { score: 2, color: brand.colors.amber, label: "Fair" };
+  if (score === 3) return { score: 3, color: brand.colors.green, label: "Good" };
+  return { score: 4, color: brand.colors.orange, label: "Strong" };
+}
+
+function PasswordStrengthBar({ password }) {
+  const strength = getPasswordStrength(password);
+  return (
+    <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.75 }}>
+      {[1, 2, 3, 4].map((segment) => (
+        <Box
+          key={segment}
+          sx={{
+            flex: 1,
+            height: 5,
+            borderRadius: 10,
+            bgcolor: segment <= strength.score ? strength.color : brand.colors.line,
+          }}
+        />
+      ))}
+      {strength.label ? (
+        <Typography sx={{ color: strength.color, fontSize: 12, fontWeight: 800, minWidth: 44 }}>
+          {strength.label}
+        </Typography>
+      ) : null}
+    </Stack>
+  );
+}
 
 export default function RegisterPage() {
   const location = useLocation();
@@ -45,19 +90,20 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmTouched, setConfirmTouched] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     setGoogleRegistration(location.state?.googleRegistration || googleRegistrationStorage.get());
   }, [location.state]);
 
   useEffect(() => {
-    if (!isGoogleRegistration) {
-      return;
-    }
-
+    if (!isGoogleRegistration) return;
     setForm((current) => ({
       ...current,
       email: googleRegistration.email,
@@ -66,65 +112,13 @@ export default function RegisterPage() {
     }));
   }, [googleRegistration, isGoogleRegistration]);
 
-  const clearGoogleRegistrationMode = () => {
-    googleRegistrationStorage.clear();
-    setGoogleRegistration(null);
-    setForm((current) => ({
-      ...INITIAL_FORM,
-      fullName: current.fullName,
-    }));
-    setTouched({});
-    setFieldErrors({});
-    navigate("/register", { replace: true, state: null });
-  };
-
-  const handleGoogleLogin = async (idToken) => {
-    setError("");
-    setGoogleLoading(true);
-    try {
-      const response = await http.post("/api/auth/google", { idToken });
-      const data = response.data?.data;
-
-      if (data?.registrationRequired) {
-        const registrationPayload = {
-          idToken,
-          email: data.email,
-          fullName: data.fullName || "",
-          pictureUrl: data.pictureUrl || "",
-        };
-        googleRegistrationStorage.set(registrationPayload);
-        setGoogleRegistration(registrationPayload);
-        setForm((current) => ({
-          ...current,
-          email: registrationPayload.email,
-          fullName: current.fullName || registrationPayload.fullName,
-        }));
-        navigate("/register", { replace: true, state: { googleRegistration: registrationPayload } });
-        return;
-      }
-
-      authStorage.set(data?.auth);
-      googleRegistrationStorage.clear();
-      navigate("/dashboard?section=account");
-    } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Google sign-in failed");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
   const validateField = (name, value, nextForm = form) => {
     const trimmedValue = typeof value === "string" ? value.trim() : value;
-
     switch (name) {
       case "username":
         if (!trimmedValue) return "Username is required";
-        if (trimmedValue.length < 4 || trimmedValue.length > 50) {
-          return "Username must be 4-50 characters";
-        }
-        if (!USERNAME_REGEX.test(trimmedValue)) {
-          return "Username only allows letters, numbers, dot, underscore and hyphen";
-        }
+        if (trimmedValue.length < 4 || trimmedValue.length > 50) return "Username must be 4-50 characters";
+        if (!USERNAME_REGEX.test(trimmedValue)) return "Username may only contain letters, numbers, dot, underscore, and hyphen";
         return "";
       case "fullName":
         if (!trimmedValue) return "Full name is required";
@@ -137,20 +131,16 @@ export default function RegisterPage() {
       case "password":
         if (isGoogleRegistration) return "";
         if (!value) return "Password is required";
-        if (!PASSWORD_REGEX.test(value)) {
-          return "Password must include at least one letter, one number, one special character, and be 8-72 characters";
-        }
+        if (!PASSWORD_REGEX.test(value)) return "Password must include uppercase, lowercase, number, special character, and be 8-72 characters";
         return "";
       case "fptStudentCode":
         if (nextForm.studentType !== "FPT") return "";
         if (!trimmedValue) return "FPT student code is required";
-        if (!FPT_STUDENT_CODE_REGEX.test(trimmedValue)) {
-          return "FPT student code must look like SE123456, HE123456, DE123456, QE123456, or CE123456";
-        }
+        if (!FPT_STUDENT_CODE_REGEX.test(trimmedValue)) return "FPT student code must look like SE123456, HE123456, DE123456, QE123456, or CE123456";
         return "";
       case "externalStudentCode":
         if (nextForm.studentType !== "EXTERNAL") return "";
-        if (!trimmedValue) return "External student code is required";
+        if (!trimmedValue) return "Student code is required";
         return "";
       case "externalUniversity":
         if (nextForm.studentType !== "EXTERNAL") return "";
@@ -180,31 +170,30 @@ export default function RegisterPage() {
       nextErrors.externalUniversity = validateField("externalUniversity", nextForm.externalUniversity, nextForm);
     }
 
+    if (!acceptedTerms) {
+      nextErrors.acceptedTerms = "Please agree to the participation terms before registering";
+    }
+
     return nextErrors;
   };
 
-  const hasClientErrors = Object.values(collectClientErrors(form)).some(Boolean);
-  const isRegisterDisabled = loading || googleLoading || hasClientErrors;
+  const confirmPasswordError = useMemo(() => {
+    if (isGoogleRegistration || !confirmTouched) return "";
+    return confirmPassword === form.password ? "" : "Passwords do not match";
+  }, [confirmPassword, confirmTouched, form.password, isGoogleRegistration]);
 
   const getFieldErrors = (err) => {
     const response = err?.response?.data;
     const message = response?.message || "";
     const validationData = response?.data;
-
     if (validationData && typeof validationData === "object" && !Array.isArray(validationData)) {
       return validationData;
     }
-
     if (message.includes("Username already exists")) return { username: message };
     if (message.includes("Email already exists")) return { email: message };
-    if (message.includes("FPT student code") || message.includes("Student ID already exists in FPT")) {
-      return { fptStudentCode: message };
-    }
-    if (message.includes("externalStudentCode") || message.includes("Student ID already exists in the selected university")) {
-      return { externalStudentCode: message };
-    }
+    if (message.includes("FPT student code") || message.includes("Student ID already exists in FPT")) return { fptStudentCode: message };
+    if (message.includes("externalStudentCode") || message.includes("Student ID already exists in the selected university")) return { externalStudentCode: message };
     if (message.includes("externalUniversity")) return { externalUniversity: message };
-
     return {};
   };
 
@@ -235,24 +224,67 @@ export default function RegisterPage() {
     setFieldErrors(nextFieldErrors);
   };
 
+  const clearGoogleRegistrationMode = () => {
+    googleRegistrationStorage.clear();
+    setGoogleRegistration(null);
+    setForm(INITIAL_FORM);
+    setTouched({});
+    setFieldErrors({});
+    setConfirmPassword("");
+    setConfirmTouched(false);
+    navigate("/register", { replace: true, state: null });
+  };
+
+  const handleGoogleLogin = async (idToken) => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const response = await http.post("/api/auth/google", { idToken });
+      const data = response.data?.data;
+      if (data?.registrationRequired) {
+        const registrationPayload = {
+          idToken,
+          email: data.email,
+          fullName: data.fullName || "",
+          pictureUrl: data.pictureUrl || "",
+        };
+        googleRegistrationStorage.set(registrationPayload);
+        setGoogleRegistration(registrationPayload);
+        navigate("/register", { replace: true, state: { googleRegistration: registrationPayload } });
+        return;
+      }
+      authStorage.set(data?.auth);
+      googleRegistrationStorage.clear();
+      navigate("/dashboard?section=account");
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Google sign-in failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const onSubmit = async (event) => {
     event.preventDefault();
     setError("");
-    setSuccess("");
 
     const allTouched = {
       username: true,
       fullName: true,
       email: true,
+      acceptedTerms: true,
       ...(isGoogleRegistration ? {} : { password: true }),
       ...(form.studentType === "FPT"
         ? { fptStudentCode: true }
         : { externalStudentCode: true, externalUniversity: true }),
     };
-
     const clientErrors = collectClientErrors(form);
     setTouched(allTouched);
     setFieldErrors(clientErrors);
+
+    if (!isGoogleRegistration && confirmPassword !== form.password) {
+      setConfirmTouched(true);
+      return;
+    }
     if (Object.values(clientErrors).some(Boolean)) {
       return;
     }
@@ -262,34 +294,29 @@ export default function RegisterPage() {
       const endpoint = isGoogleRegistration ? "/api/auth/register/google" : "/api/auth/register";
       const payload = isGoogleRegistration
         ? {
-            username: form.username,
-            fullName: form.fullName,
+            username: form.username.trim(),
+            fullName: form.fullName.trim(),
             studentType: form.studentType,
-            fptStudentCode: form.studentType === "FPT" ? form.fptStudentCode : null,
-            externalStudentCode: form.studentType === "EXTERNAL" ? form.externalStudentCode : null,
-            externalUniversity: form.studentType === "EXTERNAL" ? form.externalUniversity : null,
+            fptStudentCode: form.studentType === "FPT" ? form.fptStudentCode.trim() : null,
+            externalStudentCode: form.studentType === "EXTERNAL" ? form.externalStudentCode.trim() : null,
+            externalUniversity: form.studentType === "EXTERNAL" ? form.externalUniversity.trim() : null,
             idToken: googleRegistration.idToken,
           }
-        : form;
+        : {
+            ...form,
+            username: form.username.trim(),
+            fullName: form.fullName.trim(),
+            email: form.email.trim(),
+          };
 
-      const response = await http.post(endpoint, payload);
-      const successMessage = response.data?.data?.message || "Register successful";
-
-      if (isGoogleRegistration) {
-        googleRegistrationStorage.clear();
-        navigate("/login", { state: { message: successMessage } });
-        return;
-      }
-
-      setSuccess(successMessage);
-      setForm(INITIAL_FORM);
-      setTouched({});
-      setFieldErrors({});
+      await http.post(endpoint, payload);
+      googleRegistrationStorage.clear();
+      navigate("/login", { state: { message: APPROVAL_MESSAGE } });
     } catch (err) {
       const nextFieldErrors = getFieldErrors(err);
       setFieldErrors(nextFieldErrors);
       if (Object.keys(nextFieldErrors).length === 0) {
-        setError(err?.response?.data?.message || "Register failed");
+        setError(err?.response?.data?.message || "Registration failed. Please review the form and try again.");
       }
     } finally {
       setLoading(false);
@@ -297,51 +324,53 @@ export default function RegisterPage() {
   };
 
   return (
-    <PublicShell>
-      <Box className="ms-auth-screen">
-        <Box className="ms-auth-panel">
-          <Box>
-            <Typography component="h1">
-              {isGoogleRegistration ? "Complete your Google registration." : "Join SEAL as a student participant."}
-            </Typography>
-            <Typography sx={{ mt: 2 }}>
-              {isGoogleRegistration
-                ? "Your Google account is verified. Complete the remaining student information to create your SEAL account."
-                : "Register with your student information to join upcoming hackathon seasons, form a team, and access your student workspace after approval."}
-            </Typography>
-          </Box>
-          <Box className="ms-auth-meta">
-            <Box className="ms-auth-meta-item"><strong>Register</strong><span>Student Account</span></Box>
-            <Box className="ms-auth-meta-item"><strong>Approval</strong><span>Coordinator Review</span></Box>
-            <Box className="ms-auth-meta-item"><strong>Access</strong><span>Team Workspace</span></Box>
-          </Box>
-        </Box>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: brand.colors.surface }}>
+      <AuthVisualPanel mode="register" />
 
-        <Box className="ms-auth-form-wrap">
-          <Box className="ms-auth-form-card is-wide">
-            <span className="ms-auth-header">
-              <PersonAddAltRoundedIcon sx={{ fontSize: 16 }} />
-              {isGoogleRegistration ? "Google Registration" : "Participant Registration"}
-            </span>
+      <Box
+        sx={{
+          flexBasis: { xs: "100%", md: "42%" },
+          minWidth: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          px: { xs: 3, sm: 5, lg: 7 },
+          py: { xs: 4, md: 5 },
+          bgcolor: brand.colors.surface,
+        }}
+      >
+        <Box sx={{ width: "100%", maxWidth: 460 }}>
+          <Typography sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}>
+            REQUEST ACCOUNT
+          </Typography>
+          <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
+            Register for SEAL
+          </Typography>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, lineHeight: 1.7, mt: 1.2, mb: 2.4 }}>
+            New accounts must be approved by an administrator before signing in to the Hackathon system.
+          </Typography>
 
-            <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>
-              {isGoogleRegistration ? "Complete Registration" : "Create Account"}
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-              {isGoogleRegistration
-                ? "Choose a username and complete your student profile."
-                : "Complete the form to request your student account."}
-            </Typography>
+          {isGoogleRegistration ? (
+            <Alert severity="info" sx={{ mb: 1.5 }}>
+              Google account detected for <strong>{googleRegistration.email}</strong>.
+            </Alert>
+          ) : null}
 
-            {isGoogleRegistration ? (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Google account detected for <strong>{googleRegistration.email}</strong>.
-              </Alert>
-            ) : null}
-
-            <form onSubmit={onSubmit}>
-              <Grid2 container spacing={1.4}>
-                <Grid2 size={{ xs: 12, md: 6 }}>
+          <Box component="form" noValidate onSubmit={onSubmit}>
+            <Stack spacing={1.2}>
+              <Grid2 container spacing={1.2}>
+                <Grid2 size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Full name"
+                    value={form.fullName}
+                    onChange={(event) => setFormField("fullName", event.target.value.trimStart())}
+                    error={Boolean(fieldErrors.fullName)}
+                    helperText={fieldErrors.fullName || " "}
+                    required
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Username"
@@ -352,142 +381,189 @@ export default function RegisterPage() {
                     required
                   />
                 </Grid2>
-                <Grid2 size={{ xs: 12, md: 6 }}>
+              </Grid2>
+
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                value={form.email}
+                onChange={(event) => setFormField("email", event.target.value.trim())}
+                error={Boolean(fieldErrors.email)}
+                helperText={fieldErrors.email || " "}
+                required
+                disabled={isGoogleRegistration}
+              />
+
+              {!isGoogleRegistration ? (
+                <>
                   <TextField
                     fullWidth
-                    label="Full Name"
-                    value={form.fullName}
-                    onChange={(event) => setFormField("fullName", event.target.value.trimStart())}
-                    error={Boolean(fieldErrors.fullName)}
-                    helperText={fieldErrors.fullName || " "}
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(event) => setFormField("password", event.target.value)}
+                    error={Boolean(fieldErrors.password)}
+                    helperText={fieldErrors.password || " "}
                     required
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton edge="end" onClick={() => setShowPassword((value) => !value)}>
+                            {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
-                </Grid2>
-                <Grid2 size={{ xs: 12, md: 6 }}>
+                  <PasswordStrengthBar password={form.password} />
                   <TextField
                     fullWidth
-                    label="Email"
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => setFormField("email", event.target.value.trim())}
-                    error={Boolean(fieldErrors.email)}
-                    helperText={fieldErrors.email || " "}
+                    label="Confirm password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onBlur={() => setConfirmTouched(true)}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    error={Boolean(confirmPasswordError)}
+                    helperText={confirmPasswordError || " "}
                     required
-                    disabled={isGoogleRegistration}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton edge="end" onClick={() => setShowConfirmPassword((value) => !value)}>
+                            {showConfirmPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
-                </Grid2>
+                </>
+              ) : null}
 
-                {!isGoogleRegistration ? (
-                  <Grid2 size={{ xs: 12, md: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="Password"
-                      type="password"
-                      value={form.password}
-                      onChange={(event) => setFormField("password", event.target.value)}
-                      error={Boolean(fieldErrors.password)}
-                      helperText={fieldErrors.password || "At least 8 characters, including a letter, a number, and a special character."}
-                      required
-                    />
-                  </Grid2>
-                ) : null}
-
-                <Grid2 size={{ xs: 12, md: 6 }}>
+              <Grid2 container spacing={1.2}>
+                <Grid2 size={{ xs: 12, sm: 5 }}>
                   <TextField
                     fullWidth
                     select
-                    label="Student Type"
+                    label="Student type"
                     value={form.studentType}
                     onChange={(event) => setFormField("studentType", event.target.value)}
                     required
                   >
-                    <MenuItem value="FPT">FPT</MenuItem>
+                    <MenuItem value="FPT">FPT University</MenuItem>
                     <MenuItem value="EXTERNAL">External</MenuItem>
                   </TextField>
                 </Grid2>
-
-                {form.studentType === "FPT" ? (
-                  <Grid2 size={{ xs: 12, md: 6 }}>
+                <Grid2 size={{ xs: 12, sm: 7 }}>
+                  {form.studentType === "FPT" ? (
                     <TextField
                       fullWidth
-                      label="FPT Student Code"
+                      label="FPT student code"
                       value={form.fptStudentCode}
                       onChange={(event) => setFormField("fptStudentCode", event.target.value.toUpperCase())}
                       error={Boolean(fieldErrors.fptStudentCode)}
-                      helperText={fieldErrors.fptStudentCode || "Format: SE123456, HE123456, DE123456, QE123456, or CE123456."}
+                      helperText={fieldErrors.fptStudentCode || "Example: SE123456"}
                       inputProps={{ maxLength: 8 }}
                       required
                     />
-                  </Grid2>
-                ) : (
-                  <>
-                    <Grid2 size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="External Student Code"
-                        value={form.externalStudentCode}
-                        onChange={(event) => setFormField("externalStudentCode", event.target.value.trimStart())}
-                        error={Boolean(fieldErrors.externalStudentCode)}
-                        helperText={fieldErrors.externalStudentCode || " "}
-                        required
-                      />
-                    </Grid2>
-                    <Grid2 size={{ xs: 12 }}>
-                      <TextField
-                        fullWidth
-                        label="University"
-                        value={form.externalUniversity}
-                        onChange={(event) => setFormField("externalUniversity", event.target.value.trimStart())}
-                        error={Boolean(fieldErrors.externalUniversity)}
-                        helperText={fieldErrors.externalUniversity || " "}
-                        required
-                      />
-                    </Grid2>
-                  </>
-                )}
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Student code"
+                      value={form.externalStudentCode}
+                      onChange={(event) => setFormField("externalStudentCode", event.target.value.trimStart())}
+                      error={Boolean(fieldErrors.externalStudentCode)}
+                      helperText={fieldErrors.externalStudentCode || " "}
+                      required
+                    />
+                  )}
+                </Grid2>
               </Grid2>
 
-              <Stack spacing={1.2} sx={{ mt: 2 }}>
-                {error ? <Alert severity="error">{error}</Alert> : null}
-                {success ? <Alert severity="success">{success}</Alert> : null}
-                <Button disabled={isRegisterDisabled} size="large" type="submit" variant="contained">
-                  {loading
-                    ? "Submitting..."
-                    : isGoogleRegistration
-                      ? "Complete registration"
-                      : "Register"}
-                </Button>
-                <Divider>or</Divider>
-                {isGoogleRegistration ? (
-                  <Typography color="text.secondary" variant="body2">
-                    Need to switch Google account? Sign in with Google again below.
-                  </Typography>
-                ) : null}
-                <GoogleSignInButton
-                  text="signup_with"
-                  onCredential={handleGoogleLogin}
-                  disabled={loading || googleLoading}
-                  width={280}
+              {form.studentType === "EXTERNAL" ? (
+                <TextField
+                  fullWidth
+                  label="University"
+                  value={form.externalUniversity}
+                  onChange={(event) => setFormField("externalUniversity", event.target.value.trimStart())}
+                  error={Boolean(fieldErrors.externalUniversity)}
+                  helperText={fieldErrors.externalUniversity || " "}
+                  required
                 />
-                {googleLoading ? (
-                  <Typography color="text.secondary" variant="body2">
-                    Processing Google sign-in...
-                  </Typography>
-                ) : null}
-                {isGoogleRegistration ? (
-                  <Button color="inherit" onClick={clearGoogleRegistrationMode} size="small">
-                    Use manual registration instead
-                  </Button>
-                ) : null}
-              </Stack>
-            </form>
+              ) : null}
 
-            <Typography color="text.secondary" sx={{ mt: 2 }}>
-              Already registered? <Link component={RouterLink} to="/login">Go to login</Link>
-            </Typography>
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    checked={acceptedTerms}
+                    onChange={(event) => {
+                      setAcceptedTerms(event.target.checked);
+                      setTouched((current) => ({ ...current, acceptedTerms: true }));
+                      setFieldErrors((current) => ({
+                        ...current,
+                        acceptedTerms: event.target.checked ? "" : "Please agree to the participation terms before registering",
+                      }));
+                    }}
+                    size="small"
+                    sx={{ color: brand.colors.orange }}
+                  />
+                )}
+                label={(
+                  <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
+                    I agree to the{" "}
+                    <Link href="#" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
+                      SEAL participation terms
+                    </Link>
+                  </Typography>
+                )}
+                sx={{ m: 0 }}
+              />
+              {touched.acceptedTerms && fieldErrors.acceptedTerms ? (
+                <Typography sx={{ color: brand.colors.danger, fontSize: 12 }}>{fieldErrors.acceptedTerms}</Typography>
+              ) : null}
+
+              {error ? <Alert severity="error">{error}</Alert> : null}
+
+              <Button
+                disabled={loading || googleLoading}
+                fullWidth
+                size="large"
+                type="submit"
+                variant="contained"
+                sx={{
+                  height: 50,
+                  bgcolor: brand.colors.orange,
+                  color: brand.colors.inverse,
+                  "&:hover": { bgcolor: brand.colors.orangeDark },
+                }}
+              >
+                {loading ? <CircularProgress color="inherit" size={20} /> : isGoogleRegistration ? "Complete account" : "Create account"}
+              </Button>
+
+              <Divider sx={{ color: brand.colors.muted, fontSize: 13 }}>or</Divider>
+              <GoogleSignInButton
+                text="signup_with"
+                onCredential={handleGoogleLogin}
+                disabled={loading || googleLoading}
+                width={300}
+              />
+              {googleLoading ? <Typography color="text.secondary" variant="body2">Processing Google sign-in...</Typography> : null}
+              {isGoogleRegistration ? (
+                <Button color="inherit" onClick={clearGoogleRegistrationMode} size="small">
+                  Use manual registration instead
+                </Button>
+              ) : null}
+            </Stack>
           </Box>
+
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 2.3 }}>
+            Already have an account?{" "}
+            <Link component={RouterLink} to="/login" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
+              Sign in
+            </Link>
+          </Typography>
         </Box>
       </Box>
-    </PublicShell>
+    </Box>
   );
 }

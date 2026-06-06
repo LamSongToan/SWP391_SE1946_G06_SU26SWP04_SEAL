@@ -49,6 +49,7 @@ class AccountApprovalServiceTest {
         user.setUserId(11);
         user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
         user.setApproved(false);
+        user.setRejectionReason("Old reason");
 
         when(userRepository.findById(11)).thenReturn(Optional.of(user));
 
@@ -56,5 +57,37 @@ class AccountApprovalServiceTest {
 
         Assertions.assertEquals(UserStatus.ACTIVE.getDbValue(), user.getStatus());
         Assertions.assertTrue(user.getApproved());
+        Assertions.assertNull(user.getRejectionReason());
+    }
+
+    @Test
+    void processAction_shouldStoreRejectReason() {
+        UserEntity user = new UserEntity();
+        user.setUserId(13);
+        user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
+        user.setApproved(false);
+
+        when(userRepository.findById(13)).thenReturn(Optional.of(user));
+
+        accountApprovalService.processAction(13, "REJECTED", "Student ID image is unclear");
+
+        Assertions.assertEquals(UserStatus.REJECTED.getDbValue(), user.getStatus());
+        Assertions.assertFalse(user.getApproved());
+        Assertions.assertEquals("Student ID image is unclear", user.getRejectionReason());
+    }
+
+    @Test
+    void processAction_shouldRejectActivatingRejectedUserDirectly() {
+        UserEntity user = new UserEntity();
+        user.setUserId(12);
+        user.setStatus(UserStatus.REJECTED.getDbValue());
+        user.setApproved(false);
+
+        when(userRepository.findById(12)).thenReturn(Optional.of(user));
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> accountApprovalService.processAction(12, "ACTIVE", null));
+
+        Assertions.assertTrue(ex.getMessage().contains("Only PendingApproval accounts can be activated"));
     }
 }

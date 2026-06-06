@@ -5,7 +5,10 @@ import com.seal.hackathon.auth.service.AuthService;
 import com.seal.hackathon.auth.service.LogoutService;
 import com.seal.hackathon.auth.service.PasswordService;
 import com.seal.hackathon.common.ApiResponse;
+import com.seal.hackathon.common.ApiException;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +31,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<RegisterResponse>> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Register completed", authService.register(request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Register completed", authService.register(request)));
     }
 
     @PostMapping("/login")
@@ -43,15 +47,17 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody LogoutRequest request) {
-        logoutService.logout(request.accessToken());
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader) {
+        logoutService.logout(extractBearerToken(authorizationHeader));
         return ResponseEntity.ok(ApiResponse.ok("Logged out successfully", null));
     }
 
     @PostMapping("/register/google")
     public ResponseEntity<ApiResponse<RegisterResponse>> registerWithGoogle(
             @Valid @RequestBody GoogleRegisterRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Google registration completed", authService.registerWithGoogle(request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Google registration completed", authService.registerWithGoogle(request)));
     }
 
     @PostMapping("/forgot-password")
@@ -81,5 +87,12 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest request) {
         passwordService.changePassword(authentication, request.currentPassword(), request.newPassword());
         return ResponseEntity.ok(ApiResponse.ok("Password changed successfully", null));
+    }
+
+    private String extractBearerToken(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Bearer token is required");
+        }
+        return authorizationHeader.substring(7);
     }
 }

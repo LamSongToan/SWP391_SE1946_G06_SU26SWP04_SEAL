@@ -4,14 +4,16 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   Link,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
-import PublicShell from "../components/layout/PublicShell";
+import AuthVisualPanel from "../components/auth/AuthVisualPanel";
 import { http, passwordResetStorage } from "../api/http";
+import { brand } from "../styles/designTokens";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_REGEX = /^\d{6}$/;
@@ -204,19 +206,36 @@ export default function VerifyResetOtpPage() {
   const isSubmitDisabled = loading || Object.values(validate(form)).some(Boolean);
 
   return (
-    <PublicShell>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: brand.colors.surface }}>
+      <AuthVisualPanel mode="login" />
+
       <Box
-        className="ms-auth-form-wrap"
-        sx={{ minHeight: "calc(100vh - 74px)", px: { xs: 2, md: 3 } }}
+        sx={{
+          flexBasis: { xs: "100%", md: "42%" },
+          minWidth: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          px: { xs: 3, sm: 5, lg: 7 },
+          py: 5,
+          bgcolor: brand.colors.surface,
+        }}
       >
-        <Box className="ms-auth-form-card">
-          <span className="ms-auth-header">
-            <KeyRoundedIcon sx={{ fontSize: 16 }} />
-            OTP Verification
-          </span>
-          <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>Verify OTP</Typography>
-          <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-            Enter the 6-digit code sent to your email to continue.
+        <Box sx={{ width: "100%", maxWidth: 430 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}
+          >
+            <KeyRoundedIcon sx={{ fontSize: 18 }} />
+            <span>SEAL HACKATHON</span>
+          </Stack>
+          <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
+            Verify your OTP
+          </Typography>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, lineHeight: 1.7, mt: 1.2, mb: 3 }}>
+            Enter the 6-digit code sent to your email to continue setting a new password.
           </Typography>
 
           {location.state?.otpSent ? (
@@ -226,8 +245,8 @@ export default function VerifyResetOtpPage() {
             </Alert>
           ) : null}
 
-          <Box component="form" onSubmit={onSubmit}>
-            <Stack spacing={1.5}>
+          <Box component="form" noValidate onSubmit={onSubmit}>
+            <Stack spacing={2}>
               <TextField
                 label="Email"
                 type="email"
@@ -236,10 +255,11 @@ export default function VerifyResetOtpPage() {
                 error={Boolean(touched.email && fieldErrors.email)}
                 helperText={(touched.email && fieldErrors.email) || " "}
                 required
+                fullWidth
               />
 
               <Box>
-                <Typography sx={{ mb: 1, fontSize: 14, fontWeight: 600, color: "text.secondary" }}>
+                <Typography sx={{ mb: 1, fontSize: 14, fontWeight: 800, color: brand.colors.text }}>
                   OTP Code
                 </Typography>
                 <Stack direction="row" spacing={1.1} justifyContent="space-between">
@@ -265,15 +285,15 @@ export default function VerifyResetOtpPage() {
                         maxLength: 1,
                         style: {
                           textAlign: "center",
-                          fontSize: "1.4rem",
-                          fontWeight: 700,
+                          fontSize: "1.35rem",
+                          fontWeight: 800,
                           padding: "12px 0",
                         },
                       }}
                       sx={{
-                        width: { xs: 44, sm: 52 },
+                        width: { xs: 42, sm: 52 },
                         "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
+                          borderRadius: brand.radius.sm,
                         },
                       }}
                     />
@@ -287,31 +307,45 @@ export default function VerifyResetOtpPage() {
                 </Typography>
               </Box>
 
-              <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>
-                {loading ? "Verifying..." : "Verify OTP"}
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={isSubmitDisabled}
+                fullWidth
+                sx={{
+                  height: 50,
+                  bgcolor: brand.colors.orange,
+                  color: brand.colors.inverse,
+                  "&:hover": { bgcolor: brand.colors.orangeDark },
+                }}
+              >
+                {loading ? <CircularProgress color="inherit" size={20} /> : "Verify OTP"}
               </Button>
             </Stack>
           </Box>
 
           {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
-          <Typography color="text.secondary" sx={{ mt: 2 }}>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
             Need a new OTP?{" "}
             <Button
               variant="text"
               size="small"
               onClick={resendOtp}
               disabled={resendingOtp}
-              sx={{ minWidth: 0, px: 0.5, verticalAlign: "baseline" }}
+              sx={{ minWidth: 0, px: 0.5, color: brand.colors.orange, fontWeight: 900, verticalAlign: "baseline" }}
             >
               {resendingOtp ? "Sending..." : "Resend code"}
             </Button>
           </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.8 }}>
-            <Link component={RouterLink} to="/forgot-password">Back to forgot password</Link>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 0.8 }}>
+            <Link component={RouterLink} to="/forgot-password" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
+              Back to password recovery
+            </Link>
           </Typography>
         </Box>
       </Box>
-    </PublicShell>
+    </Box>
   );
 }

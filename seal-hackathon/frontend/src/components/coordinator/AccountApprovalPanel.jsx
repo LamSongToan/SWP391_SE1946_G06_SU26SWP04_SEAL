@@ -406,10 +406,7 @@ export default function AccountApprovalPanel() {
                           <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap">
                             <Button size="small" variant="outlined" onClick={() => openDetails(user)}>Details</Button>
                             {normalizeStatus(user.status) === "REJECTED" && (
-                              <>
-                                <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "PENDING_APPROVAL")}>Re-review</Button>
-                                <Button size="small" color="success" variant="outlined" onClick={() => approveDirectly(user.userId)}>Approve</Button>
-                              </>
+                              <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "PENDING_APPROVAL")}>Re-review</Button>
                             )}
                             {normalizeStatus(user.status) === "ACTIVE" && (
                               <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "SUSPENDED")}>Suspend</Button>

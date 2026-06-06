@@ -18,6 +18,7 @@ import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
+import com.seal.hackathon.team.repository.TeamRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,9 @@ import java.util.Set;
 @Service
 public class EventManagementService {
 
+    private static final int MIN_TEAM_SIZE = 3;
+    private static final int MAX_TEAM_SIZE = 5;
+
     private static final Map<String, String> ALLOWED_SEASONS = Map.of(
             "SPRING", "Spring",
             "SUMMER", "Summer",
@@ -43,13 +47,16 @@ public class EventManagementService {
     private final HackathonEventRepository eventRepository;
     private final TrackRepository trackRepository;
     private final RoundRepository roundRepository;
+    private final TeamRepository teamRepository;
 
     public EventManagementService(HackathonEventRepository eventRepository,
-                                  TrackRepository trackRepository,
-                                  RoundRepository roundRepository) {
+                                   TrackRepository trackRepository,
+                                   RoundRepository roundRepository,
+                                   TeamRepository teamRepository) {
         this.eventRepository = eventRepository;
         this.trackRepository = trackRepository;
         this.roundRepository = roundRepository;
+        this.teamRepository = teamRepository;
     }
 
     @Transactional(readOnly = true)
@@ -134,6 +141,9 @@ public class EventManagementService {
         if (!eventRepository.existsById(eventId)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "Event not found");
         }
+        if (teamRepository.countByEventId(eventId) > 0) {
+            throw new ApiException(HttpStatus.CONFLICT, "Event cannot be deleted after teams have registered");
+        }
         eventRepository.deleteById(eventId);
     }
 
@@ -181,6 +191,7 @@ public class EventManagementService {
         if (trackRepository.countByEventId(track.getEventId()) <= 1) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Each event must keep at least one track");
         }
+        requireTrackHasNoTeams(track.getTrackId());
         trackRepository.deleteById(trackId);
     }
 
@@ -416,6 +427,7 @@ public class EventManagementService {
                 .filter(track -> !requestedIds.contains(track.getTrackId()))
                 .toList();
         for (TrackEntity track : tracksToDelete) {
+            requireTrackHasNoTeams(track.getTrackId());
             trackRepository.delete(track);
         }
     }
@@ -543,6 +555,9 @@ public class EventManagementService {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Cannot change event status from " + currentStatus.getDbValue() + " to " + nextStatus.getDbValue());
         }
+        if (nextStatus == EventStatus.ONGOING) {
+            validateTeamsReadyForEvent(event.getEventId());
+        }
     }
 
     private void validateConfiguredReadiness(Integer eventId) {
@@ -554,6 +569,20 @@ public class EventManagementService {
         }
         if (roundRepository.findByEventIdOrderByRoundOrderAsc(eventId).isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Configured event requires at least one round");
+        }
+    }
+
+    private void validateTeamsReadyForEvent(Integer eventId) {
+        long invalidTeams = teamRepository.countInvalidTeamSizesByEventId(eventId, MIN_TEAM_SIZE, MAX_TEAM_SIZE);
+        if (invalidTeams > 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "All teams must have 3 to 5 members before the event can start");
+        }
+    }
+
+    private void requireTrackHasNoTeams(Integer trackId) {
+        if (teamRepository.countByTrackTrackId(trackId) > 0) {
+            throw new ApiException(HttpStatus.CONFLICT, "Track cannot be deleted after teams have registered");
         }
     }
 

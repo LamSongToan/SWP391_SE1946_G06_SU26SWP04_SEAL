@@ -88,9 +88,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
-        if (!Boolean.TRUE.equals(user.getApproved()) || !UserStatus.ACTIVE.isActiveValue(user.getStatus())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Account is not approved yet or has been locked");
-        }
+        ensureAccountCanLogin(user);
 
         return buildAuthResponse(user);
     }
@@ -110,9 +108,7 @@ public class AuthService {
             );
         }
 
-        if (!Boolean.TRUE.equals(user.getApproved()) || !UserStatus.ACTIVE.isActiveValue(user.getStatus())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Account is not approved yet or has been locked");
-        }
+        ensureAccountCanLogin(user);
 
         return new GoogleLoginResponse(
                 false,
@@ -283,5 +279,32 @@ public class AuthService {
                 user.getStatus(),
                 roleNames
         );
+    }
+
+    private void ensureAccountCanLogin(UserEntity user) {
+        UserStatus status = UserStatus.from(user.getStatus());
+        if (Boolean.TRUE.equals(user.getApproved()) && status == UserStatus.ACTIVE) {
+            return;
+        }
+
+        if (status == UserStatus.REJECTED) {
+            String reason = user.getRejectionReason();
+            String message = isBlank(reason)
+                    ? "Account request was rejected."
+                    : "Account request was rejected. Reason: " + reason.trim();
+            throw new ApiException(HttpStatus.FORBIDDEN, message);
+        }
+
+        if (status == UserStatus.PENDING_APPROVAL) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Account is waiting for administrator approval.");
+        }
+
+        if (status == UserStatus.SUSPENDED) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Account is suspended. Please contact the Event Coordinator.");
+        }
+
+        throw new ApiException(HttpStatus.FORBIDDEN, "Account is not allowed to sign in.");
     }
 }

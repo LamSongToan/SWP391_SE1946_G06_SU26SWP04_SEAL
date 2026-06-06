@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/landing";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -7,16 +7,52 @@ import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PublicOnlyRoute from "./components/PublicOnlyRoute";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/verify-reset-otp" element={<VerifyResetOtpPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route
+        path="/login"
+        element={
+          <PublicOnlyRoute>
+            <LoginPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicOnlyRoute>
+            <RegisterPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicOnlyRoute>
+            <ForgotPasswordPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/verify-reset-otp"
+        element={
+          <PublicOnlyRoute>
+            <VerifyResetOtpPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicOnlyRoute>
+            <ResetPasswordPage />
+          </PublicOnlyRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={

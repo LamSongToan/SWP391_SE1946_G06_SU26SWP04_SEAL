@@ -12,9 +12,8 @@ import { Link as RouterLink, useLocation } from "react-router-dom";
 
 const NAV_ITEMS = [
   { label: "About", href: "/#about" },
-  { label: "Upcoming", href: "/#upcoming" },
-  { label: "Flow", href: "/#flow" },
-  { label: "Impact", href: "/#impact" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Events", href: "/#events" },
   { label: "Contact", href: "/#contact" },
 ];
 
@@ -33,10 +32,10 @@ export default function PublicShell({ children }) {
               color="primary.main"
               component={RouterLink}
               sx={{
-                fontSize: 34,
+                fontSize: 28,
                 fontWeight: 800,
                 textDecoration: "none",
-                letterSpacing: "0.01em",
+                letterSpacing: 0,
                 lineHeight: 1,
               }}
               to="/"
@@ -68,7 +67,7 @@ export default function PublicShell({ children }) {
                 to="/login"
                 variant={isLogin ? "contained" : "text"}
               >
-                Login
+                Sign In
               </Button>
               <Button
                 color="primary"
@@ -76,7 +75,7 @@ export default function PublicShell({ children }) {
                 to="/register"
                 variant={isRegister ? "contained" : "outlined"}
               >
-                Register
+                Register Now
               </Button>
             </Stack>
           </Toolbar>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" role="img" aria-label="SEAL Hackathon coding team visual">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#071A2F"/>
+      <stop offset=".48" stop-color="#0D2A47"/>
+      <stop offset="1" stop-color="#FDB515"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#061322" flood-opacity=".4"/>
+    </filter>
+  </defs>
+  <rect width="1440" height="960" fill="url(#bg)"/>
+  <circle cx="1110" cy="180" r="260" fill="#F37021" opacity=".24"/>
+  <circle cx="250" cy="760" r="320" fill="#18B984" opacity=".18"/>
+  <g opacity=".12" stroke="#fff">
+    <path d="M0 120h1440M0 240h1440M0 360h1440M0 480h1440M0 600h1440M0 720h1440M0 840h1440"/>
+    <path d="M120 0v960M240 0v960M360 0v960M480 0v960M600 0v960M720 0v960M840 0v960M960 0v960M1080 0v960M1200 0v960M1320 0v960"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="245" y="185" width="950" height="560" rx="38" fill="#061322"/>
+    <rect x="245" y="185" width="950" height="72" rx="38" fill="#0D2A47"/>
+    <circle cx="305" cy="222" r="12" fill="#F37021"/>
+    <circle cx="345" cy="222" r="12" fill="#FDB515"/>
+    <circle cx="385" cy="222" r="12" fill="#18B984"/>
+    <text x="435" y="232" font-family="JetBrains Mono, Consolas, monospace" font-size="22" fill="#DCE4EF">seal-hackathon.ts</text>
+    <text x="310" y="340" font-family="JetBrains Mono, Consolas, monospace" font-size="30" fill="#FDB515">const league = new SEALHackathon();</text>
+    <text x="310" y="410" font-family="JetBrains Mono, Consolas, monospace" font-size="30" fill="#FFFFFF">team.buildProduct({`{ users: true }`});</text>
+    <text x="310" y="480" font-family="JetBrains Mono, Consolas, monospace" font-size="30" fill="#18B7CF">mentor.review(sprintDemo);</text>
+    <text x="310" y="550" font-family="JetBrains Mono, Consolas, monospace" font-size="30" fill="#F37021">ranking.publish();</text>
+    <rect x="310" y="612" width="650" height="16" rx="8" fill="#fff" opacity=".14"/>
+    <rect x="310" y="652" width="520" height="16" rx="8" fill="#fff" opacity=".14"/>
+    <rect x="310" y="692" width="420" height="16" rx="8" fill="#fff" opacity=".14"/>
+  </g>
+</svg>

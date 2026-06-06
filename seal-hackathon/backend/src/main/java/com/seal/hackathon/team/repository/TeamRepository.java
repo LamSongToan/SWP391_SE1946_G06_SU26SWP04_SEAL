@@ -36,6 +36,29 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
 
     Optional<TeamEntity> findByJoinCodeIgnoreCase(String joinCode);
 
+    long countByTrackTrackId(Integer trackId);
+
+    @Query("""
+            SELECT COUNT(t)
+            FROM TeamEntity t
+            WHERE t.track.eventId = :eventId
+            """)
+    long countByEventId(@Param("eventId") Integer eventId);
+
+    @Query("""
+            SELECT COUNT(t)
+            FROM TeamEntity t
+            WHERE t.track.eventId = :eventId
+              AND (
+                    SELECT COUNT(tm)
+                    FROM TeamMemberEntity tm
+                    WHERE tm.team = t
+                  ) NOT BETWEEN :minSize AND :maxSize
+            """)
+    long countInvalidTeamSizesByEventId(@Param("eventId") Integer eventId,
+                                        @Param("minSize") int minSize,
+                                        @Param("maxSize") int maxSize);
+
     @Query(value = "SELECT COUNT(*) FROM Submission WHERE team_id = :teamId", nativeQuery = true)
     long countSubmissionsByTeamId(@Param("teamId") Integer teamId);
 }

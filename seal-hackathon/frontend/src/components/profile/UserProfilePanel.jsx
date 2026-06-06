@@ -25,7 +25,8 @@ import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import CalendarTodayRoundedIcon from "@mui/icons-material/CalendarTodayRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { http, resolveAssetUrl } from "../../api/http";
+import { authStorage, http, resolveAssetUrl } from "../../api/http";
+import { brand } from "../../styles/designTokens";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
 const PROFILE_DRAFT_STORAGE_KEY = "seal-profile-draft";
@@ -65,12 +66,42 @@ function toFormFromProfile(profile) {
   };
 }
 
+function getProfileInitials(profile = {}) {
+  const source = (profile?.fullName || profile?.username || "U").trim();
+  const words = source.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+  }
+  const compact = source.replace(/[^a-zA-Z0-9]/g, "");
+  return (compact.slice(0, 2) || "U").toUpperCase();
+}
+
+function withAssetVersion(url, version) {
+  if (!url || !version) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${version}`;
+}
+
+function syncStoredAuthProfile(profile) {
+  if (!profile) return;
+  const auth = authStorage.get();
+  if (!auth) return;
+
+  authStorage.set({
+    ...auth,
+    username: profile.username ?? auth.username,
+    fullName: profile.fullName ?? auth.fullName,
+    avatarUrl: profile.avatarUrl ?? auth.avatarUrl,
+  });
+}
+
 export default function UserProfilePanel({ onDirtyChange = () => {} }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [teams, setTeams] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(true);
@@ -135,15 +166,33 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         studentCode: profile?.studentCode || "",
         universityName: profile?.universityName || "",
       };
+  const displayAvatarSrc = avatarPreviewUrl || withAssetVersion(
+    resolveAssetUrl(displayProfile.avatarUrl),
+    profile?.__avatarVersion
+  );
 
   const emitProfileUpdated = (data) => {
     window.dispatchEvent(new CustomEvent("seal-profile-updated", { detail: data }));
   };
 
-  const applyProfileData = (data, message = "") => {
-    setProfile(data);
-    setForm(toFormFromProfile(data));
-    emitProfileUpdated(data);
+  const applyProfileData = (data, message = "", options = {}) => {
+    const shouldBustAvatar = options.bustAvatar && data?.avatarUrl;
+    const shouldPreserveAvatarVersion = profile?.__avatarVersion && data?.avatarUrl === profile?.avatarUrl;
+    const nextData = data
+      ? {
+          ...data,
+          __avatarVersion: shouldBustAvatar
+            ? Date.now()
+            : shouldPreserveAvatarVersion
+              ? profile.__avatarVersion
+              : data.__avatarVersion,
+        }
+      : data;
+
+    setProfile(nextData);
+    setForm(toFormFromProfile(nextData));
+    syncStoredAuthProfile(nextData);
+    emitProfileUpdated(nextData);
     if (message) {
       setSuccess(message);
     }
@@ -274,6 +323,14 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
   }, [editMode, form.avatarUrl, form.bio, form.fullName, form.username, onDirtyChange, profile?.email, profileDirty]);
 
   useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) {
+        URL.revokeObjectURL(avatarPreviewUrl);
+      }
+    };
+  }, [avatarPreviewUrl]);
 
   useEffect(() => {
     const handleDiscardDraft = () => {
@@ -414,14 +471,36 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     setUploadingAvatar(true);
     setError("");
     setSuccess("");
+    const nextPreviewUrl = URL.createObjectURL(file);
+    setAvatarPreviewUrl((currentPreviewUrl) => {
+      if (currentPreviewUrl) {
+        URL.revokeObjectURL(currentPreviewUrl);
+      }
+      return nextPreviewUrl;
+    });
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await http.post("/api/users/me/avatar", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const response = await http.post("/api/users/me/avatar", formData);
+      const freshProfileResponse = await http.get("/api/users/me");
+      const persistedProfile = freshProfileResponse.data?.data || response.data?.data;
+      if (!persistedProfile?.avatarUrl) {
+        throw new Error("Backend did not persist the avatar URL");
+      }
+      setAvatarPreviewUrl((currentPreviewUrl) => {
+        if (currentPreviewUrl) {
+          URL.revokeObjectURL(currentPreviewUrl);
+        }
+        return "";
       });
-      applyProfileData(response.data?.data, "Avatar updated successfully");
+      applyProfileData(persistedProfile, "Avatar updated successfully", { bustAvatar: true });
     } catch (err) {
+      setAvatarPreviewUrl((currentPreviewUrl) => {
+        if (currentPreviewUrl) {
+          URL.revokeObjectURL(currentPreviewUrl);
+        }
+        return "";
+      });
       setError(err?.response?.data?.message || "Failed to upload avatar");
     } finally {
       setUploadingAvatar(false);
@@ -434,6 +513,12 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     setSuccess("");
     try {
       const response = await http.delete("/api/users/me/avatar");
+      setAvatarPreviewUrl((currentPreviewUrl) => {
+        if (currentPreviewUrl) {
+          URL.revokeObjectURL(currentPreviewUrl);
+        }
+        return "";
+      });
       applyProfileData(response.data?.data, "Avatar removed successfully");
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to remove avatar");
@@ -455,11 +540,23 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
       {error && <Alert severity="error">{error}</Alert>}
       {success && <Alert severity="success">{success}</Alert>}
 
-      <Grid2 container spacing={3} alignItems="flex-start">
-        <Grid2 size={{ xs: 12, lg: 3.5 }}>
-          <Card className="ms-data-card">
-            <CardContent>
-              <Stack spacing={2.2}>
+      <Grid2 container spacing={2.5} alignItems="flex-start">
+        <Grid2 size={{ xs: 12 }}>
+          <Card
+            className="ms-data-card"
+            sx={{
+              background:
+                "linear-gradient(135deg, rgba(7,26,47,0.04) 0%, rgba(243,112,33,0.05) 48%, #FFFFFF 100%)",
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+              <Stack
+                direction={{ xs: "column", lg: "row" }}
+                spacing={2.5}
+                alignItems={{ xs: "center", lg: "flex-start" }}
+                flexWrap="wrap"
+                useFlexGap
+              >
                 <Box
                   sx={{
                     position: "relative",
@@ -468,6 +565,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     borderRadius: "50%",
                     overflow: "hidden",
                     cursor: "pointer",
+                    flex: "0 0 auto",
                     "&:hover .profile-avatar-overlay": {
                       opacity: 1,
                     },
@@ -482,10 +580,18 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     onChange={onAvatarFileChange}
                   />
                   <Avatar
-                    src={resolveAssetUrl(displayProfile.avatarUrl) || undefined}
-                    sx={{ width: 180, height: 180, bgcolor: "primary.main", fontSize: 56 }}
+                    src={displayAvatarSrc || undefined}
+                    sx={{
+                      width: { xs: 112, md: 132 },
+                      height: { xs: 112, md: 132 },
+                      bgcolor: "primary.main",
+                      border: "6px solid #FFFFFF",
+                      boxShadow: "0 18px 48px rgba(93,135,255,0.2)",
+                      fontSize: { xs: 34, md: 40 },
+                      fontWeight: 800,
+                    }}
                   >
-                    {(displayProfile.fullName || displayProfile.username || "U").trim().charAt(0).toUpperCase()}
+                    {getProfileInitials(displayProfile)}
                   </Avatar>
                   <Box
                     className="profile-avatar-overlay"
@@ -529,20 +635,19 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                   </IconButton>
                 </Box>
 
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+                <Box sx={{ flex: { xs: "1 1 100%", lg: "1 1 310px" }, minWidth: 0, textAlign: { xs: "center", lg: "left" } }}>
+                  <Typography variant="h4" sx={{ color: brand.colors.text, fontWeight: 800, lineHeight: 1.1 }}>
                     {displayProfile.fullName || "Unnamed User"}
                   </Typography>
-                  <Typography variant="h6" color="text.secondary" sx={{ mt: 0.4, fontWeight: 500 }}>
+                  <Typography variant="h6" color="text.secondary" sx={{ mt: 0.4, fontWeight: 600 }}>
                     @{displayProfile.username || "username"}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 1.5, color: "text.secondary", lineHeight: 1.7, maxWidth: 560 }}>
+                    {displayProfile.bio?.trim() || "Add a short bio so mentors, judges, and coordinators can quickly understand who you are."}
                   </Typography>
                 </Box>
 
-                <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
-                  {displayProfile.bio?.trim() || "Add a short bio so mentors, judges, and coordinators can quickly understand who you are."}
-                </Typography>
-
-                <Stack spacing={1}>
+                <Stack spacing={1} sx={{ width: { xs: "100%", sm: 220 }, ml: { lg: "auto" } }}>
                     <Button
                       variant="outlined"
                       startIcon={<EditRoundedIcon />}
@@ -567,16 +672,22 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                   </Button>
                 </Stack>
 
-                <Stack spacing={1.2}>
-                  <Stack direction="row" spacing={1.2} alignItems="center">
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={1.2}
+                  flexWrap="wrap"
+                  useFlexGap
+                  sx={{ flexBasis: "100%", pt: 1 }}
+                >
+                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, maxWidth: "100%", p: 1.4, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
                     <MailOutlineRoundedIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{profile?.email}</Typography>
+                    <Typography variant="body2" sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile?.email}</Typography>
                   </Stack>
-                  <Stack direction="row" spacing={1.2} alignItems="center">
+                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, p: 1.4, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
                     <BadgeRoundedIcon fontSize="small" color="action" />
                     <Typography variant="body2">Status: {profile?.status}</Typography>
                   </Stack>
-                  <Stack direction="row" spacing={1.2} alignItems="center">
+                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, p: 1.4, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
                     <CalendarTodayRoundedIcon fontSize="small" color="action" />
                     <Typography variant="body2">
                       Joined {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-GB") : "N/A"}
@@ -584,10 +695,10 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                   </Stack>
                 </Stack>
 
-                <Divider />
+                <Divider sx={{ display: "none" }} />
 
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.2 }}>
+                <Box sx={{ flex: "1 1 280px", minWidth: 0, p: 1.6, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.2 }}>
                     Roles
                   </Typography>
                   <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
@@ -599,24 +710,24 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
 
                 {isStudent ? (
                   <>
-                    <Divider />
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.2 }}>
+                    <Divider sx={{ display: "none" }} />
+                    <Box sx={{ flex: "2 1 420px", minWidth: 0, p: 1.6, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.2 }}>
                         Student Identity
                       </Typography>
-                      <Stack spacing={1}>
-                        <Typography variant="body2" color="text.secondary">
-                          Type
-                        </Typography>
-                        <Typography variant="body1">{displayProfile.studentType || "N/A"}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Student Code
-                        </Typography>
-                        <Typography variant="body1">{displayProfile.studentCode || "N/A"}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          University
-                        </Typography>
-                        <Typography variant="body1">{displayProfile.universityName || "N/A"}</Typography>
+                      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Type</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 700 }}>{displayProfile.studentType || "N/A"}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Student Code</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 700 }}>{displayProfile.studentCode || "N/A"}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">University</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 700 }}>{displayProfile.universityName || "N/A"}</Typography>
+                        </Box>
                       </Stack>
                     </Box>
                   </>
@@ -626,7 +737,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
           </Card>
         </Grid2>
 
-        <Grid2 size={{ xs: 12, lg: 8.5 }}>
+        <Grid2 size={{ xs: 12 }}>
           <Stack spacing={2.5}>
             {editMode ? (
               <Card className="ms-data-card">
@@ -643,7 +754,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                         Edit Profile
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Update how you appear across SEAL Hackathon modules.
+                        Update how you appear across SEAL.
                       </Typography>
                     </Box>
                     <Stack direction="row" spacing={1}>
@@ -721,7 +832,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {isStudent
                         ? "Your current participation snapshot across SEAL events and teams."
-                        : "Your current role summary and the modules available to this account."}
+                        : "Your current role summary and account access overview."}
                     </Typography>
 
                     <Grid2 container spacing={2}>
@@ -938,7 +1049,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                           </Typography>
                           <Stack spacing={1.2}>
                             <Typography variant="body2" color="text.secondary">
-                              This account can access only the modules assigned to the roles below.
+                              This account can access SEAL areas according to the roles below.
                             </Typography>
                             <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
                               {(profile?.roles || []).map((role) => (

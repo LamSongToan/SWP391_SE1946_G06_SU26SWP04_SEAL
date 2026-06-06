@@ -9,8 +9,8 @@ public record ChangePasswordRequest(
         @NotBlank
         @Size(min = 8, max = 72)
         @Pattern(
-                regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,72}$",
-                message = "newPassword must include at least one letter, one number, and one special character"
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,72}$",
+                message = "newPassword must include uppercase, lowercase, number, and special character"
         )
         String newPassword
 ) {}

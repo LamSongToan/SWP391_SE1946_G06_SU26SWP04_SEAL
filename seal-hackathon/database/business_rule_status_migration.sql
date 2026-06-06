@@ -1,6 +1,13 @@
 USE SEAL_Hackathon_G06;
 GO
 
+IF COL_LENGTH('Users', 'rejection_reason') IS NULL
+BEGIN
+    ALTER TABLE [Users]
+    ADD rejection_reason NVARCHAR(500) NULL;
+END
+GO
+
 DECLARE @sql NVARCHAR(MAX) = N'';
 
 SELECT @sql += N'ALTER TABLE [Users] DROP CONSTRAINT ' + QUOTENAME(cc.name) + N';'

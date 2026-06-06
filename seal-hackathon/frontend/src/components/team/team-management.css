@@ -126,6 +126,9 @@
 
 .team-table-scroll {
   overflow-x: auto;
+  border: 1px solid #e8edf7;
+  border-radius: 14px;
+  background: #ffffff;
 }
 
 .team-table-scroll .MuiTable-root {

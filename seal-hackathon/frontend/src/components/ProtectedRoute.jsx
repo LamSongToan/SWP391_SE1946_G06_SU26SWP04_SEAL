@@ -1,10 +1,11 @@
 import { Navigate } from "react-router-dom";
-import { authStorage } from "../api/http";
+import { authStorage, isAuthSessionValid } from "../api/http";
 
 export default function ProtectedRoute({ children, requiredRole }) {
   const auth = authStorage.get();
 
-  if (!auth?.accessToken) {
+  if (!isAuthSessionValid(auth)) {
+    authStorage.clear();
     return <Navigate to="/login" replace />;
   }
 

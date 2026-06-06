@@ -13,7 +13,7 @@ import {
 import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
 import { http, logout } from "../api/http";
 
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
 
 export default function ChangePasswordPage() {
   const [form, setForm] = useState({
@@ -38,7 +38,7 @@ export default function ChangePasswordPage() {
       nextErrors.newPassword = "New password is required";
     } else if (!PASSWORD_REGEX.test(nextForm.newPassword)) {
       nextErrors.newPassword =
-        "Password must include at least one letter, one number, one special character, and be 8-72 characters";
+        "Password must include uppercase, lowercase, number, special character, and be 8-72 characters";
     }
 
     if (!nextForm.confirmPassword) {

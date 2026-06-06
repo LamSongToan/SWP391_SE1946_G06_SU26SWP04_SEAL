@@ -464,24 +464,14 @@ export default function UserDirectoryPanel({ currentRole, initialQuery = "" }) {
                         </Button>
                       ) : null}
                       {(currentStatus === "REJECTED" || currentStatus === "SUSPENDED") ? (
-                        <>
-                          <Button
-                            color="warning"
-                            variant="outlined"
-                            disabled={actionLoading}
-                            onClick={() => runCoordinatorAction("PENDING_APPROVAL")}
-                          >
-                            {actionLoading ? "Processing..." : "Re-review"}
-                          </Button>
-                          <Button
-                            color="success"
-                            variant="outlined"
-                            disabled={actionLoading}
-                            onClick={() => runCoordinatorAction("ACTIVE")}
-                          >
-                            {actionLoading ? "Processing..." : "Approve"}
-                          </Button>
-                        </>
+                        <Button
+                          color="warning"
+                          variant="outlined"
+                          disabled={actionLoading}
+                          onClick={() => runCoordinatorAction("PENDING_APPROVAL")}
+                        >
+                          {actionLoading ? "Processing..." : "Re-review"}
+                        </Button>
                       ) : null}
                     </Stack>
                   </CardContent>

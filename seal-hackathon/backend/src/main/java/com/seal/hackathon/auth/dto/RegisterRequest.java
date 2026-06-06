@@ -16,8 +16,8 @@ public record RegisterRequest(
         @NotBlank
         @Size(min = 8, max = 72)
         @Pattern(
-                regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,72}$",
-                message = "password must include at least one letter, one number, and one special character"
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,72}$",
+                message = "password must include uppercase, lowercase, number, and special character"
         )
         String password,
         @NotBlank @Size(max = 150) String fullName,

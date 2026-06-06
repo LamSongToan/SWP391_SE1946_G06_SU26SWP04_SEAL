@@ -4,16 +4,22 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
+  IconButton,
+  InputAdornment,
   Link,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
-import PublicShell from "../components/layout/PublicShell";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import AuthVisualPanel from "../components/auth/AuthVisualPanel";
 import { http, passwordResetStorage } from "../api/http";
+import { brand } from "../styles/designTokens";
 
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -31,6 +37,8 @@ export default function ResetPasswordPage() {
   const [touched, setTouched] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validate = (nextForm) => {
     const nextErrors = {};
@@ -39,7 +47,7 @@ export default function ResetPasswordPage() {
       nextErrors.newPassword = "New password is required";
     } else if (!PASSWORD_REGEX.test(nextForm.newPassword)) {
       nextErrors.newPassword =
-        "Password must include at least one letter, one number, one special character, and be 8-72 characters";
+        "Password must include uppercase, lowercase, number, special character, and be 8-72 characters";
     }
 
     if (!nextForm.confirmPassword) {
@@ -98,57 +106,122 @@ export default function ResetPasswordPage() {
   const isSubmitDisabled = loading || Object.values(validate(form)).some(Boolean) || !resetContext?.email || !resetContext?.otp;
 
   return (
-    <PublicShell>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: brand.colors.surface }}>
+      <AuthVisualPanel mode="login" />
+
       <Box
-        className="ms-auth-form-wrap"
-        sx={{ minHeight: "calc(100vh - 74px)", px: { xs: 2, md: 3 } }}
+        sx={{
+          flexBasis: { xs: "100%", md: "42%" },
+          minWidth: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          px: { xs: 3, sm: 5, lg: 7 },
+          py: 5,
+          bgcolor: brand.colors.surface,
+        }}
       >
-        <Box className="ms-auth-form-card">
-          <span className="ms-auth-header">
-            <LockResetRoundedIcon sx={{ fontSize: 16 }} />
-            New Password
-          </span>
-          <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>Set New Password</Typography>
-          <Typography color="text.secondary" sx={{ mb: 2.5 }}>
+        <Box sx={{ width: "100%", maxWidth: 430 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}
+          >
+            <LockResetRoundedIcon sx={{ fontSize: 18 }} />
+            <span>SEAL HACKATHON</span>
+          </Stack>
+          <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
+            Set a new password
+          </Typography>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, lineHeight: 1.7, mt: 1.2, mb: 3 }}>
             Choose a strong password for <strong>{resetContext?.email || "your account"}</strong>.
           </Typography>
 
-          <Box component="form" onSubmit={onSubmit}>
-            <Stack spacing={1.4}>
+          {!resetContext?.email || !resetContext?.otp ? (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Please verify your OTP before setting a new password.
+            </Alert>
+          ) : null}
+
+          <Box component="form" noValidate onSubmit={onSubmit}>
+            <Stack spacing={2}>
               <TextField
                 label="New Password"
-                type="password"
+                type={showNewPassword ? "text" : "password"}
                 value={form.newPassword}
                 onChange={(event) => setFormField("newPassword", event.target.value)}
                 error={Boolean(touched.newPassword && fieldErrors.newPassword)}
                 helperText={
                   (touched.newPassword && fieldErrors.newPassword) ||
-                  "At least 8 characters, including a letter, a number, and a special character."
+                  "At least 8 characters with uppercase, lowercase, number, and special character."
                 }
                 required
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                        edge="end"
+                        onClick={() => setShowNewPassword((value) => !value)}
+                      >
+                        {showNewPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <TextField
                 label="Confirm New Password"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 value={form.confirmPassword}
                 onChange={(event) => setFormField("confirmPassword", event.target.value)}
                 error={Boolean(touched.confirmPassword && fieldErrors.confirmPassword)}
                 helperText={(touched.confirmPassword && fieldErrors.confirmPassword) || " "}
                 required
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                        edge="end"
+                        onClick={() => setShowConfirmPassword((value) => !value)}
+                      >
+                        {showConfirmPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
-              <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>
-                {loading ? "Resetting..." : "Reset Password"}
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={isSubmitDisabled}
+                fullWidth
+                sx={{
+                  height: 50,
+                  bgcolor: brand.colors.orange,
+                  color: brand.colors.inverse,
+                  "&:hover": { bgcolor: brand.colors.orangeDark },
+                }}
+              >
+                {loading ? <CircularProgress color="inherit" size={20} /> : "Reset Password"}
               </Button>
             </Stack>
           </Box>
 
           {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
-          <Typography color="text.secondary" sx={{ mt: 2 }}>
-            <Link component={RouterLink} to="/login">Back to login</Link>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
+            <Link component={RouterLink} to="/login" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
+              Back to sign in
+            </Link>
           </Typography>
         </Box>
       </Box>
-    </PublicShell>
+    </Box>
   );
 }

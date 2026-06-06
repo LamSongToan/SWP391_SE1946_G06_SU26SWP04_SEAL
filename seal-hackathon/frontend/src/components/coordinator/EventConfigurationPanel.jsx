@@ -1214,6 +1214,11 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                 <Chip label={`${selectedEventSummary.deadlineCount} deadlines`} variant="outlined" />
                 <Chip label={`${selectedEventSummary.promotionRuleCount} top-N rules`} variant="outlined" />
               </Stack>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
+                {["1 Event Info", "2 Tracks", "3 Rounds & Top-N", "4 Review & Publish"].map((step) => (
+                  <Chip key={step} label={step} size="small" sx={{ bgcolor: "#F5F7FF", fontWeight: 700 }} />
+                ))}
+              </Stack>
               {managedEventDirty ? (
                 <Alert severity="warning" variant="outlined" sx={{ mb: 1.5 }}>
                   You have unsaved event changes. Click <strong>Update Event</strong> at the bottom to keep them.
@@ -1280,6 +1285,9 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                 </Box>
                 <Button variant="contained" size="small" onClick={addDraftRound}>Add Round</Button>
               </Stack>
+              <Alert severity="info" variant="outlined" sx={{ mb: 1.5 }}>
+                Advancement preview: each track is ranked independently. If a round has Top N = 4, up to 4 teams from each track advance into the next round. Ties should be reviewed by the coordinator when Sprint 2 scoring is enabled.
+              </Alert>
 
               {draftRounds.length === 0 ? (
                 <Typography color="text.secondary">No rounds yet. Add at least one round before marking this event as Configured.</Typography>
@@ -1536,6 +1544,13 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
         <DialogContent>
           <Stack spacing={1.5} sx={{ pt: 1 }}>
             {eventDialogError ? <Alert severity="error">{eventDialogError}</Alert> : null}
+            {eventDialog.mode === "create" ? (
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {["1 Event Info", "2 Tracks", "3 Rounds & Top-N", "4 Review"].map((step) => (
+                  <Chip key={step} label={step} size="small" sx={{ bgcolor: "#F5F7FF", fontWeight: 700 }} />
+                ))}
+              </Stack>
+            ) : null}
             <TextField label="Event Name" value={eventForm.name} onChange={onEventChange("name")} fullWidth />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
               <TextField select label="Season" value={eventForm.season} onChange={onEventChange("season")} fullWidth>
@@ -1598,6 +1613,9 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                       </Box>
                       <Button variant="text" onClick={addInitialRound}>Add Round</Button>
                     </Stack>
+                    <Alert severity="info" variant="outlined" sx={{ mb: 1.2 }}>
+                      Top N is applied per track. Example: with AI and Web tracks, Top N = 3 advances up to three AI teams and up to three Web teams.
+                    </Alert>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onInitialRoundDragEnd}>
                       <SortableContext items={initialRounds.map((round) => round.draftId)} strategy={verticalListSortingStrategy}>
                         <Stack spacing={1.2}>

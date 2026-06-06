@@ -134,7 +134,31 @@ class AuthServiceTest {
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
                 () -> authService.login(new LoginRequest("a@fpt.edu.vn", "12345678")));
-        Assertions.assertTrue(ex.getMessage().contains("not approved"));
+        Assertions.assertTrue(ex.getMessage().contains("waiting for administrator approval"));
+    }
+
+    @Test
+    void login_shouldReturnRejectReasonForRejectedUser() {
+        UserEntity user = new UserEntity();
+        user.setUsername("an.user");
+        user.setEmail("a@fpt.edu.vn");
+        user.setPasswordHash("hash");
+        user.setStatus(UserStatus.REJECTED.getDbValue());
+        user.setApproved(false);
+        user.setRejectionReason("Student code does not match the submitted university.");
+
+        UserRoleEntity roleEntity = new UserRoleEntity();
+        roleEntity.setRoleType(RoleType.STUDENT.getDbValue());
+        Set<UserRoleEntity> roles = new HashSet<>();
+        roles.add(roleEntity);
+        user.setUserRoles(roles);
+
+        when(userRepository.findByEmailIgnoreCase("a@fpt.edu.vn")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("12345678", "hash")).thenReturn(true);
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> authService.login(new LoginRequest("a@fpt.edu.vn", "12345678")));
+        Assertions.assertTrue(ex.getMessage().contains("Student code does not match"));
     }
 
     @Test

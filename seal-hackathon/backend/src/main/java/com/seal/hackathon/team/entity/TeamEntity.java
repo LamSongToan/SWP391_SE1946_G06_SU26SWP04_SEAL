@@ -56,7 +56,7 @@ public class TeamEntity {
             joinCode = UUID.randomUUID().toString().replace("-", "")
                     .substring(0, 8).toUpperCase(Locale.ROOT);
         }
-        if (status == null) status = "Active";
+        if (status == null) status = "Forming";
         if (createdAt == null) createdAt = LocalDateTime.now();
     }
 }

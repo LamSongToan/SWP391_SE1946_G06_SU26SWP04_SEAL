@@ -11,6 +11,7 @@ import com.seal.hackathon.event.dto.TrackDto;
 import com.seal.hackathon.event.dto.TrackUpsertRequest;
 import com.seal.hackathon.event.service.EventManagementService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -42,16 +43,18 @@ public class CoordinatorEventController {
 
     @PostMapping("/events")
     public ResponseEntity<ApiResponse<EventManagementDto>> createEvent(@Valid @RequestBody EventUpsertRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Event created", eventManagementService.createEvent(request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Event created", eventManagementService.createEvent(request)));
     }
 
     @PostMapping("/events/setup")
     public ResponseEntity<ApiResponse<EventManagementDto>> createEventWithInitialConfiguration(
             @Valid @RequestBody EventSetupCreateRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                "Event created with initial configuration",
-                eventManagementService.createEventWithInitialConfiguration(request)
-        ));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(
+                        "Event created with initial configuration",
+                        eventManagementService.createEventWithInitialConfiguration(request)
+                ));
     }
 
     @PutMapping("/events/{eventId}")
@@ -86,7 +89,8 @@ public class CoordinatorEventController {
     public ResponseEntity<ApiResponse<TrackDto>> createTrack(
             @PathVariable Integer eventId,
             @Valid @RequestBody TrackUpsertRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Track created", eventManagementService.createTrack(eventId, request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Track created", eventManagementService.createTrack(eventId, request)));
     }
 
     @PutMapping("/tracks/{trackId}")
@@ -111,7 +115,8 @@ public class CoordinatorEventController {
     public ResponseEntity<ApiResponse<RoundManagementDto>> createRound(
             @PathVariable Integer eventId,
             @Valid @RequestBody RoundUpsertRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Round created", eventManagementService.createRound(eventId, request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Round created", eventManagementService.createRound(eventId, request)));
     }
 
     @PutMapping("/rounds/{roundId}")

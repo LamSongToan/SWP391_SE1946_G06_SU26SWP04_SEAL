@@ -37,6 +37,8 @@ public class TeamService {
 
     private static final int MIN_TEAM_SIZE = 3;
     private static final int MAX_TEAM_SIZE = 5;
+    private static final String TEAM_STATUS_FORMING = "Forming";
+    private static final String TEAM_STATUS_READY = "Ready";
 
     private final TeamRepository teamRepository;
     private final TeamMemberRepository memberRepository;
@@ -112,6 +114,7 @@ public class TeamService {
         team.setTeamName(teamName);
         team = teamRepository.save(team);
         addMember(team, leader);
+        updateTeamMembershipStatus(team);
         return toTeamDto(team, leader.getUserRoleId());
     }
 
@@ -178,6 +181,7 @@ public class TeamService {
         validateCanJoin(invitation.getTeam(), student);
 
         addMember(invitation.getTeam(), student);
+        updateTeamMembershipStatus(invitation.getTeam());
         invitation.setStatus("Accepted");
         invitation.setRespondedAt(LocalDateTime.now());
         invitationRepository.save(invitation);
@@ -223,6 +227,7 @@ public class TeamService {
         requireAvailableSlot(team.getTeamId());
         validateCanJoin(team, student);
         addMember(team, student);
+        updateTeamMembershipStatus(team);
         return toTeamDto(team, student.getUserRoleId());
     }
 
@@ -242,6 +247,7 @@ public class TeamService {
             throw new ApiException(HttpStatus.NOT_FOUND, "Team member not found");
         }
         memberRepository.deleteById(id);
+        updateTeamMembershipStatus(team);
         return toTeamDto(team, leader.getUserRoleId());
     }
 
@@ -276,6 +282,7 @@ public class TeamService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Transfer team leadership before leaving the team");
         }
         memberRepository.deleteById(new TeamMemberId(teamId, student.getUserRoleId()));
+        updateTeamMembershipStatus(team);
     }
 
     @Transactional
@@ -325,6 +332,18 @@ public class TeamService {
         member.setTeam(team);
         member.setStudent(student);
         memberRepository.save(member);
+    }
+
+    private void updateTeamMembershipStatus(TeamEntity team) {
+        long memberCount = memberRepository.countByTeamTeamId(team.getTeamId());
+        team.setStatus(resolveTeamStatus(memberCount));
+        teamRepository.save(team);
+    }
+
+    private String resolveTeamStatus(long memberCount) {
+        return memberCount >= MIN_TEAM_SIZE && memberCount <= MAX_TEAM_SIZE
+                ? TEAM_STATUS_READY
+                : TEAM_STATUS_FORMING;
     }
 
     private TeamEntity getTeamOrThrow(Integer teamId) {
@@ -413,7 +432,7 @@ public class TeamService {
                 team.getTeamId(),
                 team.getTeamName(),
                 team.getJoinCode(),
-                team.getStatus(),
+                resolveTeamStatus(memberCount),
                 team.getTrack().getTrackId(),
                 team.getTrack().getName(),
                 event.getEventId(),

@@ -20,6 +20,9 @@ public class StaticResourceConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String location = avatarStorageDirectory.toUri().toString();
+        if (!location.endsWith("/")) {
+            location = location + "/";
+        }
         registry.addResourceHandler("/uploads/avatars/**")
                 .addResourceLocations(location);
     }

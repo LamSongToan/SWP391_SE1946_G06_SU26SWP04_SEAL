@@ -127,7 +127,7 @@ public class UserProfileService {
 
             deleteManagedAvatarIfPresent(user.getAvatarUrl());
             user.setAvatarUrl("/uploads/avatars/" + generatedFilename);
-            userRepository.save(user);
+            userRepository.saveAndFlush(user);
             return toProfileDto(user, studentProfile.orElse(null));
         } catch (IOException ex) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store avatar image");
@@ -140,7 +140,7 @@ public class UserProfileService {
         Optional<StudentProfileEntity> studentProfile = studentProfileRepository.findByUserRoleUserUserId(user.getUserId());
         deleteManagedAvatarIfPresent(user.getAvatarUrl());
         user.setAvatarUrl(null);
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
         return toProfileDto(user, studentProfile.orElse(null));
     }
 

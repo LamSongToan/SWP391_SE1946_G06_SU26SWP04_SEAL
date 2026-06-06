@@ -4,14 +4,16 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   Link,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import PasswordRoundedIcon from "@mui/icons-material/PasswordRounded";
-import PublicShell from "../components/layout/PublicShell";
+import AuthVisualPanel from "../components/auth/AuthVisualPanel";
 import { http, passwordResetStorage } from "../api/http";
+import { brand } from "../styles/designTokens";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -64,23 +66,40 @@ export default function ForgotPasswordPage() {
   const isSubmitDisabled = loading || Boolean(validateEmail(email));
 
   return (
-    <PublicShell>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: brand.colors.surface }}>
+      <AuthVisualPanel mode="login" />
+
       <Box
-        className="ms-auth-form-wrap"
-        sx={{ minHeight: "calc(100vh - 74px)", px: { xs: 2, md: 3 } }}
+        sx={{
+          flexBasis: { xs: "100%", md: "42%" },
+          minWidth: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          px: { xs: 3, sm: 5, lg: 7 },
+          py: 5,
+          bgcolor: brand.colors.surface,
+        }}
       >
-        <Box className="ms-auth-form-card">
-          <span className="ms-auth-header">
-            <PasswordRoundedIcon sx={{ fontSize: 16 }} />
-            Password Recovery
-          </span>
-          <Typography variant="h4" sx={{ mt: 2, mb: 0.7 }}>Forgot Password</Typography>
-          <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-            Enter your registered email and we will send a 6-digit verification code.
+        <Box sx={{ width: "100%", maxWidth: 430 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}
+          >
+            <PasswordRoundedIcon sx={{ fontSize: 18 }} />
+            <span>SEAL HACKATHON</span>
+          </Stack>
+          <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
+            Recover your password
+          </Typography>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, lineHeight: 1.7, mt: 1.2, mb: 3 }}>
+            Enter the email linked to your SEAL account. We will send a 6-digit OTP so you can reset your password securely.
           </Typography>
 
-          <Box component="form" onSubmit={onSubmit}>
-            <Stack spacing={1.4}>
+          <Box component="form" noValidate onSubmit={onSubmit}>
+            <Stack spacing={2}>
               <TextField
                 label="Email"
                 type="email"
@@ -93,20 +112,36 @@ export default function ForgotPasswordPage() {
                 error={Boolean(fieldError)}
                 helperText={fieldError || " "}
                 required
+                fullWidth
               />
-              <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>
-                {loading ? "Sending..." : "Send OTP"}
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={isSubmitDisabled}
+                fullWidth
+                sx={{
+                  height: 50,
+                  bgcolor: brand.colors.orange,
+                  color: brand.colors.inverse,
+                  "&:hover": { bgcolor: brand.colors.orangeDark },
+                }}
+              >
+                {loading ? <CircularProgress color="inherit" size={20} /> : "Send OTP"}
               </Button>
             </Stack>
           </Box>
 
           {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
-          <Typography color="text.secondary" sx={{ mt: 2 }}>
-            <Link component={RouterLink} to="/login">Back to login</Link>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
+            Remembered your password?{" "}
+            <Link component={RouterLink} to="/login" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
+              Back to sign in
+            </Link>
           </Typography>
         </Box>
       </Box>
-    </PublicShell>
+    </Box>
   );
 }

@@ -13,5 +13,6 @@ public record PendingUserDto(
         LocalDateTime createdAt,
         String studentType,
         String studentCode,
-        String universityName
+        String universityName,
+        String rejectionReason
 ) {}
