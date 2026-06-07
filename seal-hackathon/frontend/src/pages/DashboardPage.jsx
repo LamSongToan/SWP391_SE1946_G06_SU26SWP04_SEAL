@@ -131,7 +131,7 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
     }
     if (currentRole === "JUDGE") {
       return [
-        ["Submissions to Score", stats.pendingScores, AssignmentTurnedInRoundedIcon, "Waiting for Sprint 2 scoring APIs"],
+        ["Submissions to Score", stats.pendingScores, AssignmentTurnedInRoundedIcon, "Waiting for scoring APIs"],
         ["Judging Schedule", stats.judgeSchedule, CalendarMonthRoundedIcon, "Assigned rounds will appear here"],
         ["Score History", stats.scoreHistory, GavelRoundedIcon, "Track submitted scores"],
       ];
@@ -140,7 +140,7 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
       return [
         ["Mentored Teams", stats.mentorTeams, PsychologyRoundedIcon, "Assigned teams will appear here"],
         ["Meetings", stats.mentorMeetings, CalendarMonthRoundedIcon, "Track upcoming check-ins"],
-        ["Follow-up Notes", stats.mentorNotes, GroupsRoundedIcon, "Mentoring notes arrive in Sprint 2"],
+        ["Follow-up Notes", stats.mentorNotes, GroupsRoundedIcon, "Mentoring notes will appear after assignment setup"],
       ];
     }
     return [
@@ -245,6 +245,165 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
   );
 }
 
+function formatDashboardDate(value) {
+  if (!value) return "No deadline";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function StudentSubmissionDashboard({ teams, roundsByTeam, onOpenTeam }) {
+  const rows = teams.flatMap((team) => (
+    roundsByTeam[team.teamId] || []
+  ).map((round) => ({
+    ...round,
+    teamId: team.teamId,
+    teamName: team.teamName,
+    eventName: team.eventName,
+    leader: team.currentUserLeader,
+  })));
+
+  const openRows = rows.filter((row) => row.editable && !row.submitted);
+  const submittedRows = rows.filter((row) => row.submitted);
+  const lockedRows = rows.filter((row) => !row.editable && !row.submitted);
+  const nextRows = [...openRows, ...submittedRows, ...lockedRows]
+    .sort((a, b) => new Date(a.submissionDeadline || 0) - new Date(b.submissionDeadline || 0))
+    .slice(0, 4);
+
+  const statItems = [
+    ["Open Rounds", openRows.length, brand.colors.green, "Ready for submission now"],
+    ["Submitted", submittedRows.length, brand.colors.blue, "Submission records created"],
+    ["Locked", lockedRows.length, brand.colors.muted, "Waiting for event status, qualification, or deadline"],
+  ];
+
+  return (
+    <Box
+      sx={{
+        mb: 3,
+        p: { xs: 2, md: 2.4 },
+        borderRadius: brand.radius.xl,
+        bgcolor: brand.colors.surface,
+        border: `1px solid ${brand.colors.line}`,
+        boxShadow: brand.shadow.sm,
+      }}
+    >
+      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
+        <Box>
+          <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
+            Submission Workspace
+          </Typography>
+          <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>
+            Submission Command Center
+          </Typography>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
+            Track round availability, submitted links, and blocked submission states across your teams.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<GroupsRoundedIcon />}
+          onClick={() => onOpenTeam()}
+          sx={{ alignSelf: { xs: "stretch", md: "center" }, borderRadius: 999, px: 2.4 }}
+        >
+          Open My Teams
+        </Button>
+      </Stack>
+
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" }, gap: 1.4, mb: 2 }}>
+        {statItems.map(([label, value, color, hint]) => (
+          <Box
+            key={label}
+            sx={{
+              p: 1.8,
+              borderRadius: brand.radius.lg,
+              bgcolor: brand.colors.surfaceSoft,
+              border: `1px solid ${brand.colors.line}`,
+            }}
+          >
+            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
+              <Box>
+                <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900 }}>{label}</Typography>
+                <Typography sx={{ color, fontSize: 28, fontWeight: 950, lineHeight: 1.1 }}>{value}</Typography>
+              </Box>
+              <AssignmentTurnedInRoundedIcon sx={{ color, opacity: 0.85 }} />
+            </Stack>
+            <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.8 }}>{hint}</Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {teams.length === 0 ? (
+        <Box className="ms-empty">
+          <Typography fontWeight={800}>No team workspace yet</Typography>
+          <Typography color="text.secondary" variant="body2">
+            Create or join a team before using submission features.
+          </Typography>
+        </Box>
+      ) : nextRows.length === 0 ? (
+        <Box className="ms-empty">
+          <Typography fontWeight={800}>No configured submission rounds</Typography>
+          <Typography color="text.secondary" variant="body2">
+            Rounds will appear after the event coordinator configures the event timeline.
+          </Typography>
+        </Box>
+      ) : (
+        <Box sx={{ display: "grid", gap: 1 }}>
+          {nextRows.map((row) => (
+            <Box
+              key={`${row.teamId}-${row.roundId}`}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1.4fr 1fr auto" },
+                gap: 1.2,
+                alignItems: "center",
+                p: 1.4,
+                borderRadius: brand.radius.md,
+                border: `1px solid ${brand.colors.line}`,
+                bgcolor: row.editable && !row.submitted ? "#F4FFF9" : "#FFFFFF",
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
+                  <Typography sx={{ color: brand.colors.text, fontWeight: 900 }} noWrap>{row.teamName}</Typography>
+                  <Chip label={row.leader ? "Leader" : "Member"} size="small" />
+                </Stack>
+                <Typography sx={{ color: brand.colors.muted, fontSize: 13 }} noWrap>{row.eventName}</Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ color: brand.colors.text, fontWeight: 800 }}>{row.roundName}</Typography>
+                <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>
+                  {formatDashboardDate(row.submissionDeadline)}
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent={{ xs: "flex-start", md: "flex-end" }}>
+                <Chip
+                  size="small"
+                  color={row.submitted ? "success" : row.editable ? "warning" : "default"}
+                  label={row.submitted ? row.submissionStatus : row.editable ? "Ready to submit" : "Locked"}
+                />
+                <Button size="small" variant="outlined" onClick={() => onOpenTeam(row.teamId)}>
+                  Open
+                </Button>
+              </Stack>
+              {row.blockedReason && !row.submitted ? (
+                <Typography sx={{ gridColumn: { xs: "1", md: "1 / -1" }, color: brand.colors.muted, fontSize: 12.5 }}>
+                  {row.blockedReason}
+                </Typography>
+              ) : null}
+            </Box>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 function RoleWorkspacePanel({ role, type }) {
   const isJudge = role === "JUDGE";
   const title = isJudge
@@ -303,7 +462,7 @@ function RoleWorkspacePanel({ role, type }) {
       <Box className="ms-empty">
         <Typography fontWeight={700}>{emptyMessage}</Typography>
         <Typography color="text.secondary" variant="body2">
-          This placeholder keeps the role dashboard aligned with Sprint 1 navigation while the Sprint 2 assignment APIs are being implemented.
+          This placeholder keeps the role dashboard aligned while the assignment APIs are being implemented.
         </Typography>
       </Box>
     </Stack>
@@ -343,6 +502,10 @@ export default function DashboardPage() {
     mentorTeams: 0,
     mentorMeetings: 0,
     mentorNotes: 0,
+  });
+  const [studentSubmissionWorkspace, setStudentSubmissionWorkspace] = useState({
+    teams: [],
+    roundsByTeam: {},
   });
   const lastApprovedSearchRef = useRef(searchParams.toString());
   const skipNextSearchGuardRef = useRef(false);
@@ -525,13 +688,32 @@ export default function DashboardPage() {
         if (currentRole === "STUDENT") {
           const teamsResponse = await http.get("/api/teams/my");
           const teams = teamsResponse.data?.data || [];
+          const roundResults = await Promise.allSettled(
+            teams.map((team) => http
+              .get(`/api/teams/${team.teamId}/submission-rounds`)
+              .then((response) => [team.teamId, response.data?.data || []]))
+          );
+          const roundsByTeam = Object.fromEntries(
+            roundResults
+              .filter((result) => result.status === "fulfilled")
+              .map((result) => result.value)
+          );
+          const allRounds = Object.values(roundsByTeam).flat();
+          const openRound = allRounds
+            .filter((round) => round.editable && !round.submitted)
+            .sort((a, b) => new Date(a.submissionDeadline || 0) - new Date(b.submissionDeadline || 0))[0];
+          const firstRound = allRounds
+            .sort((a, b) => Number(a.roundOrder || 0) - Number(b.roundOrder || 0))[0];
           if (!mounted) return;
+          setStudentSubmissionWorkspace({ teams, roundsByTeam });
           setDashboardStats((current) => ({
             ...current,
             activeTeams: teams.length,
             leaderTeams: teams.filter((team) => team.currentUserLeader).length,
-            nextDeadline: pickDeadline(teams),
-            currentRound: teams.find((team) => team.currentRoundName || team.roundName)?.currentRoundName
+            nextDeadline: openRound?.submissionDeadline || pickDeadline(teams),
+            currentRound: openRound?.roundName
+              || firstRound?.roundName
+              || teams.find((team) => team.currentRoundName || team.roundName)?.currentRoundName
               || teams.find((team) => team.roundName)?.roundName
               || "No round yet",
           }));
@@ -539,6 +721,9 @@ export default function DashboardPage() {
       } catch {
         if (mounted) {
           setDashboardStats((current) => ({ ...current }));
+          if (currentRole === "STUDENT") {
+            setStudentSubmissionWorkspace({ teams: [], roundsByTeam: {} });
+          }
         }
       }
     };
@@ -576,6 +761,17 @@ export default function DashboardPage() {
       return <TeamManagementPanel />;
     }
     return null;
+  };
+
+  const openTeamWorkspace = (teamId) => {
+    if (!confirmLeaveCurrentView()) return;
+    const nextParams = { section: "teams" };
+    if (teamId) {
+      nextParams.teamId = String(teamId);
+    }
+    skipNextSearchGuardRef.current = true;
+    setSearchParams(nextParams);
+    setMobileOpen(false);
   };
 
   const openProfileMenu = (event) => setProfileMenuAnchor(event.currentTarget);
@@ -990,6 +1186,14 @@ export default function DashboardPage() {
             avatarInitials={avatarInitials}
             stats={dashboardStats}
           />
+
+          {currentRole === "STUDENT" ? (
+            <StudentSubmissionDashboard
+              teams={studentSubmissionWorkspace.teams}
+              roundsByTeam={studentSubmissionWorkspace.roundsByTeam}
+              onOpenTeam={openTeamWorkspace}
+            />
+          ) : null}
 
           {renderContent()}
         </Container>

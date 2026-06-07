@@ -20,6 +20,9 @@ public record TeamDto(
         boolean currentUserLeader,
         boolean deletable,
         LocalDateTime createdAt,
-        List<TeamMemberDto> members
+        List<TeamMemberDto> members,
+        String latestSubmissionStatus,
+        String currentRoundName,
+        LocalDateTime submissionDeadline
 ) {
 }

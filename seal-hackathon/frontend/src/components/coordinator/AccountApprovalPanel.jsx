@@ -70,6 +70,7 @@ export default function AccountApprovalPanel() {
   const [actionDialog, setActionDialog] = useState(null);
   const [reason, setReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [reasonViewDialog, setReasonViewDialog] = useState(null);
 
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
@@ -116,8 +117,9 @@ export default function AccountApprovalPanel() {
     });
   };
 
-  const openDialog = (userId, action) => {
-    setActionDialog({ userId, action });
+  const openDialog = (userOrId, action) => {
+    const user = typeof userOrId === "object" ? userOrId : users.find((item) => item.userId === userOrId);
+    setActionDialog({ userId: user?.userId || userOrId, action, user });
     setReason("");
     setError("");
   };
@@ -237,6 +239,15 @@ export default function AccountApprovalPanel() {
       setDetailError("Cannot save because the selected user does not include userId.");
       return;
     }
+
+    const currentStatus = normalizeStatus(managedUser.status);
+    const nextStatus = normalizeStatus(editForm.status);
+    if (nextStatus === "REJECTED" && currentStatus !== "REJECTED") {
+      setDetailDialogOpen(false);
+      openDialog({ ...managedUser, ...editForm, userId: managedUser.userId }, "REJECTED");
+      return;
+    }
+
     setDetailSaving(true);
     setError("");
     try {
@@ -336,7 +347,7 @@ export default function AccountApprovalPanel() {
                             <Button size="small" color="success" variant="contained" onClick={() => approveDirectly(user.userId)}>
                               Approve
                             </Button>
-                            <Button size="small" color="error" variant="outlined" onClick={() => openDialog(user.userId, "REJECTED")}>
+                            <Button size="small" color="error" variant="outlined" onClick={() => openDialog(user, "REJECTED")}>
                               Reject
                             </Button>
                             <Button size="small" variant="text" onClick={() => openDetails(user)}>
@@ -406,10 +417,13 @@ export default function AccountApprovalPanel() {
                           <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap">
                             <Button size="small" variant="outlined" onClick={() => openDetails(user)}>Details</Button>
                             {normalizeStatus(user.status) === "REJECTED" && (
-                              <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "PENDING_APPROVAL")}>Re-review</Button>
+                              <>
+                                <Button size="small" color="error" variant="outlined" onClick={() => setReasonViewDialog(user)}>View reason</Button>
+                                <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user, "PENDING_APPROVAL")}>Re-review</Button>
+                              </>
                             )}
                             {normalizeStatus(user.status) === "ACTIVE" && (
-                              <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user.userId, "SUSPENDED")}>Suspend</Button>
+                              <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user, "SUSPENDED")}>Suspend</Button>
                             )}
                           </Stack>
                         </TableCell>
@@ -423,20 +437,40 @@ export default function AccountApprovalPanel() {
         </Stack>
       )}
 
-      <Dialog open={Boolean(actionDialog)} onClose={closeActionDialog} maxWidth="xs" fullWidth>
-        <DialogTitle>{actionDialog ? `${actionLabel[actionDialog.action]} User` : ""}</DialogTitle>
+      <Dialog open={Boolean(actionDialog)} onClose={closeActionDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {actionDialog?.action === "REJECTED"
+            ? "Reject account request"
+            : actionDialog ? `${actionLabel[actionDialog.action]} User` : ""}
+        </DialogTitle>
         <DialogContent>
+          {actionDialog?.user ? (
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontWeight: 800 }}>
+                {actionDialog.user.fullName || actionDialog.user.username}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {actionDialog.user.email || `@${actionDialog.user.username}`}
+              </Typography>
+            </Box>
+          ) : null}
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Reject requires a reason. Other actions can include an optional note.
+            {actionDialog?.action === "REJECTED"
+              ? "Write a clear rejection reason. This message will be shown to the applicant when they try to sign in."
+              : "Confirm this account status change. You can leave the note empty for this action."}
           </Typography>
           <TextField
-            label={actionDialog?.action === "REJECTED" ? "Reason" : "Reason (optional)"}
+            label={actionDialog?.action === "REJECTED" ? "Rejection reason" : "Reason (optional)"}
+            placeholder={actionDialog?.action === "REJECTED" ? "Example: Student code does not match the submitted university record." : ""}
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             fullWidth
             multiline
-            rows={2}
+            minRows={actionDialog?.action === "REJECTED" ? 5 : 3}
+            maxRows={8}
             required={actionDialog?.action === "REJECTED"}
+            inputProps={{ maxLength: 1000 }}
+            helperText={actionDialog?.action === "REJECTED" ? `${reason.length}/1000 characters` : " "}
           />
         </DialogContent>
         <DialogActions>
@@ -449,6 +483,28 @@ export default function AccountApprovalPanel() {
           >
             {actionLoading ? "Processing..." : (actionDialog ? actionLabel[actionDialog.action] : "Save")}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(reasonViewDialog)} onClose={() => setReasonViewDialog(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Rejection reason</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            <Box>
+              <Typography sx={{ fontWeight: 800 }}>
+                {reasonViewDialog?.fullName || reasonViewDialog?.username || "Rejected account"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {reasonViewDialog?.email || "No email available"}
+              </Typography>
+            </Box>
+            <Alert severity="error" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {reasonViewDialog?.rejectionReason || "No rejection reason was recorded for this account."}
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReasonViewDialog(null)}>Close</Button>
         </DialogActions>
       </Dialog>
 
@@ -516,7 +572,7 @@ export default function AccountApprovalPanel() {
               <Button
                 color="error"
                 variant="outlined"
-                onClick={() => openDialog(reviewUser.userId, "REJECTED")}
+                onClick={() => openDialog(reviewUser, "REJECTED")}
                 disabled={actionLoading}
               >
                 Reject
@@ -549,6 +605,16 @@ export default function AccountApprovalPanel() {
                   <MenuItem key={status} value={status}>{status}</MenuItem>
                 ))}
               </TextField>
+              {normalizeStatus(editForm.status) === "REJECTED" && normalizeStatus(managedUser?.status) !== "REJECTED" ? (
+                <Alert severity="warning">
+                  Saving with Rejected status will open a separate rejection reason dialog before the account is updated.
+                </Alert>
+              ) : null}
+              {normalizeStatus(managedUser?.status) === "REJECTED" && managedUser?.rejectionReason ? (
+                <Alert severity="error" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                  Current rejection reason: {managedUser.rejectionReason}
+                </Alert>
+              ) : null}
 
               <FormControl fullWidth>
                 <InputLabel id="role-select-label">Roles</InputLabel>

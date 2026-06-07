@@ -12,6 +12,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Nationalized;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -46,7 +47,8 @@ public class UserEntity {
     @Column(name = "bio", length = 500)
     private String bio;
 
-    @Column(name = "rejection_reason", length = 500)
+    @Nationalized
+    @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 
     @Column(name = "status", nullable = false, length = 50)

@@ -94,9 +94,9 @@ const faqs = [
 ];
 
 const activityImages = [
-  { src: "/seal-assets/seal-photo-1.jpg", label: "Main event photo" },
-  { src: "/seal-assets/seal-photo-2.jpg", label: "Final demo photo" },
-  { src: "/seal-assets/seal-banner-spring-2026.jpg", label: "Spring 2026 banner" },
+  { src: "/seal-assets/seal-photo-1.jpg", label: "SEAL Hackathon Showcase" },
+  { src: "/seal-assets/seal-photo-2.jpg", label: "Project Presentation Round" },
+  { src: "/seal-assets/seal-banner-spring-2026.jpg", label: "Spring 2026 Identity" },
 ];
 
 function formatDate(rawDate) {
@@ -205,6 +205,17 @@ function FptMark() {
 }
 
 function ActivityPhotoPanel() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % activityImages.length);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const activeImage = activityImages[activeIndex];
+
   return (
     <Box
       className="seal-photo-panel"
@@ -218,7 +229,20 @@ function ActivityPhotoPanel() {
         background: "#061322",
       }}
     >
-      <ActivityImage image={activityImages[0]} alt="SEAL Hackathon activity" sx={{ position: "absolute", inset: 0 }} />
+      {activityImages.map((image, index) => (
+        <ActivityImage
+          key={image.src}
+          image={image}
+          alt={image.label}
+          sx={{
+            position: "absolute",
+            inset: 0,
+            opacity: activeIndex === index ? 1 : 0,
+            transform: activeIndex === index ? "scale(1.02)" : "scale(1)",
+            transition: "opacity 900ms ease, transform 5200ms ease",
+          }}
+        />
+      ))}
       <Box
         sx={{
           position: "absolute",
@@ -228,14 +252,54 @@ function ActivityPhotoPanel() {
         }}
       />
       <Stack direction="row" spacing={1.2} sx={{ position: "absolute", top: 20, right: 20, display: { xs: "none", sm: "flex" } }}>
-        {activityImages.slice(1).map((image, index) => (
-          <Box key={image.src} className="seal-photo-thumb" sx={{ width: 132, height: 88, overflow: "hidden", borderRadius: brand.radius.md, border: "1px solid rgba(255,255,255,0.32)", boxShadow: "0 14px 34px rgba(0,0,0,0.24)" }}>
-            <ActivityImage image={image} alt={`SEAL activity ${index + 2}`} />
+        {activityImages.map((image, index) => (
+          <Box
+            key={image.src}
+            component="button"
+            type="button"
+            onClick={() => setActiveIndex(index)}
+            className="seal-photo-thumb"
+            aria-label={`Show ${image.label}`}
+            sx={{
+              position: "relative",
+              width: activeIndex === index ? 142 : 118,
+              height: 84,
+              p: 0,
+              overflow: "hidden",
+              borderRadius: brand.radius.md,
+              border: activeIndex === index ? `2px solid ${brand.colors.amber}` : "1px solid rgba(255,255,255,0.32)",
+              boxShadow: activeIndex === index ? "0 18px 42px rgba(253,181,21,0.22)" : "0 14px 34px rgba(0,0,0,0.24)",
+              cursor: "pointer",
+              transition: "width 260ms ease, border-color 260ms ease, box-shadow 260ms ease",
+              bgcolor: "transparent",
+            }}
+          >
+            <ActivityImage image={image} alt={`SEAL activity ${index + 1}`} />
+            <Box
+              sx={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 4,
+                bgcolor: "rgba(255,255,255,0.18)",
+              }}
+            >
+              <Box
+                key={activeIndex === index ? `active-${index}` : `idle-${index}`}
+                sx={{
+                  width: activeIndex === index ? "100%" : "0%",
+                  height: "100%",
+                  bgcolor: brand.colors.amber,
+                  transition: activeIndex === index ? "width 4200ms linear" : "none",
+                }}
+              />
+            </Box>
           </Box>
         ))}
       </Stack>
       <Stack className="seal-photo-caption" sx={{ position: "absolute", left: { xs: 18, md: 26 }, right: { xs: 18, md: 26 }, bottom: { xs: 18, md: 26 } }} spacing={1.2}>
-        <Chip label="SEAL Hackathon activities" sx={{ alignSelf: "flex-start", bgcolor: "rgba(255,255,255,0.14)", color: brand.colors.inverse, fontWeight: 900 }} />
+        <Chip label={activeImage.label} sx={{ alignSelf: "flex-start", bgcolor: "rgba(255,255,255,0.14)", color: brand.colors.inverse, fontWeight: 900 }} />
         <Typography sx={{ color: brand.colors.inverse, fontSize: { xs: 24, md: 32 }, fontWeight: 950, lineHeight: 1.12, maxWidth: 680 }}>
           Academic competition and technology experience at FPT University HCMC.
         </Typography>

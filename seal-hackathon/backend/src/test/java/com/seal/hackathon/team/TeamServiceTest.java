@@ -11,6 +11,7 @@ import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
+import com.seal.hackathon.submission.repository.SubmissionRepository;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.TeamDto;
 import com.seal.hackathon.team.entity.TeamEntity;
@@ -54,6 +55,8 @@ class TeamServiceTest {
     private TrackRepository trackRepository;
     @Mock
     private HackathonEventRepository eventRepository;
+    @Mock
+    private SubmissionRepository submissionRepository;
 
     @InjectMocks
     private TeamService teamService;
@@ -84,6 +87,7 @@ class TeamServiceTest {
         });
         when(memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(40))
                 .thenAnswer(invocation -> List.of(savedMember.get()));
+        when(submissionRepository.findTopByTeamTeamIdOrderBySubmittedAtDesc(40)).thenReturn(Optional.empty());
 
         TeamDto result = teamService.createTeam(authentication("leader@example.com"), new CreateTeamRequest(20, "Seal Coders"));
 
@@ -194,6 +198,7 @@ class TeamServiceTest {
         when(studentProfileRepository.findById(11)).thenReturn(Optional.of(member));
         when(teamRepository.save(team)).thenReturn(team);
         when(memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(40)).thenReturn(List.of());
+        when(submissionRepository.findTopByTeamTeamIdOrderBySubmittedAtDesc(40)).thenReturn(Optional.empty());
 
         TeamDto result = teamService.transferLeadership(authentication("leader@example.com"), 40, 11);
 

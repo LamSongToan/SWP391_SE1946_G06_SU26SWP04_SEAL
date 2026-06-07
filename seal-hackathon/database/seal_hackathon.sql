@@ -28,7 +28,7 @@ CREATE TABLE [Users] (
     full_name NVARCHAR(150) NOT NULL,
     avatar_url VARCHAR(500) NULL,
     bio NVARCHAR(500) NULL,
-    rejection_reason NVARCHAR(500) NULL,
+    rejection_reason NVARCHAR(1000) NULL,
     status VARCHAR(50) DEFAULT 'PendingApproval',
     CHECK (status IN ('PendingApproval', 'Active', 'Rejected', 'Suspended')),
     is_approved BIT DEFAULT 0,
@@ -150,7 +150,7 @@ CREATE TABLE Team (
     team_name NVARCHAR(100) NOT NULL,
     join_code VARCHAR(12) NOT NULL UNIQUE
         DEFAULT UPPER(LEFT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 8)),
-    status VARCHAR(50) DEFAULT 'Active',
+    status VARCHAR(50) DEFAULT 'Forming',
     created_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (track_id) REFERENCES Track(track_id) ON DELETE CASCADE,
     FOREIGN KEY (user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION
@@ -219,16 +219,38 @@ CREATE TABLE Submission (
     submission_id INT IDENTITY(1,1) PRIMARY KEY,
     team_id INT NOT NULL,
     round_id INT NOT NULL,
-    repository_url VARCHAR(255) NOT NULL,
-    demo_url VARCHAR(255),
-    slide_url VARCHAR(255),
+    repository_url VARCHAR(1000) NOT NULL,
+    demo_url VARCHAR(1000),
+    slide_url VARCHAR(1000),
     github_metadata NVARCHAR(MAX), 
     is_calibration BIT DEFAULT 0,
     status VARCHAR(50) DEFAULT 'Submitted',
     CHECK (status IN ('Submitted', 'Evaluating', 'Qualified', 'Eliminated')),
     submitted_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
+    submitted_by_user_role_id INT NULL,
+    UNIQUE(team_id, round_id),
     FOREIGN KEY (team_id) REFERENCES Team(team_id) ON DELETE NO ACTION,
-    FOREIGN KEY (round_id) REFERENCES Round(round_id) ON DELETE NO ACTION
+    FOREIGN KEY (round_id) REFERENCES Round(round_id) ON DELETE NO ACTION,
+    FOREIGN KEY (submitted_by_user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION
+);
+
+CREATE TABLE SubmissionHistory (
+    history_id INT IDENTITY(1,1) PRIMARY KEY,
+    submission_id INT NOT NULL,
+    changed_by_user_role_id INT NULL,
+    action_type VARCHAR(50) NOT NULL,
+    old_repository_url VARCHAR(1000),
+    new_repository_url VARCHAR(1000),
+    old_demo_url VARCHAR(1000),
+    new_demo_url VARCHAR(1000),
+    old_slide_url VARCHAR(1000),
+    new_slide_url VARCHAR(1000),
+    old_status VARCHAR(50),
+    new_status VARCHAR(50),
+    created_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (submission_id) REFERENCES Submission(submission_id) ON DELETE CASCADE,
+    FOREIGN KEY (changed_by_user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION
 );
 
 CREATE TABLE Score (

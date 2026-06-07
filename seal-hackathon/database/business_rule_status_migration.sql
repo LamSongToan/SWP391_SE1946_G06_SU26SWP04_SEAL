@@ -4,8 +4,12 @@ GO
 IF COL_LENGTH('Users', 'rejection_reason') IS NULL
 BEGIN
     ALTER TABLE [Users]
-    ADD rejection_reason NVARCHAR(500) NULL;
+    ADD rejection_reason NVARCHAR(1000) NULL;
 END
+GO
+
+ALTER TABLE [Users]
+ALTER COLUMN rejection_reason NVARCHAR(1000) NULL;
 GO
 
 DECLARE @sql NVARCHAR(MAX) = N'';

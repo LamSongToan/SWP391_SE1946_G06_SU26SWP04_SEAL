@@ -7,6 +7,10 @@ import {
   Checkbox,
   CircularProgress,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   IconButton,
   InputAdornment,
@@ -37,19 +41,32 @@ function validateLoginForm(form) {
   return errors;
 }
 
-function normalizeLoginError(error) {
+function getLoginFailure(error) {
   const message = error?.response?.data?.message || error?.message || "";
   const normalized = message.toLowerCase();
   if (normalized.includes("not approved") || normalized.includes("pending")) {
-    return "Your account is waiting for administrator approval. Please sign in again after it is approved.";
+    return {
+      message: "Your account is waiting for administrator approval. Please sign in again after it is approved.",
+    };
   }
   if (normalized.includes("locked") || normalized.includes("suspended")) {
-    return "Your account is currently inactive. Please contact the Event Coordinator.";
+    return {
+      message: "Your account is currently inactive. Please contact the Event Coordinator.",
+    };
   }
   if (normalized.includes("rejected")) {
-    return message || "Your account request was rejected. Please contact the Event Coordinator for details.";
+    const reasonMarker = "reason:";
+    const reasonIndex = normalized.indexOf(reasonMarker);
+    const rejectionReason = reasonIndex >= 0
+      ? message.slice(reasonIndex + reasonMarker.length).trim()
+      : "";
+
+    return {
+      message: "Your account request was rejected. Review the rejection reason before contacting the Event Coordinator.",
+      rejectionReason: rejectionReason || "No rejection reason was recorded for this account.",
+    };
   }
-  return message || "Sign in failed";
+  return { message: message || "Sign in failed" };
 }
 
 export default function LoginPage() {
@@ -59,6 +76,8 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [error, setError] = useState("");
+  const [rejectionReasonDialog, setRejectionReasonDialog] = useState("");
+  const [rejectionReasonOpen, setRejectionReasonOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -81,6 +100,8 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async (idToken) => {
     setError("");
+    setRejectionReasonDialog("");
+    setRejectionReasonOpen(false);
     setGoogleLoading(true);
     try {
       const response = await http.post("/api/auth/google", { idToken });
@@ -102,7 +123,10 @@ export default function LoginPage() {
       googleRegistrationStorage.clear();
       navigate("/dashboard?section=account");
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Google sign-in failed");
+      const failure = getLoginFailure(err);
+      setError(failure.message || "Google sign-in failed");
+      setRejectionReasonDialog(failure.rejectionReason || "");
+      setRejectionReasonOpen(Boolean(failure.rejectionReason));
     } finally {
       setGoogleLoading(false);
     }
@@ -111,6 +135,8 @@ export default function LoginPage() {
   const loginByPassword = async (event) => {
     event.preventDefault();
     setError("");
+    setRejectionReasonDialog("");
+    setRejectionReasonOpen(false);
     const nextErrors = validateLoginForm(form);
     setTouched({ email: true, password: true });
     setFieldErrors(nextErrors);
@@ -128,7 +154,10 @@ export default function LoginPage() {
       googleRegistrationStorage.clear();
       navigate("/dashboard?section=account");
     } catch (err) {
-      setError(normalizeLoginError(err));
+      const failure = getLoginFailure(err);
+      setError(failure.message);
+      setRejectionReasonDialog(failure.rejectionReason || "");
+      setRejectionReasonOpen(Boolean(failure.rejectionReason));
     } finally {
       setLoading(false);
     }
@@ -251,7 +280,19 @@ export default function LoginPage() {
 
           {successMessage ? <Alert severity="success" sx={{ mt: 2 }}>{successMessage}</Alert> : null}
           {sessionExpired ? <Alert severity="warning" sx={{ mt: 2 }}>Your session expired. Please sign in again.</Alert> : null}
-          {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
+          {error ? (
+            <Alert
+              action={rejectionReasonDialog ? (
+                <Button color="inherit" size="small" onClick={() => setRejectionReasonOpen(true)}>
+                  View reason
+                </Button>
+              ) : null}
+              severity="error"
+              sx={{ mt: 2 }}
+            >
+              {error}
+            </Alert>
+          ) : null}
 
           <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
             New to SEAL?{" "}
@@ -261,6 +302,21 @@ export default function LoginPage() {
           </Typography>
         </Box>
       </Box>
+
+      <Dialog open={Boolean(rejectionReasonDialog && rejectionReasonOpen)} onClose={() => setRejectionReasonOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Account request rejected</DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary" sx={{ mb: 1.5 }}>
+            Your registration was reviewed by the Event Coordinator and rejected for the reason below.
+          </Typography>
+          <Alert severity="error" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {rejectionReasonDialog}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectionReasonOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

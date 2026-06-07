@@ -128,7 +128,13 @@ public class AccountApprovalService {
         }
 
         UserStatus nextStatus = parseStatus(request.status());
+        UserStatus currentStatus = UserStatus.from(user.getStatus());
         Set<String> nextRoles = normalizeRoles(request.roles());
+
+        if (nextStatus == UserStatus.REJECTED && currentStatus != UserStatus.REJECTED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Use the reject action to reject an account because a rejection reason is required");
+        }
 
         boolean hasStudentProfile = studentProfileRepository.findByUserRoleUserUserId(userId).isPresent();
         if (hasStudentProfile && !nextRoles.contains(RoleType.STUDENT.name())) {
@@ -142,6 +148,9 @@ public class AccountApprovalService {
         user.setFullName(request.fullName().trim());
         user.setStatus(nextStatus.getDbValue());
         user.setApproved(nextStatus == UserStatus.ACTIVE);
+        if (nextStatus != UserStatus.REJECTED) {
+            user.setRejectionReason(null);
+        }
 
         Map<String, UserRoleEntity> existingRoleMap = user.getUserRoles().stream()
                 .collect(Collectors.toMap(

@@ -12,6 +12,8 @@ import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
+import com.seal.hackathon.submission.entity.SubmissionEntity;
+import com.seal.hackathon.submission.repository.SubmissionRepository;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.TeamDto;
 import com.seal.hackathon.team.dto.TeamInvitationDto;
@@ -47,6 +49,7 @@ public class TeamService {
     private final UserRepository userRepository;
     private final TrackRepository trackRepository;
     private final HackathonEventRepository eventRepository;
+    private final SubmissionRepository submissionRepository;
 
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository memberRepository,
@@ -54,7 +57,8 @@ public class TeamService {
                        StudentProfileRepository studentProfileRepository,
                        UserRepository userRepository,
                        TrackRepository trackRepository,
-                       HackathonEventRepository eventRepository) {
+                       HackathonEventRepository eventRepository,
+                       SubmissionRepository submissionRepository) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.invitationRepository = invitationRepository;
@@ -62,6 +66,7 @@ public class TeamService {
         this.userRepository = userRepository;
         this.trackRepository = trackRepository;
         this.eventRepository = eventRepository;
+        this.submissionRepository = submissionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -427,6 +432,9 @@ public class TeamService {
         String validationMessage = valid
                 ? "Team is ready with " + memberCount + " members"
                 : "Invite " + (MIN_TEAM_SIZE - memberCount) + " more member(s) to reach the required minimum";
+        SubmissionEntity latestSubmission = submissionRepository
+                .findTopByTeamTeamIdOrderBySubmittedAtDesc(team.getTeamId())
+                .orElse(null);
 
         return new TeamDto(
                 team.getTeamId(),
@@ -445,7 +453,10 @@ public class TeamService {
                 team.getLeader().getUserRoleId().equals(currentUserRoleId),
                 deletable,
                 team.getCreatedAt(),
-                members
+                members,
+                latestSubmission == null ? null : latestSubmission.getStatus(),
+                latestSubmission == null ? null : latestSubmission.getRound().getRoundName(),
+                latestSubmission == null ? null : latestSubmission.getRound().getSubmissionDeadline()
         );
     }
 

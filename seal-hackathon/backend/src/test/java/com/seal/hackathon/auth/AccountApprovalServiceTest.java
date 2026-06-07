@@ -1,6 +1,7 @@
 package com.seal.hackathon.auth;
 
 import com.seal.hackathon.auth.entity.UserEntity;
+import com.seal.hackathon.auth.dto.UpdateManagedUserRequest;
 import com.seal.hackathon.auth.entity.UserStatus;
 import com.seal.hackathon.auth.repository.StudentProfileRepository;
 import com.seal.hackathon.auth.repository.UserRepository;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
 
@@ -89,5 +91,25 @@ class AccountApprovalServiceTest {
                 () -> accountApprovalService.processAction(12, "ACTIVE", null));
 
         Assertions.assertTrue(ex.getMessage().contains("Only PendingApproval accounts can be activated"));
+    }
+
+    @Test
+    void updateManagedUser_shouldRejectDirectRejectedStatusWithoutReasonAction() {
+        UserEntity user = new UserEntity();
+        user.setUserId(14);
+        user.setUsername("student.one");
+        user.setFullName("Student One");
+        user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
+        user.setApproved(false);
+
+        when(userRepository.findById(14)).thenReturn(Optional.of(user));
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> accountApprovalService.updateManagedUser(
+                        14,
+                        new UpdateManagedUserRequest("student.one", "Student One", "Rejected", List.of("STUDENT"))
+                ));
+
+        Assertions.assertTrue(ex.getMessage().contains("Use the reject action"));
     }
 }

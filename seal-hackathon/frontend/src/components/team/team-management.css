@@ -135,6 +135,52 @@
   min-width: 680px;
 }
 
+.team-submission-card.MuiCard-root {
+  overflow: hidden;
+}
+
+.team-submission-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.team-submission-round {
+  padding: 14px;
+  border: 1px solid #e5ebf5;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.team-submission-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.team-submission-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #c9d7eb;
+  border-radius: 999px;
+  color: var(--se-primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.team-submission-links a:hover {
+  border-color: var(--se-primary);
+  background: #eef6ff;
+}
+
+.team-submission-note {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
 @media (max-width: 699px) {
   .team-summary-strip {
     grid-template-columns: 1fr;
