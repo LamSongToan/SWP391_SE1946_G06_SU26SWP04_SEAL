@@ -14,7 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.seal.hackathon.auth.dto.MentorOptionDto;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,7 +30,7 @@ public class AccountApprovalService {
     private final StudentProfileRepository studentProfileRepository;
 
     public AccountApprovalService(UserRepository userRepository,
-                                  StudentProfileRepository studentProfileRepository) {
+            StudentProfileRepository studentProfileRepository) {
         this.userRepository = userRepository;
         this.studentProfileRepository = studentProfileRepository;
     }
@@ -38,10 +38,9 @@ public class AccountApprovalService {
     @Transactional(readOnly = true)
     public List<PendingUserDto> listPendingUsers() {
         return userRepository.findByStatusIn(List.of(
-                        UserStatus.PENDING_APPROVAL.getDbValue(),
-                        "PENDING",
-                        "Pending"
-                ),
+                UserStatus.PENDING_APPROVAL.getDbValue(),
+                "PENDING",
+                "Pending"),
                 Sort.by(Sort.Direction.ASC, "createdAt"))
                 .stream()
                 .map(this::toDto)
@@ -94,7 +93,8 @@ public class AccountApprovalService {
             case "PENDING_APPROVAL" -> {
                 if (currentStatus != UserStatus.REJECTED) {
                     throw new ApiException(HttpStatus.BAD_REQUEST,
-                            "Only Rejected accounts can be moved back to PendingApproval. Current status: " + user.getStatus());
+                            "Only Rejected accounts can be moved back to PendingApproval. Current status: "
+                                    + user.getStatus());
                 }
                 user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
                 user.setApproved(false);
@@ -114,6 +114,24 @@ public class AccountApprovalService {
 
         userRepository.save(user);
         return toDto(user);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MentorOptionDto> listMentors() {
+        return userRepository.findAll()
+                .stream()
+                .filter(u -> "ACTIVE".equals(normalizeStatus(u.getStatus())))
+                .flatMap(u -> u.getUserRoles().stream()
+                        .filter(role -> "MENTOR".equals(normalizeRole(role.getRoleType())))
+                        .map(role -> new MentorOptionDto(
+                                role.getUserRoleId(), // ✅ the real userRoleId
+                                u.getFullName() != null ? u.getFullName() : u.getUsername(),
+                                u.getEmail())))
+                .toList();
+    }
+
+    private String normalizeStatus(String s) {
+        return s == null ? "" : s.trim().replace(" ", "_").toUpperCase(Locale.ROOT);
     }
 
     @Transactional
@@ -156,12 +174,12 @@ public class AccountApprovalService {
                 .collect(Collectors.toMap(
                         role -> normalizeRole(role.getRoleType()),
                         role -> role,
-                        (a, b) -> a
-                ));
+                        (a, b) -> a));
 
         user.getUserRoles().removeIf(role -> !nextRoles.contains(normalizeRole(role.getRoleType())));
         for (String nextRole : nextRoles) {
-            if (existingRoleMap.containsKey(nextRole)) continue;
+            if (existingRoleMap.containsKey(nextRole))
+                continue;
             UserRoleEntity userRole = new UserRoleEntity();
             userRole.setUser(user);
             userRole.setRoleType(roleTypeToDbValue(nextRole));
@@ -176,7 +194,8 @@ public class AccountApprovalService {
         List<String> roles = user.getUserRoles().stream()
                 .map(r -> normalizeRole(r.getRoleType()))
                 .toList();
-        StudentProfileEntity studentProfile = studentProfileRepository.findByUserRoleUserUserId(user.getUserId()).orElse(null);
+        StudentProfileEntity studentProfile = studentProfileRepository.findByUserRoleUserUserId(user.getUserId())
+                .orElse(null);
         return new PendingUserDto(
                 user.getUserId(),
                 user.getUsername(),

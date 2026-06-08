@@ -1,5 +1,6 @@
 package com.seal.hackathon.auth.controller;
 
+import com.seal.hackathon.auth.dto.MentorOptionDto;
 import com.seal.hackathon.auth.dto.PendingUserDto;
 import com.seal.hackathon.auth.dto.UpdateManagedUserRequest;
 import com.seal.hackathon.auth.dto.UserApprovalRequest;
@@ -57,5 +58,11 @@ public class AccountApprovalController {
             @Valid @RequestBody UpdateManagedUserRequest request) {
         PendingUserDto updated = approvalService.updateManagedUser(userId, request);
         return ResponseEntity.ok(ApiResponse.ok("User updated", updated));
+    }
+
+    // GET /api/coordinator/users/mentors
+    @GetMapping("/mentors")
+    public ResponseEntity<ApiResponse<List<MentorOptionDto>>> getMentors() {
+        return ResponseEntity.ok(ApiResponse.ok("Mentors fetched", approvalService.listMentors()));
     }
 }

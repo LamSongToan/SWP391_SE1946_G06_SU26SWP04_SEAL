@@ -37,14 +37,20 @@ import PermIdentityRoundedIcon from "@mui/icons-material/PermIdentityRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
+import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
+import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import { authStorage, http, logout, resolveAssetUrl } from "../api/http";
 import { useSearchParams } from "react-router-dom";
 import AccountApprovalPanel from "../components/coordinator/AccountApprovalPanel";
 import EventConfigurationPanel from "../components/coordinator/EventConfigurationPanel";
+import GuestJudgePanel from "../components/coordinator/GuestJudgePanel";
+import JudgeAssignmentPanel from "../components/coordinator/JudgeAssignmentPanel";
+import MentorAssignmentPanel from "../components/coordinator/MentorAssignmentPanel";
 import UserProfilePanel from "../components/profile/UserProfilePanel";
 import UserDirectoryPanel from "../components/user/UserDirectoryPanel";
 import ChangePasswordPage from "./ChangePasswordPage";
 import TeamManagementPanel from "../components/team/TeamManagementPanel";
+import { JudgeAssignedRoundsPanel, JudgeScoringQueuePanel, MentorTracksPanel } from "../components/workspace/RoleWorkspacePanels";
 import { brand, roleColors, roleLabels } from "../styles/designTokens";
 
 const DRAWER_WIDTH = 270;
@@ -58,11 +64,13 @@ const STUDENT_CORE_NAV = [
 const COORDINATOR_CORE_NAV = [
   { key: "users", label: "User Management", icon: <ManageAccountsRoundedIcon fontSize="small" /> },
   { key: "event-config", label: "Event Configuration", icon: <EventRoundedIcon fontSize="small" /> },
+  { key: "guest-judges", label: "Guest Judges", icon: <GavelRoundedIcon fontSize="small" /> },
+  { key: "judge-assignment", label: "Judge Assignment", icon: <AssignmentIndRoundedIcon fontSize="small" /> },
+  { key: "mentor-assignment", label: "Mentor Assignment", icon: <SupervisorAccountRoundedIcon fontSize="small" /> },
 ];
 
 const MENTOR_CORE_NAV = [
-  { key: "mentor-teams", label: "Mentor Teams", icon: <PsychologyRoundedIcon fontSize="small" /> },
-  { key: "mentor-notes", label: "Mentor Notes", icon: <GroupsRoundedIcon fontSize="small" /> },
+  { key: "mentor-tracks", label: "My Tracks", icon: <PsychologyRoundedIcon fontSize="small" /> },
 ];
 
 const JUDGE_CORE_NAV = [
@@ -404,71 +412,6 @@ function StudentSubmissionDashboard({ teams, roundsByTeam, onOpenTeam }) {
   );
 }
 
-function RoleWorkspacePanel({ role, type }) {
-  const isJudge = role === "JUDGE";
-  const title = isJudge
-    ? (type === "scoring" ? "Scoring Queue" : "Assigned Rounds")
-    : (type === "notes" ? "Mentor Notes" : "Mentor Teams");
-  const summary = isJudge
-    ? "Judge workspace for assigned rounds, submissions, rubric status, and scoring progress."
-    : "Mentor workspace for assigned teams, guidance notes, and team follow-up status.";
-  const emptyMessage = isJudge
-    ? "No assigned judging work is available yet. Assigned rounds will appear here after the Event Coordinator publishes the judging setup."
-    : "No mentoring assignment is available yet. Assigned teams will appear here after the Event Coordinator maps mentors to tracks or teams.";
-  const checklist = isJudge
-    ? ["Assigned round", "Pending submissions", "Rubric completion", "Score history"]
-    : ["Assigned team", "Team health", "Mentoring notes", "Upcoming check-in"];
-
-  return (
-    <Stack spacing={2}>
-      <Box
-        sx={{
-          p: 2.5,
-          borderRadius: 3,
-          bgcolor: "#FFFFFF",
-          border: "1px solid #e8edf7",
-          boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
-        }}
-      >
-        <Typography variant="h5" sx={{ fontWeight: 800, color: "#2A3547", mb: 0.6 }}>
-          {title}
-        </Typography>
-        <Typography color="text.secondary">{summary}</Typography>
-      </Box>
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
-          gap: 1.5,
-        }}
-      >
-        {checklist.map((label) => (
-          <Box
-            key={label}
-            sx={{
-              p: 2,
-              borderRadius: 3,
-              bgcolor: "#F8FAFF",
-              border: "1px solid #e8edf7",
-            }}
-          >
-            <Typography sx={{ color: "#5A6A85", fontSize: 12, fontWeight: 700 }}>{label}</Typography>
-            <Typography sx={{ color: "#2A3547", fontSize: 22, fontWeight: 800 }}>0</Typography>
-          </Box>
-        ))}
-      </Box>
-
-      <Box className="ms-empty">
-        <Typography fontWeight={700}>{emptyMessage}</Typography>
-        <Typography color="text.secondary" variant="body2">
-          This placeholder keeps the role dashboard aligned while the assignment APIs are being implemented.
-        </Typography>
-      </Box>
-    </Stack>
-  );
-}
-
 export default function DashboardPage() {
   const auth = authStorage.get();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -718,6 +661,31 @@ export default function DashboardPage() {
               || "No round yet",
           }));
         }
+
+        if (currentRole === "MENTOR") {
+          const tracksResponse = await http.get("/api/mentor/tracks");
+          const tracks = tracksResponse.data?.data || [];
+          if (!mounted) return;
+          setDashboardStats((current) => ({
+            ...current,
+            mentorTeams: tracks.length,
+          }));
+        }
+
+        if (currentRole === "JUDGE") {
+          const [assignmentsResult, submissionsResult] = await Promise.allSettled([
+            http.get("/api/judge/assignments"),
+            http.get("/api/judge/submissions"),
+          ]);
+          const assignments = assignmentsResult.status === "fulfilled" ? assignmentsResult.value.data?.data || [] : [];
+          const submissions = submissionsResult.status === "fulfilled" ? submissionsResult.value.data?.data || [] : [];
+          if (!mounted) return;
+          setDashboardStats((current) => ({
+            ...current,
+            judgeSchedule: assignments.length,
+            pendingScores: submissions.length,
+          }));
+        }
       } catch {
         if (mounted) {
           setDashboardStats((current) => ({ ...current }));
@@ -742,18 +710,20 @@ export default function DashboardPage() {
     if (currentRole === "COORDINATOR") {
       if (activeKey === "users") return <AccountApprovalPanel />;
       if (activeKey === "event-config") return <EventConfigurationPanel onDirtyChange={setHasUnsavedEventChanges} />;
+      if (activeKey === "guest-judges") return <GuestJudgePanel />;
+      if (activeKey === "judge-assignment") return <JudgeAssignmentPanel />;
+      if (activeKey === "mentor-assignment") return <MentorAssignmentPanel />;
       return null;
     }
 
     if (currentRole === "MENTOR") {
-      if (activeKey === "mentor-teams") return <RoleWorkspacePanel role="MENTOR" type="teams" />;
-      if (activeKey === "mentor-notes") return <RoleWorkspacePanel role="MENTOR" type="notes" />;
+      if (activeKey === "mentor-tracks") return <MentorTracksPanel />;
       return null;
     }
 
     if (currentRole === "JUDGE") {
-      if (activeKey === "judge-rounds") return <RoleWorkspacePanel role="JUDGE" type="rounds" />;
-      if (activeKey === "scoring") return <RoleWorkspacePanel role="JUDGE" type="scoring" />;
+      if (activeKey === "judge-rounds") return <JudgeAssignedRoundsPanel />;
+      if (activeKey === "scoring") return <JudgeScoringQueuePanel />;
       return null;
     }
 
