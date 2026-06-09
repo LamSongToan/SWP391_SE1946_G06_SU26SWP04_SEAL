@@ -36,4 +36,7 @@ public class RoundEntity {
 
     @Column(name = "promotion_rule_top_n", nullable = false)
     private Integer promotionRuleTopN;
+
+    @Column(name = "score_locked", nullable = false)
+    private Boolean scoreLocked = false;
 }

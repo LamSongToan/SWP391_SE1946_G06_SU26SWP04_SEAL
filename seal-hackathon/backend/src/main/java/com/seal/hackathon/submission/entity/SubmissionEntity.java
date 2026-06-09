@@ -47,7 +47,7 @@ public class SubmissionEntity {
     @Column(name = "slide_url", length = 1000)
     private String slideUrl;
 
-    @Column(name = "github_metadata")
+    @Column(name = "github_metadata", columnDefinition = "NVARCHAR(MAX)")
     private String githubMetadata;
 
     @Column(name = "is_calibration", nullable = false)

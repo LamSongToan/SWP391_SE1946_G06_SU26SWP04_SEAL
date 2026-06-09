@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Card,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -174,6 +175,28 @@ export default function RoundManagementPanel() {
     }
   };
 
+  const toggleScoreLock = async (round) => {
+    const nextLocked = !round.scoreLocked;
+    const yes = window.confirm(
+      nextLocked
+        ? `Lock scoring for ${round.roundName}? Judges will no longer be able to edit scores in this round.`
+        : `Reopen scoring for ${round.roundName}? Judges can edit non-finalized evaluations again.`
+    );
+    if (!yes) return;
+    setSaving(true);
+    setError("");
+    try {
+      await http.patch(`/api/coordinator/rounds/${round.roundId}/score-lock`, {
+        scoreLocked: nextLocked,
+      });
+      await fetchRounds(selectedEventId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to update scoring lock"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -227,6 +250,7 @@ export default function RoundManagementPanel() {
                 <TableCell>Order</TableCell>
                 <TableCell>Submission Deadline</TableCell>
                 <TableCell>Top N</TableCell>
+                <TableCell>Scoring</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -237,8 +261,24 @@ export default function RoundManagementPanel() {
                   <TableCell>{round.roundOrder}</TableCell>
                   <TableCell>{formatDateTime(round.submissionDeadline)}</TableCell>
                   <TableCell>{round.promotionRuleTopN}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      color={round.scoreLocked ? "default" : "success"}
+                      label={round.scoreLocked ? "Locked" : "Open"}
+                    />
+                  </TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Button
+                        size="small"
+                        color={round.scoreLocked ? "success" : "warning"}
+                        variant="outlined"
+                        disabled={saving}
+                        onClick={() => toggleScoreLock(round)}
+                      >
+                        {round.scoreLocked ? "Reopen scoring" : "Lock scoring"}
+                      </Button>
                       <Button size="small" variant="outlined" onClick={() => openEdit(round)}>Edit</Button>
                       <Button size="small" color="error" variant="outlined" onClick={() => onDelete(round.roundId)}>
                         Delete

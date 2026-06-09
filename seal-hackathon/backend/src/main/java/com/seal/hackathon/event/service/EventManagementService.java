@@ -234,6 +234,17 @@ public class EventManagementService {
     }
 
     @Transactional
+    public RoundManagementDto updateRoundScoreLock(Integer roundId, Boolean scoreLocked) {
+        if (scoreLocked == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "scoreLocked is required");
+        }
+        RoundEntity round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Round not found"));
+        round.setScoreLocked(scoreLocked);
+        return toRoundDto(roundRepository.save(round));
+    }
+
+    @Transactional
     public void deleteRound(Integer roundId) {
         RoundEntity round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Round not found"));
@@ -458,12 +469,16 @@ public class EventManagementService {
             } else {
                 round = new RoundEntity();
                 round.setEventId(eventId);
+                round.setScoreLocked(false);
             }
 
             round.setRoundName(request.roundName().trim());
             round.setRoundOrder(request.roundOrder());
             round.setSubmissionDeadline(request.submissionDeadline());
             round.setPromotionRuleTopN(request.promotionRuleTopN());
+            if (round.getScoreLocked() == null) {
+                round.setScoreLocked(false);
+            }
             roundRepository.save(round);
         }
         roundRepository.flush();
@@ -591,6 +606,9 @@ public class EventManagementService {
         round.setRoundOrder(request.roundOrder());
         round.setSubmissionDeadline(request.submissionDeadline());
         round.setPromotionRuleTopN(request.promotionRuleTopN());
+        if (round.getScoreLocked() == null) {
+            round.setScoreLocked(false);
+        }
     }
 
     private EventManagementDto toEventDto(HackathonEventEntity event) {
@@ -617,7 +635,8 @@ public class EventManagementService {
                 round.getRoundName(),
                 round.getRoundOrder(),
                 round.getSubmissionDeadline(),
-                round.getPromotionRuleTopN()
+                round.getPromotionRuleTopN(),
+                Boolean.TRUE.equals(round.getScoreLocked())
         );
     }
 }

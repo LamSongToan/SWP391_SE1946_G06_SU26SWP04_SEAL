@@ -50,7 +50,8 @@ import UserProfilePanel from "../components/profile/UserProfilePanel";
 import UserDirectoryPanel from "../components/user/UserDirectoryPanel";
 import ChangePasswordPage from "./ChangePasswordPage";
 import TeamManagementPanel from "../components/team/TeamManagementPanel";
-import { JudgeAssignedRoundsPanel, JudgeScoringQueuePanel, MentorTracksPanel } from "../components/workspace/RoleWorkspacePanels";
+import EvaluationWorkspacePanel from "../components/evaluation/EvaluationWorkspacePanel";
+import { MentorTracksPanel } from "../components/workspace/RoleWorkspacePanels";
 import { brand, roleColors, roleLabels } from "../styles/designTokens";
 
 const DRAWER_WIDTH = 270;
@@ -71,6 +72,8 @@ const COORDINATOR_CORE_NAV = [
 
 const MENTOR_CORE_NAV = [
   { key: "mentor-tracks", label: "My Tracks", icon: <PsychologyRoundedIcon fontSize="small" /> },
+  { key: "mentor-teams", label: "Mentored Teams", icon: <GroupsRoundedIcon fontSize="small" /> },
+  { key: "mentor-notes", label: "Feedback Notes", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
 ];
 
 const JUDGE_CORE_NAV = [
@@ -662,28 +665,28 @@ export default function DashboardPage() {
           }));
         }
 
-        if (currentRole === "MENTOR") {
-          const tracksResponse = await http.get("/api/mentor/tracks");
-          const tracks = tracksResponse.data?.data || [];
+        if (currentRole === "JUDGE") {
+          const response = await http.get("/api/judge/dashboard");
+          const dashboard = response.data?.data || {};
           if (!mounted) return;
           setDashboardStats((current) => ({
             ...current,
-            mentorTeams: tracks.length,
+            pendingScores: dashboard.pendingSubmissionCount || 0,
+            judgeSchedule: dashboard.assignedRoundCount || 0,
+            scoreHistory: dashboard.submittedScoreCount || 0,
           }));
+          return;
         }
 
-        if (currentRole === "JUDGE") {
-          const [assignmentsResult, submissionsResult] = await Promise.allSettled([
-            http.get("/api/judge/assignments"),
-            http.get("/api/judge/submissions"),
-          ]);
-          const assignments = assignmentsResult.status === "fulfilled" ? assignmentsResult.value.data?.data || [] : [];
-          const submissions = submissionsResult.status === "fulfilled" ? submissionsResult.value.data?.data || [] : [];
+        if (currentRole === "MENTOR") {
+          const response = await http.get("/api/mentor/dashboard");
+          const dashboard = response.data?.data || {};
           if (!mounted) return;
           setDashboardStats((current) => ({
             ...current,
-            judgeSchedule: assignments.length,
-            pendingScores: submissions.length,
+            mentorTeams: dashboard.mentoredTeamCount || 0,
+            mentorMeetings: dashboard.assignedTrackCount || 0,
+            mentorNotes: dashboard.feedbackCount || 0,
           }));
         }
       } catch {
@@ -718,12 +721,14 @@ export default function DashboardPage() {
 
     if (currentRole === "MENTOR") {
       if (activeKey === "mentor-tracks") return <MentorTracksPanel />;
+      if (activeKey === "mentor-teams") return <EvaluationWorkspacePanel role="MENTOR" type="teams" />;
+      if (activeKey === "mentor-notes") return <EvaluationWorkspacePanel role="MENTOR" type="notes" />;
       return null;
     }
 
     if (currentRole === "JUDGE") {
-      if (activeKey === "judge-rounds") return <JudgeAssignedRoundsPanel />;
-      if (activeKey === "scoring") return <JudgeScoringQueuePanel />;
+      if (activeKey === "judge-rounds") return <EvaluationWorkspacePanel role="JUDGE" type="rounds" />;
+      if (activeKey === "scoring") return <EvaluationWorkspacePanel role="JUDGE" type="scoring" />;
       return null;
     }
 
@@ -755,6 +760,11 @@ export default function DashboardPage() {
     }
     skipNextSearchGuardRef.current = true;
     setSearchParams(nextParams);
+    if (["judge-rounds", "scoring", "mentor-teams", "mentor-notes"].includes(key)) {
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("seal-scroll-evaluation-section", { detail: { section: key } }));
+      }, 120);
+    }
     closeProfileMenu();
     setMobileOpen(false);
   };
@@ -1157,7 +1167,7 @@ export default function DashboardPage() {
             stats={dashboardStats}
           />
 
-          {currentRole === "STUDENT" ? (
+          {currentRole === "STUDENT" && activeKey === "teams" ? (
             <StudentSubmissionDashboard
               teams={studentSubmissionWorkspace.teams}
               roundsByTeam={studentSubmissionWorkspace.roundsByTeam}

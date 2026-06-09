@@ -299,6 +299,27 @@ class EventManagementServiceTest {
     }
 
     @Test
+    void updateRoundScoreLock_shouldPersistLockStateAndExposeItInDto() {
+        RoundEntity round = new RoundEntity();
+        round.setRoundId(30);
+        round.setEventId(10);
+        round.setRoundName("Final");
+        round.setRoundOrder(2);
+        round.setSubmissionDeadline(LocalDateTime.of(2026, 11, 15, 23, 59));
+        round.setPromotionRuleTopN(1);
+        round.setScoreLocked(false);
+
+        when(roundRepository.findById(30)).thenReturn(Optional.of(round));
+        when(roundRepository.save(round)).thenReturn(round);
+
+        var dto = eventManagementService.updateRoundScoreLock(30, true);
+
+        Assertions.assertTrue(round.getScoreLocked());
+        Assertions.assertTrue(dto.scoreLocked());
+        verify(roundRepository).save(round);
+    }
+
+    @Test
     void updateEvent_shouldRejectWhenExistingRoundDeadlineFallsOutsideNewRange() {
         HackathonEventEntity event = new HackathonEventEntity();
         event.setEventId(10);

@@ -48,6 +48,41 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
             """)
     List<SubmissionEntity> findByEventId(@Param("eventId") Integer eventId);
 
+    @EntityGraph(attributePaths = {
+            "team", "team.track", "team.leader", "team.leader.userRole", "team.leader.userRole.user",
+            "round", "submittedBy", "submittedBy.userRole", "submittedBy.userRole.user"
+    })
+    @Query("""
+            SELECT s
+            FROM SubmissionEntity s
+            WHERE EXISTS (
+                SELECT 1
+                FROM JudgeAssignmentEntity ja
+                WHERE ja.round.roundId = s.round.roundId
+                  AND ja.track.trackId = s.team.track.trackId
+                  AND ja.judgeRole.userRoleId = :judgeRoleId
+            )
+            ORDER BY s.round.roundOrder ASC, s.submittedAt DESC
+            """)
+    List<SubmissionEntity> findAssignedToJudge(@Param("judgeRoleId") Integer judgeRoleId);
+
+    @EntityGraph(attributePaths = {
+            "team", "team.track", "team.leader", "team.leader.userRole", "team.leader.userRole.user",
+            "round", "submittedBy", "submittedBy.userRole", "submittedBy.userRole.user"
+    })
+    @Query("""
+            SELECT s
+            FROM SubmissionEntity s
+            WHERE EXISTS (
+                SELECT 1
+                FROM TrackMentorEntity tm
+                WHERE tm.track.trackId = s.team.track.trackId
+                  AND tm.mentorRole.userRoleId = :mentorRoleId
+            )
+            ORDER BY s.team.teamName ASC, s.submittedAt DESC
+            """)
+    List<SubmissionEntity> findAssignedToMentor(@Param("mentorRoleId") Integer mentorRoleId);
+
     @Query(value = """
             SELECT CASE WHEN COUNT(*) > 0 THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END
             FROM Ranking

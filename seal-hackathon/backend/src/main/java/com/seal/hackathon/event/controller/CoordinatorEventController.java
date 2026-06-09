@@ -6,6 +6,7 @@ import com.seal.hackathon.event.dto.EventConfigurationUpdateRequest;
 import com.seal.hackathon.event.dto.EventSetupCreateRequest;
 import com.seal.hackathon.event.dto.EventUpsertRequest;
 import com.seal.hackathon.event.dto.RoundManagementDto;
+import com.seal.hackathon.event.dto.RoundScoreLockRequest;
 import com.seal.hackathon.event.dto.RoundUpsertRequest;
 import com.seal.hackathon.event.dto.TrackDto;
 import com.seal.hackathon.event.dto.TrackUpsertRequest;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -124,6 +126,16 @@ public class CoordinatorEventController {
             @PathVariable Integer roundId,
             @Valid @RequestBody RoundUpsertRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Round updated", eventManagementService.updateRound(roundId, request)));
+    }
+
+    @PatchMapping("/rounds/{roundId}/score-lock")
+    public ResponseEntity<ApiResponse<RoundManagementDto>> updateRoundScoreLock(
+            @PathVariable Integer roundId,
+            @Valid @RequestBody RoundScoreLockRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                Boolean.TRUE.equals(request.scoreLocked()) ? "Round scoring locked" : "Round scoring reopened",
+                eventManagementService.updateRoundScoreLock(roundId, request.scoreLocked())
+        ));
     }
 
     @DeleteMapping("/rounds/{roundId}")

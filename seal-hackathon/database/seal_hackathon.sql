@@ -127,6 +127,7 @@ CREATE TABLE Round (
     round_order INT NOT NULL,
     submission_deadline DATETIME NOT NULL,
     promotion_rule_top_n INT NOT NULL,
+    score_locked BIT NOT NULL DEFAULT 0,
     FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE,
     CONSTRAINT UQ_Round_Event_Order UNIQUE (event_id, round_order)
 );
@@ -261,9 +262,51 @@ CREATE TABLE Score (
     score_value DECIMAL(5,2) NOT NULL,
     comment NVARCHAR(MAX),
     scored_at DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (submission_id) REFERENCES Submission(submission_id) ON DELETE CASCADE,
+    CONSTRAINT UQ_Score_Submission_Criteria_Judge UNIQUE (submission_id, criteria_id, judge_assignment_id),
+    FOREIGN KEY (submission_id) REFERENCES Submission(submission_id) ON DELETE NO ACTION,
     FOREIGN KEY (criteria_id) REFERENCES ScoringCriteria(criteria_id) ON DELETE NO ACTION,
     FOREIGN KEY (judge_assignment_id) REFERENCES JudgeAssignment(judge_assignment_id) ON DELETE NO ACTION
+);
+
+CREATE TABLE JudgeEvaluation (
+    evaluation_id INT IDENTITY(1,1) PRIMARY KEY,
+    submission_id INT NOT NULL,
+    judge_assignment_id INT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'Draft',
+    finalized_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    CHECK (status IN ('Draft', 'Finalized')),
+    UNIQUE(submission_id, judge_assignment_id),
+    FOREIGN KEY (submission_id) REFERENCES Submission(submission_id) ON DELETE NO ACTION,
+    FOREIGN KEY (judge_assignment_id) REFERENCES JudgeAssignment(judge_assignment_id) ON DELETE NO ACTION
+);
+
+CREATE TABLE ScoreHistory (
+    score_history_id INT IDENTITY(1,1) PRIMARY KEY,
+    evaluation_id INT NOT NULL,
+    criteria_id INT NOT NULL,
+    old_score_value DECIMAL(5,2),
+    new_score_value DECIMAL(5,2) NOT NULL,
+    old_comment NVARCHAR(MAX),
+    new_comment NVARCHAR(MAX),
+    action_type VARCHAR(30) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    CHECK (action_type IN ('SAVE_DRAFT', 'FINALIZE', 'REOPEN')),
+    FOREIGN KEY (evaluation_id) REFERENCES JudgeEvaluation(evaluation_id) ON DELETE NO ACTION,
+    FOREIGN KEY (criteria_id) REFERENCES ScoringCriteria(criteria_id) ON DELETE NO ACTION
+);
+
+CREATE TABLE Feedback (
+    feedback_id INT IDENTITY(1,1) PRIMARY KEY,
+    submission_id INT NOT NULL,
+    author_user_role_id INT NOT NULL,
+    author_role VARCHAR(50) NOT NULL,
+    feedback_text NVARCHAR(MAX) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    CHECK (author_role IN ('Judge', 'Mentor', 'Coordinator')),
+    FOREIGN KEY (submission_id) REFERENCES Submission(submission_id) ON DELETE NO ACTION,
+    FOREIGN KEY (author_user_role_id) REFERENCES UserRole(user_role_id) ON DELETE NO ACTION
 );
 
 CREATE TABLE CalibrationSession (

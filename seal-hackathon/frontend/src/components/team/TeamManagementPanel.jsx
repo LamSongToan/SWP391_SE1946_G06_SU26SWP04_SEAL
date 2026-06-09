@@ -108,6 +108,9 @@ export default function TeamManagementPanel() {
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [submissionHistory, setSubmissionHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [submissionFeedback, setSubmissionFeedback] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [events, setEvents] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +190,7 @@ export default function TeamManagementPanel() {
       setTeamInvitations([]);
       setSubmissions([]);
       setSubmissionRounds([]);
+      setSubmissionFeedback([]);
       return;
     }
 
@@ -210,6 +214,7 @@ export default function TeamManagementPanel() {
       setTeamInvitations([]);
       setSubmissions([]);
       setSubmissionRounds([]);
+      setSubmissionFeedback([]);
       setSearchParams({ section: "teams" }, { replace: true });
     }
   };
@@ -264,6 +269,7 @@ export default function TeamManagementPanel() {
       setTeamInvitations([]);
       setSubmissions([]);
       setSubmissionRounds([]);
+      setSubmissionFeedback([]);
       setInviteQuery("");
       setInviteSelection(null);
       setInviteCandidates([]);
@@ -595,6 +601,26 @@ export default function TeamManagementPanel() {
     setSubmissionHistory([]);
   };
 
+  const openFeedbackDialog = async (submission) => {
+    if (!submission?.submissionId) return;
+    setFeedbackDialogOpen(true);
+    setFeedbackLoading(true);
+    setSubmissionFeedback([]);
+    try {
+      const response = await http.get(`/api/submissions/${submission.submissionId}/feedback`);
+      setSubmissionFeedback(response.data?.data || []);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to load feedback"));
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  const closeFeedbackDialog = () => {
+    setFeedbackDialogOpen(false);
+    setSubmissionFeedback([]);
+  };
+
   const renderSubmissionPanel = () => (
     <Card className="ms-data-card team-submission-card">
       <CardContent>
@@ -675,6 +701,13 @@ export default function TeamManagementPanel() {
                           onClick={() => openHistoryDialog(existing)}
                         >
                           History
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => openFeedbackDialog(existing)}
+                        >
+                          Feedback
                         </Button>
                       </>
                     ) : (
@@ -1264,6 +1297,40 @@ export default function TeamManagementPanel() {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeHistoryDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={feedbackDialogOpen} onClose={closeFeedbackDialog} maxWidth="md" fullWidth>
+        <DialogTitle>Submission Feedback</DialogTitle>
+        <DialogContent>
+          {feedbackLoading ? (
+            <Box className="team-loading"><CircularProgress /></Box>
+          ) : (
+            <Stack spacing={1.2}>
+              {submissionFeedback.length === 0 ? (
+                <Box className="ms-empty">
+                  <Typography fontWeight={700}>No feedback yet.</Typography>
+                  <Typography color="text.secondary" variant="body2">
+                    Judge and mentor feedback will appear here after it is submitted.
+                  </Typography>
+                </Box>
+              ) : submissionFeedback.map((item) => (
+                <Box key={item.feedbackId} className="team-submission-round">
+                  <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="center">
+                    <Typography fontWeight={800}>{item.authorName || "Unknown"}</Typography>
+                    <Chip size="small" label={item.authorRole || "Feedback"} />
+                  </Stack>
+                  <Typography sx={{ whiteSpace: "pre-wrap", mt: 1 }}>{item.feedbackText}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatDateTime(item.createdAt)}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeFeedbackDialog}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
