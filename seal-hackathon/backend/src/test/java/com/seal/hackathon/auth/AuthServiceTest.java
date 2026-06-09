@@ -3,6 +3,7 @@ package com.seal.hackathon.auth;
 import com.seal.hackathon.auth.dto.GoogleLoginRequest;
 import com.seal.hackathon.auth.dto.LoginRequest;
 import com.seal.hackathon.auth.dto.RegisterRequest;
+import com.seal.hackathon.auth.entity.RegistrationOtpEntity;
 import com.seal.hackathon.auth.entity.RoleType;
 import com.seal.hackathon.auth.entity.StudentType;
 import com.seal.hackathon.auth.entity.UserEntity;
@@ -14,6 +15,7 @@ import com.seal.hackathon.auth.security.CustomUserDetailsService;
 import com.seal.hackathon.auth.security.JwtService;
 import com.seal.hackathon.auth.service.AuthService;
 import com.seal.hackathon.auth.service.GoogleIdentityService;
+import com.seal.hackathon.auth.service.RegistrationOtpService;
 import com.seal.hackathon.common.ApiException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +49,8 @@ class AuthServiceTest {
     private CustomUserDetailsService userDetailsService;
     @Mock
     private GoogleIdentityService googleIdentityService;
+    @Mock
+    private RegistrationOtpService registrationOtpService;
 
     @InjectMocks
     private AuthService authService;
@@ -59,9 +63,10 @@ class AuthServiceTest {
     @Test
     void register_shouldRejectMissingFptCode() {
         RegisterRequest request = new RegisterRequest(
-                "an.user", "a@gmail.com", "12345678", "An", StudentType.FPT,
+                "an.user", "a@gmail.com", "12345678", "123456", "An", StudentType.FPT,
                 null, null, null
         );
+        when(registrationOtpService.requireValidOtp("a@gmail.com", "123456")).thenReturn(validOtp());
 
         ApiException ex = Assertions.assertThrows(ApiException.class, () -> authService.register(request));
         Assertions.assertTrue(ex.getMessage().contains("fptStudentCode"));
@@ -70,9 +75,10 @@ class AuthServiceTest {
     @Test
     void register_shouldRejectInvalidFptStudentCodeFormat() {
         RegisterRequest request = new RegisterRequest(
-                "an.user", "a@gmail.com", "Seal@2026", "An", StudentType.FPT,
+                "an.user", "a@gmail.com", "Seal@2026", "123456", "An", StudentType.FPT,
                 "AB123456", null, null
         );
+        when(registrationOtpService.requireValidOtp("a@gmail.com", "123456")).thenReturn(validOtp());
         when(userRepository.existsByUsernameIgnoreCase("an.user")).thenReturn(false);
         when(userRepository.existsByEmailIgnoreCase("a@gmail.com")).thenReturn(false);
 
@@ -83,9 +89,10 @@ class AuthServiceTest {
     @Test
     void register_shouldRejectDuplicateFptStudentCode() {
         RegisterRequest request = new RegisterRequest(
-                "an.user", "a@gmail.com", "Seal@2026", "An", StudentType.FPT,
+                "an.user", "a@gmail.com", "Seal@2026", "123456", "An", StudentType.FPT,
                 "SE123456", null, null
         );
+        when(registrationOtpService.requireValidOtp("a@gmail.com", "123456")).thenReturn(validOtp());
         when(userRepository.existsByUsernameIgnoreCase("an.user")).thenReturn(false);
         when(userRepository.existsByEmailIgnoreCase("a@gmail.com")).thenReturn(false);
         when(studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCase(
@@ -98,9 +105,11 @@ class AuthServiceTest {
     @Test
     void register_shouldSetPendingWhenAutoApproveDisabled() {
         RegisterRequest request = new RegisterRequest(
-                "an.user", "a@gmail.com", "12345678", "An", StudentType.FPT,
+                "an.user", "a@gmail.com", "12345678", "123456", "An", StudentType.FPT,
                 "SE180000", null, null
         );
+        RegistrationOtpEntity otpEntity = validOtp();
+        when(registrationOtpService.requireValidOtp("a@gmail.com", "123456")).thenReturn(otpEntity);
         when(userRepository.existsByUsernameIgnoreCase("an.user")).thenReturn(false);
         when(userRepository.existsByEmailIgnoreCase("a@gmail.com")).thenReturn(false);
         when(passwordEncoder.encode("12345678")).thenReturn("hash");
@@ -176,5 +185,12 @@ class AuthServiceTest {
         Assertions.assertTrue(response.registrationRequired());
         Assertions.assertNull(response.auth());
         Assertions.assertEquals("new.student@gmail.com", response.email());
+    }
+
+    private RegistrationOtpEntity validOtp() {
+        RegistrationOtpEntity entity = new RegistrationOtpEntity();
+        entity.setId(1);
+        entity.setEmail("a@gmail.com");
+        return entity;
     }
 }

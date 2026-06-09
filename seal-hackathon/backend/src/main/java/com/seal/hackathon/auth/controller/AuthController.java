@@ -35,6 +35,15 @@ public class AuthController {
                 .body(ApiResponse.ok("Register completed", authService.register(request)));
     }
 
+    @PostMapping("/register/send-otp")
+    public ResponseEntity<ApiResponse<RegistrationOtpResponse>> sendRegistrationOtp(
+            @Valid @RequestBody RegistrationOtpRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Registration verification code sent",
+                authService.sendRegistrationOtp(request)
+        ));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Login successful", authService.login(request)));

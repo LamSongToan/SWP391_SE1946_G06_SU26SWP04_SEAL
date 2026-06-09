@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Entity
+@Entity(name = "EvaluationScoreEntity")
 @Table(
         name = "Score",
         uniqueConstraints = @UniqueConstraint(

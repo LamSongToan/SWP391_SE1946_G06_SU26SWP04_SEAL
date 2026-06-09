@@ -20,6 +20,7 @@ import com.seal.hackathon.evaluation.repository.JudgeEvaluationRepository;
 import com.seal.hackathon.evaluation.repository.ScoreHistoryRepository;
 import com.seal.hackathon.evaluation.repository.ScoreRepository;
 import com.seal.hackathon.evaluation.repository.ScoringCriteriaRepository;
+import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.evaluation.service.EvaluationService;
 import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
@@ -79,6 +80,8 @@ class EvaluationServiceTest {
     private TeamRepository teamRepository;
     @Mock
     private TeamMemberRepository teamMemberRepository;
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private EvaluationService evaluationService;

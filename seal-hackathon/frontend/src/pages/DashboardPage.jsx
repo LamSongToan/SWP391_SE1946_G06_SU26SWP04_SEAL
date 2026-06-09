@@ -37,11 +37,14 @@ import PermIdentityRoundedIcon from "@mui/icons-material/PermIdentityRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
+import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import { authStorage, http, logout, resolveAssetUrl } from "../api/http";
 import { useSearchParams } from "react-router-dom";
 import AccountApprovalPanel from "../components/coordinator/AccountApprovalPanel";
+import AuditLogPanel from "../components/coordinator/AuditLogPanel";
+import CoordinatorScoringPanel from "../components/coordinator/CoordinatorScoringPanel";
 import EventConfigurationPanel from "../components/coordinator/EventConfigurationPanel";
 import GuestJudgePanel from "../components/coordinator/GuestJudgePanel";
 import JudgeAssignmentPanel from "../components/coordinator/JudgeAssignmentPanel";
@@ -68,6 +71,8 @@ const COORDINATOR_CORE_NAV = [
   { key: "guest-judges", label: "Guest Judges", icon: <GavelRoundedIcon fontSize="small" /> },
   { key: "judge-assignment", label: "Judge Assignment", icon: <AssignmentIndRoundedIcon fontSize="small" /> },
   { key: "mentor-assignment", label: "Mentor Assignment", icon: <SupervisorAccountRoundedIcon fontSize="small" /> },
+  { key: "scoring-management", label: "Scoring Management", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
+  { key: "audit-logs", label: "Audit Logs", icon: <HistoryRoundedIcon fontSize="small" /> },
 ];
 
 const MENTOR_CORE_NAV = [
@@ -716,6 +721,8 @@ export default function DashboardPage() {
       if (activeKey === "guest-judges") return <GuestJudgePanel />;
       if (activeKey === "judge-assignment") return <JudgeAssignmentPanel />;
       if (activeKey === "mentor-assignment") return <MentorAssignmentPanel />;
+      if (activeKey === "scoring-management") return <CoordinatorScoringPanel />;
+      if (activeKey === "audit-logs") return <AuditLogPanel />;
       return null;
     }
 

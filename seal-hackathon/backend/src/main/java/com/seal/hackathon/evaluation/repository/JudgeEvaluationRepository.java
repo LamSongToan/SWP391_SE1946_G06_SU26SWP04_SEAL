@@ -16,4 +16,9 @@ public interface JudgeEvaluationRepository extends JpaRepository<JudgeEvaluation
     );
 
     List<JudgeEvaluationEntity> findByJudgeAssignmentJudgeRoleUserRoleId(Integer judgeRoleId);
+
+    @EntityGraph(attributePaths = {"submission", "submission.team", "submission.team.track", "judgeAssignment", "judgeAssignment.judgeRole", "judgeAssignment.judgeRole.user"})
+    List<JudgeEvaluationEntity> findBySubmissionRoundRoundId(Integer roundId);
+
+    boolean existsBySubmissionRoundRoundId(Integer roundId);
 }

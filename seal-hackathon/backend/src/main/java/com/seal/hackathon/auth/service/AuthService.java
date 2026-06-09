@@ -5,8 +5,11 @@ import com.seal.hackathon.auth.dto.GoogleLoginRequest;
 import com.seal.hackathon.auth.dto.GoogleLoginResponse;
 import com.seal.hackathon.auth.dto.GoogleRegisterRequest;
 import com.seal.hackathon.auth.dto.LoginRequest;
+import com.seal.hackathon.auth.dto.RegistrationOtpRequest;
+import com.seal.hackathon.auth.dto.RegistrationOtpResponse;
 import com.seal.hackathon.auth.dto.RegisterRequest;
 import com.seal.hackathon.auth.dto.RegisterResponse;
+import com.seal.hackathon.auth.entity.RegistrationOtpEntity;
 import com.seal.hackathon.auth.entity.RoleType;
 import com.seal.hackathon.auth.entity.StudentProfileEntity;
 import com.seal.hackathon.auth.entity.StudentType;
@@ -45,6 +48,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final GoogleIdentityService googleIdentityService;
+    private final RegistrationOtpService registrationOtpService;
 
     @Value("${app.auth.auto-approve-new-user:false}")
     private boolean autoApproveNewUser;
@@ -54,18 +58,21 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        CustomUserDetailsService userDetailsService,
-                       GoogleIdentityService googleIdentityService) {
+                       GoogleIdentityService googleIdentityService,
+                       RegistrationOtpService registrationOtpService) {
         this.userRepository = userRepository;
         this.studentProfileRepository = studentProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.googleIdentityService = googleIdentityService;
+        this.registrationOtpService = registrationOtpService;
     }
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        return registerStudentAccount(
+        RegistrationOtpEntity otpEntity = registrationOtpService.requireValidOtp(request.email(), request.otp());
+        RegisterResponse response = registerStudentAccount(
                 request.username(),
                 request.email(),
                 request.password(),
@@ -76,6 +83,13 @@ public class AuthService {
                 request.externalUniversity(),
                 false
         );
+        registrationOtpService.markUsed(otpEntity);
+        return response;
+    }
+
+    @Transactional
+    public RegistrationOtpResponse sendRegistrationOtp(RegistrationOtpRequest request) {
+        return registrationOtpService.sendOtp(request.email());
     }
 
     @Transactional(readOnly = true)
@@ -125,7 +139,7 @@ public class AuthService {
         return registerStudentAccount(
                 request.username(),
                 googleUser.email(),
-                UUID.randomUUID() + "#Aa1",
+                request.password(),
                 request.fullName(),
                 request.studentType(),
                 request.fptStudentCode(),

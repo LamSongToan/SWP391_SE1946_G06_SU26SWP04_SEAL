@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Entity
+@Entity(name = "EvaluationJudgeAssignmentEntity")
 @Table(name = "JudgeAssignment")
 public class JudgeAssignmentEntity {
 

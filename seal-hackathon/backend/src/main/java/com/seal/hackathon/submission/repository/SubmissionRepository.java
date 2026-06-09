@@ -52,6 +52,12 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
             "team", "team.track", "team.leader", "team.leader.userRole", "team.leader.userRole.user",
             "round", "submittedBy", "submittedBy.userRole", "submittedBy.userRole.user"
     })
+    List<SubmissionEntity> findByRoundRoundIdOrderByTeamTeamNameAsc(Integer roundId);
+
+    @EntityGraph(attributePaths = {
+            "team", "team.track", "team.leader", "team.leader.userRole", "team.leader.userRole.user",
+            "round", "submittedBy", "submittedBy.userRole", "submittedBy.userRole.user"
+    })
     @Query("""
             SELECT s
             FROM SubmissionEntity s
@@ -60,7 +66,7 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
                 FROM JudgeAssignmentEntity ja
                 WHERE ja.round.roundId = s.round.roundId
                   AND ja.track.trackId = s.team.track.trackId
-                  AND ja.judgeRole.userRoleId = :judgeRoleId
+                  AND ja.judge.userRoleId = :judgeRoleId
             )
             ORDER BY s.round.roundOrder ASC, s.submittedAt DESC
             """)
@@ -77,7 +83,7 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
                 SELECT 1
                 FROM TrackMentorEntity tm
                 WHERE tm.track.trackId = s.team.track.trackId
-                  AND tm.mentorRole.userRoleId = :mentorRoleId
+                  AND tm.mentor.userRoleId = :mentorRoleId
             )
             ORDER BY s.team.teamName ASC, s.submittedAt DESC
             """)

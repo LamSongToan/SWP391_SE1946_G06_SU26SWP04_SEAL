@@ -70,7 +70,7 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
                 SELECT 1
                 FROM TrackMentorEntity tm
                 WHERE tm.track.trackId = t.track.trackId
-                  AND tm.mentorRole.userRoleId = :mentorRoleId
+                  AND tm.mentor.userRoleId = :mentorRoleId
             )
             ORDER BY t.teamName ASC
             """)
@@ -84,7 +84,7 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
                   SELECT 1
                   FROM TrackMentorEntity tm
                   WHERE tm.track.trackId = t.track.trackId
-                    AND tm.mentorRole.userRoleId = :mentorRoleId
+                    AND tm.mentor.userRoleId = :mentorRoleId
               )
             """)
     boolean existsMentorAssignmentForTeam(@Param("mentorRoleId") Integer mentorRoleId,
@@ -93,7 +93,7 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
     @Query("""
             SELECT COUNT(tm)
             FROM TrackMentorEntity tm
-            WHERE tm.mentorRole.userRoleId = :mentorRoleId
+            WHERE tm.mentor.userRoleId = :mentorRoleId
             """)
     long countAssignedTracksForMentor(@Param("mentorRoleId") Integer mentorRoleId);
 }

@@ -214,6 +214,52 @@ BEGIN
 END;
 GO
 
+-- =======================================================
+-- 5. Criteria templates for reusable rubrics
+-- =======================================================
+
+IF OBJECT_ID('dbo.CriteriaTemplate', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.CriteriaTemplate (
+        template_id INT IDENTITY(1,1) PRIMARY KEY,
+        template_name NVARCHAR(150) NOT NULL,
+        description NVARCHAR(500) NULL,
+        created_by_user_id INT NOT NULL,
+        created_at DATETIME DEFAULT GETDATE(),
+        updated_at DATETIME DEFAULT GETDATE(),
+        CONSTRAINT FK_CriteriaTemplate_CreatedBy
+            FOREIGN KEY (created_by_user_id) REFERENCES dbo.[Users](user_id)
+    );
+END;
+GO
+
+IF OBJECT_ID('dbo.CriteriaTemplateItem', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.CriteriaTemplateItem (
+        template_item_id INT IDENTITY(1,1) PRIMARY KEY,
+        template_id INT NOT NULL,
+        criteria_name NVARCHAR(150) NOT NULL,
+        weight DECIMAL(5,2) NOT NULL,
+        criteria_type VARCHAR(50) NOT NULL,
+        sort_order INT NOT NULL,
+        CONSTRAINT FK_CriteriaTemplateItem_Template
+            FOREIGN KEY (template_id) REFERENCES dbo.CriteriaTemplate(template_id) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'UQ_CriteriaTemplate_TemplateName'
+      AND object_id = OBJECT_ID('dbo.CriteriaTemplate')
+)
+BEGIN
+    CREATE UNIQUE INDEX UQ_CriteriaTemplate_TemplateName
+        ON dbo.CriteriaTemplate(template_name);
+END;
+GO
+
 IF COL_LENGTH('dbo.Submission', 'repository_url') IS NULL
 BEGIN
     ALTER TABLE dbo.Submission ADD repository_url VARCHAR(1000) NULL;

@@ -60,6 +60,15 @@ CREATE TABLE PasswordResetToken (
     FOREIGN KEY (user_id) REFERENCES [Users](user_id) ON DELETE CASCADE
 );
 
+CREATE TABLE RegistrationOtp (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    used BIT DEFAULT 0,
+    created_at DATETIME DEFAULT GETDATE()
+);
+
 -- =======================================================
 -- 2. CORE SUB-PROFILES (Reusing user_role_id as PK & FK)
 -- =======================================================
@@ -336,6 +345,26 @@ CREATE TABLE CalibrationScore (
 -- =======================================================
 -- 6. PRIZES, RANKINGS & AUDITS
 -- =======================================================
+CREATE TABLE CriteriaTemplate (
+    template_id INT IDENTITY(1,1) PRIMARY KEY,
+    template_name NVARCHAR(150) NOT NULL,
+    description NVARCHAR(500) NULL,
+    created_by_user_id INT NOT NULL,
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (created_by_user_id) REFERENCES [Users](user_id) ON DELETE NO ACTION
+);
+
+CREATE TABLE CriteriaTemplateItem (
+    template_item_id INT IDENTITY(1,1) PRIMARY KEY,
+    template_id INT NOT NULL,
+    criteria_name NVARCHAR(150) NOT NULL,
+    weight DECIMAL(5,2) NOT NULL,
+    criteria_type VARCHAR(50) NOT NULL,
+    sort_order INT NOT NULL,
+    FOREIGN KEY (template_id) REFERENCES CriteriaTemplate(template_id) ON DELETE CASCADE
+);
+
 CREATE TABLE Prize (
     prize_id INT IDENTITY(1,1) PRIMARY KEY,
     event_id INT NOT NULL,

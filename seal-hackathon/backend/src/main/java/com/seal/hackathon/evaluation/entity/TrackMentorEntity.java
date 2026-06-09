@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Entity
+@Entity(name = "EvaluationTrackMentorEntity")
 @Table(name = "TrackMentor")
 public class TrackMentorEntity {
 

@@ -1,6 +1,5 @@
 package com.seal.hackathon.evaluation.entity;
 
-import com.seal.hackathon.event.entity.RoundEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,18 +16,18 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-@Entity(name = "EvaluationScoringCriteriaEntity")
-@Table(name = "ScoringCriteria")
-public class ScoringCriteriaEntity {
+@Entity
+@Table(name = "CriteriaTemplateItem")
+public class CriteriaTemplateItemEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "criteria_id")
-    private Integer criteriaId;
+    @Column(name = "template_item_id")
+    private Integer templateItemId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "round_id", nullable = false)
-    private RoundEntity round;
+    @JoinColumn(name = "template_id", nullable = false)
+    private CriteriaTemplateEntity template;
 
     @Column(name = "criteria_name", nullable = false, length = 150)
     private String criteriaName;
@@ -38,4 +37,7 @@ public class ScoringCriteriaEntity {
 
     @Column(name = "criteria_type", nullable = false, length = 50)
     private String criteriaType;
+
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder;
 }

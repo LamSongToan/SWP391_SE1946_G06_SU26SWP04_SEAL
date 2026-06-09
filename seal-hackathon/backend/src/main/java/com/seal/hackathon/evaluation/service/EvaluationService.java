@@ -71,6 +71,7 @@ public class EvaluationService {
     private final FeedbackRepository feedbackRepository;
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final AuditLogService auditLogService;
 
     public EvaluationService(UserRepository userRepository,
                              UserRoleRepository userRoleRepository,
@@ -83,7 +84,8 @@ public class EvaluationService {
                              ScoreHistoryRepository scoreHistoryRepository,
                              FeedbackRepository feedbackRepository,
                              TeamRepository teamRepository,
-                             TeamMemberRepository teamMemberRepository) {
+                             TeamMemberRepository teamMemberRepository,
+                             AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.eventRepository = eventRepository;
@@ -96,6 +98,7 @@ public class EvaluationService {
         this.feedbackRepository = feedbackRepository;
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional(readOnly = true)
@@ -197,6 +200,7 @@ public class EvaluationService {
     public ScoreFormDto submitScores(Authentication authentication,
                                      Integer submissionId,
                                      ScoreSubmissionRequest request) {
+        UserEntity actor = currentUser(authentication);
         UserRoleEntity judgeRole = currentRole(authentication, RoleType.JUDGE);
         SubmissionEntity submission = getSubmissionOrThrow(submissionId);
         JudgeAssignmentEntity assignment = requireJudgeAssignment(submission, judgeRole.getUserRoleId());
@@ -275,6 +279,22 @@ public class EvaluationService {
         if (request.feedbackText() != null && !request.feedbackText().trim().isBlank()) {
             appendFeedback(submission, judgeRole, RoleType.JUDGE.getDbValue(), request.feedbackText());
         }
+        auditLogService.record(
+                actor,
+                finalize ? "JUDGE_SCORES_FINALIZED" : "JUDGE_SCORES_SAVED_DRAFT",
+                "SUBMISSION",
+                submission.getSubmissionId(),
+                null,
+                Map.of(
+                        "teamName", submission.getTeam().getTeamName(),
+                        "roundName", submission.getRound().getRoundName(),
+                        "criteriaCount", criteria.size(),
+                        "evaluationStatus", finalize ? "Finalized" : "Draft"
+                ),
+                finalize
+                        ? "Judge finalized criterion scores for submission " + submission.getTeam().getTeamName()
+                        : "Judge saved draft criterion scores for submission " + submission.getTeam().getTeamName()
+        );
         return getScoreForm(authentication, submissionId);
     }
 
@@ -314,13 +334,28 @@ public class EvaluationService {
     @Transactional
     public FeedbackDto addFeedback(Authentication authentication, Integer submissionId, FeedbackRequest request) {
         SubmissionEntity submission = getSubmissionOrThrow(submissionId);
+        UserEntity actor = currentUser(authentication);
         UserRoleEntity authorRole = requireFeedbackAccess(authentication, submission, true);
         FeedbackEntity saved = appendFeedback(submission, authorRole, authorRole.getRoleType(), request.feedbackText());
+        auditLogService.record(
+                actor,
+                "SUBMISSION_FEEDBACK_ADDED",
+                "SUBMISSION",
+                submissionId,
+                null,
+                Map.of(
+                        "teamName", submission.getTeam().getTeamName(),
+                        "authorRole", authorRole.getRoleType(),
+                        "feedbackLength", saved.getFeedbackText().length()
+                ),
+                authorRole.getRoleType() + " added feedback for submission " + submission.getTeam().getTeamName()
+        );
         return toFeedbackDto(saved);
     }
 
     @Transactional
     public void reopenEvaluation(Authentication authentication, Integer evaluationId) {
+        UserEntity actor = currentUser(authentication);
         currentRole(authentication, RoleType.COORDINATOR);
         JudgeEvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Evaluation not found"));
@@ -355,6 +390,21 @@ public class EvaluationService {
                     "REOPEN"
             );
         }
+        auditLogService.record(
+                actor,
+                "JUDGE_EVALUATION_REOPENED",
+                "EVALUATION",
+                evaluationId,
+                Map.of(
+                        "status", "Finalized",
+                        "submissionId", evaluation.getSubmission().getSubmissionId()
+                ),
+                Map.of(
+                        "status", "Draft",
+                        "submissionId", evaluation.getSubmission().getSubmissionId()
+                ),
+                "Coordinator reopened a finalized evaluation for submission " + evaluation.getSubmission().getTeam().getTeamName()
+        );
     }
 
     private FeedbackEntity appendFeedback(SubmissionEntity submission,
