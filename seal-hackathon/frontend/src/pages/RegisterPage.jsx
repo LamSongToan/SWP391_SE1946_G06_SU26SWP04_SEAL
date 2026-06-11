@@ -19,9 +19,15 @@ import {
 } from "@mui/material";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import AuthVisualPanel from "../components/auth/AuthVisualPanel";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton";
-import { authStorage, googleRegistrationStorage, http } from "../api/http";
+import {
+  authStorage,
+  googleRegistrationStorage,
+  http,
+  registrationVerificationStorage,
+} from "../api/http";
 import { brand } from "../styles/designTokens";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
@@ -34,7 +40,6 @@ const INITIAL_FORM = {
   username: "",
   email: "",
   password: "",
-  otp: "",
   fullName: "",
   studentType: "FPT",
   fptStudentCode: "",
@@ -85,6 +90,9 @@ export default function RegisterPage() {
   const [googleRegistration, setGoogleRegistration] = useState(
     () => location.state?.googleRegistration || googleRegistrationStorage.get()
   );
+  const [emailVerification, setEmailVerification] = useState(
+    () => location.state?.registrationVerification || registrationVerificationStorage.get()
+  );
   const isGoogleRegistration = Boolean(googleRegistration?.idToken && googleRegistration?.email);
 
   const [form, setForm] = useState(INITIAL_FORM);
@@ -93,8 +101,6 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpSentMessage, setOtpSentMessage] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [confirmTouched, setConfirmTouched] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -103,16 +109,34 @@ export default function RegisterPage() {
 
   useEffect(() => {
     setGoogleRegistration(location.state?.googleRegistration || googleRegistrationStorage.get());
+    setEmailVerification(
+      location.state?.registrationVerification || registrationVerificationStorage.get()
+    );
   }, [location.state]);
 
   useEffect(() => {
-    if (!isGoogleRegistration) return;
+    if (isGoogleRegistration) {
+      setForm((current) => ({
+        ...current,
+        email: googleRegistration.email,
+        fullName: current.fullName || googleRegistration.fullName || "",
+      }));
+      return;
+    }
+
+    const verifiedPayload =
+      location.state?.registrationVerification || registrationVerificationStorage.get();
+    if (!verifiedPayload?.email || !verifiedPayload?.otp) {
+      navigate("/register/verify-email", { replace: true });
+      return;
+    }
+
+    setEmailVerification(verifiedPayload);
     setForm((current) => ({
       ...current,
-      email: googleRegistration.email,
-      fullName: current.fullName || googleRegistration.fullName || "",
+      email: verifiedPayload.email,
     }));
-  }, [googleRegistration, isGoogleRegistration]);
+  }, [googleRegistration, isGoogleRegistration, location.state, navigate]);
 
   const validateField = (name, value, nextForm = form) => {
     const trimmedValue = typeof value === "string" ? value.trim() : value;
@@ -133,11 +157,6 @@ export default function RegisterPage() {
       case "password":
         if (!value) return "Password is required";
         if (!PASSWORD_REGEX.test(value)) return "Password must include uppercase, lowercase, number, special character, and be 8-72 characters";
-        return "";
-      case "otp":
-        if (isGoogleRegistration) return "";
-        if (!trimmedValue) return "Email verification code is required";
-        if (!/^\d{6}$/.test(trimmedValue)) return "Verification code must contain 6 digits";
         return "";
       case "fptStudentCode":
         if (nextForm.studentType !== "FPT") return "";
@@ -165,10 +184,6 @@ export default function RegisterPage() {
       email: validateField("email", nextForm.email, nextForm),
       password: validateField("password", nextForm.password, nextForm),
     };
-
-    if (!isGoogleRegistration) {
-      nextErrors.otp = validateField("otp", nextForm.otp, nextForm);
-    }
 
     if (nextForm.studentType === "FPT") {
       nextErrors.fptStudentCode = validateField("fptStudentCode", nextForm.fptStudentCode, nextForm);
@@ -198,7 +213,7 @@ export default function RegisterPage() {
     }
     if (message.includes("Username already exists")) return { username: message };
     if (message.includes("Email already exists")) return { email: message };
-    if (message.includes("verification code")) return { otp: message };
+    if (message.includes("verification code")) return { email: message };
     if (message.includes("FPT student code") || message.includes("Student ID already exists in FPT")) return { fptStudentCode: message };
     if (message.includes("externalStudentCode") || message.includes("Student ID already exists in the selected university")) return { externalStudentCode: message };
     if (message.includes("externalUniversity")) return { externalUniversity: message };
@@ -208,12 +223,6 @@ export default function RegisterPage() {
   const setFormField = (key, value) => {
     const nextForm = { ...form, [key]: value };
     const nextTouched = { ...touched, [key]: true };
-
-    if (key === "email" && !isGoogleRegistration) {
-      nextForm.otp = "";
-      nextTouched.otp = false;
-      setOtpSentMessage("");
-    }
 
     if (key === "studentType") {
       if (value === "FPT") {
@@ -238,37 +247,6 @@ export default function RegisterPage() {
     setFieldErrors(nextFieldErrors);
   };
 
-  const handleSendOtp = async () => {
-    setError("");
-    const emailError = validateField("email", form.email, form);
-    setTouched((current) => ({ ...current, email: true }));
-    if (emailError) {
-      setFieldErrors((current) => ({ ...current, email: emailError }));
-      return;
-    }
-
-    setOtpSending(true);
-    try {
-      const response = await http.post("/api/auth/register/send-otp", {
-        email: form.email.trim(),
-      });
-      setOtpSentMessage(
-        response.data?.data?.message || "A verification code has been sent to your email."
-      );
-      setFieldErrors((current) => ({ ...current, email: "", otp: "" }));
-    } catch (err) {
-      const nextFieldErrors = getFieldErrors(err);
-      if (Object.keys(nextFieldErrors).length > 0) {
-        setFieldErrors((current) => ({ ...current, ...nextFieldErrors }));
-      } else {
-        setError(err?.response?.data?.message || "Unable to send verification code right now.");
-      }
-      setOtpSentMessage("");
-    } finally {
-      setOtpSending(false);
-    }
-  };
-
   const clearGoogleRegistrationMode = () => {
     googleRegistrationStorage.clear();
     setGoogleRegistration(null);
@@ -277,7 +255,7 @@ export default function RegisterPage() {
     setFieldErrors({});
     setConfirmPassword("");
     setConfirmTouched(false);
-    navigate("/register", { replace: true, state: null });
+    navigate("/register/verify-email", { replace: true, state: null });
   };
 
   const handleGoogleLogin = async (idToken) => {
@@ -294,12 +272,14 @@ export default function RegisterPage() {
           pictureUrl: data.pictureUrl || "",
         };
         googleRegistrationStorage.set(registrationPayload);
+        registrationVerificationStorage.clear();
         setGoogleRegistration(registrationPayload);
         navigate("/register", { replace: true, state: { googleRegistration: registrationPayload } });
         return;
       }
       authStorage.set(data?.auth);
       googleRegistrationStorage.clear();
+      registrationVerificationStorage.clear();
       navigate("/dashboard?section=account");
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Google sign-in failed");
@@ -318,7 +298,6 @@ export default function RegisterPage() {
       email: true,
       acceptedTerms: true,
       password: true,
-      ...(isGoogleRegistration ? {} : { otp: true }),
       ...(form.studentType === "FPT"
         ? { fptStudentCode: true }
         : { externalStudentCode: true, externalUniversity: true }),
@@ -332,6 +311,11 @@ export default function RegisterPage() {
       return;
     }
     if (Object.values(clientErrors).some(Boolean)) {
+      return;
+    }
+
+    if (!isGoogleRegistration && (!emailVerification?.email || !emailVerification?.otp)) {
+      navigate("/register/verify-email", { replace: true });
       return;
     }
 
@@ -350,15 +334,20 @@ export default function RegisterPage() {
             idToken: googleRegistration.idToken,
           }
         : {
-            ...form,
             username: form.username.trim(),
+            email: emailVerification.email.trim(),
+            password: form.password,
+            otp: emailVerification.otp.trim(),
             fullName: form.fullName.trim(),
-            email: form.email.trim(),
-            otp: form.otp.trim(),
+            studentType: form.studentType,
+            fptStudentCode: form.studentType === "FPT" ? form.fptStudentCode.trim() : null,
+            externalStudentCode: form.studentType === "EXTERNAL" ? form.externalStudentCode.trim() : null,
+            externalUniversity: form.studentType === "EXTERNAL" ? form.externalUniversity.trim() : null,
           };
 
       await http.post(endpoint, payload);
       googleRegistrationStorage.clear();
+      registrationVerificationStorage.clear();
       navigate("/login", { state: { message: APPROVAL_MESSAGE } });
     } catch (err) {
       const nextFieldErrors = getFieldErrors(err);
@@ -369,6 +358,12 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const changeVerifiedEmail = () => {
+    registrationVerificationStorage.clear();
+    setEmailVerification(null);
+    navigate("/register/verify-email", { replace: true });
   };
 
   return (
@@ -401,6 +396,19 @@ export default function RegisterPage() {
           {isGoogleRegistration ? (
             <Alert severity="info" sx={{ mb: 1.5 }}>
               Google account detected for <strong>{googleRegistration.email}</strong>.
+            </Alert>
+          ) : emailVerification?.email ? (
+            <Alert
+              icon={<VerifiedRoundedIcon fontSize="inherit" />}
+              severity="success"
+              sx={{ mb: 1.5 }}
+              action={(
+                <Button color="inherit" size="small" onClick={changeVerifiedEmail}>
+                  Change
+                </Button>
+              )}
+            >
+              Email verified for <strong>{emailVerification.email}</strong>.
             </Alert>
           ) : null}
 
@@ -435,48 +443,23 @@ export default function RegisterPage() {
                 fullWidth
                 label="Email"
                 type="email"
-                value={form.email}
-                onChange={(event) => setFormField("email", event.target.value.trim())}
+                value={isGoogleRegistration ? form.email : emailVerification?.email || form.email}
                 error={Boolean(fieldErrors.email)}
-                helperText={fieldErrors.email || " "}
+                helperText={
+                  fieldErrors.email ||
+                  (isGoogleRegistration
+                    ? "This email comes from your Google account"
+                    : "This email has already been verified")
+                }
                 required
-                disabled={isGoogleRegistration}
+                disabled
               />
 
-              {!isGoogleRegistration ? (
-                <>
-                  <Grid2 container spacing={1.2} sx={{ alignItems: "flex-start" }}>
-                    <Grid2 size={{ xs: 12, sm: 7.2 }}>
-                      <TextField
-                        fullWidth
-                        label="Email verification code"
-                        value={form.otp}
-                        onChange={(event) => setFormField("otp", event.target.value.replace(/\D/g, "").slice(0, 6))}
-                        error={Boolean(fieldErrors.otp)}
-                        helperText={fieldErrors.otp || "Enter the 6-digit code sent to your email"}
-                        inputProps={{ inputMode: "numeric", maxLength: 6 }}
-                        required
-                      />
-                    </Grid2>
-                    <Grid2 size={{ xs: 12, sm: 4.8 }}>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={handleSendOtp}
-                        disabled={otpSending || loading || googleLoading}
-                        sx={{ minHeight: 56 }}
-                      >
-                        {otpSending ? <CircularProgress size={20} /> : otpSentMessage ? "Resend code" : "Send code"}
-                      </Button>
-                    </Grid2>
-                  </Grid2>
-                  {otpSentMessage ? <Alert severity="success">{otpSentMessage}</Alert> : null}
-                </>
-              ) : (
+              {isGoogleRegistration ? (
                 <Alert severity="info" sx={{ mb: 0.25 }}>
                   This Google account will also use the password below for future email sign-in.
                 </Alert>
-              )}
+              ) : null}
 
               <TextField
                 fullWidth
@@ -619,17 +602,18 @@ export default function RegisterPage() {
                 {loading ? <CircularProgress color="inherit" size={20} /> : isGoogleRegistration ? "Complete account" : "Create account"}
               </Button>
 
-              <Divider sx={{ color: brand.colors.muted, fontSize: 13 }}>or</Divider>
+              <Divider sx={{ color: brand.colors.muted, fontSize: 13 }}>or continue with Google</Divider>
               <GoogleSignInButton
                 text="signup_with"
                 onCredential={handleGoogleLogin}
                 disabled={loading || googleLoading}
-                width={300}
+                fullWidth
+                minHeight={50}
               />
               {googleLoading ? <Typography color="text.secondary" variant="body2">Processing Google sign-in...</Typography> : null}
               {isGoogleRegistration ? (
                 <Button color="inherit" onClick={clearGoogleRegistrationMode} size="small">
-                  Use manual registration instead
+                  Use email registration instead
                 </Button>
               ) : null}
             </Stack>

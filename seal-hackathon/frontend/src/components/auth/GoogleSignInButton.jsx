@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Box } from "@mui/material";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -7,9 +7,32 @@ export default function GoogleSignInButton({
   text = "signin_with",
   onCredential,
   disabled = false,
-  width = 280,
+  width,
+  fullWidth = false,
+  minHeight = 50,
 }) {
   const buttonRef = useRef(null);
+  const containerRef = useRef(null);
+  const [resolvedWidth, setResolvedWidth] = useState(width || 280);
+
+  useEffect(() => {
+    if (!fullWidth || !containerRef.current) {
+      setResolvedWidth(width || 280);
+      return undefined;
+    }
+
+    const updateWidth = () => {
+      const nextWidth = Math.max(240, Math.floor(containerRef.current?.clientWidth || 0));
+      if (nextWidth) {
+        setResolvedWidth(nextWidth);
+      }
+    };
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [fullWidth, width]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || !buttonRef.current || disabled) {
@@ -36,11 +59,11 @@ export default function GoogleSignInButton({
       window.google.accounts.id.renderButton(buttonRef.current, {
         type: "standard",
         theme: "outline",
-        size: "medium",
+        size: "large",
         text,
         shape: "pill",
         logo_alignment: "left",
-        width,
+        width: resolvedWidth,
       });
       return true;
     };
@@ -58,14 +81,26 @@ export default function GoogleSignInButton({
         window.clearInterval(intervalId);
       }
     };
-  }, [disabled, onCredential, text, width]);
+  }, [disabled, onCredential, resolvedWidth, text]);
 
   return (
     <Box
+      ref={containerRef}
       sx={{
         display: "flex",
         justifyContent: "center",
-        minHeight: 40,
+        width: fullWidth ? "100%" : "auto",
+        minHeight,
+        "& > div": {
+          width: fullWidth ? "100%" : "auto",
+          display: "flex",
+          justifyContent: "center",
+        },
+        "& iframe": {
+          width: fullWidth ? "100% !important" : "auto",
+          minWidth: fullWidth ? "100% !important" : "auto",
+          height: `${minHeight}px !important`,
+        },
       }}
     >
       <Box ref={buttonRef} />

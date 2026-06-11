@@ -18,6 +18,7 @@ import { brand } from "../styles/designTokens";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_REGEX = /^\d{6}$/;
 const OTP_LENGTH = 6;
+const OTP_COOLDOWN_SECONDS = 60;
 
 export default function VerifyResetOtpPage() {
   const navigate = useNavigate();
@@ -38,12 +39,33 @@ export default function VerifyResetOtpPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendingOtp, setResendingOtp] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(
+    location.state?.otpSent ? OTP_COOLDOWN_SECONDS : 0
+  );
 
   useEffect(() => {
     if (location.state?.otpSent) {
       otpInputRefs.current[0]?.focus();
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (location.state?.otpSent) {
+      setCooldownSeconds(OTP_COOLDOWN_SECONDS);
+    }
+  }, [location.state?.otpSent]);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      return undefined;
+    }
+
+    const timerId = window.setInterval(() => {
+      setCooldownSeconds((current) => (current > 1 ? current - 1 : 0));
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [cooldownSeconds]);
 
   const otpValue = form.otpDigits.join("");
 
@@ -146,6 +168,10 @@ export default function VerifyResetOtpPage() {
       return;
     }
 
+    if (cooldownSeconds > 0) {
+      return;
+    }
+
     setResendingOtp(true);
     setError("");
     try {
@@ -161,6 +187,7 @@ export default function VerifyResetOtpPage() {
         },
       });
       setForm((current) => ({ ...current, otpDigits: Array(OTP_LENGTH).fill("") }));
+      setCooldownSeconds(OTP_COOLDOWN_SECONDS);
       otpInputRefs.current[0]?.focus();
     } catch (err) {
       setError(err?.response?.data?.message || "Unable to resend OTP");
@@ -307,6 +334,8 @@ export default function VerifyResetOtpPage() {
                 </Typography>
               </Box>
 
+              {error ? <Alert severity="error">{error}</Alert> : null}
+
               <Button
                 type="submit"
                 variant="contained"
@@ -322,24 +351,36 @@ export default function VerifyResetOtpPage() {
               >
                 {loading ? <CircularProgress color="inherit" size={20} /> : "Verify OTP"}
               </Button>
+
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={resendOtp}
+                disabled={resendingOtp || cooldownSeconds > 0}
+                fullWidth
+                sx={{
+                  height: 50,
+                  borderRadius: brand.radius.md,
+                  fontWeight: 800,
+                  bgcolor: brand.colors.surfaceWarm,
+                  "&:hover": {
+                    bgcolor: "#FFF1E3",
+                    borderColor: brand.colors.orange,
+                  },
+                }}
+              >
+                {resendingOtp ? (
+                  <CircularProgress size={20} />
+                ) : cooldownSeconds > 0 ? (
+                  `Resend code in ${cooldownSeconds}s`
+                ) : (
+                  "Resend code"
+                )}
+              </Button>
             </Stack>
           </Box>
 
-          {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
-
-          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
-            Need a new OTP?{" "}
-            <Button
-              variant="text"
-              size="small"
-              onClick={resendOtp}
-              disabled={resendingOtp}
-              sx={{ minWidth: 0, px: 0.5, color: brand.colors.orange, fontWeight: 900, verticalAlign: "baseline" }}
-            >
-              {resendingOtp ? "Sending..." : "Resend code"}
-            </Button>
-          </Typography>
-          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 0.8 }}>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 2.4 }}>
             <Link component={RouterLink} to="/forgot-password" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
               Back to password recovery
             </Link>

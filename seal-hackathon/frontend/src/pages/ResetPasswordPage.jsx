@@ -195,6 +195,7 @@ export default function ResetPasswordPage() {
                   ),
                 }}
               />
+              {error ? <Alert severity="error">{error}</Alert> : null}
               <Button
                 type="submit"
                 variant="contained"
@@ -207,13 +208,11 @@ export default function ResetPasswordPage() {
                   color: brand.colors.inverse,
                   "&:hover": { bgcolor: brand.colors.orangeDark },
                 }}
-              >
+                >
                 {loading ? <CircularProgress color="inherit" size={20} /> : "Reset Password"}
               </Button>
             </Stack>
           </Box>
-
-          {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
           <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
             <Link component={RouterLink} to="/login" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>

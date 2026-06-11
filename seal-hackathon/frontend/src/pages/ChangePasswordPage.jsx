@@ -138,14 +138,13 @@ export default function ChangePasswordPage() {
                 helperText={(touched.confirmPassword && fieldErrors.confirmPassword) || " "}
                 required
               />
+              {error ? <Alert severity="error">{error}</Alert> : null}
+              {success ? <Alert severity="success">{success}</Alert> : null}
               <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>
                 {loading ? "Saving..." : "Change Password"}
               </Button>
             </Stack>
           </Box>
-
-          {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
-          {success ? <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert> : null}
         </CardContent>
       </Card>
     </Container>

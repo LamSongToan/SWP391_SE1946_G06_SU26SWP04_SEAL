@@ -114,6 +114,7 @@ export default function ForgotPasswordPage() {
                 required
                 fullWidth
               />
+              {error ? <Alert severity="error">{error}</Alert> : null}
               <Button
                 type="submit"
                 variant="contained"
@@ -126,13 +127,11 @@ export default function ForgotPasswordPage() {
                   color: brand.colors.inverse,
                   "&:hover": { bgcolor: brand.colors.orangeDark },
                 }}
-              >
+                >
                 {loading ? <CircularProgress color="inherit" size={20} /> : "Send OTP"}
               </Button>
             </Stack>
           </Box>
-
-          {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
 
           <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
             Remembered your password?{" "}

@@ -1,6 +1,8 @@
 import { createTheme } from "@mui/material/styles";
 import { brand } from "./styles/designTokens";
 
+const alertErrorBackground = "#FDEDEA";
+
 const theme = createTheme({
   palette: {
     mode: "light",
@@ -111,6 +113,40 @@ const theme = createTheme({
           border: `1px solid ${brand.colors.line}`,
           boxShadow: brand.shadow.md,
           borderRadius: brand.radius.md,
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        standardError: {
+          color: brand.colors.danger,
+          backgroundColor: alertErrorBackground,
+          "& .MuiAlert-icon": {
+            color: brand.colors.danger,
+          },
+          "& .MuiAlert-action": {
+            color: brand.colors.danger,
+          },
+        },
+        outlinedError: {
+          color: brand.colors.danger,
+          borderColor: brand.colors.danger,
+          "& .MuiAlert-icon": {
+            color: brand.colors.danger,
+          },
+          "& .MuiAlert-action": {
+            color: brand.colors.danger,
+          },
+        },
+        filledError: {
+          color: brand.colors.danger,
+          backgroundColor: alertErrorBackground,
+          "& .MuiAlert-icon": {
+            color: brand.colors.danger,
+          },
+          "& .MuiAlert-action": {
+            color: brand.colors.danger,
+          },
         },
       },
     },

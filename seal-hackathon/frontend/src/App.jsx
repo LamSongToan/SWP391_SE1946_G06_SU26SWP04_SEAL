@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import LandingPage from "./pages/landing";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import RegisterEmailVerificationPage from "./pages/RegisterEmailVerificationPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import VerifyResetOtpPage from "./pages/VerifyResetOtpPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -18,6 +19,14 @@ export default function App() {
         element={
           <PublicOnlyRoute>
             <LoginPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/register/verify-email"
+        element={
+          <PublicOnlyRoute>
+            <RegisterEmailVerificationPage />
           </PublicOnlyRoute>
         }
       />

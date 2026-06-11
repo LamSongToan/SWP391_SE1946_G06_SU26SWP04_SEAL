@@ -4,6 +4,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_U
 const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || BASE_URL;
 const AUTH_STORAGE_KEY = "seal_auth";
 const GOOGLE_REGISTRATION_STORAGE_KEY = "seal_google_registration";
+const REGISTRATION_VERIFICATION_STORAGE_KEY = "seal_registration_verification";
 const PASSWORD_RESET_STORAGE_KEY = "seal_password_reset";
 
 export const authStorage = {
@@ -44,6 +45,24 @@ export const googleRegistrationStorage = {
   },
   clear() {
     sessionStorage.removeItem(GOOGLE_REGISTRATION_STORAGE_KEY);
+  },
+};
+
+export const registrationVerificationStorage = {
+  get() {
+    try {
+      const raw = sessionStorage.getItem(REGISTRATION_VERIFICATION_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      sessionStorage.removeItem(REGISTRATION_VERIFICATION_STORAGE_KEY);
+      return null;
+    }
+  },
+  set(payload) {
+    sessionStorage.setItem(REGISTRATION_VERIFICATION_STORAGE_KEY, JSON.stringify(payload));
+  },
+  clear() {
+    sessionStorage.removeItem(REGISTRATION_VERIFICATION_STORAGE_KEY);
   },
 };
 

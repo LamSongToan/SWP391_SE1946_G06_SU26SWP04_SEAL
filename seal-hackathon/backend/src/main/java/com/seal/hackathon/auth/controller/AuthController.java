@@ -44,6 +44,13 @@ public class AuthController {
         ));
     }
 
+    @PostMapping("/register/verify-otp")
+    public ResponseEntity<ApiResponse<Void>> verifyRegistrationOtp(
+            @Valid @RequestBody VerifyRegistrationOtpRequest request) {
+        authService.verifyRegistrationOtp(request);
+        return ResponseEntity.ok(ApiResponse.ok("Registration verification code confirmed", null));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Login successful", authService.login(request)));

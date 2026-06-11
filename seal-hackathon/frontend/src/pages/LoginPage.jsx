@@ -190,18 +190,6 @@ export default function LoginPage() {
             Track your team, deadlines, rounds, and Hackathon tasks at FPT University HCMC.
           </Typography>
 
-          <Stack spacing={1.2} sx={{ mb: 2.4 }}>
-            <GoogleSignInButton
-              text="signin_with"
-              onCredential={handleGoogleLogin}
-              disabled={loading || googleLoading}
-              width={300}
-            />
-            {googleLoading ? (
-              <Typography color="text.secondary" variant="body2">Processing Google sign-in...</Typography>
-            ) : null}
-          </Stack>
-
           <Divider sx={{ color: brand.colors.muted, fontSize: 13, mb: 2.8 }}>
             or sign in with email
           </Divider>
@@ -260,6 +248,21 @@ export default function LoginPage() {
                 </Link>
               </Stack>
 
+              {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+              {sessionExpired ? <Alert severity="warning">Your session expired. Please sign in again.</Alert> : null}
+              {error ? (
+                <Alert
+                  action={rejectionReasonDialog ? (
+                    <Button color="inherit" size="small" onClick={() => setRejectionReasonOpen(true)}>
+                      View reason
+                    </Button>
+                  ) : null}
+                  severity="error"
+                >
+                  {error}
+                </Alert>
+              ) : null}
+
               <Button
                 disabled={loading || googleLoading || hasClientErrors}
                 fullWidth
@@ -275,28 +278,24 @@ export default function LoginPage() {
               >
                 {loading ? <CircularProgress color="inherit" size={20} /> : "Sign in"}
               </Button>
+
+              <Divider sx={{ color: brand.colors.muted, fontSize: 13 }}>or continue with Google</Divider>
+              <GoogleSignInButton
+                text="signin_with"
+                onCredential={handleGoogleLogin}
+                disabled={loading || googleLoading}
+                fullWidth
+                minHeight={50}
+              />
+              {googleLoading ? (
+                <Typography color="text.secondary" variant="body2">Processing Google sign-in...</Typography>
+              ) : null}
             </Stack>
           </Box>
 
-          {successMessage ? <Alert severity="success" sx={{ mt: 2 }}>{successMessage}</Alert> : null}
-          {sessionExpired ? <Alert severity="warning" sx={{ mt: 2 }}>Your session expired. Please sign in again.</Alert> : null}
-          {error ? (
-            <Alert
-              action={rejectionReasonDialog ? (
-                <Button color="inherit" size="small" onClick={() => setRejectionReasonOpen(true)}>
-                  View reason
-                </Button>
-              ) : null}
-              severity="error"
-              sx={{ mt: 2 }}
-            >
-              {error}
-            </Alert>
-          ) : null}
-
           <Typography sx={{ color: brand.colors.muted, fontSize: 15, mt: 3 }}>
             New to SEAL?{" "}
-            <Link component={RouterLink} to="/register" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
+            <Link component={RouterLink} to="/register/verify-email" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
               Register
             </Link>
           </Typography>

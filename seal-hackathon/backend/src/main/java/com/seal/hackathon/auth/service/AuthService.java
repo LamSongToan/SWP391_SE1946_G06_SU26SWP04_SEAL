@@ -9,6 +9,7 @@ import com.seal.hackathon.auth.dto.RegistrationOtpRequest;
 import com.seal.hackathon.auth.dto.RegistrationOtpResponse;
 import com.seal.hackathon.auth.dto.RegisterRequest;
 import com.seal.hackathon.auth.dto.RegisterResponse;
+import com.seal.hackathon.auth.dto.VerifyRegistrationOtpRequest;
 import com.seal.hackathon.auth.entity.RegistrationOtpEntity;
 import com.seal.hackathon.auth.entity.RoleType;
 import com.seal.hackathon.auth.entity.StudentProfileEntity;
@@ -90,6 +91,11 @@ public class AuthService {
     @Transactional
     public RegistrationOtpResponse sendRegistrationOtp(RegistrationOtpRequest request) {
         return registrationOtpService.sendOtp(request.email());
+    }
+
+    @Transactional(readOnly = true)
+    public void verifyRegistrationOtp(VerifyRegistrationOtpRequest request) {
+        registrationOtpService.requireValidOtp(request.email(), request.otp());
     }
 
     @Transactional(readOnly = true)
