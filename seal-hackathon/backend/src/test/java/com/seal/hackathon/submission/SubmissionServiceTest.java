@@ -105,7 +105,7 @@ class SubmissionServiceTest {
         event = new HackathonEventEntity();
         event.setEventId(10);
         event.setName("SEAL Summer 2026");
-        event.setSeason("Summer");
+        event.setSemester("Summer");
         event.setYear(2026);
         event.setStartDate(LocalDate.now());
         event.setEndDate(LocalDate.now().plusDays(10));

@@ -22,6 +22,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import { http } from "../../api/http";
+import ModulePageHeader from "../layout/ModulePageHeader";
 import { brand } from "../../styles/designTokens";
 
 function getInitials(name = "") {
@@ -251,17 +252,11 @@ export default function MentorAssignmentPanel() {
 
   return (
     <Box>
-      <Box sx={{ mb: 2.5 }}>
-        <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
-          Event Setup
-        </Typography>
-        <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>
-          Mentor Assignment
-        </Typography>
-        <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-          Assign mentors to tracks across events.
-        </Typography>
-      </Box>
+      <ModulePageHeader
+        eyebrow="Event Setup"
+        title="Mentor Assignment"
+        description="Assign mentors to tracks across events."
+      />
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
@@ -272,14 +267,14 @@ export default function MentorAssignmentPanel() {
       ) : events.length === 0 ? (
         <Box className="ms-empty">
           <Typography fontWeight={800}>No events configured</Typography>
-          <Typography color="text.secondary" variant="body2">Create an event first in Event Configuration.</Typography>
+          <Typography color="text.secondary" variant="body2">Create an event first before assigning mentors.</Typography>
         </Box>
       ) : (
         <>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2.5 }}>
             {events.map((event) => (
               <Chip key={event.eventId}
-                label={`${event.name} (${event.season} ${event.year})`}
+                label={event.name}
                 onClick={() => setSelectedEventId(event.eventId)}
                 sx={{
                   cursor: "pointer",
@@ -299,7 +294,7 @@ export default function MentorAssignmentPanel() {
           ) : tracks.length === 0 ? (
             <Box className="ms-empty">
               <Typography fontWeight={800}>No tracks for this event</Typography>
-              <Typography color="text.secondary" variant="body2">Configure tracks in Event Configuration first.</Typography>
+              <Typography color="text.secondary" variant="body2">Add tracks to this event before assigning mentors.</Typography>
             </Box>
           ) : (
             <Stack spacing={1.5}>

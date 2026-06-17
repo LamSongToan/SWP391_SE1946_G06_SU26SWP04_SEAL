@@ -2,9 +2,12 @@ package com.seal.hackathon.auth;
 
 import com.seal.hackathon.auth.dto.GoogleLoginRequest;
 import com.seal.hackathon.auth.dto.LoginRequest;
+import com.seal.hackathon.auth.dto.RejectedLoginPayload;
+import com.seal.hackathon.auth.dto.RejectedRegistrationResubmitRequest;
 import com.seal.hackathon.auth.dto.RegisterRequest;
 import com.seal.hackathon.auth.entity.RegistrationOtpEntity;
 import com.seal.hackathon.auth.entity.RoleType;
+import com.seal.hackathon.auth.entity.StudentProfileEntity;
 import com.seal.hackathon.auth.entity.StudentType;
 import com.seal.hackathon.auth.entity.UserEntity;
 import com.seal.hackathon.auth.entity.UserRoleEntity;
@@ -31,7 +34,9 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -149,6 +154,7 @@ class AuthServiceTest {
     @Test
     void login_shouldReturnRejectReasonForRejectedUser() {
         UserEntity user = new UserEntity();
+        user.setUserId(44);
         user.setUsername("an.user");
         user.setEmail("a@fpt.edu.vn");
         user.setPasswordHash("hash");
@@ -164,10 +170,65 @@ class AuthServiceTest {
 
         when(userRepository.findByEmailIgnoreCase("a@fpt.edu.vn")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("12345678", "hash")).thenReturn(true);
+        when(jwtService.generateToken(eq("a@fpt.edu.vn"), any(), anyLong())).thenReturn("resubmit-token");
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
                 () -> authService.login(new LoginRequest("a@fpt.edu.vn", "12345678")));
-        Assertions.assertTrue(ex.getMessage().contains("Student code does not match"));
+        Assertions.assertEquals("Account request was rejected.", ex.getMessage());
+        Assertions.assertInstanceOf(RejectedLoginPayload.class, ex.getData());
+        RejectedLoginPayload payload = (RejectedLoginPayload) ex.getData();
+        Assertions.assertTrue(payload.rejectionReason().contains("Student code does not match"));
+        Assertions.assertEquals("resubmit-token", payload.resubmitToken());
+    }
+
+    @Test
+    void resubmitRejectedRegistration_shouldMoveUserBackToPendingApproval() {
+        UserEntity user = new UserEntity();
+        user.setUserId(45);
+        user.setUsername("an.user");
+        user.setEmail("a@fpt.edu.vn");
+        user.setFullName("An");
+        user.setStatus(UserStatus.REJECTED.getDbValue());
+        user.setApproved(false);
+        user.setRejectionReason("Need better student code proof");
+
+        StudentProfileEntity studentProfile = new StudentProfileEntity();
+        studentProfile.setStudentType(StudentType.FPT.name());
+        studentProfile.setStudentCode("SE180001");
+        studentProfile.setUniversityName("FPT University HCMC");
+
+        when(jwtService.extractAllClaims("resubmit-token")).thenReturn(io.jsonwebtoken.Jwts.claims()
+                .setSubject("a@fpt.edu.vn"));
+        when(jwtService.isTokenExpired("resubmit-token")).thenReturn(false);
+        when(userRepository.findById(45)).thenReturn(Optional.of(user));
+        when(studentProfileRepository.findByUserRoleUserUserId(45)).thenReturn(Optional.of(studentProfile));
+        when(userRepository.existsByUsernameIgnoreCase("an.updated")).thenReturn(false);
+        when(studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCaseAndUserRoleUserUserIdNot(
+                "SE180002", "FPT University HCMC", 45)).thenReturn(false);
+
+        io.jsonwebtoken.Claims claims = io.jsonwebtoken.Jwts.claims()
+                .setSubject("a@fpt.edu.vn");
+        claims.put("purpose", "REJECTED_RESUBMIT");
+        claims.put("userId", 45);
+        when(jwtService.extractAllClaims("resubmit-token")).thenReturn(claims);
+
+        var response = authService.resubmitRejectedRegistration(new RejectedRegistrationResubmitRequest(
+                "resubmit-token",
+                "an.updated",
+                "An Updated",
+                StudentType.FPT,
+                "SE180002",
+                null,
+                null
+        ));
+
+        Assertions.assertEquals(UserStatus.PENDING_APPROVAL.getDbValue(), user.getStatus());
+        Assertions.assertFalse(user.getApproved());
+        Assertions.assertNull(user.getRejectionReason());
+        Assertions.assertEquals("an.updated", user.getUsername());
+        Assertions.assertEquals("An Updated", user.getFullName());
+        Assertions.assertEquals("SE180002", studentProfile.getStudentCode());
+        Assertions.assertEquals(UserStatus.PENDING_APPROVAL.getDbValue(), response.status());
     }
 
     @Test

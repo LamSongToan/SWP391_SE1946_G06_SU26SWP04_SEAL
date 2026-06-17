@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import {
   AppBar,
@@ -30,10 +30,12 @@ import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import { getApiErrorMessage, http } from "../../api/http";
 import { brand } from "../../styles/designTokens";
+import EventCatalogExperience from "../../components/event/EventCatalogExperience";
 
 const navItems = [
   ["About", "#about"],
   ["System", "#system"],
+  ["Events", "#events"],
   ["Rankings", "#rankings"],
   ["Participants", "#participants"],
   ["FAQ", "#faq"],
@@ -41,17 +43,17 @@ const navItems = [
 
 const hackathons = [
   {
-    season: "Spring",
+    semester: "Spring",
     title: "SDLC & Professional Working",
     description: "A semester Hackathon focused on software development life cycle topics and professional working skills.",
   },
   {
-    season: "Summer",
+    semester: "Summer",
     title: "Summer SEAL - Emerging Technologies",
     description: "A semester Hackathon focused on emerging technologies and modern directions such as AI, IoT, Blockchain, and research-oriented trends.",
   },
   {
-    season: "Fall",
+    semester: "Fall",
     title: "Product & User Experience",
     description: "A semester Hackathon focused on user-oriented product development, practical experience, and idea commercialization.",
   },
@@ -98,15 +100,6 @@ const activityImages = [
   { src: "/seal-assets/seal-photo-2.jpg", label: "Project Presentation Round" },
   { src: "/seal-assets/seal-banner-spring-2026.jpg", label: "Spring 2026 Identity" },
 ];
-
-function formatDate(rawDate) {
-  if (!rawDate) return "Schedule pending";
-  return new Date(rawDate).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function Logo({ dark = false }) {
   return (
@@ -308,7 +301,7 @@ function ActivityPhotoPanel() {
         </Typography>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {hackathons.map((item) => (
-            <Chip key={item.season} label={item.season} sx={{ bgcolor: brand.colors.surface, color: brand.colors.navy, fontWeight: 900 }} />
+            <Chip key={item.semester} label={item.semester} sx={{ bgcolor: brand.colors.surface, color: brand.colors.navy, fontWeight: 900 }} />
           ))}
         </Stack>
       </Stack>
@@ -321,10 +314,10 @@ export default function LandingPage() {
   const [events, setEvents] = useState([]);
   const [eventsError, setEventsError] = useState("");
 
-  const loadUpcomingEvents = async () => {
+  const loadEventCatalog = async () => {
     setEventsError("");
     try {
-      const response = await http.get("/api/public/events/upcoming");
+      const response = await http.get("/api/public/events/catalog");
       setEvents(Array.isArray(response.data?.data) ? response.data.data : []);
     } catch (err) {
       setEventsError(getApiErrorMessage(err, "Event data is currently unavailable."));
@@ -333,13 +326,8 @@ export default function LandingPage() {
   };
 
   useEffect(() => {
-    loadUpcomingEvents();
+    loadEventCatalog();
   }, []);
-
-  const totalRounds = useMemo(
-    () => events.reduce((sum, event) => sum + (event.rounds?.length || 0), 0),
-    [events]
-  );
 
   const nav = (
     <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems={{ xs: "stretch", md: "center" }}>
@@ -383,7 +371,7 @@ export default function LandingPage() {
               <Button component={RouterLink} to="/login" variant="outlined" sx={{ borderColor: brand.colors.lineStrong, color: brand.colors.navy }}>
                 Sign in
               </Button>
-              <Button component={RouterLink} to="/register" variant="contained" sx={{ bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark } }}>
+              <Button component={RouterLink} to="/register/verify-email" variant="contained" sx={{ bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark } }}>
                 Register
               </Button>
             </Stack>
@@ -403,7 +391,7 @@ export default function LandingPage() {
           {nav}
           <Divider />
           <Button component={RouterLink} to="/login" variant="outlined">Sign in</Button>
-          <Button component={RouterLink} to="/register" variant="contained" sx={{ bgcolor: brand.colors.orange }}>Register</Button>
+          <Button component={RouterLink} to="/register/verify-email" variant="contained" sx={{ bgcolor: brand.colors.orange }}>Register</Button>
         </Stack>
       </Drawer>
 
@@ -447,7 +435,7 @@ export default function LandingPage() {
                   An annual academic Hackathon system and technology experience for Information Technology students at FPT University HCMC and other universities in Ho Chi Minh City.
                 </Typography>
                 <Stack className="seal-cta-row" direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 3.2 }}>
-                  <Button className="seal-cta-primary" component={RouterLink} to="/register" size="large" variant="contained" endIcon={<KeyboardArrowRightRoundedIcon />} sx={{ height: 52, px: 3.2, bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark } }}>
+                  <Button className="seal-cta-primary" component={RouterLink} to="/register/verify-email" size="large" variant="contained" endIcon={<KeyboardArrowRightRoundedIcon />} sx={{ height: 52, px: 3.2, bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark } }}>
                     Register
                   </Button>
                   <Button className="seal-cta-secondary" component="a" href="#about" size="large" variant="outlined" sx={{ height: 52, px: 3, color: brand.colors.inverse, borderColor: "rgba(255,255,255,0.42)", "&:hover": { borderColor: brand.colors.inverse, bgcolor: "rgba(255,255,255,0.08)" } }}>
@@ -480,7 +468,7 @@ export default function LandingPage() {
               </Grid2>
               <Grid2 size={{ xs: 12, md: 7 }} className="seal-reveal">
                 <Typography sx={{ color: brand.colors.muted, fontSize: 17, lineHeight: 1.85 }}>
-                  SEAL Hackathon is an academic playground and technology experience for Information Technology students studying at FPT University HCMC and other universities in Ho Chi Minh City. Every year, SEAL organizes three Hackathons corresponding to the Spring, Summer, and Fall semesters, with each season carrying a clear academic direction.
+                  SEAL Hackathon is an academic playground and technology experience for Information Technology students studying at FPT University HCMC and other universities in Ho Chi Minh City. Every year, SEAL organizes three Hackathons corresponding to the Spring, Summer, and Fall semesters, with each semester carrying a clear academic direction.
                 </Typography>
               </Grid2>
             </Grid2>
@@ -507,9 +495,9 @@ export default function LandingPage() {
             </Box>
             <Grid2 container spacing={2.4}>
               {hackathons.map((item) => (
-                <Grid2 key={item.season} size={{ xs: 12, md: 4 }} className="seal-reveal">
+                <Grid2 key={item.semester} size={{ xs: 12, md: 4 }} className="seal-reveal">
                   <Box className="seal-premium-card" sx={{ height: "100%", p: 3, borderRadius: brand.radius.lg, bgcolor: brand.colors.surface, border: `1px solid ${brand.colors.line}`, boxShadow: brand.shadow.sm }}>
-                    <Chip label={item.season} sx={{ mb: 2, bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 950 }} />
+                    <Chip label={item.semester} sx={{ mb: 2, bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 950 }} />
                     <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950, mb: 1 }}>{item.title}</Typography>
                     <Typography sx={{ color: brand.colors.muted, lineHeight: 1.75 }}>{item.description}</Typography>
                   </Box>
@@ -605,38 +593,13 @@ export default function LandingPage() {
 
         <Box id="events" sx={{ py: { xs: 7, md: 9 }, bgcolor: brand.colors.surface }}>
           <Container maxWidth="xl">
-            <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
-              <Box>
-                <Typography sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 950, letterSpacing: 1.5 }}>LIVE EVENT DATA</Typography>
-                <Typography component="h2" sx={{ color: brand.colors.text, fontSize: { xs: 28, md: 38 }, fontWeight: 950, mt: 0.8 }}>Published SEAL events</Typography>
-              </Box>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Chip label={`${events.length} events`} sx={{ bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 900 }} />
-                <Chip label={`${totalRounds} rounds`} sx={{ bgcolor: brand.colors.surfaceSoft, color: brand.colors.navy, fontWeight: 900 }} />
-              </Stack>
-            </Stack>
             {events.length > 0 ? (
-              <Grid2 container spacing={2.4}>
-                {events.slice(0, 3).map((event) => (
-                  <Grid2 key={event.eventId} size={{ xs: 12, md: 4 }} className="seal-reveal">
-                    <Box className="seal-premium-card" sx={{ height: "100%", p: 3, borderRadius: brand.radius.lg, bgcolor: brand.colors.surfaceSoft, border: `1px solid ${brand.colors.line}` }}>
-                      <Chip label={`${event.season || "SEAL"} ${event.year || ""}`} sx={{ mb: 1.6, bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 900 }} />
-                      <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950, mb: 1 }}>{event.name}</Typography>
-                      <Typography sx={{ color: brand.colors.muted, minHeight: 68, lineHeight: 1.7 }}>{event.description || "Event description is not available yet."}</Typography>
-                      <Divider sx={{ my: 2 }} />
-                      {(event.rounds || []).slice(0, 2).map((round) => (
-                        <Stack key={`${event.eventId}-${round.roundOrder}`} direction="row" justifyContent="space-between" spacing={2}>
-                          <Typography sx={{ color: brand.colors.text, fontSize: 13, fontWeight: 800 }}>{round.roundName || `Round ${round.roundOrder}`}</Typography>
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>{formatDate(round.submissionDeadline)}</Typography>
-                        </Stack>
-                      ))}
-                      <Button component={RouterLink} to="/register" fullWidth variant="contained" sx={{ mt: 2.4, bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark } }}>
-                        Register team
-                      </Button>
-                    </Box>
-                  </Grid2>
-                ))}
-              </Grid2>
+              <EventCatalogExperience
+                events={events}
+                mode="public"
+                sectionTitle="Upcoming and past SEAL events"
+                sectionDescription="Browse current, upcoming, and archived hackathons. Open any event to review its timeline, rounds, and judging criteria before joining."
+              />
             ) : (
               <Box className="seal-reveal" sx={{ p: 3, borderRadius: brand.radius.lg, bgcolor: brand.colors.surfaceSoft, border: `1px dashed ${brand.colors.lineStrong}` }}>
                 <Typography sx={{ color: brand.colors.text, fontSize: 18, fontWeight: 950 }}>No published event data is available</Typography>

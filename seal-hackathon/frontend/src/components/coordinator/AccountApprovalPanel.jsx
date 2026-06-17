@@ -29,6 +29,7 @@ import {
   Typography,
 } from "@mui/material";
 import { http } from "../../api/http";
+import ModulePageHeader from "../layout/ModulePageHeader";
 
 const STATUS_COLOR = {
   ACTIVE: "success",
@@ -263,21 +264,12 @@ export default function AccountApprovalPanel() {
 
   return (
     <Box>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", md: "center" }}
-        sx={{ mb: 1.8 }}
-        spacing={1.1}
-      >
-        <Box>
-          <Typography className="ms-section-title" variant="h5">Account Management</Typography>
-          <Typography className="ms-section-subtitle">
-            Review pending registrations, approve accounts quickly, and keep user details manageable afterward.
-          </Typography>
-        </Box>
-        <Button size="small" onClick={fetchUsers} disabled={loading}>Refresh</Button>
-      </Stack>
+      <ModulePageHeader
+        eyebrow="Account Review"
+        title="User Management"
+        description="Review pending registrations, approve accounts quickly, and keep user details manageable afterward."
+        actions={<Button size="small" onClick={fetchUsers} disabled={loading}>Refresh</Button>}
+      />
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 

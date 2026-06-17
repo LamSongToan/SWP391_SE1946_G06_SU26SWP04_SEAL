@@ -31,12 +31,15 @@ import com.seal.hackathon.evaluation.repository.ScoreRepository;
 import com.seal.hackathon.evaluation.repository.ScoringCriteriaRepository;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.RoundEntity;
+import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
+import com.seal.hackathon.event.repository.TrackRepository;
 import com.seal.hackathon.submission.entity.SubmissionEntity;
 import com.seal.hackathon.submission.entity.SubmissionStatus;
 import com.seal.hackathon.submission.repository.SubmissionRepository;
 import com.seal.hackathon.team.entity.TeamEntity;
+import com.seal.hackathon.team.repository.TeamRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -63,12 +66,29 @@ import java.util.stream.Collectors;
 public class CoordinatorScoringService {
 
     private static final String TARGET_ENTITY_ROUND = "ROUND";
+    private static final String TARGET_ENTITY_EVENT = "EVENT";
+    private static final String TARGET_ENTITY_TRACK = "TRACK";
+    private static final String TARGET_ENTITY_TEAM = "TEAM";
+    private static final String TARGET_ENTITY_SUBMISSION = "SUBMISSION";
     private static final String TARGET_ENTITY_TEMPLATE = "CRITERIA_TEMPLATE";
+    private static final List<CriteriaDefinitionDto> DEFAULT_QUALIFIER_CRITERIA = List.of(
+            new CriteriaDefinitionDto(null, "Technical Quality", new BigDecimal("34.00"), "Technical Quality"),
+            new CriteriaDefinitionDto(null, "Innovation", new BigDecimal("33.00"), "Innovation"),
+            new CriteriaDefinitionDto(null, "Feasibility", new BigDecimal("33.00"), "Feasibility")
+    );
+    private static final List<CriteriaDefinitionDto> DEFAULT_FINAL_CRITERIA = List.of(
+            new CriteriaDefinitionDto(null, "Presentation", new BigDecimal("25.00"), "Presentation"),
+            new CriteriaDefinitionDto(null, "Q&A", new BigDecimal("25.00"), "Q&A"),
+            new CriteriaDefinitionDto(null, "Product Demo", new BigDecimal("25.00"), "Product Demo"),
+            new CriteriaDefinitionDto(null, "Business Impact", new BigDecimal("25.00"), "Business Impact")
+    );
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final HackathonEventRepository eventRepository;
     private final RoundRepository roundRepository;
+    private final TrackRepository trackRepository;
+    private final TeamRepository teamRepository;
     private final SubmissionRepository submissionRepository;
     private final ScoringCriteriaRepository criteriaRepository;
     private final CriteriaTemplateRepository criteriaTemplateRepository;
@@ -83,6 +103,8 @@ public class CoordinatorScoringService {
                                      UserRoleRepository userRoleRepository,
                                      HackathonEventRepository eventRepository,
                                      RoundRepository roundRepository,
+                                     TrackRepository trackRepository,
+                                     TeamRepository teamRepository,
                                      SubmissionRepository submissionRepository,
                                      ScoringCriteriaRepository criteriaRepository,
                                      CriteriaTemplateRepository criteriaTemplateRepository,
@@ -96,6 +118,8 @@ public class CoordinatorScoringService {
         this.userRoleRepository = userRoleRepository;
         this.eventRepository = eventRepository;
         this.roundRepository = roundRepository;
+        this.trackRepository = trackRepository;
+        this.teamRepository = teamRepository;
         this.submissionRepository = submissionRepository;
         this.criteriaRepository = criteriaRepository;
         this.criteriaTemplateRepository = criteriaTemplateRepository;
@@ -366,39 +390,91 @@ public class CoordinatorScoringService {
                                            Integer roundId,
                                            String actionType) {
         currentCoordinator(authentication);
-        Set<Integer> scopedRoundIds = null;
-        if (roundId != null) {
-            scopedRoundIds = Set.of(roundId);
-        } else if (eventId != null) {
-            scopedRoundIds = roundRepository.findByEventIdOrderByRoundOrderAsc(eventId)
-                    .stream()
-                    .map(RoundEntity::getRoundId)
-                    .collect(Collectors.toSet());
-        }
-
-        final Set<Integer> scopedRoundIdsFilter = scopedRoundIds;
         final String normalizedActionType = actionType == null ? null : actionType.trim();
+        final AuditScope auditScope = buildAuditScope(eventId, roundId);
 
         return auditLogRepository.findTop300ByOrderByTimestampDesc().stream()
                 .filter(log -> normalizedActionType == null || normalizedActionType.isBlank()
                         || log.getActionType().equalsIgnoreCase(normalizedActionType))
-                .filter(log -> {
-                    if (scopedRoundIdsFilter == null) {
-                        return true;
-                    }
-                    return TARGET_ENTITY_ROUND.equalsIgnoreCase(log.getTargetEntity())
-                            && scopedRoundIdsFilter.contains(log.getTargetId());
-                })
+                .filter(log -> matchesAuditScope(log, auditScope))
                 .map(this::toAuditLogDto)
                 .toList();
     }
 
+    private AuditScope buildAuditScope(Integer eventId, Integer roundId) {
+        if (roundId != null) {
+            RoundEntity round = getRoundOrThrow(roundId);
+            Set<Integer> eventIds = new HashSet<>();
+            if (round.getEventId() != null) {
+                eventIds.add(round.getEventId());
+            }
+            Set<Integer> roundIds = new HashSet<>();
+            roundIds.add(roundId);
+            List<SubmissionEntity> roundSubmissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+            Set<Integer> submissionIds = roundSubmissions.stream()
+                    .map(SubmissionEntity::getSubmissionId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Set<Integer> teamIds = roundSubmissions.stream()
+                    .map(SubmissionEntity::getTeam)
+                    .filter(Objects::nonNull)
+                    .map(TeamEntity::getTeamId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Set<Integer> trackIds = roundSubmissions.stream()
+                    .map(SubmissionEntity::getTeam)
+                    .filter(Objects::nonNull)
+                    .map(TeamEntity::getTrack)
+                    .filter(Objects::nonNull)
+                    .map(TrackEntity::getTrackId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            return new AuditScope(eventIds, roundIds, trackIds, teamIds, submissionIds);
+        }
+        if (eventId != null) {
+            Set<Integer> roundIds = roundRepository.findByEventIdOrderByRoundOrderAsc(eventId).stream()
+                    .map(RoundEntity::getRoundId)
+                    .collect(Collectors.toSet());
+            Set<Integer> trackIds = trackRepository.findByEventIdOrderByTrackIdAsc(eventId).stream()
+                    .map(TrackEntity::getTrackId)
+                    .collect(Collectors.toSet());
+            Set<Integer> teamIds = new HashSet<>(teamRepository.findTeamIdsByEventId(eventId));
+            Set<Integer> submissionIds = submissionRepository.findByEventId(eventId).stream()
+                    .map(SubmissionEntity::getSubmissionId)
+                    .collect(Collectors.toSet());
+            return new AuditScope(Set.of(eventId), roundIds, trackIds, teamIds, submissionIds);
+        }
+        return AuditScope.emptyScope();
+    }
+
+    private boolean matchesAuditScope(AuditLogEntity log, AuditScope scope) {
+        if (scope.isUnscoped()) {
+            return true;
+        }
+        if (log.getTargetEntity() == null) {
+            return false;
+        }
+        String normalizedTarget = log.getTargetEntity().trim().toUpperCase(Locale.ROOT);
+        Integer targetId = log.getTargetId();
+        return switch (normalizedTarget) {
+            case TARGET_ENTITY_EVENT -> targetId != null && scope.eventIds().contains(targetId);
+            case TARGET_ENTITY_ROUND -> targetId != null && scope.roundIds().contains(targetId);
+            case TARGET_ENTITY_TRACK -> targetId != null && scope.trackIds().contains(targetId);
+            case TARGET_ENTITY_TEAM -> targetId != null && scope.teamIds().contains(targetId);
+            case TARGET_ENTITY_SUBMISSION -> targetId != null && scope.submissionIds().contains(targetId);
+            default -> false;
+        };
+    }
+
     private RoundCriteriaManagementDto toRoundCriteriaDto(RoundEntity round) {
         HackathonEventEntity event = getEventOrThrow(round.getEventId());
-        List<CriteriaDefinitionDto> criteria = criteriaRepository.findByRoundRoundIdOrderByCriteriaIdAsc(round.getRoundId())
+        List<CriteriaDefinitionDto> storedCriteria = criteriaRepository.findByRoundRoundIdOrderByCriteriaIdAsc(round.getRoundId())
                 .stream()
                 .map(this::toCriteriaDefinitionDto)
                 .toList();
+        List<CriteriaDefinitionDto> criteria = storedCriteria.isEmpty()
+                ? defaultCriteriaForRound(round)
+                : storedCriteria;
         String lockedReason = criteriaEditLockedReason(round);
         BigDecimal totalWeight = criteria.stream()
                 .map(CriteriaDefinitionDto::weight)
@@ -416,6 +492,20 @@ public class CoordinatorScoringService {
                 totalWeight,
                 criteria
         );
+    }
+
+    private List<CriteriaDefinitionDto> defaultCriteriaForRound(RoundEntity round) {
+        List<CriteriaDefinitionDto> source = Boolean.TRUE.equals(round.getFinalRound())
+                ? DEFAULT_FINAL_CRITERIA
+                : DEFAULT_QUALIFIER_CRITERIA;
+        return source.stream()
+                .map(item -> new CriteriaDefinitionDto(
+                        null,
+                        item.criteriaName(),
+                        item.weight(),
+                        item.criteriaType()
+                ))
+                .toList();
     }
 
     private CriteriaTemplateDto toCriteriaTemplateDto(CriteriaTemplateEntity template) {
@@ -728,17 +818,22 @@ public class CoordinatorScoringService {
     }
 
     private AuditLogDto toAuditLogDto(AuditLogEntity entity) {
+        UserEntity actor = entity.getUser();
         return new AuditLogDto(
                 entity.getLogId(),
-                entity.getUser().getUserId(),
-                entity.getUser().getFullName(),
+                actor == null ? null : actor.getUserId(),
+                actor == null ? "System" : actor.getFullName(),
+                actor == null ? null : actor.getUsername(),
                 entity.getActionType(),
                 entity.getTargetEntity(),
                 entity.getTargetId(),
+                entity.getTargetName(),
                 entity.getOldValue(),
                 entity.getNewValue(),
                 entity.getReason(),
-                entity.getTimestamp()
+                entity.getTimestamp(),
+                entity.getIpAddress(),
+                entity.getDeviceInfo()
         );
     }
 
@@ -833,6 +928,26 @@ public class CoordinatorScoringService {
             this.totalScore = totalScore;
             this.ready = ready;
             this.readinessNote = readinessNote;
+        }
+    }
+
+    private record AuditScope(
+            Set<Integer> eventIds,
+            Set<Integer> roundIds,
+            Set<Integer> trackIds,
+            Set<Integer> teamIds,
+            Set<Integer> submissionIds
+    ) {
+        private static AuditScope emptyScope() {
+            return new AuditScope(Set.of(), Set.of(), Set.of(), Set.of(), Set.of());
+        }
+
+        private boolean isUnscoped() {
+            return eventIds.isEmpty()
+                    && roundIds.isEmpty()
+                    && trackIds.isEmpty()
+                    && teamIds.isEmpty()
+                    && submissionIds.isEmpty();
         }
     }
 }

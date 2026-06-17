@@ -367,7 +367,7 @@ class EvaluationServiceTest {
         HackathonEventEntity event = new HackathonEventEntity();
         event.setEventId(10);
         event.setName("SEAL Summer 2026");
-        event.setSeason("Summer");
+        event.setSemester("Summer");
         event.setYear(2026);
         event.setStatus(status.getDbValue());
         return event;

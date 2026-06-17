@@ -10,6 +10,7 @@ public record AuthResponse(
         String username,
         String fullName,
         String status,
-        List<String> roles
+        List<String> roles,
+        Boolean mustChangePassword
 ) {
 }

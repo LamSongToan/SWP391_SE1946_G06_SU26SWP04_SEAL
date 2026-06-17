@@ -10,17 +10,19 @@ import java.util.List;
 
 public interface HackathonEventRepository extends JpaRepository<HackathonEventEntity, Integer> {
 
+    List<HackathonEventEntity> findAllByOrderByEventIdDesc();
+
     List<HackathonEventEntity> findAllByOrderByStartDateDescEventIdDesc();
 
-    boolean existsByYearAndSeasonIgnoreCase(Integer year, String season);
+    boolean existsByYearAndSemesterIgnoreCase(Integer year, String semester);
 
-    boolean existsByYearAndSeasonIgnoreCaseAndEventIdNot(Integer year, String season, Integer eventId);
+    boolean existsByYearAndSemesterIgnoreCaseAndEventIdNot(Integer year, String semester, Integer eventId);
 
     @Query("""
             SELECT e
             FROM HackathonEventEntity e
             WHERE e.endDate >= :today
-              AND upper(e.status) IN ('REGISTRATIONOPEN', 'ONGOING', 'SCORING', 'UPCOMING', 'ACTIVE')
+              AND upper(e.status) IN ('ONGOING', 'ACTIVE', 'REGISTRATIONOPEN', 'SCORING', 'RESULTPUBLISHED')
             ORDER BY e.startDate ASC, e.eventId ASC
             """)
     List<HackathonEventEntity> findUpcomingEvents(@Param("today") LocalDate today);

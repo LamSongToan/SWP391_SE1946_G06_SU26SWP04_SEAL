@@ -26,6 +26,7 @@ import {
   authStorage,
   googleRegistrationStorage,
   http,
+  rejectedRegistrationStorage,
   registrationVerificationStorage,
 } from "../api/http";
 import { brand } from "../styles/designTokens";
@@ -87,6 +88,9 @@ function PasswordStrengthBar({ password }) {
 export default function RegisterPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [rejectedRegistration, setRejectedRegistration] = useState(
+    () => location.state?.rejectedRegistration || rejectedRegistrationStorage.get()
+  );
   const [googleRegistration, setGoogleRegistration] = useState(
     () => location.state?.googleRegistration || googleRegistrationStorage.get()
   );
@@ -94,6 +98,7 @@ export default function RegisterPage() {
     () => location.state?.registrationVerification || registrationVerificationStorage.get()
   );
   const isGoogleRegistration = Boolean(googleRegistration?.idToken && googleRegistration?.email);
+  const isRejectedResubmission = Boolean(rejectedRegistration?.resubmitToken);
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -106,8 +111,10 @@ export default function RegisterPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rejectedDraftLoading, setRejectedDraftLoading] = useState(false);
 
   useEffect(() => {
+    setRejectedRegistration(location.state?.rejectedRegistration || rejectedRegistrationStorage.get());
     setGoogleRegistration(location.state?.googleRegistration || googleRegistrationStorage.get());
     setEmailVerification(
       location.state?.registrationVerification || registrationVerificationStorage.get()
@@ -115,6 +122,70 @@ export default function RegisterPage() {
   }, [location.state]);
 
   useEffect(() => {
+    if (isRejectedResubmission) {
+      const rejectedPayload = location.state?.rejectedRegistration || rejectedRegistrationStorage.get();
+      if (!rejectedPayload?.resubmitToken) {
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      let active = true;
+      const loadRejectedDraft = async () => {
+        setRejectedDraftLoading(true);
+        setError("");
+        try {
+          const response = await http.get("/api/auth/register/rejected", {
+            params: { token: rejectedPayload.resubmitToken },
+          });
+          const draft = response.data?.data;
+          if (!active || !draft) {
+            return;
+          }
+          rejectedRegistrationStorage.set({
+            resubmitToken: draft.token,
+            rejectionReason: draft.rejectionReason || "",
+          });
+          setRejectedRegistration({
+            resubmitToken: draft.token,
+            rejectionReason: draft.rejectionReason || "",
+          });
+          setForm({
+            username: draft.username || "",
+            email: draft.email || "",
+            password: "",
+            fullName: draft.fullName || "",
+            studentType: draft.studentType || "FPT",
+            fptStudentCode: draft.fptStudentCode || "",
+            externalStudentCode: draft.externalStudentCode || "",
+            externalUniversity: draft.externalUniversity || "",
+          });
+          setAcceptedTerms(true);
+          setFieldErrors({});
+          setTouched({});
+          setConfirmPassword("");
+          setConfirmTouched(false);
+        } catch (err) {
+          rejectedRegistrationStorage.clear();
+          if (active) {
+            setRejectedRegistration(null);
+            navigate("/login", {
+              replace: true,
+              state: { message: err?.response?.data?.message || "This rejected registration can no longer be updated." },
+            });
+          }
+        } finally {
+          if (active) {
+            setRejectedDraftLoading(false);
+          }
+        }
+      };
+
+      loadRejectedDraft();
+      return () => {
+        active = false;
+      };
+    }
+
     if (isGoogleRegistration) {
       setForm((current) => ({
         ...current,
@@ -136,7 +207,7 @@ export default function RegisterPage() {
       ...current,
       email: verifiedPayload.email,
     }));
-  }, [googleRegistration, isGoogleRegistration, location.state, navigate]);
+  }, [googleRegistration, isGoogleRegistration, isRejectedResubmission, location.state, navigate]);
 
   const validateField = (name, value, nextForm = form) => {
     const trimmedValue = typeof value === "string" ? value.trim() : value;
@@ -182,8 +253,11 @@ export default function RegisterPage() {
       username: validateField("username", nextForm.username, nextForm),
       fullName: validateField("fullName", nextForm.fullName, nextForm),
       email: validateField("email", nextForm.email, nextForm),
-      password: validateField("password", nextForm.password, nextForm),
     };
+
+    if (!isRejectedResubmission) {
+      nextErrors.password = validateField("password", nextForm.password, nextForm);
+    }
 
     if (nextForm.studentType === "FPT") {
       nextErrors.fptStudentCode = validateField("fptStudentCode", nextForm.fptStudentCode, nextForm);
@@ -192,7 +266,7 @@ export default function RegisterPage() {
       nextErrors.externalUniversity = validateField("externalUniversity", nextForm.externalUniversity, nextForm);
     }
 
-    if (!acceptedTerms) {
+    if (!isRejectedResubmission && !acceptedTerms) {
       nextErrors.acceptedTerms = "Please agree to the participation terms before registering";
     }
 
@@ -258,6 +332,15 @@ export default function RegisterPage() {
     navigate("/register/verify-email", { replace: true, state: null });
   };
 
+  const cancelRejectedResubmission = () => {
+    rejectedRegistrationStorage.clear();
+    setRejectedRegistration(null);
+    setForm(INITIAL_FORM);
+    setTouched({});
+    setFieldErrors({});
+    navigate("/login", { replace: true });
+  };
+
   const handleGoogleLogin = async (idToken) => {
     setError("");
     setGoogleLoading(true);
@@ -280,9 +363,21 @@ export default function RegisterPage() {
       authStorage.set(data?.auth);
       googleRegistrationStorage.clear();
       registrationVerificationStorage.clear();
-      navigate("/dashboard?section=account");
+      navigate("/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Google sign-in failed");
+      const message = err?.response?.data?.message || err?.message || "Google sign-in failed";
+      const payload = err?.response?.data?.data || null;
+      if (message.toLowerCase().includes("rejected") && payload?.resubmitToken) {
+        const nextRejectedRegistration = {
+          resubmitToken: payload.resubmitToken,
+          rejectionReason: payload.rejectionReason || "",
+        };
+        rejectedRegistrationStorage.set(nextRejectedRegistration);
+        setRejectedRegistration(nextRejectedRegistration);
+        navigate("/register", { replace: true, state: { rejectedRegistration: nextRejectedRegistration } });
+        return;
+      }
+      setError(message);
     } finally {
       setGoogleLoading(false);
     }
@@ -296,12 +391,14 @@ export default function RegisterPage() {
       username: true,
       fullName: true,
       email: true,
-      acceptedTerms: true,
-      password: true,
       ...(form.studentType === "FPT"
         ? { fptStudentCode: true }
         : { externalStudentCode: true, externalUniversity: true }),
     };
+    if (!isRejectedResubmission) {
+      allTouched.acceptedTerms = true;
+      allTouched.password = true;
+    }
     const clientErrors = collectClientErrors(form);
     setTouched(allTouched);
     setFieldErrors(clientErrors);
@@ -314,15 +411,29 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!isGoogleRegistration && (!emailVerification?.email || !emailVerification?.otp)) {
+    if (!isGoogleRegistration && !isRejectedResubmission && (!emailVerification?.email || !emailVerification?.otp)) {
       navigate("/register/verify-email", { replace: true });
       return;
     }
 
     setLoading(true);
     try {
-      const endpoint = isGoogleRegistration ? "/api/auth/register/google" : "/api/auth/register";
-      const payload = isGoogleRegistration
+      const endpoint = isRejectedResubmission
+        ? "/api/auth/register/rejected"
+        : isGoogleRegistration
+          ? "/api/auth/register/google"
+          : "/api/auth/register";
+      const payload = isRejectedResubmission
+        ? {
+            token: rejectedRegistration.resubmitToken,
+            username: form.username.trim(),
+            fullName: form.fullName.trim(),
+            studentType: form.studentType,
+            fptStudentCode: form.studentType === "FPT" ? form.fptStudentCode.trim() : null,
+            externalStudentCode: form.studentType === "EXTERNAL" ? form.externalStudentCode.trim() : null,
+            externalUniversity: form.studentType === "EXTERNAL" ? form.externalUniversity.trim() : null,
+          }
+        : isGoogleRegistration
         ? {
             username: form.username.trim(),
             fullName: form.fullName.trim(),
@@ -345,10 +456,19 @@ export default function RegisterPage() {
             externalUniversity: form.studentType === "EXTERNAL" ? form.externalUniversity.trim() : null,
           };
 
-      await http.post(endpoint, payload);
+      const response = isRejectedResubmission
+        ? await http.put(endpoint, payload)
+        : await http.post(endpoint, payload);
       googleRegistrationStorage.clear();
       registrationVerificationStorage.clear();
-      navigate("/login", { state: { message: APPROVAL_MESSAGE } });
+      rejectedRegistrationStorage.clear();
+      navigate("/login", {
+        state: {
+          message: isRejectedResubmission
+            ? (response.data?.data?.message || "Registration updated successfully. Please wait for administrator approval.")
+            : APPROVAL_MESSAGE,
+        },
+      });
     } catch (err) {
       const nextFieldErrors = getFieldErrors(err);
       setFieldErrors(nextFieldErrors);
@@ -387,11 +507,19 @@ export default function RegisterPage() {
             REQUEST ACCOUNT
           </Typography>
           <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
-            Register for SEAL
+            {isRejectedResubmission ? "Update your registration" : "Register for SEAL"}
           </Typography>
           <Typography sx={{ color: brand.colors.muted, fontSize: 15, lineHeight: 1.7, mt: 1.2, mb: 2.4 }}>
-            New accounts must be approved by an administrator before signing in to the Hackathon system.
+            {isRejectedResubmission
+              ? "Update the information below based on the coordinator's feedback, then submit your registration again for review."
+              : "New accounts must be approved by an administrator before signing in to the Hackathon system."}
           </Typography>
+
+          {isRejectedResubmission ? (
+            <Alert severity="error" sx={{ mb: 1.5 }}>
+              {rejectedRegistration?.rejectionReason || "Your previous registration was rejected. Please update the details below and submit again."}
+            </Alert>
+          ) : null}
 
           {isGoogleRegistration ? (
             <Alert severity="info" sx={{ mb: 1.5 }}>
@@ -443,10 +571,13 @@ export default function RegisterPage() {
                 fullWidth
                 label="Email"
                 type="email"
-                value={isGoogleRegistration ? form.email : emailVerification?.email || form.email}
+                value={isGoogleRegistration || isRejectedResubmission ? form.email : emailVerification?.email || form.email}
                 error={Boolean(fieldErrors.email)}
                 helperText={
                   fieldErrors.email ||
+                  (isRejectedResubmission
+                    ? "This email belongs to your rejected registration and cannot be changed here"
+                    : null) ||
                   (isGoogleRegistration
                     ? "This email comes from your Google account"
                     : "This email has already been verified")
@@ -455,52 +586,56 @@ export default function RegisterPage() {
                 disabled
               />
 
-              {isGoogleRegistration ? (
+              {isGoogleRegistration && !isRejectedResubmission ? (
                 <Alert severity="info" sx={{ mb: 0.25 }}>
                   This Google account will also use the password below for future email sign-in.
                 </Alert>
               ) : null}
 
-              <TextField
-                fullWidth
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                value={form.password}
-                onChange={(event) => setFormField("password", event.target.value)}
-                error={Boolean(fieldErrors.password)}
-                helperText={fieldErrors.password || " "}
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton edge="end" onClick={() => setShowPassword((value) => !value)}>
-                        {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <PasswordStrengthBar password={form.password} />
-              <TextField
-                fullWidth
-                label="Confirm password"
-                type={showConfirmPassword ? "text" : "password"}
-                value={confirmPassword}
-                onBlur={() => setConfirmTouched(true)}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                error={Boolean(confirmPasswordError)}
-                helperText={confirmPasswordError || " "}
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton edge="end" onClick={() => setShowConfirmPassword((value) => !value)}>
-                        {showConfirmPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              {!isRejectedResubmission ? (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(event) => setFormField("password", event.target.value)}
+                    error={Boolean(fieldErrors.password)}
+                    helperText={fieldErrors.password || " "}
+                    required
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton edge="end" onClick={() => setShowPassword((value) => !value)}>
+                            {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <PasswordStrengthBar password={form.password} />
+                  <TextField
+                    fullWidth
+                    label="Confirm password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onBlur={() => setConfirmTouched(true)}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    error={Boolean(confirmPasswordError)}
+                    helperText={confirmPasswordError || " "}
+                    required
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton edge="end" onClick={() => setShowConfirmPassword((value) => !value)}>
+                            {showConfirmPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </>
+              ) : null}
 
               <Grid2 container spacing={1.2}>
                 <Grid2 size={{ xs: 12, sm: 5 }}>
@@ -554,40 +689,44 @@ export default function RegisterPage() {
                 />
               ) : null}
 
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={acceptedTerms}
-                    onChange={(event) => {
-                      setAcceptedTerms(event.target.checked);
-                      setTouched((current) => ({ ...current, acceptedTerms: true }));
-                      setFieldErrors((current) => ({
-                        ...current,
-                        acceptedTerms: event.target.checked ? "" : "Please agree to the participation terms before registering",
-                      }));
-                    }}
-                    size="small"
-                    sx={{ color: brand.colors.orange }}
+              {!isRejectedResubmission ? (
+                <>
+                  <FormControlLabel
+                    control={(
+                      <Checkbox
+                        checked={acceptedTerms}
+                        onChange={(event) => {
+                          setAcceptedTerms(event.target.checked);
+                          setTouched((current) => ({ ...current, acceptedTerms: true }));
+                          setFieldErrors((current) => ({
+                            ...current,
+                            acceptedTerms: event.target.checked ? "" : "Please agree to the participation terms before registering",
+                          }));
+                        }}
+                        size="small"
+                        sx={{ color: brand.colors.orange }}
+                      />
+                    )}
+                    label={(
+                      <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
+                        I agree to the{" "}
+                        <Link href="#" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
+                          SEAL participation terms
+                        </Link>
+                      </Typography>
+                    )}
+                    sx={{ m: 0 }}
                   />
-                )}
-                label={(
-                  <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-                    I agree to the{" "}
-                    <Link href="#" sx={{ color: brand.colors.orange, fontWeight: 900, textDecoration: "none" }}>
-                      SEAL participation terms
-                    </Link>
-                  </Typography>
-                )}
-                sx={{ m: 0 }}
-              />
-              {touched.acceptedTerms && fieldErrors.acceptedTerms ? (
-                <Typography sx={{ color: brand.colors.danger, fontSize: 12 }}>{fieldErrors.acceptedTerms}</Typography>
+                  {touched.acceptedTerms && fieldErrors.acceptedTerms ? (
+                    <Typography sx={{ color: brand.colors.danger, fontSize: 12 }}>{fieldErrors.acceptedTerms}</Typography>
+                  ) : null}
+                </>
               ) : null}
 
               {error ? <Alert severity="error">{error}</Alert> : null}
 
               <Button
-                disabled={loading || googleLoading}
+                disabled={loading || googleLoading || rejectedDraftLoading}
                 fullWidth
                 size="large"
                 type="submit"
@@ -599,23 +738,37 @@ export default function RegisterPage() {
                   "&:hover": { bgcolor: brand.colors.orangeDark },
                 }}
               >
-                {loading ? <CircularProgress color="inherit" size={20} /> : isGoogleRegistration ? "Complete account" : "Create account"}
+                {loading || rejectedDraftLoading
+                  ? <CircularProgress color="inherit" size={20} />
+                  : isRejectedResubmission
+                    ? "Resubmit request"
+                    : isGoogleRegistration
+                      ? "Complete account"
+                      : "Create account"}
               </Button>
 
-              <Divider sx={{ color: brand.colors.muted, fontSize: 13 }}>or continue with Google</Divider>
-              <GoogleSignInButton
-                text="signup_with"
-                onCredential={handleGoogleLogin}
-                disabled={loading || googleLoading}
-                fullWidth
-                minHeight={50}
-              />
-              {googleLoading ? <Typography color="text.secondary" variant="body2">Processing Google sign-in...</Typography> : null}
-              {isGoogleRegistration ? (
-                <Button color="inherit" onClick={clearGoogleRegistrationMode} size="small">
-                  Use email registration instead
+              {!isRejectedResubmission ? (
+                <>
+                  <Divider sx={{ color: brand.colors.muted, fontSize: 13 }}>or continue with Google</Divider>
+                  <GoogleSignInButton
+                    text="signup_with"
+                    onCredential={handleGoogleLogin}
+                    disabled={loading || googleLoading}
+                    fullWidth
+                    minHeight={50}
+                  />
+                  {googleLoading ? <Typography color="text.secondary" variant="body2">Processing Google sign-in...</Typography> : null}
+                  {isGoogleRegistration ? (
+                    <Button color="inherit" onClick={clearGoogleRegistrationMode} size="small">
+                      Use email registration instead
+                    </Button>
+                  ) : null}
+                </>
+              ) : (
+                <Button color="inherit" onClick={cancelRejectedResubmission} size="small">
+                  Back to sign in
                 </Button>
-              ) : null}
+              )}
             </Stack>
           </Box>
 

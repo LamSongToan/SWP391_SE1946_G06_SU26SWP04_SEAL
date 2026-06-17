@@ -28,6 +28,7 @@ import ForkRightRoundedIcon from "@mui/icons-material/ForkRightRounded";
 import CommitRoundedIcon from "@mui/icons-material/CommitRounded";
 import BugReportRoundedIcon from "@mui/icons-material/BugReportRounded";
 import { http } from "../../api/http";
+import ModulePageHeader from "../layout/ModulePageHeader";
 import { brand } from "../../styles/designTokens";
 
 function formatDate(value) {
@@ -260,15 +261,11 @@ export function JudgeAssignedRoundsPanel() {
 
   return (
     <Box>
-      <Box sx={{ mb: 2.5 }}>
-        <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
-          Your Work
-        </Typography>
-        <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>Assigned Rounds</Typography>
-        <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-          Rounds and tracks you have been assigned to judge.
-        </Typography>
-      </Box>
+      <ModulePageHeader
+        eyebrow="Your Work"
+        title="Assigned Rounds"
+        description="Rounds and tracks you have been assigned to judge."
+      />
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
@@ -352,15 +349,11 @@ export function JudgeScoringQueuePanel() {
 
   return (
     <Box>
-      <Box sx={{ mb: 2.5 }}>
-        <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
-          Your Work
-        </Typography>
-        <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>Scoring Queue</Typography>
-        <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-          Submissions assigned to you for scoring. Click a submission to score it.
-        </Typography>
-      </Box>
+      <ModulePageHeader
+        eyebrow="Your Work"
+        title="Scoring Queue"
+        description="Submissions assigned to you for scoring. Click a submission to score it."
+      />
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
@@ -461,15 +454,11 @@ export function MentorTracksPanel() {
 
   return (
     <Box>
-      <Box sx={{ mb: 2.5 }}>
-        <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
-          Your Work
-        </Typography>
-        <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>Mentor Tracks</Typography>
-        <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-          Tracks you have been assigned to mentor.
-        </Typography>
-      </Box>
+      <ModulePageHeader
+        eyebrow="Your Work"
+        title="Mentor Tracks"
+        description="Tracks you have been assigned to mentor."
+      />
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 

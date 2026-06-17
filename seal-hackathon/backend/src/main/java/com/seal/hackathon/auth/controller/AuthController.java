@@ -35,6 +35,24 @@ public class AuthController {
                 .body(ApiResponse.ok("Register completed", authService.register(request)));
     }
 
+    @GetMapping("/register/rejected")
+    public ResponseEntity<ApiResponse<RejectedRegistrationDraftDto>> getRejectedRegistrationDraft(
+            @RequestParam("token") String token) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Rejected registration draft fetched",
+                authService.getRejectedRegistrationDraft(token)
+        ));
+    }
+
+    @PutMapping("/register/rejected")
+    public ResponseEntity<ApiResponse<RegisterResponse>> resubmitRejectedRegistration(
+            @Valid @RequestBody RejectedRegistrationResubmitRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Rejected registration resubmitted",
+                authService.resubmitRejectedRegistration(request)
+        ));
+    }
+
     @PostMapping("/register/send-otp")
     public ResponseEntity<ApiResponse<RegistrationOtpResponse>> sendRegistrationOtp(
             @Valid @RequestBody RegistrationOtpRequest request) {

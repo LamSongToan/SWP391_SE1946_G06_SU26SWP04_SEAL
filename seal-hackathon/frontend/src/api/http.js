@@ -6,6 +6,7 @@ const AUTH_STORAGE_KEY = "seal_auth";
 const GOOGLE_REGISTRATION_STORAGE_KEY = "seal_google_registration";
 const REGISTRATION_VERIFICATION_STORAGE_KEY = "seal_registration_verification";
 const PASSWORD_RESET_STORAGE_KEY = "seal_password_reset";
+const REJECTED_REGISTRATION_STORAGE_KEY = "seal_rejected_registration";
 
 export const authStorage = {
   get() {
@@ -22,6 +23,11 @@ export const authStorage = {
     const targetStorage = remember ? localStorage : sessionStorage;
     const otherStorage = remember ? sessionStorage : localStorage;
     otherStorage.removeItem(AUTH_STORAGE_KEY);
+    targetStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
+  },
+  update(payload) {
+    const inLocal = localStorage.getItem(AUTH_STORAGE_KEY);
+    const targetStorage = inLocal ? localStorage : sessionStorage;
     targetStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
   },
   clear() {
@@ -81,6 +87,24 @@ export const passwordResetStorage = {
   },
   clear() {
     sessionStorage.removeItem(PASSWORD_RESET_STORAGE_KEY);
+  },
+};
+
+export const rejectedRegistrationStorage = {
+  get() {
+    try {
+      const raw = sessionStorage.getItem(REJECTED_REGISTRATION_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      sessionStorage.removeItem(REJECTED_REGISTRATION_STORAGE_KEY);
+      return null;
+    }
+  },
+  set(payload) {
+    sessionStorage.setItem(REJECTED_REGISTRATION_STORAGE_KEY, JSON.stringify(payload));
+  },
+  clear() {
+    sessionStorage.removeItem(REJECTED_REGISTRATION_STORAGE_KEY);
   },
 };
 

@@ -25,6 +25,7 @@ import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { getApiErrorMessage, http } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
 import ConfirmActionDialog from "../layout/ConfirmActionDialog";
+import ModulePageHeader from "../layout/ModulePageHeader";
 import "./evaluation-workspace.css";
 
 function formatDateTime(value) {
@@ -50,6 +51,15 @@ function buildScoreState(criteria = []) {
       },
     ])
   );
+}
+
+function sanitizeScoreInput(value) {
+  if (value === "" || value == null) return "";
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return "";
+  if (numeric < 0) return 0;
+  if (numeric > 10) return 10;
+  return numeric;
 }
 
 function StatTile({ label, value, icon }) {
@@ -176,11 +186,12 @@ function ScoreInputForm({
                   value={current.scoreValue}
                   disabled={!editable}
                   inputProps={{ min: 0, max: 10, step: 0.25 }}
+                  helperText="0 to 10"
                   onChange={(event) => setScoreState((state) => ({
                     ...state,
                     [criterion.criteriaId]: {
                       ...state[criterion.criteriaId],
-                      scoreValue: event.target.value,
+                      scoreValue: sanitizeScoreInput(event.target.value),
                     },
                   }))}
                 />
@@ -269,7 +280,7 @@ function ScoreInputForm({
                         : "Draft saved"}
                   />
                   <Typography fontWeight={850}>
-                    {item.oldScoreValue == null ? "New" : item.oldScoreValue} → {item.newScoreValue}
+                    {item.oldScoreValue == null ? "New" : item.oldScoreValue} {"->"} {item.newScoreValue}
                   </Typography>
                 </Box>
               ))}
@@ -283,7 +294,7 @@ function ScoreInputForm({
 
 export default function EvaluationWorkspacePanel({ role, type }) {
   const isJudge = role === "JUDGE";
-  const assignedRoundsRef = useRef(null);
+  const judgeWorkspaceRef = useRef(null);
   const submissionQueueRef = useRef(null);
   const feedbackSectionRef = useRef(null);
   const [dashboard, setDashboard] = useState(null);
@@ -387,7 +398,7 @@ export default function EvaluationWorkspacePanel({ role, type }) {
   useEffect(() => {
     if (loading) return;
     const target = isJudge
-      ? (type === "rounds" ? assignedRoundsRef.current : submissionQueueRef.current)
+      ? judgeWorkspaceRef.current
       : (type === "notes" ? feedbackSectionRef.current : submissionQueueRef.current);
     const timeoutId = window.setTimeout(() => {
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -398,9 +409,9 @@ export default function EvaluationWorkspacePanel({ role, type }) {
   useEffect(() => {
     const scrollToRequestedSection = (event) => {
       const section = event.detail?.section;
-      const target = section === "judge-rounds"
-        ? assignedRoundsRef.current
-        : section === "scoring" || section === "mentor-teams"
+      const target = ["judging", "judge-rounds", "scoring"].includes(section)
+        ? judgeWorkspaceRef.current
+        : section === "mentor-teams"
           ? submissionQueueRef.current
           : section === "mentor-notes"
             ? feedbackSectionRef.current
@@ -466,10 +477,27 @@ export default function EvaluationWorkspacePanel({ role, type }) {
     return <Box className="eval-loading"><CircularProgress /></Box>;
   }
 
-  const title = isJudge ? "Judge Dashboard" : "Mentor Dashboard";
-  const subtitle = isJudge
-    ? "Review assigned rounds, open submissions, and record criterion-level scores."
-    : "Track assigned teams, review submissions, and provide feedback history.";
+  const headerCopy = (() => {
+    if (isJudge) {
+      return {
+        eyebrow: "Judge Workspace",
+        title: "Judging Workspace",
+        description: "Review assigned rounds, open submissions after the deadline, and score each team in one place.",
+      };
+    }
+    if (type === "notes") {
+      return {
+        eyebrow: "Mentor Workspace",
+        title: "Feedback Notes",
+        description: "Review mentored submissions and keep a clean feedback trail for every team.",
+      };
+    }
+    return {
+      eyebrow: "Mentor Workspace",
+      title: "Mentored Teams",
+      description: "Track assigned teams, review submissions, and follow their round progress.",
+    };
+  })();
 
   return (
     <Box>
@@ -484,19 +512,16 @@ export default function EvaluationWorkspacePanel({ role, type }) {
       />
 
       <Stack spacing={2}>
-        <Card className="eval-card">
-          <CardContent>
-            <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
-              <Box>
-                <Typography variant="h5" fontWeight={900}>{title}</Typography>
-                <Typography color="text.secondary">{subtitle}</Typography>
-              </Box>
-              <Button variant="outlined" startIcon={<RefreshRoundedIcon />} onClick={loadDashboard}>
-                Refresh
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
+        <ModulePageHeader
+          eyebrow={headerCopy.eyebrow}
+          title={headerCopy.title}
+          description={headerCopy.description}
+          actions={(
+            <Button variant="outlined" startIcon={<RefreshRoundedIcon />} onClick={loadDashboard}>
+              Refresh
+            </Button>
+          )}
+        />
 
         <Box className="eval-stat-grid">
           {isJudge ? (
@@ -517,172 +542,272 @@ export default function EvaluationWorkspacePanel({ role, type }) {
         </Box>
 
         {isJudge ? (
-          <Card className="eval-card eval-scroll-target" ref={assignedRoundsRef}>
+          <Card className="eval-card eval-scroll-target" ref={judgeWorkspaceRef}>
             <CardContent>
-              <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>Assigned Rounds</Typography>
-              <Box className="eval-list">
-                {(dashboard?.assignedRounds || []).length === 0 ? (
-                  <Box className="eval-empty-inline">No assigned rounds yet.</Box>
-                ) : dashboard.assignedRounds.map((round) => (
-                  <Box key={round.judgeAssignmentId} className="eval-list-row">
-                    <Box>
-                      <Typography fontWeight={850}>{round.roundName} · {round.trackName}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {round.eventName} · Deadline {formatDateTime(round.submissionDeadline)}
+              <Box className="eval-judge-layout">
+                <Box className="eval-judge-sidebar">
+                  <Box className="eval-subpanel">
+                    <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>Assigned Rounds</Typography>
+                    <Box className="eval-list">
+                      {(dashboard?.assignedRounds || []).length === 0 ? (
+                        <Box className="eval-empty-inline">No assigned rounds yet.</Box>
+                      ) : dashboard.assignedRounds.map((round) => (
+                        <Box key={round.judgeAssignmentId} className="eval-list-row">
+                          <Box>
+                            <Typography fontWeight={850}>{round.roundName} · {round.trackName}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {round.eventName} · Deadline {formatDateTime(round.submissionDeadline)}
+                            </Typography>
+                          </Box>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Chip size="small" label={`${round.scoredSubmissionCount}/${round.submissionCount} scored`} />
+                            <Chip size="small" color={round.scoreLocked ? "default" : "success"} label={round.scoreLocked ? "Locked" : "Open"} />
+                          </Stack>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+
+                  <Box className="eval-subpanel eval-scroll-target" ref={submissionQueueRef}>
+                    <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>Submission Queue</Typography>
+                    <Box className="eval-filter-bar">
+                      <FormControl size="small">
+                        <InputLabel>Round</InputLabel>
+                        <Select label="Round" value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
+                          <MenuItem value="all">All rounds</MenuItem>
+                          {filterOptions.rounds.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <FormControl size="small">
+                        <InputLabel>Track</InputLabel>
+                        <Select label="Track" value={trackFilter} onChange={(event) => setTrackFilter(event.target.value)}>
+                          <MenuItem value="all">All tracks</MenuItem>
+                          {filterOptions.tracks.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <FormControl size="small">
+                        <InputLabel>Status</InputLabel>
+                        <Select label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                          <MenuItem value="all">All statuses</MenuItem>
+                          {["NotStarted", "Draft", "Finalized"].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <Typography variant="body2" color="text.secondary" className="eval-filter-count">
+                        Showing {filteredSubmissions.length} of {submissions.length}
                       </Typography>
                     </Box>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Chip size="small" label={`${round.scoredSubmissionCount}/${round.submissionCount} scored`} />
-                      <Chip size="small" color={round.scoreLocked ? "default" : "success"} label={round.scoreLocked ? "Locked" : "Open"} />
-                    </Stack>
-                  </Box>
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <Box className="eval-scroll-target" ref={submissionQueueRef}>
-          <Card className="eval-card">
-            <CardContent>
-              <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>
-                {isJudge ? "Submission Queue" : "Mentored Submissions"}
-              </Typography>
-              <Box className="eval-filter-bar">
-                <FormControl size="small">
-                  <InputLabel>Round</InputLabel>
-                  <Select label="Round" value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
-                    <MenuItem value="all">All rounds</MenuItem>
-                    {filterOptions.rounds.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
-                  </Select>
-                </FormControl>
-                <FormControl size="small">
-                  <InputLabel>Track</InputLabel>
-                  <Select label="Track" value={trackFilter} onChange={(event) => setTrackFilter(event.target.value)}>
-                    <MenuItem value="all">All tracks</MenuItem>
-                    {filterOptions.tracks.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
-                  </Select>
-                </FormControl>
-                <FormControl size="small">
-                  <InputLabel>Status</InputLabel>
-                  <Select label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                    <MenuItem value="all">All statuses</MenuItem>
-                    {(isJudge ? ["NotStarted", "Draft", "Finalized"] : ["Submitted", "Evaluating", "Qualified", "Eliminated"])
-                      .map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
-                  </Select>
-                </FormControl>
-                <Typography variant="body2" color="text.secondary" className="eval-filter-count">
-                  Showing {filteredSubmissions.length} of {submissions.length}
-                </Typography>
-              </Box>
-              {filteredSubmissions.length === 0 ? (
-                <Box className="eval-empty-inline">No submissions available.</Box>
-              ) : (
-                <Box className="eval-list">
-                  {filteredSubmissions.map((submission) => {
-                    const selected = selectedSubmission?.submissionId === submission.submissionId;
-                    return (
-                      <Box
-                        key={submission.submissionId}
-                        className={`eval-list-row eval-clickable ${selected ? "is-selected" : ""}`}
-                        onClick={() => setSelectedSubmission(submission)}
-                      >
-                        <Box>
-                          <Typography fontWeight={850}>{submission.teamName}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {submission.roundName} · {submission.trackName}
-                          </Typography>
-                        </Box>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          {isJudge ? (
-                            <Chip
-                              size="small"
-                              color={submission.evaluationStatus === "Finalized" ? "success" : submission.evaluationStatus === "Draft" ? "warning" : "default"}
-                              label={submission.evaluationStatus === "NotStarted"
-                                ? `${submission.scoredCriteriaCount}/${submission.totalCriteriaCount}`
-                                : submission.evaluationStatus}
-                            />
-                          ) : null}
-                          <Chip size="small" variant="outlined" label={submission.submissionStatus} />
-                        </Stack>
+                    {filteredSubmissions.length === 0 ? (
+                      <Box className="eval-empty-inline">No submissions available.</Box>
+                    ) : (
+                      <Box className="eval-list">
+                        {filteredSubmissions.map((submission) => {
+                          const selected = selectedSubmission?.submissionId === submission.submissionId;
+                          return (
+                            <Box
+                              key={submission.submissionId}
+                              className={`eval-list-row eval-clickable ${selected ? "is-selected" : ""}`}
+                              onClick={() => setSelectedSubmission(submission)}
+                            >
+                              <Box>
+                                <Typography fontWeight={850}>{submission.teamName}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {submission.roundName} · {submission.trackName}
+                                </Typography>
+                              </Box>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Chip
+                                  size="small"
+                                  color={submission.evaluationStatus === "Finalized" ? "success" : submission.evaluationStatus === "Draft" ? "warning" : "default"}
+                                  label={submission.evaluationStatus === "NotStarted"
+                                    ? `${submission.scoredCriteriaCount}/${submission.totalCriteriaCount}`
+                                    : submission.evaluationStatus}
+                                />
+                                <Chip size="small" variant="outlined" label={submission.submissionStatus} />
+                              </Stack>
+                            </Box>
+                          );
+                        })}
                       </Box>
-                    );
-                  })}
+                    )}
+                  </Box>
                 </Box>
-              )}
+
+                <Box className="eval-detail-stack">
+                  {selectedSubmission ? (
+                    <>
+                      <Box className="eval-subpanel eval-selected-card">
+                        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
+                          <Box>
+                            <Typography variant="h6" fontWeight={850}>{selectedSubmission.teamName}</Typography>
+                            <Typography color="text.secondary">
+                              {selectedSubmission.eventName} · {selectedSubmission.roundName}
+                            </Typography>
+                          </Box>
+                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Chip label={selectedSubmission.trackName} />
+                            <Chip
+                              color={selectedSubmission.editable ? "success" : "default"}
+                              label={selectedSubmission.editable ? "Ready to score" : (scoreForm?.lockedReason || "Locked")}
+                            />
+                          </Stack>
+                        </Stack>
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
+                          <LinkButton href={selectedSubmission.repositoryUrl}>Repository</LinkButton>
+                          <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
+                          <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>
+                          Submission deadline: {formatDateTime(selectedSubmission.submissionDeadline)}
+                        </Typography>
+                      </Box>
+
+                      {scoreForm ? (
+                        <ScoreInputForm
+                          form={scoreForm}
+                          scoreState={scoreState}
+                          setScoreState={setScoreState}
+                          feedbackText={feedbackText}
+                          setFeedbackText={setFeedbackText}
+                          onSaveDraft={() => submitScores(false)}
+                          onFinalize={() => setConfirmFinalize(true)}
+                          saving={saving}
+                        />
+                      ) : null}
+
+                      <Box className="eval-subpanel eval-scroll-target" ref={feedbackSectionRef}>
+                        <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Your Feedback History</Typography>
+                        <FeedbackHistory items={feedbackHistory} />
+                      </Box>
+                    </>
+                  ) : (
+                    <Box className="eval-empty-inline">
+                      Select a submission from the queue to review links, scores, and your own feedback history.
+                    </Box>
+                  )}
+                </Box>
+              </Box>
             </CardContent>
           </Card>
-        </Box>
-
-        {selectedSubmission ? (
-          <Card className="eval-card">
-            <CardContent>
-              <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
-                <Box>
-                  <Typography variant="h6" fontWeight={850}>{selectedSubmission.teamName}</Typography>
-                  <Typography color="text.secondary">
-                    {selectedSubmission.eventName} · {selectedSubmission.roundName}
-                  </Typography>
-                </Box>
-                <Chip label={selectedSubmission.trackName} />
-              </Stack>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
-                <LinkButton href={selectedSubmission.repositoryUrl}>Repository</LinkButton>
-                <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
-                <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
-              </Stack>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {isJudge && scoreForm ? (
-          <ScoreInputForm
-            form={scoreForm}
-            scoreState={scoreState}
-            setScoreState={setScoreState}
-            feedbackText={feedbackText}
-            setFeedbackText={setFeedbackText}
-            onSaveDraft={() => submitScores(false)}
-            onFinalize={() => setConfirmFinalize(true)}
-            saving={saving}
-          />
-        ) : null}
-
-        <Box className="eval-scroll-target" ref={feedbackSectionRef}>
-          {!isJudge && selectedSubmission ? (
+        ) : (
+          <>
+            <Box className="eval-scroll-target" ref={submissionQueueRef}>
               <Card className="eval-card">
                 <CardContent>
-                  <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Mentor Feedback</Typography>
-                  <TextField
-                    label="Write feedback for this team"
-                    minRows={4}
-                    multiline
-                    fullWidth
-                    value={mentorFeedbackText}
-                    onChange={(event) => setMentorFeedbackText(event.target.value)}
-                  />
-                  <Stack direction="row" justifyContent="flex-end" sx={{ mt: 1.4 }}>
-                    <Button
-                      variant="contained"
-                      disabled={saving || !mentorFeedbackText.trim()}
-                      onClick={submitMentorFeedback}
-                    >
-                      {saving ? "Saving..." : "Add Feedback"}
-                    </Button>
+                  <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>
+                    Mentored Submissions
+                  </Typography>
+                  <Box className="eval-filter-bar">
+                    <FormControl size="small">
+                      <InputLabel>Round</InputLabel>
+                      <Select label="Round" value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
+                        <MenuItem value="all">All rounds</MenuItem>
+                        {filterOptions.rounds.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small">
+                      <InputLabel>Track</InputLabel>
+                      <Select label="Track" value={trackFilter} onChange={(event) => setTrackFilter(event.target.value)}>
+                        <MenuItem value="all">All tracks</MenuItem>
+                        {filterOptions.tracks.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small">
+                      <InputLabel>Status</InputLabel>
+                      <Select label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                        <MenuItem value="all">All statuses</MenuItem>
+                        {["Submitted", "Evaluating", "Qualified", "Eliminated"].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <Typography variant="body2" color="text.secondary" className="eval-filter-count">
+                      Showing {filteredSubmissions.length} of {submissions.length}
+                    </Typography>
+                  </Box>
+                  {filteredSubmissions.length === 0 ? (
+                    <Box className="eval-empty-inline">No submissions available.</Box>
+                  ) : (
+                    <Box className="eval-list">
+                      {filteredSubmissions.map((submission) => {
+                        const selected = selectedSubmission?.submissionId === submission.submissionId;
+                        return (
+                          <Box
+                            key={submission.submissionId}
+                            className={`eval-list-row eval-clickable ${selected ? "is-selected" : ""}`}
+                            onClick={() => setSelectedSubmission(submission)}
+                          >
+                            <Box>
+                              <Typography fontWeight={850}>{submission.teamName}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {submission.roundName} · {submission.trackName}
+                              </Typography>
+                            </Box>
+                            <Chip size="small" variant="outlined" label={submission.submissionStatus} />
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Box>
+
+            {selectedSubmission ? (
+              <Card className="eval-card">
+                <CardContent>
+                  <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
+                    <Box>
+                      <Typography variant="h6" fontWeight={850}>{selectedSubmission.teamName}</Typography>
+                      <Typography color="text.secondary">
+                        {selectedSubmission.eventName} · {selectedSubmission.roundName}
+                      </Typography>
+                    </Box>
+                    <Chip label={selectedSubmission.trackName} />
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
+                    <LinkButton href={selectedSubmission.repositoryUrl}>Repository</LinkButton>
+                    <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
+                    <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
                   </Stack>
                 </CardContent>
               </Card>
-          ) : null}
+            ) : null}
 
-          {selectedSubmission ? (
-            <Card className="eval-card" sx={{ mt: !isJudge ? 2 : 0 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Feedback History</Typography>
-                <FeedbackHistory items={feedbackHistory} />
-              </CardContent>
-            </Card>
-          ) : null}
-        </Box>
+            <Box className="eval-scroll-target" ref={feedbackSectionRef}>
+              {!isJudge && selectedSubmission ? (
+                <>
+                  <Card className="eval-card">
+                    <CardContent>
+                      <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Mentor Feedback</Typography>
+                      <TextField
+                        label="Write feedback for this team"
+                        minRows={4}
+                        multiline
+                        fullWidth
+                        value={mentorFeedbackText}
+                        onChange={(event) => setMentorFeedbackText(event.target.value)}
+                      />
+                      <Stack direction="row" justifyContent="flex-end" sx={{ mt: 1.4 }}>
+                        <Button
+                          variant="contained"
+                          disabled={saving || !mentorFeedbackText.trim()}
+                          onClick={submitMentorFeedback}
+                        >
+                          {saving ? "Saving..." : "Add Feedback"}
+                        </Button>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="eval-card" sx={{ mt: 2 }}>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Feedback History</Typography>
+                      <FeedbackHistory items={feedbackHistory} />
+                    </CardContent>
+                  </Card>
+                </>
+              ) : null}
+            </Box>
+          </>
+        )}
       </Stack>
       <ConfirmActionDialog
         open={confirmFinalize}

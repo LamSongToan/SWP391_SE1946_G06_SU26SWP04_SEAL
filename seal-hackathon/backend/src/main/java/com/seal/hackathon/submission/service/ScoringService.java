@@ -71,8 +71,8 @@ public class ScoringService {
 
         var event = eventRepository.findById(submission.getTeam().getTrack().getEventId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Event not found"));
-        if (EventStatus.from(event.getStatus()) != EventStatus.SCORING) {
-            throw new ApiException(HttpStatus.CONFLICT, "Scoring is only open while the event is in Scoring status");
+        if (EventStatus.from(event.getStatus()) != EventStatus.ONGOING) {
+            throw new ApiException(HttpStatus.CONFLICT, "Scoring is only open while the event is Ongoing");
         }
 
         ScoringCriteriaEntity criteria = criteriaRepository.findById(request.criteriaId())

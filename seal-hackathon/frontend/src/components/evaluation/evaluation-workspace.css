@@ -63,6 +63,30 @@
   gap: 10px;
 }
 
+.eval-judge-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.3fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.eval-judge-sidebar,
+.eval-detail-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.eval-subpanel {
+  padding: 16px;
+  border: 1px solid var(--se-line);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.eval-selected-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fffaf6 100%);
+}
+
 .eval-filter-bar {
   display: grid;
   grid-template-columns: repeat(3, minmax(150px, 220px)) 1fr;
@@ -157,6 +181,7 @@
 }
 
 @media (max-width: 900px) {
+  .eval-judge-layout,
   .eval-stat-grid,
   .eval-criterion-row,
   .eval-filter-bar,

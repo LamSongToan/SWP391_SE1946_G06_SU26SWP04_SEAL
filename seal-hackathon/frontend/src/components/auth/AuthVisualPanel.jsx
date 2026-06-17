@@ -191,7 +191,7 @@ export default function AuthVisualPanel({ mode = "login" }) {
               </Typography>
             </Stack>
             <Stack spacing={1.2} sx={{ p: 2.6, fontFamily: brand.font.mono, fontSize: 13 }}>
-              <Typography sx={{ color: brand.colors.amber, fontFamily: "inherit", fontSize: "inherit" }}>const season = ["Spring", "Summer", "Fall"];</Typography>
+              <Typography sx={{ color: brand.colors.amber, fontFamily: "inherit", fontSize: "inherit" }}>const semester = ["Spring", "Summer", "Fall"];</Typography>
               <Typography sx={{ color: "#EAF2FF", fontFamily: "inherit", fontSize: "inherit" }}>team.form({"{ members: 5, track: 'SE' }"});</Typography>
               <Typography sx={{ color: brand.colors.cyan, fontFamily: "inherit", fontSize: "inherit" }}>mentor.review(sprintDemo);</Typography>
               <Typography sx={{ color: brand.colors.orange, fontFamily: "inherit", fontSize: "inherit" }}>judge.publishLeaderboard();</Typography>
@@ -215,14 +215,14 @@ export default function AuthVisualPanel({ mode = "login" }) {
             }}
           >
             <Stack spacing={1.4}>
-              <Typography sx={{ fontSize: 13, fontWeight: 900 }}>SEAL Seasons</Typography>
-              {metrics.map(([season, label]) => (
-                <Stack key={season} direction="row" alignItems="center" spacing={1.1}>
+              <Typography sx={{ fontSize: 13, fontWeight: 900 }}>SEAL Semesters</Typography>
+              {metrics.map(([semester, label]) => (
+                <Stack key={semester} direction="row" alignItems="center" spacing={1.1}>
                   <Box sx={{ width: 34, height: 34, borderRadius: 2, display: "grid", placeItems: "center", bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 900 }}>
-                    {season[0]}
+                    {semester[0]}
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{season}</Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{semester}</Typography>
                     <Typography sx={{ fontSize: 11, color: brand.colors.muted }}>{label}</Typography>
                   </Box>
                 </Stack>

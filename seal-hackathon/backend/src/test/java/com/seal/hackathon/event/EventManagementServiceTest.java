@@ -51,9 +51,9 @@ class EventManagementServiceTest {
     private EventManagementService eventManagementService;
 
     @Test
-    void createEvent_shouldRejectDuplicateSeasonYear() {
+    void createEvent_shouldRejectDuplicateSemesterYear() {
         EventUpsertRequest request = newRequest("Fall", 2026, EventStatus.DRAFT.getDbValue());
-        when(eventRepository.existsByYearAndSeasonIgnoreCase(2026, "Fall")).thenReturn(true);
+        when(eventRepository.existsByYearAndSemesterIgnoreCase(2026, "Fall")).thenReturn(true);
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
                 () -> eventManagementService.createEvent(request));
@@ -63,8 +63,8 @@ class EventManagementServiceTest {
 
     @Test
     void createEvent_shouldStartAsDraft() {
-        EventUpsertRequest request = newRequest("Fall", 2026, EventStatus.REGISTRATION_OPEN.getDbValue());
-        when(eventRepository.existsByYearAndSeasonIgnoreCase(2026, "Fall")).thenReturn(false);
+        EventUpsertRequest request = newRequest("Fall", 2026, EventStatus.ONGOING.getDbValue());
+        when(eventRepository.existsByYearAndSemesterIgnoreCase(2026, "Fall")).thenReturn(false);
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
                 () -> eventManagementService.createEvent(request));
@@ -98,7 +98,7 @@ class EventManagementServiceTest {
 
         EventUpsertRequest request = newRequest("Fall", 2026, EventStatus.ONGOING.getDbValue());
         when(eventRepository.findById(1)).thenReturn(Optional.of(event));
-        when(eventRepository.existsByYearAndSeasonIgnoreCaseAndEventIdNot(2026, "Fall", 1)).thenReturn(false);
+        when(eventRepository.existsByYearAndSemesterIgnoreCaseAndEventIdNot(2026, "Fall", 1)).thenReturn(false);
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
                 () -> eventManagementService.updateEvent(1, request));
@@ -139,7 +139,7 @@ class EventManagementServiceTest {
         savedRound.setSubmissionDeadline(LocalDateTime.of(2026, 10, 20, 23, 59));
         savedRound.setPromotionRuleTopN(2);
 
-        when(eventRepository.existsByYearAndSeasonIgnoreCase(2026, "Fall")).thenReturn(false);
+        when(eventRepository.existsByYearAndSemesterIgnoreCase(2026, "Fall")).thenReturn(false);
         when(eventRepository.save(any(HackathonEventEntity.class))).thenReturn(savedEvent);
         when(eventRepository.findById(10)).thenReturn(Optional.of(savedEvent));
         when(eventRepository.existsById(10)).thenReturn(true);
@@ -331,7 +331,7 @@ class EventManagementServiceTest {
         round.setSubmissionDeadline(LocalDateTime.of(2026, 11, 10, 23, 59));
 
         when(eventRepository.findById(10)).thenReturn(Optional.of(event));
-        when(eventRepository.existsByYearAndSeasonIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
+        when(eventRepository.existsByYearAndSemesterIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
         when(roundRepository.findByEventIdOrderByRoundOrderAsc(10)).thenReturn(List.of(round));
 
         ApiException ex = Assertions.assertThrows(ApiException.class,
@@ -383,10 +383,10 @@ class EventManagementServiceTest {
     void updateEvent_shouldRejectStartingWithInvalidTeams() {
         HackathonEventEntity event = new HackathonEventEntity();
         event.setEventId(10);
-        event.setStatus(EventStatus.REGISTRATION_OPEN.getDbValue());
+        event.setStatus(EventStatus.ONGOING.getDbValue());
 
         when(eventRepository.findById(10)).thenReturn(Optional.of(event));
-        when(eventRepository.existsByYearAndSeasonIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
+        when(eventRepository.existsByYearAndSemesterIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
         when(roundRepository.findByEventIdOrderByRoundOrderAsc(10)).thenReturn(List.of());
         when(teamRepository.countInvalidTeamSizesByEventId(10, 3, 5)).thenReturn(1L);
 
@@ -455,7 +455,7 @@ class EventManagementServiceTest {
         roundOne.setPromotionRuleTopN(2);
 
         when(eventRepository.findById(10)).thenReturn(Optional.of(event));
-        when(eventRepository.existsByYearAndSeasonIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
+        when(eventRepository.existsByYearAndSemesterIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
         when(trackRepository.findByEventIdOrderByTrackIdAsc(10)).thenReturn(List.of(existingTrack));
         when(roundRepository.findByEventIdOrderByRoundOrderAsc(10)).thenReturn(new ArrayList<>(List.of(roundOne)));
         when(eventRepository.save(any(HackathonEventEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -475,7 +475,7 @@ class EventManagementServiceTest {
         });
 
         eventManagementService.updateEventConfiguration(10, new EventConfigurationUpdateRequest(
-                newRequest("Fall", 2026, EventStatus.CONFIGURED.getDbValue()),
+                newRequest("Fall", 2026, EventStatus.ONGOING.getDbValue()),
                 List.of(
                         new TrackConfigurationRequest(1, "Web Platform"),
                         new TrackConfigurationRequest(null, "AI")
@@ -490,7 +490,7 @@ class EventManagementServiceTest {
                         ),
                         new RoundConfigurationRequest(
                                 null,
-                                "Grand Final",
+                                "Closing Pitch",
                                 2,
                                 LocalDateTime.of(2026, 11, 10, 23, 59),
                                 1
@@ -498,7 +498,7 @@ class EventManagementServiceTest {
                 )
         ));
 
-        Assertions.assertEquals("Configured", event.getStatus());
+        Assertions.assertEquals("Ongoing", event.getStatus());
         Assertions.assertEquals("Web Platform", existingTrack.getName());
         Assertions.assertEquals("Final", roundOne.getRoundName());
         Assertions.assertEquals(1, roundOne.getRoundOrder());
@@ -506,10 +506,10 @@ class EventManagementServiceTest {
         verify(roundRepository, atLeastOnce()).save(any(RoundEntity.class));
     }
 
-    private EventUpsertRequest newRequest(String season, Integer year, String status) {
+    private EventUpsertRequest newRequest(String semester, Integer year, String status) {
         return new EventUpsertRequest(
-                "SEAL " + season + " " + year,
-                season,
+                "SEAL " + semester + " " + year,
+                semester,
                 year,
                 LocalDate.of(2026, 10, 10),
                 LocalDate.of(2026, 11, 20),

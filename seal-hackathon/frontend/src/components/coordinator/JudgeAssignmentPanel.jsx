@@ -24,6 +24,7 @@ import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
 import { http } from "../../api/http";
+import ModulePageHeader from "../layout/ModulePageHeader";
 import { brand } from "../../styles/designTokens";
 
 function getInitials(name = "") {
@@ -312,17 +313,11 @@ export default function JudgeAssignmentPanel() {
   }, [selectedEventId]);
   return (
     <Box>
-      <Box sx={{ mb: 2.5 }}>
-        <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
-          Event Setup
-        </Typography>
-        <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>
-          Judge Assignment
-        </Typography>
-        <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-          Assign judges to rounds and tracks for scoring.
-        </Typography>
-      </Box>
+      <ModulePageHeader
+        eyebrow="Event Setup"
+        title="Judge Assignment"
+        description="Assign judges to rounds and tracks for scoring."
+      />
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
@@ -333,14 +328,14 @@ export default function JudgeAssignmentPanel() {
       ) : events.length === 0 ? (
         <Box className="ms-empty">
           <Typography fontWeight={800}>No events configured</Typography>
-          <Typography color="text.secondary" variant="body2">Create an event first in Event Configuration.</Typography>
+          <Typography color="text.secondary" variant="body2">Create an event first before assigning judges.</Typography>
         </Box>
       ) : (
         <>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2.5 }}>
             {events.map((event) => (
               <Chip key={event.eventId}
-                label={`${event.name} (${event.season} ${event.year})`}
+                label={event.name}
                 onClick={() => setSelectedEventId(event.eventId)}
                 sx={{
                   cursor: "pointer",
@@ -360,7 +355,7 @@ export default function JudgeAssignmentPanel() {
           ) : rounds.length === 0 ? (
             <Box className="ms-empty">
               <Typography fontWeight={800}>No rounds for this event</Typography>
-              <Typography color="text.secondary" variant="body2">Configure rounds in Event Configuration first.</Typography>
+              <Typography color="text.secondary" variant="body2">Add rounds to this event before assigning judges.</Typography>
             </Box>
           ) : (
             <Stack spacing={1.5}>

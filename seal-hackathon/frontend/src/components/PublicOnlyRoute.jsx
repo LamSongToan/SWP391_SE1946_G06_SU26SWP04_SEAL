@@ -5,7 +5,7 @@ export default function PublicOnlyRoute({ children, redirectTo = "/dashboard" })
   const auth = authStorage.get();
 
   if (isAuthSessionValid(auth)) {
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to={auth?.mustChangePassword ? "/dashboard?section=password&forcePasswordChange=1" : redirectTo} replace />;
   }
 
   if (auth?.accessToken) {

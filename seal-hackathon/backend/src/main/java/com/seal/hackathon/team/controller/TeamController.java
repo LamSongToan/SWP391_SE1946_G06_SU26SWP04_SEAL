@@ -5,6 +5,7 @@ import com.seal.hackathon.event.dto.TrackDto;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.InviteTeamMemberRequest;
 import com.seal.hackathon.team.dto.JoinTeamRequest;
+import com.seal.hackathon.team.dto.RegisterTeamForEventRequest;
 import com.seal.hackathon.team.dto.TeamDto;
 import com.seal.hackathon.team.dto.TeamInvitationDto;
 import com.seal.hackathon.team.service.TeamService;
@@ -54,6 +55,17 @@ public class TeamController {
     public ResponseEntity<ApiResponse<TeamDto>> createTeam(Authentication authentication,
                                                           @Valid @RequestBody CreateTeamRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Team created", teamService.createTeam(authentication, request)));
+    }
+
+    @PostMapping("/{teamId}/register-event")
+    public ResponseEntity<ApiResponse<TeamDto>> registerTeamForEvent(
+            Authentication authentication,
+            @PathVariable Integer teamId,
+            @Valid @RequestBody RegisterTeamForEventRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Team registered for event",
+                teamService.registerTeamForEvent(authentication, teamId, request)
+        ));
     }
 
     @PostMapping("/{teamId}/invitations")

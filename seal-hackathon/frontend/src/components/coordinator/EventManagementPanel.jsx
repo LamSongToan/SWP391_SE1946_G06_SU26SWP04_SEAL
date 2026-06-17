@@ -23,7 +23,7 @@ import { getApiErrorMessage, http } from "../../api/http";
 
 const EMPTY_FORM = {
   name: "",
-  season: "Summer",
+  semester: "Summer",
   year: new Date().getFullYear(),
   startDate: "",
   endDate: "",
@@ -33,13 +33,8 @@ const EMPTY_FORM = {
 
 const EVENT_STATUS_OPTIONS = [
   "Draft",
-  "Configured",
-  "RegistrationOpen",
   "Ongoing",
-  "Scoring",
-  "ResultPublished",
-  "Closed",
-  "Cancelled",
+  "Ended",
 ];
 
 function toDateRange(startDate, endDate) {
@@ -82,7 +77,7 @@ export default function EventManagementPanel() {
     setDialog({ open: true, mode: "edit", eventId: event.eventId });
     setForm({
       name: event.name || "",
-      season: event.season || "",
+      semester: event.semester || "",
       year: event.year || new Date().getFullYear(),
       startDate: event.startDate || "",
       endDate: event.endDate || "",
@@ -138,7 +133,7 @@ export default function EventManagementPanel() {
         <Box>
           <Typography variant="h6">Event Management</Typography>
           <Typography variant="body2" color="text.secondary">
-            Create and maintain hackathon events for each season.
+            Create and maintain hackathon events for each semester.
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
@@ -161,7 +156,7 @@ export default function EventManagementPanel() {
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Season</TableCell>
+                <TableCell>Semester</TableCell>
                 <TableCell>Year</TableCell>
                 <TableCell>Date Range</TableCell>
                 <TableCell>Status</TableCell>
@@ -177,7 +172,7 @@ export default function EventManagementPanel() {
                       {event.description || "No description"}
                     </Typography>
                   </TableCell>
-                  <TableCell>{event.season}</TableCell>
+                  <TableCell>{event.semester}</TableCell>
                   <TableCell>{event.year}</TableCell>
                   <TableCell>{toDateRange(event.startDate, event.endDate)}</TableCell>
                   <TableCell>{event.status}</TableCell>
@@ -202,7 +197,7 @@ export default function EventManagementPanel() {
           <Stack spacing={1.5} sx={{ pt: 1 }}>
             <TextField label="Name" value={form.name} onChange={onChange("name")} fullWidth />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-              <TextField select label="Season" value={form.season} onChange={onChange("season")} fullWidth>
+              <TextField select label="Semester" value={form.semester} onChange={onChange("semester")} fullWidth>
                 <MenuItem value="Spring">Spring</MenuItem>
                 <MenuItem value="Summer">Summer</MenuItem>
                 <MenuItem value="Fall">Fall</MenuItem>

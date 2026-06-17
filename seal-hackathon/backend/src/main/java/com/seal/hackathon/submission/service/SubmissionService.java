@@ -5,6 +5,7 @@ import com.seal.hackathon.auth.entity.UserEntity;
 import com.seal.hackathon.auth.repository.StudentProfileRepository;
 import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.common.ApiException;
+import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.RoundEntity;
@@ -29,8 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class SubmissionService {
@@ -50,6 +53,7 @@ public class SubmissionService {
     private final HackathonEventRepository eventRepository;
     private final UserRepository userRepository;
     private final StudentProfileRepository studentProfileRepository;
+    private final AuditLogService auditLogService;
 
     public SubmissionService(SubmissionRepository submissionRepository,
                              SubmissionHistoryRepository historyRepository,
@@ -58,7 +62,8 @@ public class SubmissionService {
                              RoundRepository roundRepository,
                              HackathonEventRepository eventRepository,
                              UserRepository userRepository,
-                             StudentProfileRepository studentProfileRepository) {
+                             StudentProfileRepository studentProfileRepository,
+                             AuditLogService auditLogService) {
         this.submissionRepository = submissionRepository;
         this.historyRepository = historyRepository;
         this.teamRepository = teamRepository;
@@ -67,6 +72,7 @@ public class SubmissionService {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.studentProfileRepository = studentProfileRepository;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional(readOnly = true)
@@ -138,6 +144,15 @@ public class SubmissionService {
 
         SubmissionEntity saved = submissionRepository.save(submission);
         recordHistory(saved, leader, ACTION_CREATED, null, null, null, null);
+        auditLogService.record(
+                "SUBMISSION_CREATED",
+                "SUBMISSION",
+                saved.getSubmissionId(),
+                saved.getTeam().getTeamName() + " - " + saved.getRound().getRoundName(),
+                null,
+                buildSubmissionAuditPayload(saved),
+                "Team submitted round deliverables"
+        );
         return toDto(saved, leader.getUserRoleId());
     }
 
@@ -161,6 +176,15 @@ public class SubmissionService {
         applyRequest(submission, request);
         SubmissionEntity saved = submissionRepository.save(submission);
         recordHistory(saved, leader, ACTION_UPDATED, oldRepositoryUrl, oldDemoUrl, oldSlideUrl, oldStatus);
+        auditLogService.record(
+                "SUBMISSION_UPDATED",
+                "SUBMISSION",
+                saved.getSubmissionId(),
+                saved.getTeam().getTeamName() + " - " + saved.getRound().getRoundName(),
+                buildSubmissionAuditPayload(oldRepositoryUrl, oldDemoUrl, oldSlideUrl, oldStatus),
+                buildSubmissionAuditPayload(saved),
+                "Team updated submission links before judging"
+        );
         return toDto(saved, leader.getUserRoleId());
     }
 
@@ -362,6 +386,27 @@ public class SubmissionService {
         history.setOldStatus(oldStatus);
         history.setNewStatus(submission.getStatus());
         historyRepository.save(history);
+    }
+
+    private Map<String, Object> buildSubmissionAuditPayload(SubmissionEntity submission) {
+        return buildSubmissionAuditPayload(
+                submission.getRepositoryUrl(),
+                submission.getDemoUrl(),
+                submission.getSlideUrl(),
+                submission.getStatus()
+        );
+    }
+
+    private Map<String, Object> buildSubmissionAuditPayload(String repositoryUrl,
+                                                            String demoUrl,
+                                                            String slideUrl,
+                                                            String status) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("repositoryUrl", repositoryUrl);
+        payload.put("demoUrl", demoUrl);
+        payload.put("slideUrl", slideUrl);
+        payload.put("status", status);
+        return payload;
     }
 
     private StudentProfileEntity currentStudent(Authentication authentication) {

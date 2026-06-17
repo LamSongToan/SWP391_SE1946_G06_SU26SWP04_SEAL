@@ -5,6 +5,8 @@ import com.seal.hackathon.event.dto.EventManagementDto;
 import com.seal.hackathon.event.dto.EventConfigurationUpdateRequest;
 import com.seal.hackathon.event.dto.EventSetupCreateRequest;
 import com.seal.hackathon.event.dto.EventUpsertRequest;
+import com.seal.hackathon.event.dto.EventWizardDetailDto;
+import com.seal.hackathon.event.dto.EventWizardRequest;
 import com.seal.hackathon.event.dto.RoundManagementDto;
 import com.seal.hackathon.event.dto.RoundScoreLockRequest;
 import com.seal.hackathon.event.dto.RoundUpsertRequest;
@@ -41,6 +43,29 @@ public class CoordinatorEventController {
     @GetMapping("/events")
     public ResponseEntity<ApiResponse<List<EventManagementDto>>> getEvents() {
         return ResponseEntity.ok(ApiResponse.ok("Events fetched", eventManagementService.listEvents()));
+    }
+
+    @GetMapping("/events/{eventId}/wizard")
+    public ResponseEntity<ApiResponse<EventWizardDetailDto>> getEventWizard(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(ApiResponse.ok("Event wizard fetched", eventManagementService.getEventWizard(eventId)));
+    }
+
+    @PostMapping("/events/wizard")
+    public ResponseEntity<ApiResponse<EventWizardDetailDto>> createEventWizard(@RequestBody EventWizardRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Event draft saved", eventManagementService.createEventWizard(request)));
+    }
+
+    @PutMapping("/events/{eventId}/wizard")
+    public ResponseEntity<ApiResponse<EventWizardDetailDto>> updateEventWizard(
+            @PathVariable Integer eventId,
+            @RequestBody EventWizardRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Event draft saved", eventManagementService.updateEventWizard(eventId, request)));
+    }
+
+    @PostMapping("/events/{eventId}/publish")
+    public ResponseEntity<ApiResponse<EventWizardDetailDto>> publishEvent(@PathVariable Integer eventId) {
+        return ResponseEntity.ok(ApiResponse.ok("Event published", eventManagementService.publishEvent(eventId)));
     }
 
     @PostMapping("/events")

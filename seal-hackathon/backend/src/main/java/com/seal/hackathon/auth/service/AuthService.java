@@ -5,6 +5,9 @@ import com.seal.hackathon.auth.dto.GoogleLoginRequest;
 import com.seal.hackathon.auth.dto.GoogleLoginResponse;
 import com.seal.hackathon.auth.dto.GoogleRegisterRequest;
 import com.seal.hackathon.auth.dto.LoginRequest;
+import com.seal.hackathon.auth.dto.RejectedLoginPayload;
+import com.seal.hackathon.auth.dto.RejectedRegistrationDraftDto;
+import com.seal.hackathon.auth.dto.RejectedRegistrationResubmitRequest;
 import com.seal.hackathon.auth.dto.RegistrationOtpRequest;
 import com.seal.hackathon.auth.dto.RegistrationOtpResponse;
 import com.seal.hackathon.auth.dto.RegisterRequest;
@@ -36,6 +39,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import io.jsonwebtoken.Claims;
 
 @Service
 public class AuthService {
@@ -53,6 +57,9 @@ public class AuthService {
 
     @Value("${app.auth.auto-approve-new-user:false}")
     private boolean autoApproveNewUser;
+
+    @Value("${app.auth.rejected-resubmit.expiration-seconds:1800}")
+    private long rejectedResubmitTokenExpirySeconds;
 
     public AuthService(UserRepository userRepository,
                        StudentProfileRepository studentProfileRepository,
@@ -155,6 +162,61 @@ public class AuthService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public RejectedRegistrationDraftDto getRejectedRegistrationDraft(String token) {
+        UserEntity user = validateRejectedResubmitToken(token);
+        StudentProfileEntity studentProfile = studentProfileRepository.findByUserRoleUserUserId(user.getUserId())
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Student profile is missing"));
+        return toRejectedDraftDto(user, studentProfile, token);
+    }
+
+    @Transactional
+    public RegisterResponse resubmitRejectedRegistration(RejectedRegistrationResubmitRequest request) {
+        UserEntity user = validateRejectedResubmitToken(request.token());
+        StudentProfileEntity studentProfile = studentProfileRepository.findByUserRoleUserUserId(user.getUserId())
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Student profile is missing"));
+
+        String normalizedUsername = normalizeUsername(request.username());
+        if (!normalizedUsername.equalsIgnoreCase(user.getUsername())
+                && userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
+            throw new ApiException(HttpStatus.CONFLICT, "Username already exists");
+        }
+
+        validateStudentClassification(
+                request.studentType(),
+                request.fptStudentCode(),
+                request.externalStudentCode(),
+                request.externalUniversity(),
+                user.getUserId()
+        );
+
+        user.setUsername(normalizedUsername);
+        user.setFullName(request.fullName().trim());
+        user.setApproved(false);
+        user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
+        user.setRejectionReason(null);
+
+        studentProfile.setStudentType(request.studentType().name());
+        if (request.studentType() == StudentType.FPT) {
+            studentProfile.setStudentCode(normalizeFptStudentCode(request.fptStudentCode()));
+            studentProfile.setUniversityName(FPT_UNIVERSITY);
+        } else {
+            studentProfile.setStudentCode(request.externalStudentCode().trim());
+            studentProfile.setUniversityName(request.externalUniversity().trim());
+        }
+
+        userRepository.save(user);
+        studentProfileRepository.save(studentProfile);
+
+        return new RegisterResponse(
+                user.getUserId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getStatus(),
+                "Registration updated successfully. Account is pending coordinator approval again."
+        );
+    }
+
     private RegisterResponse registerStudentAccount(String username,
                                                    String email,
                                                    String rawPassword,
@@ -174,7 +236,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.CONFLICT, "Email already exists");
         }
 
-        validateStudentClassification(studentType, fptStudentCode, externalStudentCode, externalUniversity);
+        validateStudentClassification(studentType, fptStudentCode, externalStudentCode, externalUniversity, null);
 
         UserEntity user = new UserEntity();
         user.setUsername(normalizedUsername);
@@ -228,7 +290,8 @@ public class AuthService {
     private void validateStudentClassification(StudentType studentType,
                                                String fptStudentCode,
                                                String externalStudentCode,
-                                               String externalUniversity) {
+                                               String externalUniversity,
+                                               Integer excludeUserId) {
         if (studentType == StudentType.FPT) {
             if (isBlank(fptStudentCode)) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "fptStudentCode is required for FPT student");
@@ -238,8 +301,12 @@ public class AuthService {
                 throw new ApiException(HttpStatus.BAD_REQUEST,
                         "FPT student code must have 8 characters: campus code (SE, HE, DE, QE, CE) followed by 6 digits");
             }
-            if (studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCase(
-                    normalizedCode, FPT_UNIVERSITY)) {
+            boolean duplicate = excludeUserId == null
+                    ? studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCase(
+                    normalizedCode, FPT_UNIVERSITY)
+                    : studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCaseAndUserRoleUserUserIdNot(
+                    normalizedCode, FPT_UNIVERSITY, excludeUserId);
+            if (duplicate) {
                 throw new ApiException(HttpStatus.CONFLICT, "Student ID already exists in FPT University HCMC");
             }
             return;
@@ -253,8 +320,12 @@ public class AuthService {
         }
         String normalizedExternalCode = externalStudentCode.trim();
         String normalizedExternalUniversity = externalUniversity.trim();
-        if (studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCase(
-                normalizedExternalCode, normalizedExternalUniversity)) {
+        boolean duplicate = excludeUserId == null
+                ? studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCase(
+                normalizedExternalCode, normalizedExternalUniversity)
+                : studentProfileRepository.existsByStudentCodeIgnoreCaseAndUniversityNameIgnoreCaseAndUserRoleUserUserIdNot(
+                normalizedExternalCode, normalizedExternalUniversity, excludeUserId);
+        if (duplicate) {
             throw new ApiException(HttpStatus.CONFLICT, "Student ID already exists in the selected university");
         }
     }
@@ -297,7 +368,8 @@ public class AuthService {
                 user.getUsername(),
                 user.getFullName(),
                 user.getStatus(),
-                roleNames
+                roleNames,
+                Boolean.TRUE.equals(user.getMustChangePassword())
         );
     }
 
@@ -308,11 +380,14 @@ public class AuthService {
         }
 
         if (status == UserStatus.REJECTED) {
-            String reason = user.getRejectionReason();
-            String message = isBlank(reason)
-                    ? "Account request was rejected."
-                    : "Account request was rejected. Reason: " + reason.trim();
-            throw new ApiException(HttpStatus.FORBIDDEN, message);
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "Account request was rejected.",
+                    new RejectedLoginPayload(
+                            isBlank(user.getRejectionReason()) ? null : user.getRejectionReason().trim(),
+                            generateRejectedResubmitToken(user)
+                    )
+            );
         }
 
         if (status == UserStatus.PENDING_APPROVAL) {
@@ -326,5 +401,64 @@ public class AuthService {
         }
 
         throw new ApiException(HttpStatus.FORBIDDEN, "Account is not allowed to sign in.");
+    }
+
+    private String generateRejectedResubmitToken(UserEntity user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("purpose", "REJECTED_RESUBMIT");
+        claims.put("userId", user.getUserId());
+        claims.put("status", user.getStatus());
+        return jwtService.generateToken(user.getEmail(), claims, rejectedResubmitTokenExpirySeconds);
+    }
+
+    private UserEntity validateRejectedResubmitToken(String token) {
+        if (isBlank(token)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Resubmission token is required");
+        }
+
+        Claims claims;
+        try {
+            claims = jwtService.extractAllClaims(token.trim());
+        } catch (Exception ex) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Resubmission token is invalid or expired");
+        }
+
+        if (jwtService.isTokenExpired(token.trim())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Resubmission token is invalid or expired");
+        }
+
+        String purpose = Objects.toString(claims.get("purpose"), "");
+        if (!"REJECTED_RESUBMIT".equals(purpose)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Resubmission token is invalid or expired");
+        }
+
+        Integer userId = claims.get("userId", Integer.class);
+        String email = claims.getSubject();
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!user.getEmail().equalsIgnoreCase(email) || UserStatus.from(user.getStatus()) != UserStatus.REJECTED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "This registration can no longer be resubmitted");
+        }
+
+        return user;
+    }
+
+    private RejectedRegistrationDraftDto toRejectedDraftDto(UserEntity user,
+                                                            StudentProfileEntity studentProfile,
+                                                            String token) {
+        StudentType studentType = StudentType.valueOf(studentProfile.getStudentType().trim().toUpperCase(Locale.ROOT));
+        boolean isFpt = studentType == StudentType.FPT;
+        return new RejectedRegistrationDraftDto(
+                token,
+                user.getEmail(),
+                user.getUsername(),
+                user.getFullName(),
+                studentType,
+                isFpt ? studentProfile.getStudentCode() : null,
+                isFpt ? null : studentProfile.getStudentCode(),
+                isFpt ? null : studentProfile.getUniversityName(),
+                user.getRejectionReason()
+        );
     }
 }

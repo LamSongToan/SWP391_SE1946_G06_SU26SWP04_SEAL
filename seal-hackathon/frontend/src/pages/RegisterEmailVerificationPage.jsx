@@ -19,6 +19,7 @@ import {
   authStorage,
   googleRegistrationStorage,
   http,
+  rejectedRegistrationStorage,
   registrationVerificationStorage,
 } from "../api/http";
 import { brand } from "../styles/designTokens";
@@ -137,9 +138,20 @@ export default function RegisterEmailVerificationPage() {
       authStorage.set(data?.auth);
       googleRegistrationStorage.clear();
       registrationVerificationStorage.clear();
-      navigate("/dashboard?section=account");
+      navigate("/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Google sign-in failed");
+      const message = err?.response?.data?.message || err?.message || "Google sign-in failed";
+      const payload = err?.response?.data?.data || null;
+      if (message.toLowerCase().includes("rejected") && payload?.resubmitToken) {
+        const rejectedRegistration = {
+          resubmitToken: payload.resubmitToken,
+          rejectionReason: payload.rejectionReason || "",
+        };
+        rejectedRegistrationStorage.set(rejectedRegistration);
+        navigate("/register", { replace: true, state: { rejectedRegistration } });
+        return;
+      }
+      setError(message);
     } finally {
       setGoogleLoading(false);
     }

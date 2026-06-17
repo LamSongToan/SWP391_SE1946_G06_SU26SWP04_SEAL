@@ -53,6 +53,8 @@ import UserProfilePanel from "../components/profile/UserProfilePanel";
 import UserDirectoryPanel from "../components/user/UserDirectoryPanel";
 import ChangePasswordPage from "./ChangePasswordPage";
 import TeamManagementPanel from "../components/team/TeamManagementPanel";
+import EventRegistrationPanel from "../components/team/EventRegistrationPanel";
+import StudentSubmissionPanel from "../components/team/StudentSubmissionPanel";
 import EvaluationWorkspacePanel from "../components/evaluation/EvaluationWorkspacePanel";
 import { MentorTracksPanel } from "../components/workspace/RoleWorkspacePanels";
 import { brand, roleColors, roleLabels } from "../styles/designTokens";
@@ -61,8 +63,14 @@ const DRAWER_WIDTH = 270;
 
 const APP_NAME = "SEAL";
 
+const HOME_NAV = [
+  { key: "dashboard", label: "Dashboard", icon: <HomeRoundedIcon fontSize="small" /> },
+];
+
 const STUDENT_CORE_NAV = [
   { key: "teams", label: "My Teams", icon: <GroupsRoundedIcon fontSize="small" /> },
+  { key: "event-registration", label: "Event Registration", icon: <EventRoundedIcon fontSize="small" /> },
+  { key: "submissions", label: "Submissions", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
 ];
 
 const COORDINATOR_CORE_NAV = [
@@ -82,8 +90,7 @@ const MENTOR_CORE_NAV = [
 ];
 
 const JUDGE_CORE_NAV = [
-  { key: "judge-rounds", label: "Assigned Rounds", icon: <GavelRoundedIcon fontSize="small" /> },
-  { key: "scoring", label: "Scoring Queue", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
+  { key: "judging", label: "Judging Workspace", icon: <GavelRoundedIcon fontSize="small" /> },
 ];
 
 const ACCOUNT_NAV = [
@@ -92,11 +99,10 @@ const ACCOUNT_NAV = [
   { key: "password", label: "Change Password", icon: <LockRoundedIcon fontSize="small" /> },
 ];
 
-const EVENT_DRAFT_STORAGE_PREFIX = "seal-event-config-draft:";
 const PROFILE_DRAFT_STORAGE_KEY = "seal-profile-draft";
 
-function getEventDraftStorageKey(eventId) {
-  return `${EVENT_DRAFT_STORAGE_PREFIX}${eventId}`;
+function getDefaultSectionForRole() {
+  return "dashboard";
 }
 
 function getAvatarInitials(profile = {}, auth = {}) {
@@ -128,7 +134,7 @@ function pickDeadline(teams = []) {
     || "No deadline yet";
 }
 
-function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, stats }) {
+function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, stats, eventNotifications = [] }) {
   const displayName = profileSummary?.fullName || auth?.fullName || auth?.username || "SEAL participant";
   const isLeader = currentRole === "STUDENT" && stats.leaderTeams > 0;
   const displayRole = isLeader ? "TEAM_LEADER" : currentRole;
@@ -257,6 +263,73 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
           </Box>
         ))}
       </Box>
+
+      {["STUDENT", "MENTOR", "JUDGE"].includes(currentRole) ? (
+        <Box
+          sx={{
+            mt: 2,
+            p: { xs: 2, md: 2.2 },
+            borderRadius: brand.radius.xl,
+            bgcolor: brand.colors.surface,
+            border: `1px solid ${brand.colors.line}`,
+            boxShadow: brand.shadow.sm,
+          }}
+        >
+          <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }}>
+            <Box>
+              <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950 }}>
+                Event Updates
+              </Typography>
+              <Typography sx={{ color: brand.colors.muted, fontSize: 13.5 }}>
+                Coordinator changes that may affect your current event workflow.
+              </Typography>
+            </Box>
+            <Chip label={`${eventNotifications.length} recent`} sx={{ alignSelf: { xs: "flex-start", md: "center" } }} />
+          </Stack>
+
+          {eventNotifications.length === 0 ? (
+            <Box className="ms-empty">
+              <Typography fontWeight={800}>No recent event updates</Typography>
+              <Typography color="text.secondary" variant="body2">
+                New event notices will appear here when deadlines, rounds, promotion rules, or scoring settings change.
+              </Typography>
+            </Box>
+          ) : (
+            <Stack spacing={1}>
+              {eventNotifications.map((item) => (
+                <Box
+                  key={item.notificationId}
+                  sx={{
+                    p: 1.4,
+                    borderRadius: brand.radius.md,
+                    border: `1px solid ${brand.colors.line}`,
+                    bgcolor: brand.colors.surfaceSoft,
+                  }}
+                >
+                  <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
+                        {item.title}
+                      </Typography>
+                      <Typography sx={{ color: brand.colors.muted, fontSize: 13, mt: 0.35 }}>
+                        {item.eventName}
+                      </Typography>
+                      <Typography sx={{ color: brand.colors.text, fontSize: 13.5, mt: 0.8 }}>
+                        {item.message}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      icon={<HistoryRoundedIcon fontSize="small" />}
+                      label={formatDashboardDate(item.createdAt)}
+                      sx={{ alignSelf: { xs: "flex-start", md: "center" } }}
+                    />
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Box>
+      ) : null}
     </Box>
   );
 }
@@ -274,152 +347,6 @@ function formatDashboardDate(value) {
   });
 }
 
-function StudentSubmissionDashboard({ teams, roundsByTeam, onOpenTeam }) {
-  const rows = teams.flatMap((team) => (
-    roundsByTeam[team.teamId] || []
-  ).map((round) => ({
-    ...round,
-    teamId: team.teamId,
-    teamName: team.teamName,
-    eventName: team.eventName,
-    leader: team.currentUserLeader,
-  })));
-
-  const openRows = rows.filter((row) => row.editable && !row.submitted);
-  const submittedRows = rows.filter((row) => row.submitted);
-  const lockedRows = rows.filter((row) => !row.editable && !row.submitted);
-  const nextRows = [...openRows, ...submittedRows, ...lockedRows]
-    .sort((a, b) => new Date(a.submissionDeadline || 0) - new Date(b.submissionDeadline || 0))
-    .slice(0, 4);
-
-  const statItems = [
-    ["Open Rounds", openRows.length, brand.colors.green, "Ready for submission now"],
-    ["Submitted", submittedRows.length, brand.colors.blue, "Submission records created"],
-    ["Locked", lockedRows.length, brand.colors.muted, "Waiting for event status, qualification, or deadline"],
-  ];
-
-  return (
-    <Box
-      sx={{
-        mb: 3,
-        p: { xs: 2, md: 2.4 },
-        borderRadius: brand.radius.xl,
-        bgcolor: brand.colors.surface,
-        border: `1px solid ${brand.colors.line}`,
-        boxShadow: brand.shadow.sm,
-      }}
-    >
-      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1.5} sx={{ mb: 2 }}>
-        <Box>
-          <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
-            Submission Workspace
-          </Typography>
-          <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>
-            Submission Command Center
-          </Typography>
-          <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-            Track round availability, submitted links, and blocked submission states across your teams.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<GroupsRoundedIcon />}
-          onClick={() => onOpenTeam()}
-          sx={{ alignSelf: { xs: "stretch", md: "center" }, borderRadius: 999, px: 2.4 }}
-        >
-          Open My Teams
-        </Button>
-      </Stack>
-
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" }, gap: 1.4, mb: 2 }}>
-        {statItems.map(([label, value, color, hint]) => (
-          <Box
-            key={label}
-            sx={{
-              p: 1.8,
-              borderRadius: brand.radius.lg,
-              bgcolor: brand.colors.surfaceSoft,
-              border: `1px solid ${brand.colors.line}`,
-            }}
-          >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
-              <Box>
-                <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900 }}>{label}</Typography>
-                <Typography sx={{ color, fontSize: 28, fontWeight: 950, lineHeight: 1.1 }}>{value}</Typography>
-              </Box>
-              <AssignmentTurnedInRoundedIcon sx={{ color, opacity: 0.85 }} />
-            </Stack>
-            <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.8 }}>{hint}</Typography>
-          </Box>
-        ))}
-      </Box>
-
-      {teams.length === 0 ? (
-        <Box className="ms-empty">
-          <Typography fontWeight={800}>No team workspace yet</Typography>
-          <Typography color="text.secondary" variant="body2">
-            Create or join a team before using submission features.
-          </Typography>
-        </Box>
-      ) : nextRows.length === 0 ? (
-        <Box className="ms-empty">
-          <Typography fontWeight={800}>No configured submission rounds</Typography>
-          <Typography color="text.secondary" variant="body2">
-            Rounds will appear after the event coordinator configures the event timeline.
-          </Typography>
-        </Box>
-      ) : (
-        <Box sx={{ display: "grid", gap: 1 }}>
-          {nextRows.map((row) => (
-            <Box
-              key={`${row.teamId}-${row.roundId}`}
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1.4fr 1fr auto" },
-                gap: 1.2,
-                alignItems: "center",
-                p: 1.4,
-                borderRadius: brand.radius.md,
-                border: `1px solid ${brand.colors.line}`,
-                bgcolor: row.editable && !row.submitted ? "#F4FFF9" : "#FFFFFF",
-              }}
-            >
-              <Box sx={{ minWidth: 0 }}>
-                <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
-                  <Typography sx={{ color: brand.colors.text, fontWeight: 900 }} noWrap>{row.teamName}</Typography>
-                  <Chip label={row.leader ? "Leader" : "Member"} size="small" />
-                </Stack>
-                <Typography sx={{ color: brand.colors.muted, fontSize: 13 }} noWrap>{row.eventName}</Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ color: brand.colors.text, fontWeight: 800 }}>{row.roundName}</Typography>
-                <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>
-                  {formatDashboardDate(row.submissionDeadline)}
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent={{ xs: "flex-start", md: "flex-end" }}>
-                <Chip
-                  size="small"
-                  color={row.submitted ? "success" : row.editable ? "warning" : "default"}
-                  label={row.submitted ? row.submissionStatus : row.editable ? "Ready to submit" : "Locked"}
-                />
-                <Button size="small" variant="outlined" onClick={() => onOpenTeam(row.teamId)}>
-                  Open
-                </Button>
-              </Stack>
-              {row.blockedReason && !row.submitted ? (
-                <Typography sx={{ gridColumn: { xs: "1", md: "1 / -1" }, color: brand.colors.muted, fontSize: 12.5 }}>
-                  {row.blockedReason}
-                </Typography>
-              ) : null}
-            </Box>
-          ))}
-        </Box>
-      )}
-    </Box>
-  );
-}
-
 export default function DashboardPage() {
   const auth = authStorage.get();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -431,14 +358,15 @@ export default function DashboardPage() {
     if (roles.includes("STUDENT")) return "STUDENT";
     return roles[0] || "USER";
   }, [auth?.roles]);
+  const defaultSection = useMemo(() => getDefaultSectionForRole(currentRole), [currentRole]);
   const [profileSummary, setProfileSummary] = useState(null);
 
-  const [activeKey, setActiveKey] = useState("account");
+  const [activeKey, setActiveKey] = useState(defaultSection);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState(searchParams.get("query") || "");
-  const [hasUnsavedEventChanges, setHasUnsavedEventChanges] = useState(false);
   const [hasUnsavedProfileChanges, setHasUnsavedProfileChanges] = useState(false);
+  const [eventNotifications, setEventNotifications] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
     activeEvents: 0,
     registeredTeams: 0,
@@ -453,10 +381,6 @@ export default function DashboardPage() {
     mentorTeams: 0,
     mentorMeetings: 0,
     mentorNotes: 0,
-  });
-  const [studentSubmissionWorkspace, setStudentSubmissionWorkspace] = useState({
-    teams: [],
-    roundsByTeam: {},
   });
   const lastApprovedSearchRef = useRef(searchParams.toString());
   const skipNextSearchGuardRef = useRef(false);
@@ -473,29 +397,21 @@ export default function DashboardPage() {
     [currentRole]
   );
   const allowedNavKeys = useMemo(
-    () => new Set([...coreNavItems, ...ACCOUNT_NAV].map((item) => item.key)),
+    () => new Set([...HOME_NAV, ...coreNavItems, ...ACCOUNT_NAV].map((item) => item.key)),
     [coreNavItems]
   );
   const sectionParam = searchParams.get("section");
   const queryParam = searchParams.get("query") || "";
-  const normalizedSectionParam = useMemo(() => {
-    if (["events", "tracks", "rounds"].includes(sectionParam)) {
-      return "event-config";
-    }
-    return sectionParam;
-  }, [sectionParam]);
+  const normalizedSectionParam = sectionParam;
 
   const pageTitle = useMemo(() => {
-    const allItems = [...coreNavItems, ...ACCOUNT_NAV];
+    const allItems = [...HOME_NAV, ...coreNavItems, ...ACCOUNT_NAV];
     return allItems.find((item) => item.key === activeKey)?.label || "Dashboard";
   }, [coreNavItems, activeKey]);
 
   const getUnsavedPromptForSearch = (searchString) => {
     const params = new URLSearchParams(searchString);
-    const section = params.get("section") || "account";
-    if (section === "event-config" && hasUnsavedEventChanges) {
-      return "You have unsaved event changes. Leave this page without saving?";
-    }
+    const section = params.get("section") || defaultSection;
     if (section === "account" && hasUnsavedProfileChanges) {
       return "You have unsaved profile changes. Leave this page without saving?";
     }
@@ -504,15 +420,7 @@ export default function DashboardPage() {
 
   const clearDraftForSearch = (searchString) => {
     const params = new URLSearchParams(searchString);
-    const section = params.get("section") || "account";
-    if (section === "event-config") {
-      const eventId = params.get("eventId");
-      if (eventId) {
-        sessionStorage.removeItem(getEventDraftStorageKey(eventId));
-        window.dispatchEvent(new CustomEvent("seal-discard-event-draft", { detail: { eventId } }));
-      }
-      return;
-    }
+    const section = params.get("section") || defaultSection;
     if (section === "account") {
       sessionStorage.removeItem(PROFILE_DRAFT_STORAGE_KEY);
       window.dispatchEvent(new Event("seal-discard-profile-draft"));
@@ -530,7 +438,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const nextKey = normalizedSectionParam && allowedNavKeys.has(normalizedSectionParam) ? normalizedSectionParam : "account";
+    const nextKey = normalizedSectionParam && allowedNavKeys.has(normalizedSectionParam) ? normalizedSectionParam : defaultSection;
     if (activeKey !== nextKey) {
       setActiveKey(nextKey);
     }
@@ -541,7 +449,7 @@ export default function DashboardPage() {
       }
       setSearchParams(nextParams, { replace: true });
     }
-  }, [activeKey, allowedNavKeys, normalizedSectionParam, queryParam, sectionParam, setSearchParams]);
+  }, [activeKey, allowedNavKeys, defaultSection, normalizedSectionParam, queryParam, sectionParam, setSearchParams]);
 
   useEffect(() => {
     const currentSearch = searchParams.toString();
@@ -569,7 +477,7 @@ export default function DashboardPage() {
     }
 
     lastApprovedSearchRef.current = currentSearch;
-  }, [hasUnsavedEventChanges, hasUnsavedProfileChanges, searchParams, setSearchParams]);
+  }, [hasUnsavedProfileChanges, searchParams, setSearchParams]);
 
   useEffect(() => {
     setGlobalSearch(queryParam);
@@ -629,7 +537,7 @@ export default function DashboardPage() {
           if (!mounted) return;
           setDashboardStats((current) => ({
             ...current,
-            activeEvents: events.filter((event) => ["RegistrationOpen", "Ongoing", "Scoring"].includes(event.status)).length,
+            activeEvents: events.filter((event) => event.status === "Ongoing").length,
             registeredTeams: events.reduce((sum, event) => sum + Number(event.teamCount || event.registeredTeamCount || 0), 0),
             pendingAccounts: users.filter((user) => normalizeStatus(user.status) === "PENDING_APPROVAL").length,
           }));
@@ -656,7 +564,6 @@ export default function DashboardPage() {
           const firstRound = allRounds
             .sort((a, b) => Number(a.roundOrder || 0) - Number(b.roundOrder || 0))[0];
           if (!mounted) return;
-          setStudentSubmissionWorkspace({ teams, roundsByTeam });
           setDashboardStats((current) => ({
             ...current,
             activeTeams: teams.length,
@@ -697,9 +604,6 @@ export default function DashboardPage() {
       } catch {
         if (mounted) {
           setDashboardStats((current) => ({ ...current }));
-          if (currentRole === "STUDENT") {
-            setStudentSubmissionWorkspace({ teams: [], roundsByTeam: {} });
-          }
         }
       }
     };
@@ -710,14 +614,44 @@ export default function DashboardPage() {
     };
   }, [currentRole]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadEventNotifications = async () => {
+      if (!["STUDENT", "MENTOR", "JUDGE"].includes(currentRole)) {
+        if (mounted) {
+          setEventNotifications([]);
+        }
+        return;
+      }
+
+      try {
+        const response = await http.get("/api/dashboard/event-updates");
+        if (mounted) {
+          setEventNotifications(response.data?.data || []);
+        }
+      } catch {
+        if (mounted) {
+          setEventNotifications([]);
+        }
+      }
+    };
+
+    loadEventNotifications();
+    return () => {
+      mounted = false;
+    };
+  }, [currentRole]);
+
   const renderContent = () => {
+    if (activeKey === "dashboard") return null;
     if (activeKey === "directory") return <UserDirectoryPanel currentRole={currentRole} initialQuery={queryParam} />;
     if (activeKey === "account") return <UserProfilePanel onDirtyChange={setHasUnsavedProfileChanges} />;
     if (activeKey === "password") return <ChangePasswordPage />;
 
     if (currentRole === "COORDINATOR") {
       if (activeKey === "users") return <AccountApprovalPanel />;
-      if (activeKey === "event-config") return <EventConfigurationPanel onDirtyChange={setHasUnsavedEventChanges} />;
+      if (activeKey === "event-config") return <EventConfigurationPanel onDirtyChange={() => {}} />;
       if (activeKey === "guest-judges") return <GuestJudgePanel />;
       if (activeKey === "judge-assignment") return <JudgeAssignmentPanel />;
       if (activeKey === "mentor-assignment") return <MentorAssignmentPanel />;
@@ -734,26 +668,22 @@ export default function DashboardPage() {
     }
 
     if (currentRole === "JUDGE") {
-      if (activeKey === "judge-rounds") return <EvaluationWorkspacePanel role="JUDGE" type="rounds" />;
-      if (activeKey === "scoring") return <EvaluationWorkspacePanel role="JUDGE" type="scoring" />;
+      if (["judging", "judge-rounds", "scoring"].includes(activeKey)) {
+        return <EvaluationWorkspacePanel role="JUDGE" type="judging" />;
+      }
       return null;
     }
 
     if (activeKey === "teams") {
       return <TeamManagementPanel />;
     }
-    return null;
-  };
-
-  const openTeamWorkspace = (teamId) => {
-    if (!confirmLeaveCurrentView()) return;
-    const nextParams = { section: "teams" };
-    if (teamId) {
-      nextParams.teamId = String(teamId);
+    if (activeKey === "event-registration") {
+      return <EventRegistrationPanel />;
     }
-    skipNextSearchGuardRef.current = true;
-    setSearchParams(nextParams);
-    setMobileOpen(false);
+    if (activeKey === "submissions") {
+      return <StudentSubmissionPanel />;
+    }
+    return null;
   };
 
   const openProfileMenu = (event) => setProfileMenuAnchor(event.currentTarget);
@@ -767,7 +697,7 @@ export default function DashboardPage() {
     }
     skipNextSearchGuardRef.current = true;
     setSearchParams(nextParams);
-    if (["judge-rounds", "scoring", "mentor-teams", "mentor-notes"].includes(key)) {
+    if (["judging", "judge-rounds", "scoring", "mentor-teams", "mentor-notes"].includes(key)) {
       window.setTimeout(() => {
         window.dispatchEvent(new CustomEvent("seal-scroll-evaluation-section", { detail: { section: key } }));
       }, 120);
@@ -797,10 +727,10 @@ export default function DashboardPage() {
     jumpToSection(key);
   };
 
-  const goToProfileHome = () => {
+  const goToRoleHome = () => {
     if (!confirmLeaveCurrentView()) return;
     skipNextSearchGuardRef.current = true;
-    setSearchParams({ section: "account" });
+    setSearchParams({ section: "dashboard" });
     closeProfileMenu();
     setMobileOpen(false);
   };
@@ -890,7 +820,7 @@ export default function DashboardPage() {
       }}
     >
       <Box
-        onClick={goToProfileHome}
+        onClick={goToRoleHome}
         sx={{
           height: 70,
           display: "flex",
@@ -923,7 +853,8 @@ export default function DashboardPage() {
       </Box>
 
       <Box sx={{ flex: 1, overflowY: "auto", py: 0.75 }}>
-        {coreNavItems.length ? renderNavSection("HOME", coreNavItems) : null}
+        {renderNavSection("Home", HOME_NAV)}
+        {coreNavItems.length ? renderNavSection("Modules", coreNavItems) : null}
       </Box>
     </Box>
   );
@@ -1162,23 +1093,20 @@ export default function DashboardPage() {
           <Box className="ms-breadcrumb">
             <HomeRoundedIcon sx={{ fontSize: 16 }} />
             <span>Dashboard</span>
-            <span>/</span>
-            <span style={{ color: brand.colors.text, fontWeight: 600 }}>{pageTitle}</span>
+            {activeKey !== "dashboard" ? <span>/</span> : null}
+            {activeKey !== "dashboard" ? (
+              <span style={{ color: brand.colors.text, fontWeight: 600 }}>{pageTitle}</span>
+            ) : null}
           </Box>
 
-          <DashboardOverview
-            auth={auth}
-            currentRole={currentRole}
-            profileSummary={profileSummary}
-            avatarInitials={avatarInitials}
-            stats={dashboardStats}
-          />
-
-          {currentRole === "STUDENT" && activeKey === "teams" ? (
-            <StudentSubmissionDashboard
-              teams={studentSubmissionWorkspace.teams}
-              roundsByTeam={studentSubmissionWorkspace.roundsByTeam}
-              onOpenTeam={openTeamWorkspace}
+          {activeKey === "dashboard" ? (
+            <DashboardOverview
+              auth={auth}
+              currentRole={currentRole}
+              profileSummary={profileSummary}
+              avatarInitials={avatarInitials}
+              stats={dashboardStats}
+              eventNotifications={eventNotifications}
             />
           ) : null}
 

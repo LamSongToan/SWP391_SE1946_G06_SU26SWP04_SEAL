@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -11,11 +12,18 @@ import {
   Typography,
 } from "@mui/material";
 import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
-import { http, logout } from "../api/http";
+import { authStorage, http, logout } from "../api/http";
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}$/;
 
 export default function ChangePasswordPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const auth = authStorage.get();
+  const mustChangePassword = useMemo(
+    () => Boolean(auth?.mustChangePassword) || searchParams.get("forcePasswordChange") === "1",
+    [auth?.mustChangePassword, searchParams]
+  );
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -80,11 +88,20 @@ export default function ChangePasswordPage() {
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
       });
-      setSuccess("Password changed successfully. You will be logged out.");
+      if (mustChangePassword) {
+        authStorage.update({ ...(auth || {}), mustChangePassword: false });
+        setSuccess("Password changed successfully. Redirecting you to the dashboard...");
+      } else {
+        setSuccess("Password changed successfully. You will be logged out.");
+      }
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setTouched({});
       setFieldErrors({});
-      setTimeout(() => logout(), 2000);
+      if (mustChangePassword) {
+        setTimeout(() => navigate("/dashboard?section=dashboard", { replace: true }), 1200);
+      } else {
+        setTimeout(() => logout(), 2000);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || "Change failed");
     } finally {
@@ -103,7 +120,9 @@ export default function ChangePasswordPage() {
             <Typography variant="h4">Change Password</Typography>
           </Stack>
           <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-            Enter your current password and choose a new one.
+            {mustChangePassword
+              ? "You need to change the temporary password before accessing the rest of the system."
+              : "Enter your current password and choose a new one."}
           </Typography>
 
           <Box component="form" onSubmit={onSubmit}>

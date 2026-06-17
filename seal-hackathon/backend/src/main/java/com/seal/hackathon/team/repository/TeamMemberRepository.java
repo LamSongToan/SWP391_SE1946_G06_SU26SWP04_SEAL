@@ -25,6 +25,13 @@ public interface TeamMemberRepository extends JpaRepository<TeamMemberEntity, Te
     boolean existsMembershipInEvent(@Param("userRoleId") Integer userRoleId,
                                     @Param("eventId") Integer eventId);
 
+    @Query("""
+            SELECT DISTINCT tm.student.userRole.user.userId
+            FROM TeamMemberEntity tm
+            WHERE tm.team.track.eventId = :eventId
+            """)
+    List<Integer> findDistinctStudentUserIdsByEventId(@Param("eventId") Integer eventId);
+
     boolean existsByTeamTeamIdAndStudentUserRoleId(Integer teamId, Integer userRoleId);
 
     void deleteByTeamTeamId(Integer teamId);

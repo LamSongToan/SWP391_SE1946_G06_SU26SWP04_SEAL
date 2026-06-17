@@ -32,6 +32,7 @@ CREATE TABLE [Users] (
     status VARCHAR(50) DEFAULT 'PendingApproval',
     CHECK (status IN ('PendingApproval', 'Active', 'Rejected', 'Suspended')),
     is_approved BIT DEFAULT 0,
+    must_change_password BIT NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT GETDATE()
 );
 
@@ -111,14 +112,24 @@ CREATE TABLE CoordinatorProfile (
 CREATE TABLE HackathonEvent (
     event_id INT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(150) NOT NULL,
-    season VARCHAR(20) NOT NULL, -- 'Spring', 'Summer', 'Fall'
+    semester VARCHAR(20) NOT NULL, -- 'Spring', 'Summer', 'Fall'
     year INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    registration_start_at DATETIME NULL,
+    registration_end_at DATETIME NULL,
+    competition_start_at DATETIME NULL,
+    competition_end_at DATETIME NULL,
+    track_selection_mode VARCHAR(30) NULL,
+    ranking_method VARCHAR(50) NULL,
+    awards_json NVARCHAR(MAX) NULL,
+    scoring_criteria_json NVARCHAR(MAX) NULL,
+    published_at DATETIME NULL,
     status VARCHAR(50) DEFAULT 'Draft',
-    CHECK (status IN ('Draft', 'Configured', 'RegistrationOpen', 'Ongoing', 'Scoring', 'ResultPublished', 'Closed', 'Cancelled')),
     description NVARCHAR(MAX),
-    CONSTRAINT UQ_HackathonEvent_Year_Season UNIQUE (year, season)
+    CONSTRAINT CK_HackathonEvent_Status_BusinessRule
+        CHECK (status IN ('Draft', 'Ongoing', 'Ended')),
+    CONSTRAINT UQ_HackathonEvent_Year_Semester UNIQUE (year, semester)
 );
 
 CREATE TABLE Track (
@@ -134,8 +145,11 @@ CREATE TABLE Round (
     event_id INT NOT NULL,
     round_name NVARCHAR(100) NOT NULL, -- 'Elimination', 'Finals'
     round_order INT NOT NULL,
-    submission_deadline DATETIME NOT NULL,
-    promotion_rule_top_n INT NOT NULL,
+    start_at DATETIME NULL,
+    end_at DATETIME NULL,
+    submission_deadline DATETIME NULL,
+    promotion_rule_top_n INT NULL,
+    is_final BIT NOT NULL DEFAULT 0,
     score_locked BIT NOT NULL DEFAULT 0,
     FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE,
     CONSTRAINT UQ_Round_Event_Order UNIQUE (event_id, round_order)
@@ -155,7 +169,7 @@ CREATE TABLE ScoringCriteria (
 -- =======================================================
 CREATE TABLE Team (
     team_id INT IDENTITY(1,1) PRIMARY KEY,
-    track_id INT NOT NULL,
+    track_id INT NULL,
     user_role_id INT NOT NULL, -- TEAM LEADER
     team_name NVARCHAR(100) NOT NULL,
     join_code VARCHAR(12) NOT NULL UNIQUE
@@ -410,10 +424,13 @@ CREATE TABLE AuditLog (
     user_id INT NOT NULL, 
     action_type VARCHAR(100) NOT NULL,
     target_entity VARCHAR(100) NOT NULL,
-    target_id INT NOT NULL,
+    target_id INT NULL,
+    target_name NVARCHAR(255),
     old_value NVARCHAR(MAX),
     new_value NVARCHAR(MAX),
     reason NVARCHAR(MAX),
+    ip_address VARCHAR(64),
+    device_info NVARCHAR(1000),
     timestamp DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (user_id) REFERENCES [Users](user_id) ON DELETE CASCADE
 );

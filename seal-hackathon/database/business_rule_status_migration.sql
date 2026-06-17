@@ -50,23 +50,15 @@ GO
 UPDATE HackathonEvent
 SET status = CASE
     WHEN UPPER(status) IN ('UPCOMING', 'DRAFT') THEN 'Draft'
-    WHEN UPPER(status) IN ('ACTIVE', 'ONGOING') THEN 'Ongoing'
+    WHEN UPPER(status) IN ('ACTIVE', 'ONGOING', 'CONFIGURED', 'REGISTRATIONOPEN', 'SCORING', 'RESULTPUBLISHED') THEN 'Ongoing'
+    WHEN UPPER(status) IN ('CLOSED', 'CANCELLED', 'COMPLETED', 'FINISHED') THEN 'Ended'
     ELSE status
 END;
 GO
 
 ALTER TABLE HackathonEvent
 ADD CONSTRAINT CK_HackathonEvent_Status_BusinessRule
-CHECK (status IN ('Draft', 'Configured', 'RegistrationOpen', 'Ongoing', 'Scoring', 'ResultPublished', 'Closed', 'Cancelled'));
-GO
-
-IF NOT EXISTS (
-    SELECT 1 FROM sys.key_constraints WHERE name = 'UQ_HackathonEvent_Year_Season'
-)
-BEGIN
-    ALTER TABLE HackathonEvent
-    ADD CONSTRAINT UQ_HackathonEvent_Year_Season UNIQUE (year, season);
-END
+CHECK (status IN ('Draft', 'Ongoing', 'Ended'));
 GO
 
 IF NOT EXISTS (

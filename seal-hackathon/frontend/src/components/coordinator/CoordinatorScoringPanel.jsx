@@ -27,6 +27,7 @@ import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { getApiErrorMessage, http } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
 import ConfirmActionDialog from "../layout/ConfirmActionDialog";
+import ModulePageHeader from "../layout/ModulePageHeader";
 import { brand } from "../../styles/designTokens";
 
 function createBlankCriterion() {
@@ -116,7 +117,7 @@ function EventRoundSelector({
             {events.map((event) => (
               <Chip
                 key={event.eventId}
-                label={`${event.name} (${event.season} ${event.year})`}
+                label={event.name}
                 onClick={() => onSelectEvent(event.eventId)}
                 sx={{
                   cursor: "pointer",
@@ -569,6 +570,12 @@ export default function CoordinatorScoringPanel() {
       />
 
       <Stack spacing={2}>
+        <ModulePageHeader
+          eyebrow="Evaluation Setup"
+          title="Scoring Management"
+          description="Manage round rubrics, criteria templates, and final score locking from one scoring workspace."
+        />
+
         <EventRoundSelector
           events={events}
           selectedEventId={selectedEventId}

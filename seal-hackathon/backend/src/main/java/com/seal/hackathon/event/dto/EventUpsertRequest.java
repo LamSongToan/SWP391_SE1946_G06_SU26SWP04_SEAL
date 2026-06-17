@@ -14,7 +14,7 @@ public record EventUpsertRequest(
         String name,
         @NotBlank
         @Size(max = 20)
-        String season,
+        String semester,
         @NotNull
         @Min(2020)
         @Max(2100)

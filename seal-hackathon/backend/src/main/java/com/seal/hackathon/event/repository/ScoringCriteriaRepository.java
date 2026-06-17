@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface ScoringCriteriaRepository extends JpaRepository<ScoringCriteriaEntity, Integer> {
     List<ScoringCriteriaEntity> findByRoundIdOrderByCriteriaId(Integer roundId);
+    void deleteByRoundId(Integer roundId);
 }

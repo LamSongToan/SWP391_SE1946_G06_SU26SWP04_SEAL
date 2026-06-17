@@ -57,6 +57,9 @@ public class UserEntity {
     @Column(name = "is_approved", nullable = false)
     private Boolean approved;
 
+    @Column(name = "must_change_password", nullable = false)
+    private Boolean mustChangePassword;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -70,6 +73,9 @@ public class UserEntity {
         }
         if (this.approved == null) {
             this.approved = Boolean.FALSE;
+        }
+        if (this.mustChangePassword == null) {
+            this.mustChangePassword = Boolean.FALSE;
         }
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();

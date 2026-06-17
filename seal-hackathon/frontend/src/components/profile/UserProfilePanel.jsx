@@ -9,14 +9,18 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid2,
-  IconButton,
+  LinearProgress,
+  Slider,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import EventRoundedIcon from "@mui/icons-material/EventRounded";
@@ -30,6 +34,9 @@ import { brand } from "../../styles/designTokens";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
 const PROFILE_DRAFT_STORAGE_KEY = "seal-profile-draft";
+const AVATAR_EDITOR_SIZE = 280;
+const AVATAR_MAX_FILE_SIZE = 5 * 1024 * 1024;
+const AVATAR_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const EMPTY_FORM = {
   username: "",
@@ -82,6 +89,70 @@ function withAssetVersion(url, version) {
   return `${url}${separator}v=${version}`;
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getAvatarMinScale(width, height) {
+  return Math.max(AVATAR_EDITOR_SIZE / width, AVATAR_EDITOR_SIZE / height);
+}
+
+function clampAvatarOffset(offset, width, height, scale) {
+  const scaledWidth = width * scale;
+  const scaledHeight = height * scale;
+  const maxX = Math.max((scaledWidth - AVATAR_EDITOR_SIZE) / 2, 0);
+  const maxY = Math.max((scaledHeight - AVATAR_EDITOR_SIZE) / 2, 0);
+
+  return {
+    x: clamp(offset.x, -maxX, maxX),
+    y: clamp(offset.y, -maxY, maxY),
+  };
+}
+
+async function createCroppedAvatarBlob(imageElement, cropState) {
+  const canvas = document.createElement("canvas");
+  canvas.width = AVATAR_EDITOR_SIZE;
+  canvas.height = AVATAR_EDITOR_SIZE;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Unable to prepare avatar preview");
+  }
+
+  const { width, height, scale, offset } = cropState;
+  const scaledWidth = width * scale;
+  const scaledHeight = height * scale;
+  const left = AVATAR_EDITOR_SIZE / 2 - scaledWidth / 2 + offset.x;
+  const top = AVATAR_EDITOR_SIZE / 2 - scaledHeight / 2 + offset.y;
+
+  const sourceX = (0 - left) / scale;
+  const sourceY = (0 - top) / scale;
+  const sourceWidth = AVATAR_EDITOR_SIZE / scale;
+  const sourceHeight = AVATAR_EDITOR_SIZE / scale;
+
+  context.drawImage(
+    imageElement,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    AVATAR_EDITOR_SIZE,
+    AVATAR_EDITOR_SIZE
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("Unable to prepare avatar file"));
+      }
+    }, "image/png");
+  });
+}
+
 function syncStoredAuthProfile(profile) {
   if (!profile) return;
   const auth = authStorage.get();
@@ -98,10 +169,11 @@ function syncStoredAuthProfile(profile) {
 export default function UserProfilePanel({ onDirtyChange = () => {} }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef(null);
+  const avatarImageRef = useRef(null);
+  const avatarDragRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [teams, setTeams] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(true);
@@ -109,6 +181,15 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [avatarDialogError, setAvatarDialogError] = useState("");
+  const [avatarDialogMode, setAvatarDialogMode] = useState("current");
+  const [avatarEditorFile, setAvatarEditorFile] = useState(null);
+  const [avatarEditorUrl, setAvatarEditorUrl] = useState("");
+  const [avatarEditorScale, setAvatarEditorScale] = useState(1);
+  const [avatarEditorMinScale, setAvatarEditorMinScale] = useState(1);
+  const [avatarEditorOffset, setAvatarEditorOffset] = useState({ x: 0, y: 0 });
+  const [avatarEditorImageSize, setAvatarEditorImageSize] = useState({ width: 0, height: 0 });
   const editMode = searchParams.get("mode") === "edit";
 
   const isStudent = useMemo(() => profile?.roles?.includes("STUDENT"), [profile]);
@@ -119,7 +200,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     if (roles.includes("COORDINATOR")) {
       items.push({
         title: "Coordinator Workspace",
-        description: "Manage approvals, events, tracks, and round configuration for SEAL seasons.",
+        description: "Manage approvals, events, tracks, and round configuration for SEAL semesters.",
       });
     }
     if (roles.includes("MENTOR")) {
@@ -166,10 +247,37 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         studentCode: profile?.studentCode || "",
         universityName: profile?.universityName || "",
       };
-  const displayAvatarSrc = avatarPreviewUrl || withAssetVersion(
+  const displayAvatarSrc = withAssetVersion(
     resolveAssetUrl(displayProfile.avatarUrl),
     profile?.__avatarVersion
   );
+
+  const resetAvatarEditorState = () => {
+    setAvatarDialogError("");
+    setAvatarDialogMode("current");
+    setAvatarEditorFile(null);
+    setAvatarEditorScale(1);
+    setAvatarEditorMinScale(1);
+    setAvatarEditorOffset({ x: 0, y: 0 });
+    setAvatarEditorImageSize({ width: 0, height: 0 });
+    setAvatarEditorUrl((currentUrl) => {
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+      }
+      return "";
+    });
+  };
+
+  const openAvatarDialog = () => {
+    resetAvatarEditorState();
+    setAvatarDialogOpen(true);
+  };
+
+  const closeAvatarDialog = () => {
+    if (uploadingAvatar) return;
+    setAvatarDialogOpen(false);
+    resetAvatarEditorState();
+  };
 
   const emitProfileUpdated = (data) => {
     window.dispatchEvent(new CustomEvent("seal-profile-updated", { detail: data }));
@@ -326,11 +434,11 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
 
   useEffect(() => {
     return () => {
-      if (avatarPreviewUrl) {
-        URL.revokeObjectURL(avatarPreviewUrl);
+      if (avatarEditorUrl) {
+        URL.revokeObjectURL(avatarEditorUrl);
       }
     };
-  }, [avatarPreviewUrl]);
+  }, [avatarEditorUrl]);
 
   useEffect(() => {
     const handleDiscardDraft = () => {
@@ -447,81 +555,144 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     }
   };
 
-  const onSelectAvatarClick = () => {
+  const onChooseAvatarFileClick = () => {
     fileInputRef.current?.click();
   };
 
-  const onAvatarFileChange = async (event) => {
+  const onAvatarFileChange = (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) {
       return;
     }
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      setError("Avatar image must be JPG, PNG, WEBP, or GIF");
+    if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+      setAvatarDialogError("Avatar image must be JPG, PNG, WEBP, or GIF");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Avatar image must be 5 MB or smaller");
+    if (file.size > AVATAR_MAX_FILE_SIZE) {
+      setAvatarDialogError("Avatar image must be 5 MB or smaller");
       return;
     }
 
-    setUploadingAvatar(true);
-    setError("");
-    setSuccess("");
+    setAvatarDialogError("");
+    setAvatarDialogMode("replace");
+    setAvatarEditorFile(file);
+    setAvatarEditorImageSize({ width: 0, height: 0 });
+    setAvatarEditorScale(1);
+    setAvatarEditorMinScale(1);
+    setAvatarEditorOffset({ x: 0, y: 0 });
+
     const nextPreviewUrl = URL.createObjectURL(file);
-    setAvatarPreviewUrl((currentPreviewUrl) => {
+    setAvatarEditorUrl((currentPreviewUrl) => {
       if (currentPreviewUrl) {
         URL.revokeObjectURL(currentPreviewUrl);
       }
       return nextPreviewUrl;
     });
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await http.post("/api/users/me/avatar", formData);
-      const freshProfileResponse = await http.get("/api/users/me");
-      const persistedProfile = freshProfileResponse.data?.data || response.data?.data;
-      if (!persistedProfile?.avatarUrl) {
-        throw new Error("Backend did not persist the avatar URL");
-      }
-      setAvatarPreviewUrl((currentPreviewUrl) => {
-        if (currentPreviewUrl) {
-          URL.revokeObjectURL(currentPreviewUrl);
-        }
-        return "";
-      });
-      applyProfileData(persistedProfile, "Avatar updated successfully", { bustAvatar: true });
-    } catch (err) {
-      setAvatarPreviewUrl((currentPreviewUrl) => {
-        if (currentPreviewUrl) {
-          URL.revokeObjectURL(currentPreviewUrl);
-        }
-        return "";
-      });
-      setError(err?.response?.data?.message || "Failed to upload avatar");
-    } finally {
-      setUploadingAvatar(false);
+  };
+
+  const onRemoveAvatar = () => {
+    setAvatarDialogError("");
+    setAvatarDialogMode("remove");
+  };
+
+  const onAvatarPreviewImageLoad = (event) => {
+    const image = event.currentTarget;
+    const width = image.naturalWidth;
+    const height = image.naturalHeight;
+    const minScale = getAvatarMinScale(width, height);
+
+    setAvatarEditorImageSize({ width, height });
+    setAvatarEditorMinScale(minScale);
+    setAvatarEditorScale(minScale);
+    setAvatarEditorOffset({ x: 0, y: 0 });
+  };
+
+  const onAvatarScaleChange = (_, nextValue) => {
+    const nextScale = Array.isArray(nextValue) ? nextValue[0] : nextValue;
+    setAvatarEditorScale(nextScale);
+    setAvatarEditorOffset((currentOffset) =>
+      clampAvatarOffset(currentOffset, avatarEditorImageSize.width, avatarEditorImageSize.height, nextScale)
+    );
+  };
+
+  const onAvatarDragStart = (event) => {
+    if (avatarDialogMode !== "replace" || !avatarEditorUrl) return;
+    avatarDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: avatarEditorOffset.x,
+      originY: avatarEditorOffset.y,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const onAvatarDragMove = (event) => {
+    if (!avatarDragRef.current || avatarDragRef.current.pointerId !== event.pointerId) return;
+
+    const nextOffset = clampAvatarOffset(
+      {
+        x: avatarDragRef.current.originX + (event.clientX - avatarDragRef.current.startX),
+        y: avatarDragRef.current.originY + (event.clientY - avatarDragRef.current.startY),
+      },
+      avatarEditorImageSize.width,
+      avatarEditorImageSize.height,
+      avatarEditorScale
+    );
+
+    setAvatarEditorOffset(nextOffset);
+  };
+
+  const onAvatarDragEnd = (event) => {
+    if (avatarDragRef.current?.pointerId === event.pointerId) {
+      avatarDragRef.current = null;
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
     }
   };
 
-  const onRemoveAvatar = async () => {
+  const onConfirmAvatarUpdate = async () => {
     setUploadingAvatar(true);
     setError("");
     setSuccess("");
     try {
-      const response = await http.delete("/api/users/me/avatar");
-      setAvatarPreviewUrl((currentPreviewUrl) => {
-        if (currentPreviewUrl) {
-          URL.revokeObjectURL(currentPreviewUrl);
+      if (avatarDialogMode === "remove") {
+        const response = await http.delete("/api/users/me/avatar");
+        applyProfileData(response.data?.data, "Avatar removed successfully");
+      } else {
+        if (!avatarEditorFile || !avatarImageRef.current) {
+          setAvatarDialogError("Choose an image before updating your avatar");
+          setUploadingAvatar(false);
+          return;
         }
-        return "";
-      });
-      applyProfileData(response.data?.data, "Avatar removed successfully");
+
+        const croppedBlob = await createCroppedAvatarBlob(avatarImageRef.current, {
+          width: avatarEditorImageSize.width,
+          height: avatarEditorImageSize.height,
+          scale: avatarEditorScale,
+          offset: avatarEditorOffset,
+        });
+
+        const formData = new FormData();
+        formData.append("file", new File([croppedBlob], "avatar.png", { type: "image/png" }));
+
+        const response = await http.post("/api/users/me/avatar", formData);
+        const freshProfileResponse = await http.get("/api/users/me");
+        const persistedProfile = freshProfileResponse.data?.data || response.data?.data;
+        if (!persistedProfile?.avatarUrl) {
+          throw new Error("Backend did not persist the avatar URL");
+        }
+        applyProfileData(persistedProfile, "Avatar updated successfully", { bustAvatar: true });
+      }
+
+      setAvatarDialogOpen(false);
+      resetAvatarEditorState();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to remove avatar");
+      setError(
+        err?.response?.data?.message ||
+          (avatarDialogMode === "remove" ? "Failed to remove avatar" : "Failed to update avatar")
+      );
     } finally {
       setUploadingAvatar(false);
     }
@@ -532,6 +703,109 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
       <Box sx={{ py: 6, textAlign: "center" }}>
         <CircularProgress />
       </Box>
+    );
+  }
+
+  const hasStoredAvatar = Boolean(profile?.avatarUrl);
+  const avatarActionPending =
+    avatarDialogMode === "replace"
+      ? Boolean(avatarEditorFile)
+      : avatarDialogMode === "remove"
+        ? hasStoredAvatar
+        : false;
+
+  const editProfileContent = (
+    <Card className="ms-data-card">
+      <CardContent>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", sm: "center" }}
+          spacing={1.5}
+          sx={{ mb: 2 }}
+        >
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              Edit Profile
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Update how you appear across SEAL.
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={1}>
+            <Button variant="text" color="inherit" startIcon={<CloseRoundedIcon />} onClick={cancelEdit}>
+              Cancel
+            </Button>
+            <Button variant="contained" startIcon={<EditRoundedIcon />} onClick={onSave} disabled={isSaveDisabled}>
+              {saving ? "Saving..." : "Save profile"}
+            </Button>
+          </Stack>
+        </Stack>
+
+        <Grid2 container spacing={2}>
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <TextField
+              label="Username"
+              value={form.username}
+              onChange={onChange("username")}
+              error={Boolean(fieldErrors.username)}
+              helperText={fieldErrors.username || "4-50 characters. Letters, numbers, dot, underscore, and hyphen only."}
+              fullWidth
+            />
+          </Grid2>
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <TextField label="Email" value={profile?.email || ""} fullWidth disabled />
+          </Grid2>
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <TextField
+              label="Full Name"
+              value={form.fullName}
+              onChange={onChange("fullName")}
+              error={Boolean(fieldErrors.fullName)}
+              helperText={fieldErrors.fullName || " "}
+              fullWidth
+            />
+          </Grid2>
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <TextField label="Status" value={profile?.status || ""} fullWidth disabled />
+          </Grid2>
+          <Grid2 size={{ xs: 12 }}>
+            <TextField
+              label="Bio"
+              value={form.bio}
+              onChange={onChange("bio")}
+              error={Boolean(fieldErrors.bio)}
+              helperText={fieldErrors.bio || `${form.bio.length}/500 characters`}
+              fullWidth
+              multiline
+              minRows={4}
+            />
+          </Grid2>
+          {isStudent ? (
+            <>
+              <Grid2 size={{ xs: 12, md: 4 }}>
+                <TextField label="Student Type" value={form.studentType} fullWidth disabled />
+              </Grid2>
+              <Grid2 size={{ xs: 12, md: 4 }}>
+                <TextField label="Student Code" value={form.studentCode} fullWidth disabled />
+              </Grid2>
+              <Grid2 size={{ xs: 12, md: 4 }}>
+                <TextField label="University" value={form.universityName} fullWidth disabled />
+              </Grid2>
+            </>
+          ) : null}
+        </Grid2>
+      </CardContent>
+    </Card>
+  );
+
+  if (editMode) {
+    return (
+      <Stack spacing={2.5}>
+        {error && <Alert severity="error">{error}</Alert>}
+        {success && <Alert severity="success">{success}</Alert>}
+        {editProfileContent}
+      </Stack>
     );
   }
 
@@ -570,7 +844,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                       opacity: 1,
                     },
                   }}
-                  onClick={onSelectAvatarClick}
+                  onClick={openAvatarDialog}
                 >
                   <input
                     ref={fileInputRef}
@@ -581,6 +855,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                   />
                   <Avatar
                     src={displayAvatarSrc || undefined}
+                    imgProps={{ style: { objectFit: "cover", objectPosition: "center center" } }}
                     sx={{
                       width: { xs: 112, md: 132 },
                       height: { xs: 112, md: 132 },
@@ -605,34 +880,12 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                       color: "#fff",
                       fontWeight: 700,
                       fontSize: 14,
-                      opacity: { xs: 1, md: 0 },
+                      opacity: 0,
                       transition: "opacity 0.18s ease",
                     }}
                   >
-                    {uploadingAvatar ? "Uploading..." : "Change avatar"}
+                    {uploadingAvatar ? "Uploading..." : "Manage avatar"}
                   </Box>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      right: 10,
-                      bottom: 10,
-                      width: 34,
-                      height: 34,
-                      bgcolor: "#fff",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.16)",
-                      "&:hover": { bgcolor: "#fff" },
-                    }}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onSelectAvatarClick();
-                    }}
-                    disabled={uploadingAvatar}
-                  >
-                    <PhotoCameraRoundedIcon sx={{ fontSize: 18, color: "text.primary" }} />
-                  </IconButton>
                 </Box>
 
                 <Box sx={{ flex: { xs: "1 1 100%", lg: "1 1 310px" }, minWidth: 0, textAlign: { xs: "center", lg: "left" } }}>
@@ -648,27 +901,17 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                 </Box>
 
                 <Stack spacing={1} sx={{ width: { xs: "100%", sm: 220 }, ml: { lg: "auto" } }}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<EditRoundedIcon />}
-                      onClick={() => {
-                        setSearchParams({ section: "account", mode: "edit" });
-                        setSuccess("");
-                        setError("");
-                      }}
-                      fullWidth
-                    >
-                    Edit profile
-                  </Button>
                   <Button
-                    variant="text"
-                    color="inherit"
-                    startIcon={<DeleteOutlineRoundedIcon />}
-                    onClick={onRemoveAvatar}
-                    disabled={uploadingAvatar || !displayProfile.avatarUrl}
+                    variant="outlined"
+                    startIcon={<EditRoundedIcon />}
+                    onClick={() => {
+                      setSearchParams({ section: "account", mode: "edit" });
+                      setSuccess("");
+                      setError("");
+                    }}
                     fullWidth
                   >
-                    Remove avatar
+                    Edit profile
                   </Button>
                 </Stack>
 
@@ -739,179 +982,94 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
 
         <Grid2 size={{ xs: 12 }}>
           <Stack spacing={2.5}>
-            {editMode ? (
-              <Card className="ms-data-card">
-                <CardContent>
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "flex-start", sm: "center" }}
-                    spacing={1.5}
-                    sx={{ mb: 2 }}
-                  >
-                    <Box>
-                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                        Edit Profile
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Update how you appear across SEAL.
-                      </Typography>
-                    </Box>
-                    <Stack direction="row" spacing={1}>
-                      <Button variant="text" color="inherit" startIcon={<CloseRoundedIcon />} onClick={cancelEdit}>
-                        Cancel
-                      </Button>
-                      <Button variant="contained" startIcon={<EditRoundedIcon />} onClick={onSave} disabled={isSaveDisabled}>
-                        {saving ? "Saving..." : "Save profile"}
-                      </Button>
-                    </Stack>
-                  </Stack>
+            <Card className="ms-data-card">
+              <CardContent>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  Overview
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {isStudent
+                    ? "Your current participation snapshot across SEAL events and teams."
+                    : "Your current role summary and account access overview."}
+                </Typography>
 
-                  <Grid2 container spacing={2}>
-                    <Grid2 size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        label="Username"
-                        value={form.username}
-                        onChange={onChange("username")}
-                        error={Boolean(fieldErrors.username)}
-                        helperText={fieldErrors.username || "4-50 characters. Letters, numbers, dot, underscore, and hyphen only."}
-                        fullWidth
-                      />
-                    </Grid2>
-                    <Grid2 size={{ xs: 12, md: 6 }}>
-                      <TextField label="Email" value={profile?.email || ""} fullWidth disabled />
-                    </Grid2>
-                    <Grid2 size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        label="Full Name"
-                        value={form.fullName}
-                        onChange={onChange("fullName")}
-                        error={Boolean(fieldErrors.fullName)}
-                        helperText={fieldErrors.fullName || " "}
-                        fullWidth
-                      />
-                    </Grid2>
-                    <Grid2 size={{ xs: 12, md: 6 }}>
-                      <TextField label="Status" value={profile?.status || ""} fullWidth disabled />
-                    </Grid2>
-                    <Grid2 size={{ xs: 12 }}>
-                      <TextField
-                        label="Bio"
-                        value={form.bio}
-                        onChange={onChange("bio")}
-                        error={Boolean(fieldErrors.bio)}
-                        helperText={fieldErrors.bio || `${form.bio.length}/500 characters`}
-                        fullWidth
-                        multiline
-                        minRows={4}
-                      />
-                    </Grid2>
-                    {isStudent ? (
-                      <>
-                        <Grid2 size={{ xs: 12, md: 4 }}>
-                          <TextField label="Student Type" value={form.studentType} fullWidth disabled />
-                        </Grid2>
-                        <Grid2 size={{ xs: 12, md: 4 }}>
-                          <TextField label="Student Code" value={form.studentCode} fullWidth disabled />
-                        </Grid2>
-                        <Grid2 size={{ xs: 12, md: 4 }}>
-                          <TextField label="University" value={form.universityName} fullWidth disabled />
-                        </Grid2>
-                      </>
-                    ) : null}
-                  </Grid2>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                <Card className="ms-data-card">
-                  <CardContent>
-                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-                      Overview
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {isStudent
-                        ? "Your current participation snapshot across SEAL events and teams."
-                        : "Your current role summary and account access overview."}
-                    </Typography>
-
-                    <Grid2 container spacing={2}>
-                      {isStudent ? (
-                        <>
-                          <Grid2 size={{ xs: 12, md: 4 }}>
-                            <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                              <Stack direction="row" spacing={1.2} alignItems="center">
-                                <GroupsRoundedIcon color="primary" />
-                                <Box>
-                                  <Typography className="ms-stat-label">Teams</Typography>
-                                  <Typography className="ms-stat-value">{teams.length}</Typography>
-                                </Box>
-                              </Stack>
+                <Grid2 container spacing={2}>
+                  {isStudent ? (
+                    <>
+                      <Grid2 size={{ xs: 12, md: 4 }}>
+                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <GroupsRoundedIcon color="primary" />
+                            <Box>
+                              <Typography className="ms-stat-label">Teams</Typography>
+                              <Typography className="ms-stat-value">{teams.length}</Typography>
                             </Box>
-                          </Grid2>
-                          <Grid2 size={{ xs: 12, md: 4 }}>
-                            <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                              <Stack direction="row" spacing={1.2} alignItems="center">
-                                <EventRoundedIcon color="success" />
-                                <Box>
-                                  <Typography className="ms-stat-label">Events</Typography>
-                                  <Typography className="ms-stat-value">{uniqueEvents.length}</Typography>
-                                </Box>
-                              </Stack>
+                          </Stack>
+                        </Box>
+                      </Grid2>
+                      <Grid2 size={{ xs: 12, md: 4 }}>
+                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <EventRoundedIcon color="success" />
+                            <Box>
+                              <Typography className="ms-stat-label">Events</Typography>
+                              <Typography className="ms-stat-value">{uniqueEvents.length}</Typography>
                             </Box>
-                          </Grid2>
-                          <Grid2 size={{ xs: 12, md: 4 }}>
-                            <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                              <Stack direction="row" spacing={1.2} alignItems="center">
-                                <BadgeRoundedIcon color="warning" />
-                                <Box>
-                                  <Typography className="ms-stat-label">Roles</Typography>
-                                  <Typography className="ms-stat-value">{profile?.roles?.length || 0}</Typography>
-                                </Box>
-                              </Stack>
+                          </Stack>
+                        </Box>
+                      </Grid2>
+                      <Grid2 size={{ xs: 12, md: 4 }}>
+                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <BadgeRoundedIcon color="warning" />
+                            <Box>
+                              <Typography className="ms-stat-label">Roles</Typography>
+                              <Typography className="ms-stat-value">{profile?.roles?.length || 0}</Typography>
                             </Box>
-                          </Grid2>
-                        </>
-                      ) : (
-                        <>
-                          <Grid2 size={{ xs: 12, md: 4 }}>
-                            <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                              <Stack direction="row" spacing={1.2} alignItems="center">
-                                <BadgeRoundedIcon color="primary" />
-                                <Box>
-                                  <Typography className="ms-stat-label">Primary Role</Typography>
-                                  <Typography className="ms-stat-value">{profile?.roles?.[0] || "N/A"}</Typography>
-                                </Box>
-                              </Stack>
+                          </Stack>
+                        </Box>
+                      </Grid2>
+                    </>
+                  ) : (
+                    <>
+                      <Grid2 size={{ xs: 12, md: 4 }}>
+                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <BadgeRoundedIcon color="primary" />
+                            <Box>
+                              <Typography className="ms-stat-label">Primary Role</Typography>
+                              <Typography className="ms-stat-value">{profile?.roles?.[0] || "N/A"}</Typography>
                             </Box>
-                          </Grid2>
-                          <Grid2 size={{ xs: 12, md: 4 }}>
-                            <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                              <Stack direction="row" spacing={1.2} alignItems="center">
-                                <BadgeRoundedIcon color="success" />
-                                <Box>
-                                  <Typography className="ms-stat-label">Status</Typography>
-                                  <Typography className="ms-stat-value">{profile?.status || "N/A"}</Typography>
-                                </Box>
-                              </Stack>
+                          </Stack>
+                        </Box>
+                      </Grid2>
+                      <Grid2 size={{ xs: 12, md: 4 }}>
+                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <BadgeRoundedIcon color="success" />
+                            <Box>
+                              <Typography className="ms-stat-label">Status</Typography>
+                              <Typography className="ms-stat-value">{profile?.status || "N/A"}</Typography>
                             </Box>
-                          </Grid2>
-                          <Grid2 size={{ xs: 12, md: 4 }}>
-                            <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                              <Stack direction="row" spacing={1.2} alignItems="center">
-                                <BadgeRoundedIcon color="warning" />
-                                <Box>
-                                  <Typography className="ms-stat-label">Assigned Roles</Typography>
-                                  <Typography className="ms-stat-value">{profile?.roles?.length || 0}</Typography>
-                                </Box>
-                              </Stack>
+                          </Stack>
+                        </Box>
+                      </Grid2>
+                      <Grid2 size={{ xs: 12, md: 4 }}>
+                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
+                            <BadgeRoundedIcon color="warning" />
+                            <Box>
+                              <Typography className="ms-stat-label">Assigned Roles</Typography>
+                              <Typography className="ms-stat-value">{profile?.roles?.length || 0}</Typography>
                             </Box>
-                          </Grid2>
-                        </>
-                      )}
-                    </Grid2>
-                  </CardContent>
-                </Card>
+                          </Stack>
+                        </Box>
+                      </Grid2>
+                    </>
+                  )}
+                </Grid2>
+              </CardContent>
+            </Card>
 
                 {isStudent ? (
                   <Grid2 container spacing={2}>
@@ -1066,11 +1224,175 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     </Grid2>
                   </Grid2>
                 )}
-              </>
-            )}
           </Stack>
         </Grid2>
       </Grid2>
+
+      <Dialog
+        open={avatarDialogOpen}
+        onClose={closeAvatarDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          Update Avatar
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Stack spacing={2.25}>
+            <Typography variant="body2" color="text.secondary">
+              Choose a new image, drag it to adjust the preview, then confirm when it looks right.
+            </Typography>
+
+            <Box sx={{ width: "100%", display: "flex", justifyContent: "center" }}>
+              <Box
+                sx={{
+                  width: AVATAR_EDITOR_SIZE,
+                  height: AVATAR_EDITOR_SIZE,
+                  flex: "0 0 auto",
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  position: "relative",
+                  background: "linear-gradient(180deg, rgba(15,23,42,0.05) 0%, rgba(15,23,42,0.12) 100%)",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  boxShadow: "0 18px 48px rgba(15, 23, 42, 0.08)",
+                  touchAction: "none",
+                }}
+                onPointerDown={onAvatarDragStart}
+                onPointerMove={onAvatarDragMove}
+                onPointerUp={onAvatarDragEnd}
+                onPointerCancel={onAvatarDragEnd}
+              >
+                {avatarDialogMode === "replace" && avatarEditorUrl ? (
+                  <Box
+                    component="img"
+                    ref={avatarImageRef}
+                    src={avatarEditorUrl}
+                    alt="Avatar preview"
+                    onLoad={onAvatarPreviewImageLoad}
+                    draggable={false}
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "50%",
+                      width: avatarEditorImageSize.width || "auto",
+                      height: avatarEditorImageSize.height || "auto",
+                      userSelect: "none",
+                      transform: `translate(calc(-50% + ${avatarEditorOffset.x}px), calc(-50% + ${avatarEditorOffset.y}px)) scale(${avatarEditorScale})`,
+                      transformOrigin: "center center",
+                      cursor: "grab",
+                      objectFit: "contain",
+                      objectPosition: "center center",
+                      maxWidth: "none",
+                      maxHeight: "none",
+                    }}
+                  />
+                ) : avatarDialogMode === "remove" ? (
+                  <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    spacing={1.2}
+                    sx={{ width: "100%", height: "100%", px: 3, textAlign: "center" }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 84,
+                        height: 84,
+                        bgcolor: "grey.300",
+                        color: "text.primary",
+                        fontSize: 30,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {getProfileInitials(profile)}
+                    </Avatar>
+                    <Typography variant="body2" color="text.secondary">
+                      Your avatar will be reset to the default profile image.
+                    </Typography>
+                  </Stack>
+                ) : displayAvatarSrc ? (
+                  <Box
+                    component="img"
+                    src={displayAvatarSrc}
+                    alt="Current avatar"
+                    sx={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center" }}
+                  />
+                ) : (
+                  <Avatar
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      bgcolor: "primary.main",
+                      color: "#fff",
+                      fontSize: 64,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {getProfileInitials(profile)}
+                  </Avatar>
+                )}
+              </Box>
+            </Box>
+
+            {avatarDialogMode === "replace" && avatarEditorUrl ? (
+              <>
+                <Box sx={{ px: { xs: 0, sm: 2 } }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+                    Zoom
+                  </Typography>
+                  <Slider
+                    value={avatarEditorScale}
+                    min={avatarEditorMinScale}
+                    max={Math.max(avatarEditorMinScale + 2, avatarEditorMinScale * 3)}
+                    step={0.01}
+                    onChange={onAvatarScaleChange}
+                    disabled={uploadingAvatar}
+                  />
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center" }}>
+                  Drag the image inside the preview circle to position it before updating.
+                </Typography>
+              </>
+            ) : null}
+
+            {avatarDialogError ? <Alert severity="error">{avatarDialogError}</Alert> : null}
+            {uploadingAvatar ? <LinearProgress /> : null}
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={onChooseAvatarFileClick}
+                disabled={uploadingAvatar}
+              >
+                Choose new image
+              </Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                fullWidth
+                onClick={onRemoveAvatar}
+                disabled={uploadingAvatar || !hasStoredAvatar}
+                startIcon={<DeleteOutlineRoundedIcon />}
+              >
+                Reset to default
+              </Button>
+            </Stack>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={closeAvatarDialog} disabled={uploadingAvatar}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={onConfirmAvatarUpdate}
+            disabled={uploadingAvatar || !avatarActionPending}
+          >
+            {uploadingAvatar ? "Updating..." : "Update avatar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

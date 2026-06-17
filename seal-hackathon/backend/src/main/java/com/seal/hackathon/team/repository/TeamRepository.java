@@ -46,6 +46,13 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
     long countByEventId(@Param("eventId") Integer eventId);
 
     @Query("""
+            SELECT t.teamId
+            FROM TeamEntity t
+            WHERE t.track.eventId = :eventId
+            """)
+    List<Integer> findTeamIdsByEventId(@Param("eventId") Integer eventId);
+
+    @Query("""
             SELECT COUNT(t)
             FROM TeamEntity t
             WHERE t.track.eventId = :eventId

@@ -31,7 +31,20 @@ http://localhost:8080
 
 - Student: `an.seal.demo@gmail.com / Seal@2026`
 - Student: `linh.seal.demo@gmail.com / Seal@2026`
+- Student: `bao.seal.demo@gmail.com / Seal@2026`
+- Student: `quynh.seal.demo@gmail.com / Seal@2026`
+- Student: `phuc.seal.demo@gmail.com / Seal@2026`
+- Student: `nhat.seal.demo@gmail.com / Seal@2026`
+- Student: `thao.seal.demo@gmail.com / Seal@2026`
+- Student: `lam.seal.demo@gmail.com / Seal@2026`
 - Coordinator: `toan.seal.demo@gmail.com / Seal@2026`
+- Coordinator: `anh.seal.demo@gmail.com / Seal@2026`
+- Mentor: `kiet.seal.demo@gmail.com / Seal@2026`
+- Mentor: `vy.seal.demo@gmail.com / Seal@2026`
+- Mentor: `duc.seal.demo@gmail.com / Seal@2026`
+- Judge: `ngon.seal.demo@gmail.com / Seal@2026`
+- Judge: `hao.seal.demo@gmail.com / Seal@2026`
+- Judge: `trinh.seal.demo@gmail.com / Seal@2026`
 
 ## Recommended Demo Flow
 

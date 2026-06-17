@@ -26,6 +26,8 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { http } from "../../api/http";
+import ModulePageHeader from "../layout/ModulePageHeader";
+import HighlightPill from "../layout/HighlightPill";
 import { brand } from "../../styles/designTokens";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -315,26 +317,20 @@ export default function GuestJudgePanel() {
 
   return (
     <Box>
-      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "stretch", sm: "center" }} spacing={1.5} sx={{ mb: 2.5 }}>
-        <Box>
-          <Typography sx={{ color: brand.colors.orange, fontSize: 12, fontWeight: 950, letterSpacing: 0.8, textTransform: "uppercase" }}>
-            Judge Management
-          </Typography>
-          <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>
-            Guest Judge Accounts
-          </Typography>
-          <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-            Create and manage temporary judge accounts for scoring.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Chip label={`${activeCount} active`} sx={{ bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 900 }} />
-          <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setCreateOpen(true)}
-            sx={{ bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark }, borderRadius: 999, whiteSpace: "nowrap" }}>
-            New Judge
-          </Button>
-        </Stack>
-      </Stack>
+      <ModulePageHeader
+        eyebrow="Judge Management"
+        title="Guest Judge Accounts"
+        description="Create and manage temporary judge accounts for scoring."
+        actions={(
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <HighlightPill label={`${activeCount} active`} />
+            <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setCreateOpen(true)}
+              sx={{ bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark }, borderRadius: 999, whiteSpace: "nowrap" }}>
+              New Judge
+            </Button>
+          </Stack>
+        )}
+      />
 
       <TextField
         fullWidth

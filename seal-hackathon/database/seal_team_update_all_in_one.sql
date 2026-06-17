@@ -35,6 +35,14 @@ BEGIN
 END;
 GO
 
+IF COL_LENGTH('dbo.Users', 'must_change_password') IS NULL
+BEGIN
+    ALTER TABLE dbo.[Users]
+    ADD must_change_password BIT NOT NULL
+        CONSTRAINT DF_Users_MustChangePassword DEFAULT 0;
+END;
+GO
+
 DECLARE @dropUsersStatusSql NVARCHAR(MAX) = N'';
 
 SELECT @dropUsersStatusSql += N'ALTER TABLE dbo.[Users] DROP CONSTRAINT ' + QUOTENAME(cc.name) + N';'
@@ -92,7 +100,8 @@ GO
 UPDATE dbo.HackathonEvent
 SET status = CASE
     WHEN UPPER(status) IN ('UPCOMING', 'DRAFT') THEN 'Draft'
-    WHEN UPPER(status) IN ('ACTIVE', 'ONGOING') THEN 'Ongoing'
+    WHEN UPPER(status) IN ('ACTIVE', 'ONGOING', 'CONFIGURED', 'REGISTRATIONOPEN', 'SCORING', 'RESULTPUBLISHED') THEN 'Ongoing'
+    WHEN UPPER(status) IN ('CLOSED', 'CANCELLED', 'COMPLETED', 'FINISHED') THEN 'Ended'
     ELSE status
 END
 WHERE status IS NOT NULL;
@@ -107,18 +116,7 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE dbo.HackathonEvent
     ADD CONSTRAINT CK_HackathonEvent_Status_BusinessRule
-    CHECK (status IN ('Draft', 'Configured', 'RegistrationOpen', 'Ongoing', 'Scoring', 'ResultPublished', 'Closed', 'Cancelled'));
-END;
-GO
-
-IF NOT EXISTS (
-    SELECT 1 FROM sys.key_constraints
-    WHERE name = 'UQ_HackathonEvent_Year_Season'
-      AND parent_object_id = OBJECT_ID(N'dbo.HackathonEvent')
-)
-BEGIN
-    ALTER TABLE dbo.HackathonEvent
-    ADD CONSTRAINT UQ_HackathonEvent_Year_Season UNIQUE (year, season);
+    CHECK (status IN ('Draft', 'Ongoing', 'Ended'));
 END;
 GO
 

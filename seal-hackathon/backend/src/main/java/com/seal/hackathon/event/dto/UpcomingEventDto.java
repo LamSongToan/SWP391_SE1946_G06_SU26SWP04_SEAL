@@ -6,7 +6,7 @@ import java.util.List;
 public record UpcomingEventDto(
         Integer eventId,
         String name,
-        String season,
+        String semester,
         Integer year,
         LocalDate startDate,
         LocalDate endDate,

@@ -30,8 +30,8 @@ public class TeamEntity {
     @Column(name = "team_id")
     private Integer teamId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "track_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "track_id")
     private TrackEntity track;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

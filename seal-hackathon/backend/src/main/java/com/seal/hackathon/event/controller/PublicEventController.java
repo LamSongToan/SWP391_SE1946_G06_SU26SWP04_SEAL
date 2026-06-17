@@ -1,6 +1,7 @@
 package com.seal.hackathon.event.controller;
 
 import com.seal.hackathon.common.ApiResponse;
+import com.seal.hackathon.event.dto.PublicEventCatalogDto;
 import com.seal.hackathon.event.dto.UpcomingEventDto;
 import com.seal.hackathon.event.service.PublicEventService;
 import org.springframework.http.ResponseEntity;
@@ -24,5 +25,11 @@ public class PublicEventController {
     public ResponseEntity<ApiResponse<List<UpcomingEventDto>>> getUpcomingEvents() {
         List<UpcomingEventDto> data = publicEventService.getUpcomingEvents();
         return ResponseEntity.ok(ApiResponse.ok("Upcoming events fetched", data));
+    }
+
+    @GetMapping("/catalog")
+    public ResponseEntity<ApiResponse<List<PublicEventCatalogDto>>> getEventCatalog() {
+        List<PublicEventCatalogDto> data = publicEventService.getEventCatalog();
+        return ResponseEntity.ok(ApiResponse.ok("Event catalog fetched", data));
     }
 }

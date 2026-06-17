@@ -5,6 +5,7 @@ import com.seal.hackathon.auth.dto.UpdateManagedUserRequest;
 import com.seal.hackathon.auth.entity.UserStatus;
 import com.seal.hackathon.auth.repository.StudentProfileRepository;
 import com.seal.hackathon.auth.repository.UserRepository;
+import com.seal.hackathon.auth.service.AccountApprovalNotificationService;
 import com.seal.hackathon.auth.service.AccountApprovalService;
 import com.seal.hackathon.common.ApiException;
 import org.junit.jupiter.api.Assertions;
@@ -17,6 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 import java.util.List;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +29,8 @@ class AccountApprovalServiceTest {
     private UserRepository userRepository;
     @Mock
     private StudentProfileRepository studentProfileRepository;
+    @Mock
+    private AccountApprovalNotificationService accountApprovalNotificationService;
 
     @InjectMocks
     private AccountApprovalService accountApprovalService;
@@ -60,6 +65,7 @@ class AccountApprovalServiceTest {
         Assertions.assertEquals(UserStatus.ACTIVE.getDbValue(), user.getStatus());
         Assertions.assertTrue(user.getApproved());
         Assertions.assertNull(user.getRejectionReason());
+        verify(accountApprovalNotificationService).sendApprovedEmail(user);
     }
 
     @Test
@@ -76,6 +82,8 @@ class AccountApprovalServiceTest {
         Assertions.assertEquals(UserStatus.REJECTED.getDbValue(), user.getStatus());
         Assertions.assertFalse(user.getApproved());
         Assertions.assertEquals("Student ID image is unclear", user.getRejectionReason());
+        verify(accountApprovalNotificationService, never()).sendApprovedEmail(user);
+        verify(accountApprovalNotificationService).sendRejectedEmail(user, "Student ID image is unclear");
     }
 
     @Test
@@ -111,5 +119,27 @@ class AccountApprovalServiceTest {
                 ));
 
         Assertions.assertTrue(ex.getMessage().contains("Use the reject action"));
+    }
+
+    @Test
+    void updateManagedUser_shouldSendApprovalEmailWhenPendingUserBecomesActive() {
+        UserEntity user = new UserEntity();
+        user.setUserId(15);
+        user.setUsername("student.two");
+        user.setFullName("Student Two");
+        user.setStatus(UserStatus.PENDING_APPROVAL.getDbValue());
+        user.setApproved(false);
+
+        when(userRepository.findById(15)).thenReturn(Optional.of(user));
+        when(studentProfileRepository.findByUserRoleUserUserId(15)).thenReturn(Optional.empty());
+
+        accountApprovalService.updateManagedUser(
+                15,
+                new UpdateManagedUserRequest("student.two", "Student Two", "Active", List.of("MENTOR"))
+        );
+
+        Assertions.assertEquals(UserStatus.ACTIVE.getDbValue(), user.getStatus());
+        Assertions.assertTrue(user.getApproved());
+        verify(accountApprovalNotificationService).sendApprovedEmail(user);
     }
 }

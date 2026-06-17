@@ -15,6 +15,7 @@ export default function ConfirmActionDialog({
   message,
   confirmLabel = "Confirm",
   confirmColor = "primary",
+  confirmLoading = false,
   onCancel,
   onConfirm,
 }) {
@@ -38,8 +39,8 @@ export default function ConfirmActionDialog({
         <Typography color="text.secondary">{message}</Typography>
       </DialogContent>
       <DialogActions className="ms-confirm-dialog-actions">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button color={confirmColor} onClick={onConfirm} variant="contained">
+        <Button onClick={onCancel} disabled={confirmLoading}>Cancel</Button>
+        <Button color={confirmColor} onClick={onConfirm} variant="contained" disabled={confirmLoading}>
           {confirmLabel}
         </Button>
       </DialogActions>

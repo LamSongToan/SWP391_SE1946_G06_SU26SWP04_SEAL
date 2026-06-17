@@ -23,7 +23,7 @@ import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import AuthVisualPanel from "../components/auth/AuthVisualPanel";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton";
-import { authStorage, googleRegistrationStorage, http } from "../api/http";
+import { authStorage, googleRegistrationStorage, http, rejectedRegistrationStorage } from "../api/http";
 import { brand } from "../styles/designTokens";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,6 +43,7 @@ function validateLoginForm(form) {
 
 function getLoginFailure(error) {
   const message = error?.response?.data?.message || error?.message || "";
+  const payload = error?.response?.data?.data || null;
   const normalized = message.toLowerCase();
   if (normalized.includes("not approved") || normalized.includes("pending")) {
     return {
@@ -55,15 +56,10 @@ function getLoginFailure(error) {
     };
   }
   if (normalized.includes("rejected")) {
-    const reasonMarker = "reason:";
-    const reasonIndex = normalized.indexOf(reasonMarker);
-    const rejectionReason = reasonIndex >= 0
-      ? message.slice(reasonIndex + reasonMarker.length).trim()
-      : "";
-
     return {
-      message: "Your account request was rejected. Review the rejection reason before contacting the Event Coordinator.",
-      rejectionReason: rejectionReason || "No rejection reason was recorded for this account.",
+      message: "Your account request was rejected. Please update your registration details and submit it again.",
+      rejectionReason: payload?.rejectionReason || "No rejection reason was recorded for this account.",
+      resubmitToken: payload?.resubmitToken || "",
     };
   }
   return { message: message || "Sign in failed" };
@@ -121,9 +117,18 @@ export default function LoginPage() {
 
       authStorage.set(data?.auth);
       googleRegistrationStorage.clear();
-      navigate("/dashboard?section=account");
+      navigate(data?.auth?.mustChangePassword ? "/dashboard?section=password&forcePasswordChange=1" : "/dashboard");
     } catch (err) {
       const failure = getLoginFailure(err);
+      if (failure.resubmitToken) {
+        const rejectedRegistration = {
+          resubmitToken: failure.resubmitToken,
+          rejectionReason: failure.rejectionReason || "",
+        };
+        rejectedRegistrationStorage.set(rejectedRegistration);
+        navigate("/register", { state: { rejectedRegistration } });
+        return;
+      }
       setError(failure.message || "Google sign-in failed");
       setRejectionReasonDialog(failure.rejectionReason || "");
       setRejectionReasonOpen(Boolean(failure.rejectionReason));
@@ -152,9 +157,18 @@ export default function LoginPage() {
       });
       authStorage.set(response.data?.data, rememberDevice);
       googleRegistrationStorage.clear();
-      navigate("/dashboard?section=account");
+      navigate(response.data?.data?.mustChangePassword ? "/dashboard?section=password&forcePasswordChange=1" : "/dashboard");
     } catch (err) {
       const failure = getLoginFailure(err);
+      if (failure.resubmitToken) {
+        const rejectedRegistration = {
+          resubmitToken: failure.resubmitToken,
+          rejectionReason: failure.rejectionReason || "",
+        };
+        rejectedRegistrationStorage.set(rejectedRegistration);
+        navigate("/register", { state: { rejectedRegistration } });
+        return;
+      }
       setError(failure.message);
       setRejectionReasonDialog(failure.rejectionReason || "");
       setRejectionReasonOpen(Boolean(failure.rejectionReason));
