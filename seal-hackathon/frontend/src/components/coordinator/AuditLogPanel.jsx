@@ -158,19 +158,12 @@ function JsonBlock({ title, value, tone = "dark" }) {
 
 export default function AuditLogPanel() {
   const [events, setEvents] = useState([]);
-  const [rounds, setRounds] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
-  const [selectedRoundId, setSelectedRoundId] = useState("");
   const [actionType, setActionType] = useState("");
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-
-  const scopedRounds = useMemo(
-    () => rounds.filter((round) => !selectedEventId || String(round.eventId) === String(selectedEventId)),
-    [rounds, selectedEventId]
-  );
 
   const loadEvents = async () => {
     const response = await http.get("/api/coordinator/events");
@@ -180,20 +173,6 @@ export default function AuditLogPanel() {
       setSelectedEventId(String(nextEvents[0].eventId));
     }
     return nextEvents;
-  };
-
-  const loadRounds = async (eventId) => {
-    if (!eventId) {
-      setRounds([]);
-      setSelectedRoundId("");
-      return;
-    }
-    const response = await http.get(`/api/coordinator/events/${eventId}/rounds`);
-    const nextRounds = response.data?.data || [];
-    setRounds(nextRounds);
-    if (selectedRoundId && !nextRounds.some((round) => String(round.roundId) === String(selectedRoundId))) {
-      setSelectedRoundId("");
-    }
   };
 
   const loadLogs = async ({ silent = false } = {}) => {
@@ -206,7 +185,6 @@ export default function AuditLogPanel() {
     try {
       const params = {};
       if (selectedEventId) params.eventId = selectedEventId;
-      if (selectedRoundId) params.roundId = selectedRoundId;
       if (actionType) params.actionType = actionType;
       const response = await http.get("/api/coordinator/scoring/audit-logs", { params });
       setLogs(response.data?.data || []);
@@ -223,11 +201,7 @@ export default function AuditLogPanel() {
     const bootstrap = async () => {
       setLoading(true);
       try {
-        const nextEvents = await loadEvents();
-        const initialEventId = selectedEventId || nextEvents[0]?.eventId;
-        if (initialEventId) {
-          await loadRounds(initialEventId);
-        }
+        await loadEvents();
       } catch (err) {
         setError(getApiErrorMessage(err, "Failed to load audit workspace"));
       } finally {
@@ -238,16 +212,9 @@ export default function AuditLogPanel() {
   }, []);
 
   useEffect(() => {
-    if (!selectedEventId) return;
-    loadRounds(selectedEventId).catch((err) => {
-      setError(getApiErrorMessage(err, "Failed to load rounds"));
-    });
-  }, [selectedEventId]);
-
-  useEffect(() => {
     if (loading) return;
     loadLogs({ silent: false });
-  }, [selectedEventId, selectedRoundId, actionType]);
+  }, [selectedEventId, actionType]);
 
   if (loading) {
     return (
@@ -290,7 +257,7 @@ export default function AuditLogPanel() {
               Activity stream
             </Typography>
             <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-              Filter by event, round, or action to inspect approvals, event updates, track and round changes, submissions, and scoring work.
+              Filter by event or action to inspect approvals, event updates, track and round changes, submissions, and scoring work.
             </Typography>
           </Stack>
 
@@ -310,22 +277,7 @@ export default function AuditLogPanel() {
             >
               {events.map((item) => (
                 <MenuItem key={item.eventId} value={String(item.eventId)}>
-                  {item.name} ({item.semester} {item.year})
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <TextField
-              select
-              label="Round"
-              value={selectedRoundId}
-              onChange={(event) => setSelectedRoundId(event.target.value)}
-              sx={{ minWidth: 230 }}
-            >
-              <MenuItem value="">All rounds</MenuItem>
-              {scopedRounds.map((item) => (
-                <MenuItem key={item.roundId} value={String(item.roundId)}>
-                  {item.roundOrder}. {item.roundName}
+                  {item.name}
                 </MenuItem>
               ))}
             </TextField>

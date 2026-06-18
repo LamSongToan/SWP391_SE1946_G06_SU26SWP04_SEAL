@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
+  LinearProgress,
   CircularProgress,
   Divider,
   FormControl,
@@ -13,19 +15,26 @@ import {
   Select,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedInRounded";
+import BugReportRoundedIcon from "@mui/icons-material/BugReportRounded";
+import CommitRoundedIcon from "@mui/icons-material/CommitRounded";
+import ForkRightRoundedIcon from "@mui/icons-material/ForkRightRounded";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
+import StarBorderRoundedIcon from "@mui/icons-material/StarBorderRounded";
 import { getApiErrorMessage, http } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
 import ConfirmActionDialog from "../layout/ConfirmActionDialog";
 import ModulePageHeader from "../layout/ModulePageHeader";
+import { brand } from "../../styles/designTokens";
 import "./evaluation-workspace.css";
 
 function formatDateTime(value) {
@@ -87,6 +96,169 @@ function LinkButton({ href, children }) {
     >
       {children}
     </Button>
+  );
+}
+
+function GitMetadataCard({ submissionId, repositoryUrl }) {
+  const [meta, setMeta] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!submissionId) return;
+    let mounted = true;
+    setLoading(true);
+    http.get(`/api/submissions/${submissionId}/git-metadata`)
+      .then((response) => {
+        if (mounted) {
+          setMeta(response.data?.data || null);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setMeta(null);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [submissionId]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setError("");
+    try {
+      const response = await http.post(`/api/submissions/${submissionId}/git-metadata/refresh`);
+      setMeta(response.data?.data || null);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Refresh failed");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ py: 1 }}>
+        <LinearProgress sx={{ borderRadius: 1 }} />
+      </Box>
+    );
+  }
+
+  const stats = meta
+    ? [
+        [StarBorderRoundedIcon, meta.stars ?? "-", "Stars"],
+        [ForkRightRoundedIcon, meta.forks ?? "-", "Forks"],
+        [CommitRoundedIcon, meta.commitCount ?? "-", "Commits"],
+        [BugReportRoundedIcon, meta.openIssues ?? "-", "Open issues"],
+      ]
+    : [];
+
+  return (
+    <Box
+      sx={{
+        mt: 1.5,
+        p: 1.6,
+        borderRadius: brand.radius.md,
+        bgcolor: "#F8FAFF",
+        border: `1px solid ${brand.colors.line}`,
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+        <Stack direction="row" spacing={0.8} alignItems="center">
+          <GitHubIcon sx={{ fontSize: 16, color: brand.colors.text }} />
+          <Typography sx={{ color: brand.colors.text, fontSize: 13, fontWeight: 800 }}>
+            {meta?.repoName || "Repository"}
+            {meta?.platform ? (
+              <Chip size="small" label={meta.platform} sx={{ ml: 0.8, height: 18, fontSize: 11 }} />
+            ) : null}
+          </Typography>
+        </Stack>
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Refresh metadata">
+            <Button
+              size="small"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              startIcon={refreshing ? <CircularProgress size={12} /> : <RefreshRoundedIcon sx={{ fontSize: 14 }} />}
+              sx={{ minWidth: 0, px: 1, fontSize: 12, color: brand.colors.muted }}
+            >
+              Refresh
+            </Button>
+          </Tooltip>
+          {repositoryUrl ? (
+            <Button
+              size="small"
+              component="a"
+              href={repositoryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              endIcon={<OpenInNewRoundedIcon sx={{ fontSize: 13 }} />}
+              sx={{ minWidth: 0, px: 1, fontSize: 12, color: brand.colors.orange }}
+            >
+              View
+            </Button>
+          ) : null}
+        </Stack>
+      </Stack>
+
+      {error ? <Alert severity="error" sx={{ mb: 1, py: 0.5 }}>{error}</Alert> : null}
+
+      {meta ? (
+        <>
+          {meta.description ? (
+            <Typography sx={{ color: brand.colors.muted, fontSize: 12, mb: 1 }}>{meta.description}</Typography>
+          ) : null}
+          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            {stats.map(([Icon, value, label]) => (
+              <Stack key={label} direction="row" spacing={0.5} alignItems="center">
+                <Icon sx={{ fontSize: 14, color: brand.colors.muted }} />
+                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>{value}</Typography>
+                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>{label}</Typography>
+              </Stack>
+            ))}
+            {meta.language ? (
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>Lang:</Typography>
+                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>{meta.language}</Typography>
+              </Stack>
+            ) : null}
+            {meta.lastPushedAt ? (
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>Last push:</Typography>
+                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>
+                  {meta.lastPushedAt}
+                </Typography>
+              </Stack>
+            ) : null}
+            {meta.license ? (
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>License:</Typography>
+                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>{meta.license}</Typography>
+              </Stack>
+            ) : null}
+          </Stack>
+        </>
+      ) : (
+        <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>
+          No metadata cached yet. Click Refresh to fetch from{" "}
+          {repositoryUrl ? (
+            <a href={repositoryUrl} target="_blank" rel="noopener noreferrer" style={{ color: brand.colors.orange }}>
+              {repositoryUrl}
+            </a>
+          ) : (
+            "the repository"
+          )}
+          .
+        </Typography>
+      )}
+    </Box>
   );
 }
 
@@ -298,6 +470,7 @@ export default function EvaluationWorkspacePanel({ role, type }) {
   const submissionQueueRef = useRef(null);
   const feedbackSectionRef = useRef(null);
   const [dashboard, setDashboard] = useState(null);
+  const [mentorTracks, setMentorTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [scoreForm, setScoreForm] = useState(null);
@@ -317,10 +490,12 @@ export default function EvaluationWorkspacePanel({ role, type }) {
     if (isJudge) return dashboard?.submissions || [];
     return (dashboard?.teams || []).flatMap((team) => team.submissions || []);
   }, [dashboard, isJudge]);
+
   const filterOptions = useMemo(() => ({
     rounds: [...new Map(submissions.map((item) => [item.roundId, item.roundName])).entries()],
     tracks: [...new Map(submissions.map((item) => [item.trackId, item.trackName])).entries()],
   }), [submissions]);
+
   const filteredSubmissions = useMemo(() => submissions.filter((item) => {
     if (roundFilter !== "all" && String(item.roundId) !== roundFilter) return false;
     if (trackFilter !== "all" && String(item.trackId) !== trackFilter) return false;
@@ -335,9 +510,16 @@ export default function EvaluationWorkspacePanel({ role, type }) {
     setLoading(true);
     setError("");
     try {
-      const response = await http.get(isJudge ? "/api/judge/dashboard" : "/api/mentor/dashboard");
-      const nextDashboard = response.data?.data || null;
+      const requests = [http.get(isJudge ? "/api/judge/dashboard" : "/api/mentor/dashboard")];
+      if (!isJudge) {
+        requests.push(http.get("/api/mentor/tracks"));
+      }
+      const [dashboardResponse, mentorTracksResponse] = await Promise.all(requests);
+      const nextDashboard = dashboardResponse.data?.data || null;
       setDashboard(nextDashboard);
+      if (!isJudge) {
+        setMentorTracks(mentorTracksResponse?.data?.data || []);
+      }
       const nextSubmissions = isJudge
         ? nextDashboard?.submissions || []
         : (nextDashboard?.teams || []).flatMap((team) => team.submissions || []);
@@ -347,6 +529,9 @@ export default function EvaluationWorkspacePanel({ role, type }) {
     } catch (err) {
       setError(getApiErrorMessage(err, `Failed to load ${isJudge ? "judge" : "mentor"} dashboard`));
       setDashboard(null);
+      if (!isJudge) {
+        setMentorTracks([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -397,9 +582,7 @@ export default function EvaluationWorkspacePanel({ role, type }) {
 
   useEffect(() => {
     if (loading) return;
-    const target = isJudge
-      ? judgeWorkspaceRef.current
-      : (type === "notes" ? feedbackSectionRef.current : submissionQueueRef.current);
+    const target = isJudge ? judgeWorkspaceRef.current : submissionQueueRef.current;
     const timeoutId = window.setTimeout(() => {
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 80);
@@ -411,11 +594,9 @@ export default function EvaluationWorkspacePanel({ role, type }) {
       const section = event.detail?.section;
       const target = ["judging", "judge-rounds", "scoring"].includes(section)
         ? judgeWorkspaceRef.current
-        : section === "mentor-teams"
+        : ["mentor-workspace", "mentor-tracks", "mentor-teams", "mentor-notes"].includes(section)
           ? submissionQueueRef.current
-          : section === "mentor-notes"
-            ? feedbackSectionRef.current
-            : null;
+          : null;
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
     window.addEventListener("seal-scroll-evaluation-section", scrollToRequestedSection);
@@ -477,27 +658,17 @@ export default function EvaluationWorkspacePanel({ role, type }) {
     return <Box className="eval-loading"><CircularProgress /></Box>;
   }
 
-  const headerCopy = (() => {
-    if (isJudge) {
-      return {
+  const headerCopy = isJudge
+    ? {
         eyebrow: "Judge Workspace",
         title: "Judging Workspace",
         description: "Review assigned rounds, open submissions after the deadline, and score each team in one place.",
-      };
-    }
-    if (type === "notes") {
-      return {
+      }
+    : {
         eyebrow: "Mentor Workspace",
-        title: "Feedback Notes",
-        description: "Review mentored submissions and keep a clean feedback trail for every team.",
+        title: "Mentor Workspace",
+        description: "Track assigned tracks, review mentored submissions, and keep feedback in one place.",
       };
-    }
-    return {
-      eyebrow: "Mentor Workspace",
-      title: "Mentored Teams",
-      description: "Track assigned teams, review submissions, and follow their round progress.",
-    };
-  })();
 
   return (
     <Box>
@@ -554,9 +725,9 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                       ) : dashboard.assignedRounds.map((round) => (
                         <Box key={round.judgeAssignmentId} className="eval-list-row">
                           <Box>
-                            <Typography fontWeight={850}>{round.roundName} · {round.trackName}</Typography>
+                            <Typography fontWeight={850}>{round.roundName} - {round.trackName}</Typography>
                             <Typography variant="body2" color="text.secondary">
-                              {round.eventName} · Deadline {formatDateTime(round.submissionDeadline)}
+                              {round.eventName} - Deadline {formatDateTime(round.submissionDeadline)}
                             </Typography>
                           </Box>
                           <Stack direction="row" spacing={1} alignItems="center">
@@ -611,7 +782,7 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                               <Box>
                                 <Typography fontWeight={850}>{submission.teamName}</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {submission.roundName} · {submission.trackName}
+                                  {submission.roundName} - {submission.trackName}
                                 </Typography>
                               </Box>
                               <Stack direction="row" spacing={1} alignItems="center">
@@ -640,7 +811,7 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                           <Box>
                             <Typography variant="h6" fontWeight={850}>{selectedSubmission.teamName}</Typography>
                             <Typography color="text.secondary">
-                              {selectedSubmission.eventName} · {selectedSubmission.roundName}
+                              {selectedSubmission.eventName} - {selectedSubmission.roundName}
                             </Typography>
                           </Box>
                           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -656,6 +827,10 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                           <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
                           <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
                         </Stack>
+                        <GitMetadataCard
+                          submissionId={selectedSubmission.submissionId}
+                          repositoryUrl={selectedSubmission.repositoryUrl}
+                        />
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>
                           Submission deadline: {formatDateTime(selectedSubmission.submissionDeadline)}
                         </Typography>
@@ -689,124 +864,167 @@ export default function EvaluationWorkspacePanel({ role, type }) {
             </CardContent>
           </Card>
         ) : (
-          <>
-            <Box className="eval-scroll-target" ref={submissionQueueRef}>
-              <Card className="eval-card">
-                <CardContent>
-                  <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>
-                    Mentored Submissions
-                  </Typography>
-                  <Box className="eval-filter-bar">
-                    <FormControl size="small">
-                      <InputLabel>Round</InputLabel>
-                      <Select label="Round" value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
-                        <MenuItem value="all">All rounds</MenuItem>
-                        {filterOptions.rounds.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                    <FormControl size="small">
-                      <InputLabel>Track</InputLabel>
-                      <Select label="Track" value={trackFilter} onChange={(event) => setTrackFilter(event.target.value)}>
-                        <MenuItem value="all">All tracks</MenuItem>
-                        {filterOptions.tracks.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                    <FormControl size="small">
-                      <InputLabel>Status</InputLabel>
-                      <Select label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                        <MenuItem value="all">All statuses</MenuItem>
-                        {["Submitted", "Evaluating", "Qualified", "Eliminated"].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                    <Typography variant="body2" color="text.secondary" className="eval-filter-count">
-                      Showing {filteredSubmissions.length} of {submissions.length}
+          <Card className="eval-card eval-scroll-target" ref={submissionQueueRef}>
+            <CardContent>
+              <Box className="eval-judge-layout">
+                <Box className="eval-judge-sidebar">
+                  <Box className="eval-subpanel">
+                    <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>
+                      Assigned Tracks
                     </Typography>
-                  </Box>
-                  {filteredSubmissions.length === 0 ? (
-                    <Box className="eval-empty-inline">No submissions available.</Box>
-                  ) : (
-                    <Box className="eval-list">
-                      {filteredSubmissions.map((submission) => {
-                        const selected = selectedSubmission?.submissionId === submission.submissionId;
-                        return (
-                          <Box
-                            key={submission.submissionId}
-                            className={`eval-list-row eval-clickable ${selected ? "is-selected" : ""}`}
-                            onClick={() => setSelectedSubmission(submission)}
-                          >
+                    {(mentorTracks || []).length === 0 ? (
+                      <Box className="eval-empty-inline">
+                        <Typography fontWeight={700}>No assigned tracks yet</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Track assignments will appear here after the coordinator links you to an event track.
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Box className="eval-list">
+                        {mentorTracks.map((track) => (
+                          <Box key={track.trackMentorId} className="eval-list-row">
                             <Box>
-                              <Typography fontWeight={850}>{submission.teamName}</Typography>
+                              <Typography fontWeight={850}>{track.trackName}</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {submission.roundName} · {submission.trackName}
+                                {track.eventName}
+                                {track.specialization ? ` - ${track.specialization}` : ""}
                               </Typography>
                             </Box>
-                            <Chip size="small" variant="outlined" label={submission.submissionStatus} />
+                            <Chip size="small" label={`Assigned ${formatDateTime(track.assignedAt)}`} />
                           </Box>
-                        );
-                      })}
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
 
-            {selectedSubmission ? (
-              <Card className="eval-card">
-                <CardContent>
-                  <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
-                    <Box>
-                      <Typography variant="h6" fontWeight={850}>{selectedSubmission.teamName}</Typography>
-                      <Typography color="text.secondary">
-                        {selectedSubmission.eventName} · {selectedSubmission.roundName}
+                  <Box className="eval-subpanel">
+                    <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>
+                      Mentored Submissions
+                    </Typography>
+                    <Box className="eval-filter-bar">
+                      <FormControl size="small">
+                        <InputLabel>Round</InputLabel>
+                        <Select label="Round" value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
+                          <MenuItem value="all">All rounds</MenuItem>
+                          {filterOptions.rounds.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <FormControl size="small">
+                        <InputLabel>Track</InputLabel>
+                        <Select label="Track" value={trackFilter} onChange={(event) => setTrackFilter(event.target.value)}>
+                          <MenuItem value="all">All tracks</MenuItem>
+                          {filterOptions.tracks.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <FormControl size="small">
+                        <InputLabel>Status</InputLabel>
+                        <Select label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                          <MenuItem value="all">All statuses</MenuItem>
+                          {["Submitted", "Evaluating", "Qualified", "Eliminated"].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <Typography variant="body2" color="text.secondary" className="eval-filter-count">
+                        Showing {filteredSubmissions.length} of {submissions.length}
                       </Typography>
                     </Box>
-                    <Chip label={selectedSubmission.trackName} />
-                  </Stack>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
-                    <LinkButton href={selectedSubmission.repositoryUrl}>Repository</LinkButton>
-                    <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
-                    <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ) : null}
+                    {filteredSubmissions.length === 0 ? (
+                      <Box className="eval-empty-inline">
+                        No mentored submissions available.
+                      </Box>
+                    ) : (
+                      <Box className="eval-list">
+                        {filteredSubmissions.map((submission) => {
+                          const selected = selectedSubmission?.submissionId === submission.submissionId;
+                          return (
+                            <Box
+                              key={submission.submissionId}
+                              className={`eval-list-row eval-clickable ${selected ? "is-selected" : ""}`}
+                              onClick={() => setSelectedSubmission(submission)}
+                            >
+                              <Box>
+                                <Typography fontWeight={850}>{submission.teamName}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {submission.roundName} - {submission.trackName}
+                                </Typography>
+                              </Box>
+                              <Chip size="small" variant="outlined" label={submission.submissionStatus} />
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
 
-            <Box className="eval-scroll-target" ref={feedbackSectionRef}>
-              {!isJudge && selectedSubmission ? (
-                <>
-                  <Card className="eval-card">
-                    <CardContent>
-                      <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Mentor Feedback</Typography>
-                      <TextField
-                        label="Write feedback for this team"
-                        minRows={4}
-                        multiline
-                        fullWidth
-                        value={mentorFeedbackText}
-                        onChange={(event) => setMentorFeedbackText(event.target.value)}
-                      />
-                      <Stack direction="row" justifyContent="flex-end" sx={{ mt: 1.4 }}>
-                        <Button
-                          variant="contained"
-                          disabled={saving || !mentorFeedbackText.trim()}
-                          onClick={submitMentorFeedback}
-                        >
-                          {saving ? "Saving..." : "Add Feedback"}
-                        </Button>
-                      </Stack>
-                    </CardContent>
-                  </Card>
+                <Box className="eval-detail-stack eval-scroll-target" ref={feedbackSectionRef}>
+                  {selectedSubmission ? (
+                    <>
+                      <Box className="eval-subpanel eval-selected-card">
+                        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
+                          <Box>
+                            <Typography variant="h6" fontWeight={850}>{selectedSubmission.teamName}</Typography>
+                            <Typography color="text.secondary">
+                              {selectedSubmission.eventName} - {selectedSubmission.roundName}
+                            </Typography>
+                          </Box>
+                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Chip label={selectedSubmission.trackName} />
+                            <Chip size="small" variant="outlined" label={selectedSubmission.submissionStatus} />
+                          </Stack>
+                        </Stack>
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
+                          <LinkButton href={selectedSubmission.repositoryUrl}>Repository</LinkButton>
+                          <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
+                          <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
+                        </Stack>
+                        <GitMetadataCard
+                          submissionId={selectedSubmission.submissionId}
+                          repositoryUrl={selectedSubmission.repositoryUrl}
+                        />
+                      </Box>
 
-                  <Card className="eval-card" sx={{ mt: 2 }}>
-                    <CardContent>
-                      <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Feedback History</Typography>
-                      <FeedbackHistory items={feedbackHistory} />
-                    </CardContent>
-                  </Card>
-                </>
-              ) : null}
-            </Box>
-          </>
+                      <Box className="eval-subpanel">
+                        <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>
+                          Mentor Feedback
+                        </Typography>
+                        <TextField
+                          label="Write feedback for this team"
+                          minRows={4}
+                          multiline
+                          fullWidth
+                          value={mentorFeedbackText}
+                          onChange={(event) => setMentorFeedbackText(event.target.value)}
+                        />
+                        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 1.4 }}>
+                          <Button
+                            variant="contained"
+                            disabled={saving || !mentorFeedbackText.trim()}
+                            onClick={submitMentorFeedback}
+                          >
+                            {saving ? "Saving..." : "Add Feedback"}
+                          </Button>
+                        </Stack>
+                      </Box>
+
+                      <Box className="eval-subpanel">
+                        <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>
+                          Feedback History
+                        </Typography>
+                        <FeedbackHistory items={feedbackHistory} />
+                      </Box>
+                    </>
+                  ) : (
+                    <Box className="eval-empty-inline">
+                      <Typography fontWeight={700}>Select a mentored submission</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Pick a submission from the left column to review its links and leave mentor feedback in one place.
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         )}
       </Stack>
       <ConfirmActionDialog

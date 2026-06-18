@@ -105,7 +105,7 @@ function EventRoundSelector({
   return (
     <SectionCard
       title="Scoring Workspace"
-      description="Choose an event and round before configuring rubrics, templates, and finalization."
+      description="Choose an event and round before reviewing readiness, rankings, and final score locking."
       action={null}
     >
       <Stack spacing={1.6}>
@@ -318,15 +318,9 @@ export default function CoordinatorScoringPanel() {
   const [rounds, setRounds] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [selectedRoundId, setSelectedRoundId] = useState(null);
-  const [criteriaData, setCriteriaData] = useState(null);
-  const [criteriaRows, setCriteriaRows] = useState([createBlankCriterion()]);
-  const [templates, setTemplates] = useState([]);
   const [finalization, setFinalization] = useState(null);
   const [loading, setLoading] = useState(true);
   const [roundLoading, setRoundLoading] = useState(false);
-  const [savingCriteria, setSavingCriteria] = useState(false);
-  const [savingTemplate, setSavingTemplate] = useState(false);
-  const [templateDialog, setTemplateDialog] = useState({ open: false, mode: "create", template: null });
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, templateId: null, templateName: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -336,38 +330,15 @@ export default function CoordinatorScoringPanel() {
     [rounds, selectedRoundId]
   );
 
-  const loadTemplates = async () => {
-    const response = await http.get("/api/coordinator/scoring/templates");
-    setTemplates(response.data?.data || []);
-  };
-
   const loadRoundWorkspace = async (roundId) => {
     if (!roundId) {
-      setCriteriaData(null);
       setFinalization(null);
-      setCriteriaRows([createBlankCriterion()]);
       return;
     }
     setRoundLoading(true);
     try {
-      const [criteriaResponse, finalizationResponse] = await Promise.all([
-        http.get(`/api/coordinator/scoring/rounds/${roundId}/criteria`),
-        http.get(`/api/coordinator/scoring/rounds/${roundId}/finalization`),
-      ]);
-      const nextCriteria = criteriaResponse.data?.data || null;
-      const nextFinalization = finalizationResponse.data?.data || null;
-      setCriteriaData(nextCriteria);
-      setCriteriaRows(
-        (nextCriteria?.criteria || []).length > 0
-          ? nextCriteria.criteria.map((item) => ({
-              criteriaId: item.criteriaId,
-              criteriaName: item.criteriaName,
-              weight: item.weight,
-              criteriaType: item.criteriaType,
-            }))
-          : [createBlankCriterion()]
-      );
-      setFinalization(nextFinalization);
+      const response = await http.get(`/api/coordinator/scoring/rounds/${roundId}/finalization`);
+      setFinalization(response.data?.data || null);
     } finally {
       setRoundLoading(false);
     }
@@ -380,7 +351,6 @@ export default function CoordinatorScoringPanel() {
       const eventResponse = await http.get("/api/coordinator/events");
       const nextEvents = eventResponse.data?.data || [];
       setEvents(nextEvents);
-      await loadTemplates();
       if (nextEvents.length > 0) {
         const initialEventId = selectedEventId && nextEvents.some((event) => event.eventId === selectedEventId)
           ? selectedEventId
@@ -445,9 +415,7 @@ export default function CoordinatorScoringPanel() {
     let cancelled = false;
     const run = async () => {
       if (!selectedRoundId) {
-        setCriteriaData(null);
         setFinalization(null);
-        setCriteriaRows([createBlankCriterion()]);
         return;
       }
       setError("");
@@ -464,67 +432,6 @@ export default function CoordinatorScoringPanel() {
       cancelled = true;
     };
   }, [selectedRoundId]);
-
-  const handleSaveCriteria = async () => {
-    if (!selectedRoundId) return;
-    setSavingCriteria(true);
-    setError("");
-    try {
-      const response = await http.put(`/api/coordinator/scoring/rounds/${selectedRoundId}/criteria`, {
-        criteria: normalizeCriteriaRows(criteriaRows),
-      });
-      setCriteriaData(response.data?.data || null);
-      setSuccess("Round scoring criteria updated.");
-      await loadRoundWorkspace(selectedRoundId);
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to update round criteria"));
-    } finally {
-      setSavingCriteria(false);
-    }
-  };
-
-  const handleSaveTemplate = async (payload) => {
-    setSavingTemplate(true);
-    setError("");
-    try {
-      if (templateDialog.mode === "edit" && templateDialog.template?.templateId) {
-        await http.put(`/api/coordinator/scoring/templates/${templateDialog.template.templateId}`, payload);
-        setSuccess("Criteria template updated.");
-      } else {
-        await http.post("/api/coordinator/scoring/templates", payload);
-        setSuccess("Criteria template created.");
-      }
-      setTemplateDialog({ open: false, mode: "create", template: null });
-      await loadTemplates();
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to save criteria template"));
-    } finally {
-      setSavingTemplate(false);
-    }
-  };
-
-  const handleApplyTemplate = async (templateId) => {
-    if (!selectedRoundId) return;
-    setError("");
-    try {
-      await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/apply-template/${templateId}`);
-      setSuccess("Template applied to the selected round.");
-      await loadRoundWorkspace(selectedRoundId);
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to apply criteria template"));
-    }
-  };
-
-  const handleDeleteTemplate = async (templateId) => {
-    setError("");
-    try {
-      await http.delete(`/api/coordinator/scoring/templates/${templateId}`);
-      setSuccess("Criteria template deleted.");
-      await loadTemplates();
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to delete criteria template"));
-    }
-  };
 
   const handleFinalizeRound = async () => {
     if (!selectedRoundId) return;
@@ -572,8 +479,8 @@ export default function CoordinatorScoringPanel() {
       <Stack spacing={2}>
         <ModulePageHeader
           eyebrow="Evaluation Setup"
-          title="Scoring Management"
-          description="Manage round rubrics, criteria templates, and final score locking from one scoring workspace."
+          title="Scoring Finalization"
+          description="Review round readiness, rankings, and final score locking from one scoring workspace."
         />
 
         <EventRoundSelector
@@ -600,127 +507,6 @@ export default function CoordinatorScoringPanel() {
           </Box>
         ) : currentRound ? (
           <>
-            <SectionCard
-              title="Scoring Criteria Management"
-              description={`Maintain the active rubric for ${currentRound.roundName}. Criteria can only change before scoring begins.`}
-              action={(
-                <Button
-                  variant="contained"
-                  startIcon={<SaveRoundedIcon />}
-                  onClick={handleSaveCriteria}
-                  disabled={savingCriteria || !criteriaData?.editable}
-                >
-                  {savingCriteria ? "Updating..." : "Update Criteria"}
-                </Button>
-              )}
-            >
-              {!criteriaData?.editable && criteriaData?.lockedReason ? (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  {criteriaData.lockedReason}
-                </Alert>
-              ) : null}
-              <CriteriaEditor rows={criteriaRows} setRows={setCriteriaRows} disabled={!criteriaData?.editable || savingCriteria} />
-            </SectionCard>
-
-            <SectionCard
-              title="Criteria Template Management"
-              description="Build reusable rubric templates and apply them to any round before scoring starts."
-              action={(
-                <Button
-                  variant="outlined"
-                  startIcon={<AddRoundedIcon />}
-                  onClick={() => setTemplateDialog({ open: true, mode: "create", template: null })}
-                >
-                  Create Template
-                </Button>
-              )}
-            >
-              {templates.length === 0 ? (
-                <Box className="ms-empty">
-                  <Typography fontWeight={800}>No templates yet</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Create your first rubric template so coordinators can reuse the same scoring structure.
-                  </Typography>
-                </Box>
-              ) : (
-                <Stack spacing={1.3}>
-                  {templates.map((template) => (
-                    <Box
-                      key={template.templateId}
-                      sx={{
-                        p: 1.6,
-                        borderRadius: brand.radius.md,
-                        border: `1px solid ${brand.colors.line}`,
-                        bgcolor: brand.colors.surfaceSoft,
-                      }}
-                    >
-                      <Stack
-                        direction={{ xs: "column", lg: "row" }}
-                        justifyContent="space-between"
-                        spacing={1.3}
-                      >
-                        <Box sx={{ minWidth: 0 }}>
-                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                            <Typography sx={{ color: brand.colors.text, fontWeight: 900, fontSize: 16 }}>
-                              {template.templateName}
-                            </Typography>
-                            <Chip size="small" label={`${template.criteriaCount} criteria`} />
-                            <Chip size="small" variant="outlined" label={`${Number(template.totalWeight || 0).toFixed(2)}% total`} />
-                          </Stack>
-                          {template.description ? (
-                            <Typography sx={{ color: brand.colors.muted, fontSize: 13, mt: 0.7 }}>
-                              {template.description}
-                            </Typography>
-                          ) : null}
-                          <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                            {(template.criteria || []).map((item, index) => (
-                              <Chip
-                                key={`${template.templateId}-${index}`}
-                                size="small"
-                                label={`${item.criteriaName} (${item.weight}%)`}
-                                sx={{ bgcolor: brand.colors.surface }}
-                              />
-                            ))}
-                          </Stack>
-                        </Box>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="flex-start">
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<AutoFixHighRoundedIcon />}
-                            disabled={!criteriaData?.editable}
-                            onClick={() => handleApplyTemplate(template.templateId)}
-                          >
-                            Apply to Round
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => setTemplateDialog({ open: true, mode: "edit", template })}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="small"
-                            color="error"
-                            variant="outlined"
-                            onClick={() => setConfirmState({
-                              open: true,
-                              mode: "delete-template",
-                              templateId: template.templateId,
-                              templateName: template.templateName,
-                            })}
-                          >
-                            Delete
-                          </Button>
-                        </Stack>
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
-              )}
-            </SectionCard>
-
             <SectionCard
               title="Score Finalization"
               description="Preview readiness, rank submissions per track, and lock round scoring when everything is complete."
@@ -840,47 +626,29 @@ export default function CoordinatorScoringPanel() {
         ) : null}
       </Stack>
 
-      <TemplateDialog
-        open={templateDialog.open}
-        mode={templateDialog.mode}
-        initialValue={templateDialog.template}
-        onClose={() => setTemplateDialog({ open: false, mode: "create", template: null })}
-        onSubmit={handleSaveTemplate}
-        saving={savingTemplate}
-      />
-
       <ConfirmActionDialog
         open={confirmState.open}
         title={
-          confirmState.mode === "delete-template"
-            ? "Delete criteria template?"
-            : confirmState.mode === "finalize-round"
-              ? "Finalize round scores?"
-              : "Reopen round finalization?"
+          confirmState.mode === "finalize-round"
+            ? "Finalize round scores?"
+            : "Reopen round finalization?"
         }
         message={
-          confirmState.mode === "delete-template"
-            ? `Delete "${confirmState.templateName}" permanently? This will not remove existing round criteria that were already applied.`
-            : confirmState.mode === "finalize-round"
-              ? "This will lock the round, compute rankings for every track, and mark teams as qualified or eliminated."
-              : "This will unlock the round, clear saved rankings, and move qualified/eliminated submissions back to Evaluating."
+          confirmState.mode === "finalize-round"
+            ? "This will lock the round, compute rankings for every track, and mark teams as qualified or eliminated."
+            : "This will unlock the round, clear saved rankings, and move qualified/eliminated submissions back to Evaluating."
         }
         confirmLabel={
-          confirmState.mode === "delete-template"
-            ? "Delete"
-            : confirmState.mode === "finalize-round"
-              ? "Finalize"
-              : "Reopen"
+          confirmState.mode === "finalize-round"
+            ? "Finalize"
+            : "Reopen"
         }
-        confirmColor={confirmState.mode === "delete-template" ? "error" : "primary"}
+        confirmColor="primary"
         onCancel={() => setConfirmState({ open: false, mode: null, templateId: null, templateName: "" })}
         onConfirm={async () => {
           const mode = confirmState.mode;
-          const templateId = confirmState.templateId;
           setConfirmState({ open: false, mode: null, templateId: null, templateName: "" });
-          if (mode === "delete-template" && templateId) {
-            await handleDeleteTemplate(templateId);
-          } else if (mode === "finalize-round") {
+          if (mode === "finalize-round") {
             await handleFinalizeRound();
           } else if (mode === "reopen-round") {
             await handleReopenRound();

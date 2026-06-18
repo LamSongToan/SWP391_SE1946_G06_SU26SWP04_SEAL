@@ -62,6 +62,10 @@ Reusable time-control scripts live in:
 - `test_time_controls/summer_2026/01_open_registration.sql`
 - `test_time_controls/summer_2026/02_scoring_on_2026_07_16.sql`
 - `test_time_controls/summer_2026/03_restore_seed_window.sql`
+- `test_time_controls/summer_2026/2026_06_18/01_registration_open_on_2026_06_18.sql`
+- `test_time_controls/summer_2026/2026_06_18/02_submission_open_on_2026_06_18.sql`
+- `test_time_controls/summer_2026/2026_06_18/03_scoring_ready_on_2026_06_18.sql`
+- `test_time_controls/summer_2026/2026_06_18/04_restore_seed_window.sql`
 
 These scripts update the existing `SEAL Summer 2026` rows only. They do not
 drop or recreate the database.

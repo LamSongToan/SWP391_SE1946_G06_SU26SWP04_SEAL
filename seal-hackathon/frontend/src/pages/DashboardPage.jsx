@@ -56,7 +56,6 @@ import TeamManagementPanel from "../components/team/TeamManagementPanel";
 import EventRegistrationPanel from "../components/team/EventRegistrationPanel";
 import StudentSubmissionPanel from "../components/team/StudentSubmissionPanel";
 import EvaluationWorkspacePanel from "../components/evaluation/EvaluationWorkspacePanel";
-import { MentorTracksPanel } from "../components/workspace/RoleWorkspacePanels";
 import { brand, roleColors, roleLabels } from "../styles/designTokens";
 
 const DRAWER_WIDTH = 270;
@@ -79,14 +78,12 @@ const COORDINATOR_CORE_NAV = [
   { key: "guest-judges", label: "Guest Judges", icon: <GavelRoundedIcon fontSize="small" /> },
   { key: "judge-assignment", label: "Judge Assignment", icon: <AssignmentIndRoundedIcon fontSize="small" /> },
   { key: "mentor-assignment", label: "Mentor Assignment", icon: <SupervisorAccountRoundedIcon fontSize="small" /> },
-  { key: "scoring-management", label: "Scoring Management", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
+  { key: "scoring-management", label: "Scoring Finalization", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
   { key: "audit-logs", label: "Audit Logs", icon: <HistoryRoundedIcon fontSize="small" /> },
 ];
 
 const MENTOR_CORE_NAV = [
-  { key: "mentor-tracks", label: "My Tracks", icon: <PsychologyRoundedIcon fontSize="small" /> },
-  { key: "mentor-teams", label: "Mentored Teams", icon: <GroupsRoundedIcon fontSize="small" /> },
-  { key: "mentor-notes", label: "Feedback Notes", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
+  { key: "mentor-workspace", label: "Mentor Workspace", icon: <PsychologyRoundedIcon fontSize="small" /> },
 ];
 
 const JUDGE_CORE_NAV = [
@@ -661,9 +658,9 @@ export default function DashboardPage() {
     }
 
     if (currentRole === "MENTOR") {
-      if (activeKey === "mentor-tracks") return <MentorTracksPanel />;
-      if (activeKey === "mentor-teams") return <EvaluationWorkspacePanel role="MENTOR" type="teams" />;
-      if (activeKey === "mentor-notes") return <EvaluationWorkspacePanel role="MENTOR" type="notes" />;
+      if (["mentor-workspace", "mentor-tracks", "mentor-teams", "mentor-notes"].includes(activeKey)) {
+        return <EvaluationWorkspacePanel role="MENTOR" type="workspace" />;
+      }
       return null;
     }
 
@@ -697,7 +694,7 @@ export default function DashboardPage() {
     }
     skipNextSearchGuardRef.current = true;
     setSearchParams(nextParams);
-    if (["judging", "judge-rounds", "scoring", "mentor-teams", "mentor-notes"].includes(key)) {
+    if (["judging", "judge-rounds", "scoring", "mentor-workspace", "mentor-tracks", "mentor-teams", "mentor-notes"].includes(key)) {
       window.setTimeout(() => {
         window.dispatchEvent(new CustomEvent("seal-scroll-evaluation-section", { detail: { section: key } }));
       }, 120);
