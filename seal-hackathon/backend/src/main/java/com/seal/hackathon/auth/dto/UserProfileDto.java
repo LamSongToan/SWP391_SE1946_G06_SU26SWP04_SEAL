@@ -10,6 +10,7 @@ public record UserProfileDto(
         String fullName,
         String avatarUrl,
         String bio,
+        String profileLinks,
         String status,
         Boolean approved,
         LocalDateTime createdAt,

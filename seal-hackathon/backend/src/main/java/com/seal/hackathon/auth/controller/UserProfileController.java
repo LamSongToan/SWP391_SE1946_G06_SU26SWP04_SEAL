@@ -78,6 +78,7 @@ public class UserProfileController {
                 profile.fullName(),
                 baseUrl + avatarUrl,
                 profile.bio(),
+                profile.profileLinks(),
                 profile.status(),
                 profile.approved(),
                 profile.createdAt(),

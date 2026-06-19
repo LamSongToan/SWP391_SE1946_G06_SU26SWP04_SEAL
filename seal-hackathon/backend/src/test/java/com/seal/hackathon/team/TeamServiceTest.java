@@ -6,6 +6,7 @@ import com.seal.hackathon.auth.entity.UserRoleEntity;
 import com.seal.hackathon.auth.repository.StudentProfileRepository;
 import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.common.ApiException;
+import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
@@ -58,6 +59,8 @@ class TeamServiceTest {
     private HackathonEventRepository eventRepository;
     @Mock
     private SubmissionRepository submissionRepository;
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private TeamService teamService;
@@ -104,7 +107,6 @@ class TeamServiceTest {
         team.setTeamId(40);
         team.setLeader(leader);
         team.setTeamName("Another Team");
-        TrackEntity track = track(20, 30, "Web Platform");
         HackathonEventEntity event = registrationOpenEvent(30);
         event.setTrackSelectionMode("TEAM_SELECT");
 
@@ -118,8 +120,6 @@ class TeamServiceTest {
                 teamMember(team, student(3, 12, "other@example.com", "Other Member"))
         ));
         when(memberRepository.existsMembershipInEvent(10, 30)).thenReturn(true);
-        when(trackRepository.findByEventIdOrderByTrackIdAsc(30)).thenReturn(List.of(track));
-
         ApiException ex = Assertions.assertThrows(ApiException.class,
                 () -> teamService.registerTeamForEvent(
                         authentication("leader@example.com"),

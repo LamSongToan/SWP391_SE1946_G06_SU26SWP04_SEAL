@@ -76,3 +76,4 @@ replay_pid*
 *.swp
 *.swo
 *~
+.codex_audio_libs/

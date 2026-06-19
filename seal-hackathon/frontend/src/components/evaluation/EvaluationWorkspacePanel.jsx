@@ -352,6 +352,7 @@ function ScoreInputForm({
                   </Typography>
                 </Box>
                 <TextField
+                  className="eval-score-field"
                   label="Score"
                   type="number"
                   size="small"
@@ -368,10 +369,12 @@ function ScoreInputForm({
                   }))}
                 />
                 <TextField
+                  className="eval-comment-field"
                   label="Criterion comment"
                   size="small"
                   value={current.comment}
                   disabled={!editable}
+                  helperText=" "
                   onChange={(event) => setScoreState((state) => ({
                     ...state,
                     [criterion.criteriaId]: {

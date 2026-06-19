@@ -22,7 +22,10 @@ import {
 import Grid2 from "@mui/material/Grid2";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import HubRoundedIcon from "@mui/icons-material/HubRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
@@ -88,6 +91,27 @@ const ORANGE_BUTTON_SX = {
     bgcolor: "#C96928",
     boxShadow: "none",
   },
+};
+
+const CONFIG_FIELD_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "10px",
+    bgcolor: "#FFFFFF",
+  },
+};
+
+const CONFIG_SECTION_SX = {
+  borderRadius: 2,
+  border: "1px solid #D9E2EF",
+  bgcolor: "#FFFFFF",
+  boxShadow: "none",
+};
+
+const CONFIG_SUBSECTION_SX = {
+  borderRadius: 2,
+  border: "1px solid #E2E8F0",
+  bgcolor: "#F8FAFC",
+  boxShadow: "none",
 };
 
 function buildSemesterOptions() {
@@ -544,6 +568,74 @@ function StepHeader({ title, description }) {
   );
 }
 
+function ConfigSectionHeader({ index, title, description, action = null }) {
+  return (
+    <Stack
+      direction={{ xs: "column", md: "row" }}
+      justifyContent="space-between"
+      alignItems={{ xs: "flex-start", md: "center" }}
+      spacing={1.4}
+      sx={{ mb: 1.8 }}
+    >
+      <Stack direction="row" spacing={1.25} alignItems="flex-start">
+        <Box
+          sx={{
+            width: 30,
+            height: 30,
+            borderRadius: "10px",
+            bgcolor: "#FFF6EE",
+            color: "#E17C32",
+            display: "grid",
+            placeItems: "center",
+            fontSize: 13,
+            fontWeight: 950,
+            flex: "0 0 30px",
+          }}
+        >
+          {index}
+        </Box>
+        <Box>
+          <Typography sx={{ color: "#16213E", fontSize: 21, fontWeight: 950, lineHeight: 1.15 }}>
+            {title}
+          </Typography>
+          <Typography sx={{ color: "#64748B", fontSize: 14, mt: 0.45, maxWidth: 760 }}>
+            {description}
+          </Typography>
+        </Box>
+      </Stack>
+      {action}
+    </Stack>
+  );
+}
+
+function ConfigMetric({ label, value, tone = "default" }) {
+  const toneMap = {
+    orange: { bg: "#FFF6EE", color: "#E17C32" },
+    green: { bg: "#ECFDF5", color: "#059669" },
+    blue: { bg: "#EFF6FF", color: "#2563EB" },
+    default: { bg: "#F8FAFC", color: "#16213E" },
+  };
+  const selected = toneMap[tone] || toneMap.default;
+  return (
+    <Box
+      sx={{
+        p: 1.45,
+        borderRadius: 2,
+        border: "1px solid #E2E8F0",
+        bgcolor: selected.bg,
+        minWidth: 0,
+      }}
+    >
+      <Typography sx={{ color: "#64748B", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.5 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ color: selected.color, fontSize: 14, fontWeight: 950, mt: 0.45, lineHeight: 1.25 }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
 function DateTimeField({
   label,
   value,
@@ -620,8 +712,7 @@ function DateTimeField({
   };
 
   return (
-    <Card variant="outlined" sx={{ borderRadius: 4, bgcolor: "#FCFDFF" }}>
-      <CardContent sx={{ p: 2 }}>
+    <Box sx={{ ...CONFIG_SUBSECTION_SX, p: { xs: 1.5, md: 2 } }}>
         <Stack spacing={1.2}>
           <Typography sx={{ fontWeight: 800, color: "#16213E" }}>{label}</Typography>
           <Grid2 container spacing={1.25} alignItems="stretch">
@@ -633,6 +724,7 @@ function DateTimeField({
                 value={day}
                 onChange={(event) => emitValue({ day: event.target.value })}
                 disabled={disabled}
+                sx={CONFIG_FIELD_SX}
               >
                 {dayOptions.map((option) => (
                   <MenuItem key={`${label}-day-${option}`} value={option}>
@@ -649,6 +741,7 @@ function DateTimeField({
                 value={month}
                 onChange={(event) => emitValue({ month: event.target.value })}
                 disabled={disabled}
+                sx={CONFIG_FIELD_SX}
               >
                 {monthOptions.map((option) => (
                   <MenuItem key={`${label}-month-${option.value}`} value={option.value}>
@@ -665,6 +758,7 @@ function DateTimeField({
                 value={year}
                 onChange={(event) => emitValue({ year: event.target.value })}
                 disabled={disabled}
+                sx={CONFIG_FIELD_SX}
               >
                 {yearOptions.map((option) => (
                   <MenuItem key={`${label}-year-${option}`} value={option}>
@@ -681,6 +775,7 @@ function DateTimeField({
                 value={hour}
                 onChange={(event) => emitValue({ hour: event.target.value })}
                 disabled={disabled || !year || !month || !day}
+                sx={CONFIG_FIELD_SX}
               >
                 {HOUR_OPTIONS.map((option) => (
                   <MenuItem key={`${label}-hour-${option}`} value={option}>
@@ -697,6 +792,7 @@ function DateTimeField({
                 value={minute}
                 onChange={(event) => emitValue({ minute: event.target.value })}
                 disabled={disabled || !year || !month || !day}
+                sx={CONFIG_FIELD_SX}
               >
                 {MINUTE_OPTIONS.map((option) => (
                   <MenuItem key={`${label}-minute-${option}`} value={option}>
@@ -712,8 +808,7 @@ function DateTimeField({
             </Typography>
           ) : null}
         </Stack>
-      </CardContent>
-    </Card>
+    </Box>
   );
 }
 
@@ -1066,7 +1161,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
               <Typography sx={{ color: "#E17C32", fontWeight: 900, letterSpacing: 0.6, fontSize: 13 }}>
                 EVENT SETUP
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "#16213E" }}>
+              <Typography component="h1" sx={{ fontWeight: 950, color: "#16213E", fontSize: { xs: 26, md: 30 }, lineHeight: 1.14 }}>
                 Hackathon Events
               </Typography>
               <Typography sx={{ color: "#64748B", mt: 0.5 }}>
@@ -1103,36 +1198,37 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                     key={event.eventId}
                     onClick={() => openEventWizard(event.eventId)}
                     sx={{
-                      borderRadius: 5,
-                      border: "1px solid #E2E8F0",
-                      boxShadow: "0 18px 36px rgba(15, 23, 42, 0.07)",
+                      borderRadius: 3,
+                      border: "1px solid rgba(226, 232, 240, 0.95)",
+                      boxShadow: "0 20px 48px rgba(15, 23, 42, 0.08)",
                       cursor: "pointer",
                       overflow: "hidden",
+                      bgcolor: "#FFFFFF",
                       transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
                       "&:hover": {
-                        transform: "translateY(-2px)",
-                        boxShadow: "0 24px 44px rgba(15, 23, 42, 0.11)",
-                        borderColor: "#CBD5E1",
+                        transform: "translateY(-3px)",
+                        boxShadow: "0 28px 58px rgba(15, 23, 42, 0.12)",
+                        borderColor: "rgba(243, 112, 33, 0.28)",
                       },
                     }}
                   >
-                    <CardContent sx={{ p: 0 }}>
+                    <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
                       <Stack
                         direction={{ xs: "column", lg: "row" }}
                         justifyContent="space-between"
                         spacing={0}
-                        sx={{ minHeight: 188 }}
+                        sx={{ minHeight: 194, position: "relative" }}
                       >
                         <Box
                           sx={{
                             flex: 1,
                             minWidth: 0,
-                            p: { xs: 2.4, md: 2.8 },
-                            background: "linear-gradient(135deg, #FFFFFF 0%, #FFF9F3 100%)",
-                            borderRight: { xs: "none", lg: "1px solid #EEF2F7" },
+                            p: { xs: 2.35, md: 3 },
+                            position: "relative",
+                            bgcolor: "#FFFFFF",
                           }}
                         >
-                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1.2 }}>
+                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1.35, position: "relative" }}>
                             <Chip
                               label={event.status}
                               size="small"
@@ -1147,13 +1243,14 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                             ) : null}
                           </Stack>
                           <Typography
-                            variant="h4"
+                            component="h2"
                             sx={{
                               fontWeight: 950,
                               color: "#16213E",
-                              mb: 0.8,
-                              fontSize: { xs: 30, md: 38 },
-                              lineHeight: 1.08,
+                              mb: 0.75,
+                              fontSize: { xs: 25, md: 31 },
+                              lineHeight: 1.12,
+                              position: "relative",
                             }}
                           >
                             {event.name}
@@ -1161,9 +1258,12 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                           <Typography
                             sx={{
                               color: "#64748B",
-                              mb: 2,
+                              mb: 2.1,
                               maxWidth: 760,
                               minHeight: 24,
+                              fontSize: 14.5,
+                              lineHeight: 1.55,
+                              position: "relative",
                             }}
                           >
                             {event.description || "No description yet."}
@@ -1173,51 +1273,72 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                             direction={{ xs: "column", sm: "row" }}
                             spacing={1.2}
                             useFlexGap
-                            sx={{ flexWrap: "wrap" }}
+                            sx={{ flexWrap: "wrap", position: "relative" }}
                           >
                             <Box
                               sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.2,
                                 px: 1.6,
                                 py: 1.1,
-                                borderRadius: 3,
-                                bgcolor: "#FFFFFF",
+                                borderRadius: 2.5,
+                                bgcolor: "rgba(255,255,255,0.88)",
                                 border: "1px solid #E7ECF3",
-                                minWidth: { xs: "100%", sm: 280 },
+                                boxShadow: "0 10px 24px rgba(15, 23, 42, 0.04)",
+                                minWidth: { xs: "100%", sm: 308 },
                               }}
                             >
-                              <Typography sx={{ color: "#94A3B8", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6 }}>
-                                Competition Window
-                              </Typography>
-                              <Typography sx={{ color: "#16213E", fontWeight: 800, mt: 0.35 }}>
-                                {formatDateRange(event)}
-                              </Typography>
+                              <Box sx={{ width: 34, height: 34, borderRadius: 2, bgcolor: "#FFF2E8", color: "#E17C32", display: "grid", placeItems: "center", flex: "0 0 34px" }}>
+                                <CalendarMonthRoundedIcon sx={{ fontSize: 19 }} />
+                              </Box>
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography sx={{ color: "#94A3B8", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                                  Competition Window
+                                </Typography>
+                                <Typography sx={{ color: "#16213E", fontWeight: 850, mt: 0.35, lineHeight: 1.25 }}>
+                                  {formatDateRange(event)}
+                                </Typography>
+                              </Box>
                             </Box>
                             <Box
                               sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.2,
                                 px: 1.6,
                                 py: 1.1,
-                                borderRadius: 3,
-                                bgcolor: "#FFFFFF",
+                                borderRadius: 2.5,
+                                bgcolor: "rgba(255,255,255,0.88)",
                                 border: "1px solid #E7ECF3",
-                                minWidth: { xs: "100%", sm: 210 },
+                                boxShadow: "0 10px 24px rgba(15, 23, 42, 0.04)",
+                                minWidth: { xs: "100%", sm: 230 },
                               }}
                             >
-                              <Typography sx={{ color: "#94A3B8", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6 }}>
-                                Structure
-                              </Typography>
-                              <Typography sx={{ color: "#16213E", fontWeight: 800, mt: 0.35 }}>
-                                {event.trackCount} track{event.trackCount === 1 ? "" : "s"} · {event.roundCount} round{event.roundCount === 1 ? "" : "s"}
-                              </Typography>
+                              <Box sx={{ width: 34, height: 34, borderRadius: 2, bgcolor: "#EEF6FF", color: "#1677FF", display: "grid", placeItems: "center", flex: "0 0 34px" }}>
+                                <HubRoundedIcon sx={{ fontSize: 19 }} />
+                              </Box>
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography sx={{ color: "#94A3B8", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                                  Structure
+                                </Typography>
+                                <Typography sx={{ color: "#16213E", fontWeight: 850, mt: 0.35, lineHeight: 1.25 }}>
+                                  {event.trackCount} track{event.trackCount === 1 ? "" : "s"} / {event.roundCount} round{event.roundCount === 1 ? "" : "s"}
+                                </Typography>
+                              </Box>
                             </Box>
                           </Stack>
                         </Box>
 
                         <Stack
                           sx={{
-                            width: { xs: "100%", lg: 240 },
-                            p: { xs: 2.4, md: 2.8 },
+                            width: { xs: "100%", lg: 258 },
+                            p: { xs: 2.2, md: 2.6 },
                             justifyContent: "space-between",
-                            bgcolor: "#FCFDFE",
+                            alignSelf: "stretch",
+                            background: "#F8FAFC",
+                            borderLeft: { xs: "none", lg: "1px solid rgba(226,232,240,0.95)" },
+                            borderTop: "none",
                           }}
                           spacing={2}
                         >
@@ -1226,48 +1347,49 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                               Quick View
                             </Typography>
                             <Stack spacing={1}>
-                              <Chip
-                                label={`${event.trackCount} track${event.trackCount === 1 ? "" : "s"}`}
-                                size="small"
-                                sx={{ alignSelf: "flex-start", bgcolor: "#FFF6EE", color: "#E17C32", fontWeight: 900, height: 30 }}
-                              />
-                              <Chip
-                                label={`${event.roundCount} round${event.roundCount === 1 ? "" : "s"}`}
-                                size="small"
-                                sx={{ alignSelf: "flex-start", bgcolor: "#F8FAFC", color: "#334155", fontWeight: 900, height: 30 }}
-                              />
+                              {[
+                                [`${event.trackCount}`, `track${event.trackCount === 1 ? "" : "s"}`, "#FFF6EE", "#E17C32"],
+                                [`${event.roundCount}`, `round${event.roundCount === 1 ? "" : "s"}`, "#EEF6FF", "#1677FF"],
+                              ].map(([value, label, bg, color]) => (
+                                <Stack
+                                  key={label}
+                                  direction="row"
+                                  alignItems="center"
+                                  justifyContent="space-between"
+                                  sx={{
+                                    px: 1.25,
+                                    py: 1,
+                                    borderRadius: 2,
+                                    bgcolor: bg,
+                                    color,
+                                  }}
+                                >
+                                  <Typography sx={{ fontSize: 22, fontWeight: 950, lineHeight: 1 }}>
+                                    {value}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: 12, fontWeight: 900 }}>
+                                    {label}
+                                  </Typography>
+                                </Stack>
+                              ))}
                             </Stack>
                           </Box>
 
-                          <Box
+                          <Button
+                            variant="contained"
+                            endIcon={<OpenInNewRoundedIcon />}
                             sx={{
-                              pt: 1.5,
-                              borderTop: "1px solid #EAEFF6",
-                              display: "flex",
-                              justifyContent: { xs: "flex-start", lg: "space-between" },
-                              alignItems: "center",
-                              gap: 1.2,
-                              flexWrap: "wrap",
+                              alignSelf: "stretch",
+                              borderRadius: 999,
+                              bgcolor: "#16213E",
+                              color: "#FFFFFF",
+                              fontWeight: 900,
+                              py: 1,
+                              "&:hover": { bgcolor: "#0B1220" },
                             }}
                           >
-                            <Typography sx={{ color: "#94A3B8", fontSize: 12, fontWeight: 700 }}>
-                              Open detailed configuration
-                            </Typography>
-                            <Box
-                              sx={{
-                                px: 1.5,
-                                py: 0.9,
-                                borderRadius: 999,
-                                bgcolor: "#16213E",
-                                color: "#FFFFFF",
-                                fontWeight: 900,
-                                fontSize: 13,
-                                lineHeight: 1,
-                              }}
-                            >
-                              Open
-                            </Box>
-                          </Box>
+                            Open configuration
+                          </Button>
                         </Stack>
                       </Stack>
                     </CardContent>
@@ -1291,7 +1413,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
             }}
           >
             <Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "#16213E" }}>
+              <Typography component="h1" sx={{ fontWeight: 950, color: "#16213E", fontSize: { xs: 26, md: 30 }, lineHeight: 1.14 }}>
                 Create Event
               </Typography>
               <Typography sx={{ color: "#64748B", mt: 0.6 }}>
@@ -1311,7 +1433,14 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
             </Alert>
           ) : null}
 
-          <Card sx={{ borderRadius: 5, border: "1px solid #E2E8F0", boxShadow: "0 20px 40px rgba(15, 23, 42, 0.08)" }}>
+          <Card
+            sx={{
+              borderRadius: 2,
+              border: "1px solid #D9E2EF",
+              boxShadow: "0 18px 34px rgba(15, 23, 42, 0.08)",
+              "& .MuiTextField-root": CONFIG_FIELD_SX,
+            }}
+          >
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
               <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
                 {CREATE_STEPS.map((step) => (
@@ -1469,7 +1598,10 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
           >
             <Box>
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
-                <Typography variant="h4" sx={{ fontWeight: 900, color: "#16213E" }}>
+                <Typography
+                  component="h1"
+                  sx={{ fontWeight: 950, color: "#16213E", fontSize: { xs: 26, md: 31 }, lineHeight: 1.12 }}
+                >
                   {wizard.name || "Event Detail"}
                 </Typography>
                 <Chip
@@ -1534,16 +1666,39 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
             </Alert>
           ) : null}
 
-          <Card sx={{ borderRadius: 5, border: "1px solid #E2E8F0", boxShadow: "0 20px 40px rgba(15, 23, 42, 0.08)" }}>
+          <Card
+            sx={{
+              borderRadius: 2,
+              border: "1px solid #D9E2EF",
+              boxShadow: "0 18px 34px rgba(15, 23, 42, 0.08)",
+            }}
+          >
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-              <Stack spacing={3}>
+              <Stack spacing={3.2}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+                    gap: 1.2,
+                    p: 1.2,
+                    mb: 0.5,
+                    borderRadius: 2,
+                    bgcolor: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                  }}
+                >
+                  <ConfigMetric label="Registration" value={`${formatDateTime(wizard.registrationStartAt)} - ${formatDateTime(wizard.registrationEndAt)}`} tone="orange" />
+                  <ConfigMetric label="Competition" value={`${formatDateTime(wizard.competitionStartAt)} - ${formatDateTime(wizard.competitionEndAt)}`} tone="blue" />
+                  <ConfigMetric label="Tracks" value={`${wizard.tracks.length} configured`} tone="green" />
+                  <ConfigMetric label="Rounds" value={`${wizard.qualifyingRounds.length + 1} total`} />
+                </Box>
+
                 <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 900, color: "#16213E", mb: 0.5 }}>
-                    Tracks
-                  </Typography>
-                  <Typography sx={{ color: "#64748B", mb: 2 }}>
-                    Split the event into tracks and decide whether teams choose their own track or the system assigns it automatically.
-                  </Typography>
+                  <ConfigSectionHeader
+                    index="1"
+                    title="Tracks"
+                    description="Split the event into tracks and decide whether teams choose their own track or the system assigns it automatically."
+                  />
                   <TextField
                     select
                     fullWidth
@@ -1551,7 +1706,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                     value={wizard.trackAssignmentMode}
                     onChange={(event) => updateWizard("trackAssignmentMode", event.target.value)}
                     disabled={!editable}
-                    sx={{ mb: 2 }}
+                    sx={{ mb: 2, ...CONFIG_FIELD_SX }}
                   >
                     {TRACK_ASSIGNMENT_OPTIONS.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
@@ -1561,8 +1716,8 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                   </TextField>
                   <Stack spacing={1.5}>
                     {wizard.tracks.map((track, index) => (
-                      <Card key={`track-${track.trackId || index}`} variant="outlined" sx={{ borderRadius: 4 }}>
-                        <CardContent sx={{ p: 2 }}>
+                      <Card key={`track-${track.trackId || index}`} variant="outlined" sx={CONFIG_SUBSECTION_SX}>
+                        <CardContent sx={{ p: 1.75 }}>
                           <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
                             <TextField
                               fullWidth
@@ -1570,6 +1725,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                               value={track.name}
                               onChange={(event) => updateTrack(index, event.target.value)}
                               disabled={!editable}
+                              sx={CONFIG_FIELD_SX}
                             />
                             {editable ? (
                               <Button
@@ -1594,34 +1750,30 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                 </Box>
 
                 <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 900, color: "#16213E", mb: 0.5 }}>
-                    Rounds
-                  </Typography>
-                  <Typography sx={{ color: "#64748B", mb: 2 }}>
-                    Build qualifying rounds first. Top N teams from each track move forward, then finalists join one shared final round for judge Q&amp;A.
-                  </Typography>
+                  <ConfigSectionHeader
+                    index="2"
+                    title="Rounds"
+                    description="Build qualifying rounds first. Top N teams from each track move forward, then finalists join one shared final round for judge Q&A."
+                  />
 
-                  <Card variant="outlined" sx={{ borderRadius: 4, mb: 2 }}>
+                  <Card variant="outlined" sx={{ ...CONFIG_SECTION_SX, mb: 2 }}>
                     <CardContent sx={{ p: 2.4 }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                        <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 800 }}>Qualifying Rounds</Typography>
-                          <Typography sx={{ color: "#64748B" }}>
-                            Each qualifying round defines the Top N teams per track that advance to the next stage.
-                          </Typography>
-                        </Box>
-                        {editable ? (
+                      <ConfigSectionHeader
+                        index="2A"
+                        title="Qualifying Rounds"
+                        description="Each qualifying round defines the Top N teams per track that advance to the next stage."
+                        action={editable ? (
                           <Button variant="text" startIcon={<AddRoundedIcon />} onClick={addQualifyingRound} sx={{ textTransform: "none", fontWeight: 800 }}>
                             Add Round
                           </Button>
                         ) : null}
-                      </Stack>
+                      />
 
                       <Stack spacing={1.5}>
                         {wizard.qualifyingRounds.length === 0 ? (
                           <EmptyState text="No qualifying rounds yet. Add the first round to start defining the promotion path." />
                         ) : wizard.qualifyingRounds.map((round, index) => (
-                          <Card key={`qualifying-round-${round.roundId || index}`} variant="outlined" sx={{ borderRadius: 4, bgcolor: "#FCFDFF" }}>
+                          <Card key={`qualifying-round-${round.roundId || index}`} variant="outlined" sx={CONFIG_SUBSECTION_SX}>
                             <CardContent sx={{ p: 2 }}>
                               <Stack spacing={1.5}>
                                 <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
@@ -1631,6 +1783,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                     value={round.roundName}
                                     onChange={(event) => updateQualifyingRound(index, "roundName", event.target.value)}
                                     disabled={!editable}
+                                    sx={CONFIG_FIELD_SX}
                                   />
                                   <TextField
                                     label="Top N per track"
@@ -1639,7 +1792,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                     onChange={(event) => updateQualifyingRound(index, "topNPerTrack", event.target.value)}
                                     disabled={!editable}
                                     inputProps={{ min: 1 }}
-                                    sx={{ width: { xs: "100%", md: 200 } }}
+                                    sx={{ width: { xs: "100%", md: 200 }, ...CONFIG_FIELD_SX }}
                                   />
                                   {editable ? (
                                     <Button
@@ -1661,8 +1814,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                   helperText="This is the submission cut-off for the round and must stay inside the competition window."
                                   disabled={!editable}
                                 />
-                                <Card variant="outlined" sx={{ borderRadius: 4, bgcolor: "#FFFFFF" }}>
-                                  <CardContent sx={{ p: 2 }}>
+                                <Box sx={{ ...CONFIG_SECTION_SX, p: { xs: 1.5, md: 2 } }}>
                                     <Stack spacing={1.4}>
                                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                                         <Box>
@@ -1693,6 +1845,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                               value={criterion.criterionName}
                                               onChange={(event) => updateQualifyingCriterion(index, criterionIndex, { criterionName: event.target.value })}
                                               disabled={!editable}
+                                              sx={CONFIG_FIELD_SX}
                                             />
                                             <TextField
                                               label="Weight (%)"
@@ -1701,7 +1854,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                               onChange={(event) => updateQualifyingCriterion(index, criterionIndex, { weight: event.target.value })}
                                               disabled={!editable}
                                               inputProps={{ min: 1, max: 100 }}
-                                              sx={{ width: { xs: "100%", md: 160 } }}
+                                              sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
                                             />
                                             {editable ? (
                                               <Button
@@ -1718,8 +1871,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                         ))}
                                       </Stack>
                                     </Stack>
-                                  </CardContent>
-                                </Card>
+                                </Box>
                               </Stack>
                             </CardContent>
                           </Card>
@@ -1728,12 +1880,13 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                     </CardContent>
                   </Card>
 
-                  <Card variant="outlined" sx={{ borderRadius: 4 }}>
+                  <Card variant="outlined" sx={CONFIG_SECTION_SX}>
                     <CardContent sx={{ p: 2.4 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>Final Round</Typography>
-                      <Typography sx={{ color: "#64748B", mb: 2 }}>
-                        Finalists from every track join one shared final round instead of competing inside track boundaries.
-                      </Typography>
+                      <ConfigSectionHeader
+                        index="2B"
+                        title="Final Round"
+                        description="Finalists from every track join one shared final round instead of competing inside track boundaries."
+                      />
                       <Stack spacing={1.5}>
                         <TextField
                           fullWidth
@@ -1741,6 +1894,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                           value={wizard.finalRound.roundName}
                           onChange={(event) => updateWizard("finalRound", { ...wizard.finalRound, roundName: normalizeFinalRoundName(event.target.value) })}
                           disabled={!editable}
+                          sx={CONFIG_FIELD_SX}
                         />
                         <DateTimeField
                           label="Submission Deadline"
@@ -1751,8 +1905,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                           helperText="This is the final submission cut-off before judges begin the final assessment."
                           disabled={!editable}
                         />
-                        <Card variant="outlined" sx={{ borderRadius: 4, bgcolor: "#FFFFFF" }}>
-                          <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ ...CONFIG_SUBSECTION_SX, p: { xs: 1.5, md: 2 } }}>
                             <Stack spacing={1.4}>
                               <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Box>
@@ -1783,6 +1936,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                       value={criterion.criterionName}
                                       onChange={(event) => updateFinalCriterion(criterionIndex, { criterionName: event.target.value })}
                                       disabled={!editable}
+                                      sx={CONFIG_FIELD_SX}
                                     />
                                     <TextField
                                       label="Weight (%)"
@@ -1791,7 +1945,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                       onChange={(event) => updateFinalCriterion(criterionIndex, { weight: event.target.value })}
                                       disabled={!editable}
                                       inputProps={{ min: 1, max: 100 }}
-                                      sx={{ width: { xs: "100%", md: 160 } }}
+                                      sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
                                     />
                                     {editable ? (
                                       <Button
@@ -1808,10 +1962,8 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                 ))}
                               </Stack>
                             </Stack>
-                          </CardContent>
-                        </Card>
-                        <Card variant="outlined" sx={{ borderRadius: 4, bgcolor: "#FFFFFF" }}>
-                          <CardContent sx={{ p: 2 }}>
+                        </Box>
+                        <Box sx={{ ...CONFIG_SUBSECTION_SX, p: { xs: 1.5, md: 2 } }}>
                             <Stack spacing={1.4}>
                               <Box>
                                 <Typography sx={{ fontWeight: 800, color: "#16213E" }}>
@@ -1834,6 +1986,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                       value={award.awardName}
                                       onChange={(event) => updateAward(index, "awardName", event.target.value)}
                                       disabled={!editable}
+                                      sx={CONFIG_FIELD_SX}
                                     />
                                     <TextField
                                       label="Quantity"
@@ -1842,7 +1995,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                       onChange={(event) => updateAward(index, "quantity", event.target.value)}
                                       inputProps={{ min: 1 }}
                                       disabled={!editable}
-                                      sx={{ width: { xs: "100%", md: 160 } }}
+                                      sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
                                     />
                                     {editable ? (
                                       <Button
@@ -1864,8 +2017,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                 </Button>
                               ) : null}
                             </Stack>
-                          </CardContent>
-                        </Card>
+                        </Box>
                       </Stack>
                     </CardContent>
                   </Card>
@@ -1941,3 +2093,4 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
     </Box>
   );
 }
+

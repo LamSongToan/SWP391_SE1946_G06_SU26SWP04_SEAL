@@ -11,6 +11,7 @@ import com.seal.hackathon.event.entity.RoundEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
+import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.submission.dto.SubmissionRequest;
 import com.seal.hackathon.submission.entity.SubmissionEntity;
 import com.seal.hackathon.submission.entity.SubmissionHistoryEntity;
@@ -57,6 +58,8 @@ class SubmissionServiceTest {
     private UserRepository userRepository;
     @Mock
     private StudentProfileRepository studentProfileRepository;
+    @Mock
+    private AuditLogService auditLogService;
 
     private SubmissionService submissionService;
     private UserEntity leaderUser;
@@ -77,7 +80,8 @@ class SubmissionServiceTest {
                 roundRepository,
                 eventRepository,
                 userRepository,
-                studentProfileRepository
+                studentProfileRepository,
+                auditLogService
         );
 
         leaderUser = user(1, "leader@seal.test", "Team Leader");

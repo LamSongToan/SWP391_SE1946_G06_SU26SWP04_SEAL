@@ -8,6 +8,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Collapse,
   Divider,
   Dialog,
   DialogActions,
@@ -29,6 +30,10 @@ import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import CalendarTodayRoundedIcon from "@mui/icons-material/CalendarTodayRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import { authStorage, http, resolveAssetUrl } from "../../api/http";
 import { brand } from "../../styles/designTokens";
 
@@ -43,10 +48,61 @@ const EMPTY_FORM = {
   fullName: "",
   avatarUrl: "",
   bio: "",
+  profileLinks: "",
   studentType: "",
   studentCode: "",
   universityName: "",
 };
+
+const MAX_PROFILE_LINKS = 5;
+const SOCIAL_LINK_PRESETS = ["Facebook", "GitHub", "LinkedIn", "Portfolio"];
+
+function parseProfileLinks(value, options = {}) {
+  const keepEmpty = Boolean(options.keepEmpty);
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({
+        label: String(item.label || "").trim(),
+        url: String(item.url || "").trim(),
+      }))
+      .filter((item) => keepEmpty || item.label || item.url)
+      .slice(0, MAX_PROFILE_LINKS);
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return parseProfileLinks(parsed, options);
+  } catch {
+    return [];
+  }
+}
+
+function serializeProfileLinks(links, options = {}) {
+  const normalized = parseProfileLinks(links, options);
+  return normalized.length ? JSON.stringify(normalized) : "";
+}
+
+function normalizeProfileLinkUrl(url) {
+  const trimmedUrl = String(url || "").trim();
+  if (!trimmedUrl) return "";
+  if (/^https?:\/\//i.test(trimmedUrl)) {
+    return trimmedUrl;
+  }
+  return `https://${trimmedUrl}`;
+}
+
+function normalizeProfileLinksForStorage(value) {
+  const normalized = parseProfileLinks(value)
+    .map((link) => ({
+      label: link.label.trim(),
+      url: normalizeProfileLinkUrl(link.url),
+    }))
+    .filter((link) => link.label || link.url);
+
+  return normalized.length ? JSON.stringify(normalized) : "";
+}
 
 function readProfileDraft() {
   try {
@@ -67,6 +123,7 @@ function toFormFromProfile(profile) {
     fullName: profile?.fullName || "",
     avatarUrl: profile?.avatarUrl || "",
     bio: profile?.bio || "",
+    profileLinks: profile?.profileLinks || "",
     studentType: profile?.studentType || "",
     studentCode: profile?.studentCode || "",
     universityName: profile?.universityName || "",
@@ -87,6 +144,78 @@ function withAssetVersion(url, version) {
   if (!url || !version) return url;
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}v=${version}`;
+}
+
+function formatProfileDateTime(value) {
+  if (!value) return "Unknown";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatActionLabel(value) {
+  if (!value) return "Activity";
+  return String(value)
+    .split("_")
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0) + segment.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatActivityTarget(item) {
+  if (item?.targetName) return item.targetName;
+  if (item?.targetEntity) return item.targetEntity;
+  if (item?.targetId) return `ID ${item.targetId}`;
+  return "SEAL workspace";
+}
+
+function getProfileLinkLabel(link) {
+  if (link?.label?.trim()) return link.label.trim();
+  try {
+    return new URL(link.url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Profile link";
+  }
+}
+
+function getProfileLinkDomain(link) {
+  try {
+    return new URL(normalizeProfileLinkUrl(link.url)).hostname.replace(/^www\./, "");
+  } catch {
+    return normalizeProfileLinkUrl(link.url);
+  }
+}
+
+function isValidProfileUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function validateProfileLinks(value) {
+  const links = parseProfileLinks(value);
+  if (links.length > MAX_PROFILE_LINKS) return `Add ${MAX_PROFILE_LINKS} links or fewer`;
+  const serialized = normalizeProfileLinksForStorage(links);
+  if (serialized.length > 2000) return "Profile links are too long";
+
+  for (const link of links) {
+    const normalizedUrl = normalizeProfileLinkUrl(link.url);
+    if (!normalizedUrl) return "Each link needs a URL";
+    if (link.label.length > 40) return "Link labels must be 40 characters or fewer";
+    if (normalizedUrl.length > 300) return "Each link URL must be 300 characters or fewer";
+    if (!isValidProfileUrl(normalizedUrl)) return "Enter a valid social link or website URL";
+  }
+
+  return "";
 }
 
 function clamp(value, min, max) {
@@ -166,6 +295,203 @@ function syncStoredAuthProfile(profile) {
   });
 }
 
+function ProfileSectionHeader({ title, description, action = null }) {
+  return (
+    <Stack
+      direction={{ xs: "column", sm: "row" }}
+      justifyContent="space-between"
+      alignItems={{ xs: "flex-start", sm: "center" }}
+      spacing={1.2}
+      sx={{ mb: 1.8 }}
+    >
+      <Box>
+        <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950, lineHeight: 1.2 }}>
+          {title}
+        </Typography>
+        {description ? (
+          <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.45 }}>
+            {description}
+          </Typography>
+        ) : null}
+      </Box>
+      {action}
+    </Stack>
+  );
+}
+
+function ProfileInfoPill({ icon, label, value }) {
+  return (
+    <Stack
+      direction="row"
+      spacing={1.1}
+      alignItems="center"
+      sx={{
+        minWidth: 0,
+        p: 1.35,
+        borderRadius: brand.radius.md,
+        bgcolor: "#FFFFFF",
+        border: `1px solid ${brand.colors.line}`,
+      }}
+    >
+      <Box sx={{ color: brand.colors.orange, display: "grid", placeItems: "center", flex: "0 0 auto" }}>
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ color: brand.colors.muted, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.45 }}>
+          {label}
+        </Typography>
+        <Typography sx={{ color: brand.colors.text, fontSize: 13.5, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {value || "N/A"}
+        </Typography>
+      </Box>
+    </Stack>
+  );
+}
+
+function ProfileLinkButton({ link }) {
+  return (
+    <Button
+      component="a"
+      href={normalizeProfileLinkUrl(link.url)}
+      target="_blank"
+      rel="noreferrer"
+      sx={{
+        justifyContent: "flex-start",
+        width: { xs: "100%", sm: "auto" },
+        minWidth: { xs: "100%", sm: 210 },
+        maxWidth: { xs: "100%", sm: 260 },
+        borderRadius: brand.radius.md,
+        px: 1.25,
+        py: 1,
+        color: brand.colors.navy,
+        border: `1px solid ${brand.colors.line}`,
+        bgcolor: "#FFFFFF",
+        textTransform: "none",
+        boxShadow: "0 8px 22px rgba(7, 26, 47, 0.06)",
+        "&:hover": {
+          borderColor: "#FDBA74",
+          bgcolor: brand.colors.surfaceWarm,
+          boxShadow: "0 12px 28px rgba(243, 112, 33, 0.13)",
+        },
+      }}
+    >
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%", minWidth: 0 }}>
+        <Box
+          sx={{
+            width: 34,
+            height: 34,
+            borderRadius: 2,
+            bgcolor: brand.colors.surfaceWarm,
+            color: brand.colors.orange,
+            display: "grid",
+            placeItems: "center",
+            flex: "0 0 34px",
+          }}
+        >
+          <LinkRoundedIcon fontSize="small" />
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1, textAlign: "left" }}>
+          <Typography sx={{ color: brand.colors.text, fontSize: 13.5, fontWeight: 950, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {getProfileLinkLabel(link)}
+          </Typography>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {getProfileLinkDomain(link)}
+          </Typography>
+        </Box>
+        <OpenInNewRoundedIcon sx={{ fontSize: 17, color: brand.colors.muted, flex: "0 0 auto" }} />
+      </Stack>
+    </Button>
+  );
+}
+
+function ProfileStatTile({ icon, label, value, tone = "orange" }) {
+  const colors = {
+    orange: { bg: brand.colors.surfaceWarm, color: brand.colors.orange },
+    blue: { bg: "#EFF6FF", color: "#2563EB" },
+    green: { bg: "#ECFDF5", color: "#059669" },
+  };
+  const selected = colors[tone] || colors.orange;
+  return (
+    <Box
+      sx={{
+        minHeight: 112,
+        p: 2,
+        border: `1px solid ${brand.colors.line}`,
+        borderRadius: brand.radius.md,
+        bgcolor: "#FFFFFF",
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1.5}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900 }}>
+            {label}
+          </Typography>
+          <Typography sx={{ color: brand.colors.text, fontSize: typeof value === "number" ? 26 : 19, fontWeight: 950, lineHeight: 1.15, mt: 0.8, wordBreak: "break-word" }}>
+            {value}
+          </Typography>
+        </Box>
+        <Box sx={{ width: 42, height: 42, borderRadius: 2, bgcolor: selected.bg, color: selected.color, display: "grid", placeItems: "center", flex: "0 0 42px" }}>
+          {icon}
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+function CapabilityItem({ title, description, icon }) {
+  return (
+    <Box
+      sx={{
+        p: 1.7,
+        borderRadius: brand.radius.md,
+        border: `1px solid ${brand.colors.line}`,
+        bgcolor: "#FFFFFF",
+      }}
+    >
+      <Stack direction="row" spacing={1.3} alignItems="flex-start">
+        <Box
+          sx={{
+            width: 38,
+            height: 38,
+            borderRadius: 2,
+            bgcolor: brand.colors.surfaceWarm,
+            color: brand.colors.orange,
+            display: "grid",
+            placeItems: "center",
+            flex: "0 0 38px",
+          }}
+        >
+          {icon}
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ color: brand.colors.text, fontWeight: 900, lineHeight: 1.25 }}>
+            {title}
+          </Typography>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.45, lineHeight: 1.55 }}>
+            {description}
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+function ActivityItem({ item }) {
+  return (
+    <Box sx={{ position: "relative", pl: 3.4, pb: 1.35, "&:not(:last-child)::before": { content: '""', position: "absolute", left: 9, top: 22, bottom: -2, width: 2, bgcolor: "#E2E8F0" } }}>
+      <Box sx={{ position: "absolute", left: 0, top: 4, width: 20, height: 20, borderRadius: "50%", bgcolor: brand.colors.surfaceWarm, border: "3px solid #FFFFFF", boxShadow: "0 0 0 1px #E2E8F0" }} />
+      <Box sx={{ p: 1.65, borderRadius: brand.radius.md, border: `1px solid ${brand.colors.line}`, bgcolor: "#FFFFFF" }}>
+        <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 900 }}>
+          {formatActionLabel(item.actionType)}
+        </Typography>
+        <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.4 }}>
+          {formatActivityTarget(item)} - {formatProfileDateTime(item.timestamp)}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
 export default function UserProfilePanel({ onDirtyChange = () => {} }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef(null);
@@ -173,6 +499,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
   const avatarDragRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [teams, setTeams] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -190,6 +517,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
   const [avatarEditorMinScale, setAvatarEditorMinScale] = useState(1);
   const [avatarEditorOffset, setAvatarEditorOffset] = useState({ x: 0, y: 0 });
   const [avatarEditorImageSize, setAvatarEditorImageSize] = useState({ width: 0, height: 0 });
+  const [roleCapabilitiesOpen, setRoleCapabilitiesOpen] = useState(false);
   const editMode = searchParams.get("mode") === "edit";
 
   const isStudent = useMemo(() => profile?.roles?.includes("STUDENT"), [profile]);
@@ -224,6 +552,53 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
 
     return items;
   }, [profile?.roles]);
+  const roleCapabilities = useMemo(() => {
+    const roles = profile?.roles || [];
+    const items = [];
+
+    if (roles.includes("COORDINATOR")) {
+      items.push(
+        {
+          title: "Event configuration",
+          description: "Create semester events, configure tracks, rounds, deadlines, scoring criteria, and awards.",
+          icon: <EventRoundedIcon fontSize="small" />,
+        },
+        {
+          title: "User and role operations",
+          description: "Review participant accounts, manage active users, guest judges, and role-based access.",
+          icon: <BadgeRoundedIcon fontSize="small" />,
+        },
+        {
+          title: "Audit and assignments",
+          description: "Track audited changes and coordinate judge or mentor assignments for active rounds.",
+          icon: <CalendarTodayRoundedIcon fontSize="small" />,
+        }
+      );
+    }
+    if (roles.includes("MENTOR")) {
+      items.push({
+        title: "Mentor workspace",
+        description: "View assigned tracks, follow team progress, and leave feedback for mentored submissions.",
+        icon: <GroupsRoundedIcon fontSize="small" />,
+      });
+    }
+    if (roles.includes("JUDGE")) {
+      items.push({
+        title: "Judging workspace",
+        description: "Review assigned submissions, inspect repository links, and finalize rubric scores.",
+        icon: <EditRoundedIcon fontSize="small" />,
+      });
+    }
+    if (roles.includes("STUDENT")) {
+      items.push({
+        title: "Team participation",
+        description: "Join teams, track current events, and submit work during open rounds.",
+        icon: <GroupsRoundedIcon fontSize="small" />,
+      });
+    }
+
+    return items;
+  }, [profile?.roles]);
   const uniqueEvents = useMemo(
     () => Array.from(new Map((teams || []).map((team) => [team.eventId, team])).values()),
     [teams]
@@ -234,6 +609,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         username: form.username,
         avatarUrl: form.avatarUrl,
         bio: form.bio,
+        profileLinks: form.profileLinks,
         studentType: form.studentType,
         studentCode: form.studentCode,
         universityName: form.universityName,
@@ -243,10 +619,13 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         username: profile?.username || "",
         avatarUrl: profile?.avatarUrl || "",
         bio: profile?.bio || "",
+        profileLinks: profile?.profileLinks || "",
         studentType: profile?.studentType || "",
         studentCode: profile?.studentCode || "",
         universityName: profile?.universityName || "",
       };
+  const editableProfileLinks = useMemo(() => parseProfileLinks(form.profileLinks, { keepEmpty: true }), [form.profileLinks]);
+  const visibleProfileLinks = useMemo(() => parseProfileLinks(displayProfile.profileLinks), [displayProfile.profileLinks]);
   const displayAvatarSrc = withAssetVersion(
     resolveAssetUrl(displayProfile.avatarUrl),
     profile?.__avatarVersion
@@ -325,6 +704,17 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         setTeams([]);
       }
 
+      if (profileData?.roles?.includes("COORDINATOR")) {
+        try {
+          const activityResponse = await http.get("/api/coordinator/scoring/audit-logs");
+          setRecentActivity((activityResponse.data?.data || []).slice(0, 5));
+        } catch {
+          setRecentActivity([]);
+        }
+      } else {
+        setRecentActivity([]);
+      }
+
       setFieldErrors({});
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load profile");
@@ -357,6 +747,8 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
       case "bio":
         if (trimmedValue.length > 500) return "Bio must be 500 characters or fewer";
         return "";
+      case "profileLinks":
+        return validateProfileLinks(value);
       default:
         return "";
     }
@@ -366,6 +758,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     username: validateField("username", nextForm.username),
     fullName: validateField("fullName", nextForm.fullName),
     bio: validateField("bio", nextForm.bio),
+    profileLinks: validateField("profileLinks", nextForm.profileLinks),
   });
 
   const hasClientErrors = Object.values(collectClientErrors()).some(Boolean);
@@ -377,13 +770,15 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
       fullName: form.fullName.trim(),
       avatarUrl: form.avatarUrl || "",
       bio: form.bio || "",
+      profileLinks: normalizeProfileLinksForStorage(form.profileLinks),
     }) !== JSON.stringify({
       username: profile.username || "",
       fullName: profile.fullName || "",
       avatarUrl: profile.avatarUrl || "",
       bio: profile.bio || "",
+      profileLinks: normalizeProfileLinksForStorage(profile.profileLinks),
     });
-  }, [form.avatarUrl, form.bio, form.fullName, form.username, profile]);
+  }, [form.avatarUrl, form.bio, form.fullName, form.profileLinks, form.username, profile]);
 
   useEffect(() => {
     if (!profile?.email) return;
@@ -422,13 +817,14 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
             fullName: form.fullName,
             avatarUrl: form.avatarUrl,
             bio: form.bio,
+            profileLinks: form.profileLinks,
           },
         })
       );
     } else if (editMode && !profileDirty) {
       clearProfileDraft();
     }
-  }, [editMode, form.avatarUrl, form.bio, form.fullName, form.username, onDirtyChange, profile?.email, profileDirty]);
+  }, [editMode, form.avatarUrl, form.bio, form.fullName, form.profileLinks, form.username, onDirtyChange, profile?.email, profileDirty]);
 
   useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
@@ -491,6 +887,36 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     });
   };
 
+  const setProfileLinksValue = (nextLinks) => {
+    setForm((prev) => {
+      const nextForm = { ...prev, profileLinks: serializeProfileLinks(nextLinks, { keepEmpty: true }) };
+      setTouched((prevTouched) => ({ ...prevTouched, profileLinks: true }));
+      setFieldErrors((prevErrors) => ({
+        ...prevErrors,
+        profileLinks: validateField("profileLinks", nextForm.profileLinks),
+      }));
+      return nextForm;
+    });
+  };
+
+  const onProfileLinkChange = (index, key) => (event) => {
+    const nextLinks = [...editableProfileLinks];
+    nextLinks[index] = {
+      ...nextLinks[index],
+      [key]: event.target.value,
+    };
+    setProfileLinksValue(nextLinks);
+  };
+
+  const addProfileLink = (label = "") => {
+    if (editableProfileLinks.length >= MAX_PROFILE_LINKS) return;
+    setProfileLinksValue([...editableProfileLinks, { label, url: "" }]);
+  };
+
+  const removeProfileLink = (index) => {
+    setProfileLinksValue(editableProfileLinks.filter((_, itemIndex) => itemIndex !== index));
+  };
+
   const getFieldErrors = (err) => {
     const response = err?.response?.data;
     const message = response?.message || "";
@@ -517,11 +943,17 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     }
   };
 
+  const openEditProfile = () => {
+    setSearchParams({ section: "account", mode: "edit" });
+    setSuccess("");
+    setError("");
+  };
+
   const onSave = async () => {
     setSaving(true);
     setError("");
     setSuccess("");
-    const allTouched = { username: true, fullName: true, bio: true };
+    const allTouched = { username: true, fullName: true, bio: true, profileLinks: true };
     const clientErrors = collectClientErrors(form);
     setTouched(allTouched);
     setFieldErrors(clientErrors);
@@ -536,12 +968,22 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         fullName: form.fullName,
         avatarUrl: form.avatarUrl,
         bio: form.bio,
+        profileLinks: normalizeProfileLinksForStorage(form.profileLinks),
         studentType: null,
         studentCode: null,
         universityName: null,
       };
       const response = await http.put("/api/users/me", payload);
-      applyProfileData(response.data?.data, "Profile updated successfully");
+      const responseProfile = response.data?.data || profile || {};
+      const responseHasProfileLinks = Object.prototype.hasOwnProperty.call(responseProfile, "profileLinks");
+      const nextProfile = {
+        ...responseProfile,
+        profileLinks:
+          responseHasProfileLinks && (responseProfile.profileLinks || !payload.profileLinks)
+            ? responseProfile.profileLinks
+            : payload.profileLinks,
+      };
+      applyProfileData(nextProfile, "Profile updated successfully");
       clearProfileDraft();
       setSearchParams({ section: "account" });
     } catch (err) {
@@ -715,24 +1157,12 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         : false;
 
   const editProfileContent = (
-    <Card className="ms-data-card">
-      <CardContent>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", sm: "center" }}
-          spacing={1.5}
-          sx={{ mb: 2 }}
-        >
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              Edit Profile
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Update how you appear across SEAL.
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={1}>
+    <Box>
+        <ProfileSectionHeader
+          title="Edit Profile"
+          description="Update how your account appears across SEAL workspaces."
+          action={(
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             <Button variant="text" color="inherit" startIcon={<CloseRoundedIcon />} onClick={cancelEdit}>
               Cancel
             </Button>
@@ -740,9 +1170,10 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
               {saving ? "Saving..." : "Save profile"}
             </Button>
           </Stack>
-        </Stack>
+          )}
+        />
 
-        <Grid2 container spacing={2}>
+        <Grid2 container spacing={2.2}>
           <Grid2 size={{ xs: 12, md: 6 }}>
             <TextField
               label="Username"
@@ -781,6 +1212,110 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
               minRows={4}
             />
           </Grid2>
+          <Grid2 size={{ xs: 12 }}>
+            <Box
+              sx={{
+                p: 1.7,
+                borderRadius: brand.radius.md,
+                border: `1px solid ${fieldErrors.profileLinks ? brand.colors.danger : brand.colors.line}`,
+                bgcolor: "#F8FAFC",
+              }}
+            >
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.2}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", sm: "center" }}
+                sx={{ mb: editableProfileLinks.length ? 1.4 : 0 }}
+              >
+                <Box>
+                  <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 950 }}>
+                    Social links
+                  </Typography>
+                  <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.35 }}>
+                    Add public links such as Facebook, GitHub, LinkedIn, or a personal site. You can type facebook.com/name without https.
+                  </Typography>
+                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AddRoundedIcon />}
+                  onClick={() => addProfileLink()}
+                  disabled={editableProfileLinks.length >= MAX_PROFILE_LINKS}
+                  sx={{ borderRadius: 999, textTransform: "none", fontWeight: 850 }}
+                >
+                  Add link
+                </Button>
+              </Stack>
+
+              {editableProfileLinks.length ? (
+                <Stack spacing={1.1}>
+                  {editableProfileLinks.map((link, index) => (
+                    <Stack
+                      key={`profile-link-${index}`}
+                      direction={{ xs: "column", md: "row" }}
+                      spacing={1}
+                      alignItems={{ xs: "stretch", md: "flex-start" }}
+                    >
+                      <TextField
+                        label="Label"
+                        value={link.label}
+                        onChange={onProfileLinkChange(index, "label")}
+                        placeholder="Facebook"
+                        sx={{ flex: { xs: "1 1 auto", md: "0 0 220px" } }}
+                      />
+                      <TextField
+                        label="URL"
+                        value={link.url}
+                        onChange={onProfileLinkChange(index, "url")}
+                        placeholder="facebook.com/username"
+                        sx={{ flex: "1 1 auto" }}
+                      />
+                      <Button
+                        variant="text"
+                        color="inherit"
+                        onClick={() => removeProfileLink(index)}
+                        startIcon={<DeleteOutlineRoundedIcon />}
+                        sx={{
+                          minHeight: 54,
+                          alignSelf: { xs: "stretch", md: "center" },
+                          color: brand.colors.muted,
+                          textTransform: "none",
+                          fontWeight: 850,
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </Stack>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography sx={{ color: brand.colors.muted, fontSize: 13, mt: 1.1 }}>
+                  No links yet. Add one so people can find your external profile or portfolio.
+                </Typography>
+              )}
+
+              <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap sx={{ mt: 1.2 }}>
+                {SOCIAL_LINK_PRESETS.map((preset) => (
+                  <Button
+                    key={preset}
+                    variant="text"
+                    size="small"
+                    startIcon={<AddRoundedIcon />}
+                    onClick={() => addProfileLink(preset)}
+                    disabled={editableProfileLinks.length >= MAX_PROFILE_LINKS}
+                    sx={{ borderRadius: 999, textTransform: "none", fontWeight: 850 }}
+                  >
+                    {preset}
+                  </Button>
+                ))}
+              </Stack>
+
+              <Typography sx={{ color: fieldErrors.profileLinks ? brand.colors.danger : brand.colors.muted, fontSize: 12.5, mt: 1 }}>
+                {fieldErrors.profileLinks || `${parseProfileLinks(form.profileLinks).length}/${MAX_PROFILE_LINKS} links. URLs like facebook.com/name are accepted.`}
+              </Typography>
+            </Box>
+          </Grid2>
           {isStudent ? (
             <>
               <Grid2 size={{ xs: 12, md: 4 }}>
@@ -795,22 +1330,11 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
             </>
           ) : null}
         </Grid2>
-      </CardContent>
-    </Card>
+    </Box>
   );
 
-  if (editMode) {
-    return (
-      <Stack spacing={2.5}>
-        {error && <Alert severity="error">{error}</Alert>}
-        {success && <Alert severity="success">{success}</Alert>}
-        {editProfileContent}
-      </Stack>
-    );
-  }
-
   return (
-    <Stack spacing={2.5}>
+    <Stack spacing={2.2} sx={{ width: "100%", maxWidth: 1080, mx: "auto" }}>
       {error && <Alert severity="error">{error}</Alert>}
       {success && <Alert severity="success">{success}</Alert>}
 
@@ -819,269 +1343,327 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
           <Card
             className="ms-data-card"
             sx={{
-              background:
-                "linear-gradient(135deg, rgba(7,26,47,0.04) 0%, rgba(243,112,33,0.05) 48%, #FFFFFF 100%)",
+              overflow: "hidden",
+              background: "#FFFFFF",
             }}
           >
-            <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+            <Box
+              sx={{
+                height: { xs: 142, md: 198 },
+                background:
+                  "linear-gradient(135deg, rgba(7,26,47,0.96) 0%, rgba(13,42,71,0.9) 42%, rgba(243,112,33,0.76) 100%)",
+                position: "relative",
+                "&:after": {
+                  content: '""',
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage:
+                    "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
+                  backgroundSize: "34px 34px",
+                },
+              }}
+            />
+            <CardContent sx={{ px: { xs: 2.2, md: 3 }, pb: { xs: 2.4, md: 3 }, pt: 0 }}>
               <Stack
-                direction={{ xs: "column", lg: "row" }}
-                spacing={2.5}
-                alignItems={{ xs: "center", lg: "flex-start" }}
-                flexWrap="wrap"
-                useFlexGap
+                direction={{ xs: "column", md: "row" }}
+                spacing={2.2}
+                alignItems={{ xs: "center", md: "flex-start" }}
+                sx={{ position: "relative", zIndex: 1 }}
               >
-                <Box
-                  sx={{
-                    position: "relative",
-                    display: "inline-flex",
-                    alignSelf: { xs: "center", lg: "flex-start" },
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    cursor: "pointer",
-                    flex: "0 0 auto",
-                    "&:hover .profile-avatar-overlay": {
-                      opacity: 1,
-                    },
-                  }}
-                  onClick={openAvatarDialog}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    style={{ display: "none" }}
-                    onChange={onAvatarFileChange}
-                  />
-                  <Avatar
-                    src={displayAvatarSrc || undefined}
-                    imgProps={{ style: { objectFit: "cover", objectPosition: "center center" } }}
-                    sx={{
-                      width: { xs: 112, md: 132 },
-                      height: { xs: 112, md: 132 },
-                      bgcolor: "primary.main",
-                      border: "6px solid #FFFFFF",
-                      boxShadow: "0 18px 48px rgba(93,135,255,0.2)",
-                      fontSize: { xs: 34, md: 40 },
-                      fontWeight: 800,
-                    }}
-                  >
-                    {getProfileInitials(displayProfile)}
-                  </Avatar>
                   <Box
-                    className="profile-avatar-overlay"
                     sx={{
-                      position: "absolute",
-                      inset: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "rgba(15, 23, 42, 0.42)",
-                      color: "#fff",
-                      fontWeight: 700,
-                      fontSize: 14,
-                      opacity: 0,
-                      transition: "opacity 0.18s ease",
+                      position: "relative",
+                      display: "inline-flex",
+                      mt: { xs: -7.2, md: -8.8 },
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      flex: "0 0 auto",
+                      "&:hover .profile-avatar-overlay": {
+                        opacity: 1,
+                      },
                     }}
+                    onClick={openAvatarDialog}
                   >
-                    {uploadingAvatar ? "Uploading..." : "Manage avatar"}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      style={{ display: "none" }}
+                      onChange={onAvatarFileChange}
+                    />
+                    <Avatar
+                      src={displayAvatarSrc || undefined}
+                      imgProps={{ style: { objectFit: "cover", objectPosition: "center center" } }}
+                      sx={{
+                        width: { xs: 128, md: 156 },
+                        height: { xs: 128, md: 156 },
+                        bgcolor: brand.colors.orange,
+                        border: "5px solid #FFFFFF",
+                        boxShadow: "0 12px 32px rgba(7, 26, 47, 0.18)",
+                        fontSize: { xs: 36, md: 44 },
+                        fontWeight: 900,
+                      }}
+                    >
+                      {getProfileInitials(displayProfile)}
+                    </Avatar>
+                    <Box
+                      className="profile-avatar-overlay"
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(15, 23, 42, 0.48)",
+                        color: "#fff",
+                        fontWeight: 800,
+                        fontSize: 13,
+                        opacity: 0,
+                        transition: "opacity 0.18s ease",
+                      }}
+                    >
+                      {uploadingAvatar ? "Uploading..." : "Manage avatar"}
+                    </Box>
                   </Box>
-                </Box>
 
-                <Box sx={{ flex: { xs: "1 1 100%", lg: "1 1 310px" }, minWidth: 0, textAlign: { xs: "center", lg: "left" } }}>
-                  <Typography variant="h4" sx={{ color: brand.colors.text, fontWeight: 800, lineHeight: 1.1 }}>
-                    {displayProfile.fullName || "Unnamed User"}
-                  </Typography>
-                  <Typography variant="h6" color="text.secondary" sx={{ mt: 0.4, fontWeight: 600 }}>
-                    @{displayProfile.username || "username"}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1.5, color: "text.secondary", lineHeight: 1.7, maxWidth: 560 }}>
-                    {displayProfile.bio?.trim() || "Add a short bio so mentors, judges, and coordinators can quickly understand who you are."}
-                  </Typography>
-                </Box>
+                  <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: "center", md: "left" }, pt: { xs: 0, md: 2.2 } }}>
+                    <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 28, md: 33 }, fontWeight: 950, lineHeight: 1.12 }}>
+                      {displayProfile.fullName || "Unnamed User"}
+                    </Typography>
+                    <Typography sx={{ mt: 0.45, color: brand.colors.muted, fontSize: 15, fontWeight: 800 }}>
+                      @{displayProfile.username || "username"}
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={0.8}
+                      justifyContent={{ xs: "center", md: "flex-start" }}
+                      flexWrap="wrap"
+                      useFlexGap
+                      sx={{ mt: 1 }}
+                    >
+                      {(profile?.roles || []).map((role) => (
+                        <Chip key={role} label={role} size="small" sx={{ bgcolor: "#F2F4F7", color: brand.colors.navy, fontWeight: 850 }} />
+                      ))}
+                    </Stack>
+                    <Typography
+                      sx={{
+                        mt: 1.25,
+                        color: displayProfile.bio?.trim() ? brand.colors.text : brand.colors.muted,
+                        fontSize: 14.5,
+                        lineHeight: 1.65,
+                        maxWidth: 700,
+                        whiteSpace: "pre-line",
+                      }}
+                    >
+                      {displayProfile.bio?.trim() || "Add a short bio from Edit profile."}
+                    </Typography>
+                  </Box>
 
-                <Stack spacing={1} sx={{ width: { xs: "100%", sm: 220 }, ml: { lg: "auto" } }}>
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     startIcon={<EditRoundedIcon />}
-                    onClick={() => {
-                      setSearchParams({ section: "account", mode: "edit" });
-                      setSuccess("");
-                      setError("");
+                    onClick={openEditProfile}
+                    sx={{
+                      alignSelf: { xs: "stretch", md: "flex-start" },
+                      mt: { xs: 0.4, md: 2.7 },
+                      px: 2.4,
+                      borderRadius: 999,
+                      bgcolor: brand.colors.navy,
+                      boxShadow: "none",
+                      "&:hover": { bgcolor: brand.colors.navySoft, boxShadow: "none" },
                     }}
-                    fullWidth
                   >
                     Edit profile
                   </Button>
-                </Stack>
+              </Stack>
 
-                <Stack
-                  direction={{ xs: "column", md: "row" }}
-                  spacing={1.2}
-                  flexWrap="wrap"
-                  useFlexGap
-                  sx={{ flexBasis: "100%", pt: 1 }}
-                >
-                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, maxWidth: "100%", p: 1.4, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
-                    <MailOutlineRoundedIcon fontSize="small" color="action" />
-                    <Typography variant="body2" sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile?.email}</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, p: 1.4, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
-                    <BadgeRoundedIcon fontSize="small" color="action" />
-                    <Typography variant="body2">Status: {profile?.status}</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, p: 1.4, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
-                    <CalendarTodayRoundedIcon fontSize="small" color="action" />
-                    <Typography variant="body2">
-                      Joined {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-GB") : "N/A"}
+              <Divider sx={{ my: { xs: 2, md: 2.4 } }} />
+
+              <Box>
+                <Typography sx={{ color: brand.colors.text, fontSize: 18, fontWeight: 950, mb: 1.2 }}>
+                  Contact & Links
+                </Typography>
+                <Grid2 container spacing={1.2}>
+                  <Grid2 size={{ xs: 12, md: 6 }}>
+                    <ProfileInfoPill icon={<MailOutlineRoundedIcon fontSize="small" />} label="Email" value={profile?.email} />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                    <ProfileInfoPill icon={<BadgeRoundedIcon fontSize="small" />} label="Status" value={profile?.status} />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                    <ProfileInfoPill
+                      icon={<CalendarTodayRoundedIcon fontSize="small" />}
+                      label="Joined"
+                      value={profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-GB") : "N/A"}
+                    />
+                  </Grid2>
+                  <Grid2 size={{ xs: 12 }}>
+                    <Box
+                      sx={{
+                        minHeight: "100%",
+                        p: { xs: 1.4, md: 1.6 },
+                        borderRadius: brand.radius.md,
+                        bgcolor: "#F8FAFC",
+                        border: `1px solid ${brand.colors.line}`,
+                      }}
+                    >
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        justifyContent="space-between"
+                        sx={{ mb: visibleProfileLinks.length ? 1.25 : 0 }}
+                      >
+                        <Box sx={{ minWidth: 0 }}>
+                          <Stack direction="row" spacing={0.9} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 2,
+                                bgcolor: "#FFFFFF",
+                                color: brand.colors.orange,
+                                display: "grid",
+                                placeItems: "center",
+                                border: `1px solid ${brand.colors.line}`,
+                              }}
+                            >
+                              <LinkRoundedIcon fontSize="small" />
+                            </Box>
+                            <Box>
+                              <Typography sx={{ color: brand.colors.text, fontSize: 14.5, fontWeight: 950, lineHeight: 1.1 }}>
+                                Social links
+                              </Typography>
+                              <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.25 }}>
+                                Public profiles and portfolio links
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Box>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<EditRoundedIcon />}
+                          onClick={openEditProfile}
+                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 850, bgcolor: "#FFFFFF" }}
+                        >
+                          {visibleProfileLinks.length ? "Edit links" : "Add social link"}
+                        </Button>
+                      </Stack>
+                      {visibleProfileLinks.length ? (
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                          {visibleProfileLinks.map((link, index) => (
+                            <ProfileLinkButton key={`${link.url}-${index}`} link={link} />
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Box sx={{ p: 1.2, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px dashed ${brand.colors.lineStrong}` }}>
+                          <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>
+                            Add Facebook, GitHub, LinkedIn, portfolio, or another public profile link.
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Grid2>
+                </Grid2>
+              </Box>
+
+              {isStudent ? (
+              <Grid2 container spacing={1.4} sx={{ mt: 1.4 }}>
+                <Grid2 size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ minWidth: 0, p: 1.6, borderRadius: brand.radius.md, bgcolor: "#F8FAFC", border: `1px solid ${brand.colors.line}` }}>
+                    <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 900, mb: 1.2 }}>
+                      Roles
                     </Typography>
-                  </Stack>
-                </Stack>
+                    <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
+                      {(profile?.roles || []).map((role) => (
+                        <Chip key={role} label={role} size="small" sx={{ bgcolor: "#FFFFFF", fontWeight: 850 }} />
+                      ))}
+                    </Stack>
+                  </Box>
+                </Grid2>
 
-                <Divider sx={{ display: "none" }} />
-
-                <Box sx={{ flex: "1 1 280px", minWidth: 0, p: 1.6, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.2 }}>
-                    Roles
-                  </Typography>
-                  <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
-                    {(profile?.roles || []).map((role) => (
-                      <Chip key={role} label={role} size="small" />
-                    ))}
-                  </Stack>
-                </Box>
-
-                {isStudent ? (
-                  <>
-                    <Divider sx={{ display: "none" }} />
-                    <Box sx={{ flex: "2 1 420px", minWidth: 0, p: 1.6, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.2 }}>
+                  <Grid2 size={{ xs: 12, md: 8 }}>
+                    <Box sx={{ minWidth: 0, p: 1.6, borderRadius: brand.radius.md, bgcolor: "#F8FAFC", border: `1px solid ${brand.colors.line}` }}>
+                      <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 900, mb: 1.2 }}>
                         Student Identity
                       </Typography>
                       <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                         <Box>
-                          <Typography variant="body2" color="text.secondary">Type</Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 700 }}>{displayProfile.studentType || "N/A"}</Typography>
+                          <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>Type</Typography>
+                          <Typography sx={{ color: brand.colors.text, fontWeight: 850 }}>{displayProfile.studentType || "N/A"}</Typography>
                         </Box>
                         <Box>
-                          <Typography variant="body2" color="text.secondary">Student Code</Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 700 }}>{displayProfile.studentCode || "N/A"}</Typography>
+                          <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>Student Code</Typography>
+                          <Typography sx={{ color: brand.colors.text, fontWeight: 850 }}>{displayProfile.studentCode || "N/A"}</Typography>
                         </Box>
                         <Box>
-                          <Typography variant="body2" color="text.secondary">University</Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 700 }}>{displayProfile.universityName || "N/A"}</Typography>
+                          <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>University</Typography>
+                          <Typography sx={{ color: brand.colors.text, fontWeight: 850 }}>{displayProfile.universityName || "N/A"}</Typography>
                         </Box>
                       </Stack>
                     </Box>
-                  </>
-                ) : null}
-              </Stack>
+                  </Grid2>
+              </Grid2>
+              ) : null}
             </CardContent>
           </Card>
         </Grid2>
 
         <Grid2 size={{ xs: 12 }}>
           <Stack spacing={2.5}>
+            {isStudent ? (
             <Card className="ms-data-card">
-              <CardContent>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-                  Overview
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {isStudent
+              <CardContent sx={{ p: { xs: 2.2, md: 2.6 } }}>
+                <ProfileSectionHeader
+                  title="Overview"
+                  description={isStudent
                     ? "Your current participation snapshot across SEAL events and teams."
                     : "Your current role summary and account access overview."}
-                </Typography>
+                />
 
                 <Grid2 container spacing={2}>
                   {isStudent ? (
                     <>
                       <Grid2 size={{ xs: 12, md: 4 }}>
-                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                          <Stack direction="row" spacing={1.2} alignItems="center">
-                            <GroupsRoundedIcon color="primary" />
-                            <Box>
-                              <Typography className="ms-stat-label">Teams</Typography>
-                              <Typography className="ms-stat-value">{teams.length}</Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
+                        <ProfileStatTile icon={<GroupsRoundedIcon />} label="Teams" value={teams.length} tone="blue" />
                       </Grid2>
                       <Grid2 size={{ xs: 12, md: 4 }}>
-                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                          <Stack direction="row" spacing={1.2} alignItems="center">
-                            <EventRoundedIcon color="success" />
-                            <Box>
-                              <Typography className="ms-stat-label">Events</Typography>
-                              <Typography className="ms-stat-value">{uniqueEvents.length}</Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
+                        <ProfileStatTile icon={<EventRoundedIcon />} label="Events" value={uniqueEvents.length} tone="green" />
                       </Grid2>
                       <Grid2 size={{ xs: 12, md: 4 }}>
-                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                          <Stack direction="row" spacing={1.2} alignItems="center">
-                            <BadgeRoundedIcon color="warning" />
-                            <Box>
-                              <Typography className="ms-stat-label">Roles</Typography>
-                              <Typography className="ms-stat-value">{profile?.roles?.length || 0}</Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
+                        <ProfileStatTile icon={<BadgeRoundedIcon />} label="Roles" value={profile?.roles?.length || 0} />
                       </Grid2>
                     </>
                   ) : (
                     <>
                       <Grid2 size={{ xs: 12, md: 4 }}>
-                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                          <Stack direction="row" spacing={1.2} alignItems="center">
-                            <BadgeRoundedIcon color="primary" />
-                            <Box>
-                              <Typography className="ms-stat-label">Primary Role</Typography>
-                              <Typography className="ms-stat-value">{profile?.roles?.[0] || "N/A"}</Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
+                        <ProfileStatTile icon={<BadgeRoundedIcon />} label="Primary Role" value={profile?.roles?.[0] || "N/A"} tone="blue" />
                       </Grid2>
                       <Grid2 size={{ xs: 12, md: 4 }}>
-                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                          <Stack direction="row" spacing={1.2} alignItems="center">
-                            <BadgeRoundedIcon color="success" />
-                            <Box>
-                              <Typography className="ms-stat-label">Status</Typography>
-                              <Typography className="ms-stat-value">{profile?.status || "N/A"}</Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
+                        <ProfileStatTile icon={<BadgeRoundedIcon />} label="Status" value={profile?.status || "N/A"} tone="green" />
                       </Grid2>
                       <Grid2 size={{ xs: 12, md: 4 }}>
-                        <Box className="ms-stat-card" sx={{ minHeight: 0 }}>
-                          <Stack direction="row" spacing={1.2} alignItems="center">
-                            <BadgeRoundedIcon color="warning" />
-                            <Box>
-                              <Typography className="ms-stat-label">Assigned Roles</Typography>
-                              <Typography className="ms-stat-value">{profile?.roles?.length || 0}</Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
+                        <ProfileStatTile icon={<BadgeRoundedIcon />} label="Assigned Roles" value={profile?.roles?.length || 0} />
                       </Grid2>
                     </>
                   )}
                 </Grid2>
               </CardContent>
             </Card>
+            ) : null}
 
                 {isStudent ? (
                   <Grid2 container spacing={2}>
                     <Grid2 size={{ xs: 12, md: 7 }}>
                       <Card className="ms-data-card" sx={{ height: "100%" }}>
                         <CardContent>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                              Active Teams
-                            </Typography>
-                            <Chip size="small" label={`${teams.length} total`} />
-                          </Stack>
+                          <ProfileSectionHeader
+                            title="Active Teams"
+                            description="Teams currently linked to your account."
+                            action={<Chip size="small" label={`${teams.length} total`} />}
+                          />
                           {teams.length === 0 ? (
                             <Typography variant="body2" color="text.secondary">
                               You are not participating in any team yet.
@@ -1132,12 +1714,11 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     <Grid2 size={{ xs: 12, md: 5 }}>
                       <Card className="ms-data-card" sx={{ height: "100%" }}>
                         <CardContent>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                              Current Events
-                            </Typography>
-                            <Chip size="small" label={`${uniqueEvents.length} active`} />
-                          </Stack>
+                          <ProfileSectionHeader
+                            title="Current Events"
+                            description="Events where your profile is currently participating."
+                            action={<Chip size="small" label={`${uniqueEvents.length} active`} />}
+                          />
                           {uniqueEvents.length === 0 ? (
                             <Typography variant="body2" color="text.secondary">
                               No active event participation is linked to this profile yet.
@@ -1168,65 +1749,138 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     </Grid2>
                   </Grid2>
                 ) : (
-                  <Grid2 container spacing={2}>
-                    <Grid2 size={{ xs: 12, md: 7 }}>
-                      <Card className="ms-data-card" sx={{ height: "100%" }}>
-                        <CardContent>
-                          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>
-                            Role Overview
-                          </Typography>
-                          <Stack spacing={1.4}>
-                            {roleHighlights.map((item) => (
-                              <Box
-                                key={item.title}
-                                sx={{
-                                  border: "1px solid var(--se-line)",
-                                  borderRadius: "var(--se-radius)",
-                                  p: 2,
-                                  background: "var(--se-surface-soft)",
-                                }}
-                              >
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                  {item.title}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.6 }}>
-                                  {item.description}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid2>
-
-                    <Grid2 size={{ xs: 12, md: 5 }}>
-                      <Card className="ms-data-card" sx={{ height: "100%" }}>
-                        <CardContent>
-                          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>
-                            Access Summary
-                          </Typography>
-                          <Stack spacing={1.2}>
-                            <Typography variant="body2" color="text.secondary">
-                              This account can access SEAL areas according to the roles below.
+                  <Stack spacing={2}>
+                    <Card className="ms-data-card">
+                      <CardContent sx={{ p: { xs: 2.2, md: 2.5 } }}>
+                        <Stack
+                          direction={{ xs: "column", md: "row" }}
+                          spacing={1.5}
+                          alignItems={{ xs: "stretch", md: "center" }}
+                          justifyContent="space-between"
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950, lineHeight: 1.2 }}>
+                              Roles
                             </Typography>
-                            <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
+                            <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.45 }}>
+                              Current access on this account.
+                            </Typography>
+                          </Box>
+                          <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={1.1}
+                            alignItems={{ xs: "stretch", sm: "center" }}
+                            sx={{ flex: 1, justifyContent: { sm: "flex-end" }, minWidth: 0 }}
+                          >
+                            <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap justifyContent={{ xs: "flex-start", sm: "flex-end" }}>
                               {(profile?.roles || []).map((role) => (
-                                <Chip key={role} label={role} size="small" />
+                                <Chip key={role} label={role} size="small" sx={{ bgcolor: "#F2F4F7", color: brand.colors.navy, fontWeight: 850 }} />
                               ))}
                             </Stack>
-                            <Divider sx={{ my: 0.5 }} />
-                            <Typography variant="body2" color="text.secondary">
-                              Student-only participation blocks such as team membership and current event involvement are hidden for this account.
-                            </Typography>
+                            <Button
+                              variant="outlined"
+                              endIcon={(
+                                <ExpandMoreRoundedIcon
+                                  sx={{
+                                    transition: "transform 0.18s ease",
+                                    transform: roleCapabilitiesOpen ? "rotate(180deg)" : "rotate(0deg)",
+                                  }}
+                                />
+                              )}
+                              onClick={() => setRoleCapabilitiesOpen((current) => !current)}
+                              sx={{
+                                flex: "0 0 auto",
+                                borderRadius: 999,
+                                px: 2,
+                                textTransform: "none",
+                                fontWeight: 850,
+                              }}
+                            >
+                              {roleCapabilitiesOpen ? "Hide capabilities" : "View capabilities"}
+                            </Button>
                           </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid2>
-                  </Grid2>
+                        </Stack>
+
+                        <Collapse in={roleCapabilitiesOpen} timeout="auto" unmountOnExit>
+                          <Grid2 container spacing={1.2} sx={{ mt: 1.6 }}>
+                            {roleCapabilities.length ? roleCapabilities.map((item) => (
+                              <Grid2 key={item.title} size={{ xs: 12, md: 4 }}>
+                                <CapabilityItem
+                                  title={item.title}
+                                  description={item.description}
+                                  icon={item.icon}
+                                />
+                              </Grid2>
+                            )) : (
+                              <Grid2 size={{ xs: 12 }}>
+                                <Box sx={{ p: 1.5, borderRadius: brand.radius.md, border: `1px dashed ${brand.colors.lineStrong}`, bgcolor: "#F8FAFC" }}>
+                                  <Typography sx={{ color: brand.colors.text, fontWeight: 850 }}>No role capabilities available</Typography>
+                                  <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.45 }}>
+                                    Capabilities will appear after this account receives a SEAL role.
+                                  </Typography>
+                                </Box>
+                              </Grid2>
+                            )}
+                          </Grid2>
+                        </Collapse>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="ms-data-card">
+                      <CardContent sx={{ p: { xs: 2.2, md: 2.8 } }}>
+                        <ProfileSectionHeader title="Recent Activity" description="Latest audited actions connected to this account." />
+                        <Stack spacing={1.4}>
+                          {recentActivity.length ? (
+                            recentActivity.map((item) => (
+                              <ActivityItem key={item.logId || `${item.actionType}-${item.timestamp}`} item={item} />
+                            ))
+                          ) : (
+                            <Box
+                              sx={{
+                                minHeight: 230,
+                                p: { xs: 2.2, md: 3.2 },
+                                borderRadius: brand.radius.md,
+                                border: `1px dashed ${brand.colors.lineStrong}`,
+                                bgcolor: "#F8FAFC",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Stack spacing={0.7}>
+                                <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950 }}>
+                                  No recent activity yet
+                                </Typography>
+                                <Typography sx={{ color: brand.colors.muted, fontSize: 14.5, lineHeight: 1.65, maxWidth: 620 }}>
+                                  Audited event, account, assignment, and scoring changes will appear here when this profile performs coordinator work.
+                                </Typography>
+                              </Stack>
+                            </Box>
+                          )}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Stack>
                 )}
           </Stack>
         </Grid2>
       </Grid2>
+
+      <Dialog
+        open={editMode}
+        onClose={cancelEdit}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: brand.radius.lg,
+            boxShadow: "0 24px 70px rgba(7, 26, 47, 0.24)",
+          },
+        }}
+      >
+        <DialogContent sx={{ p: { xs: 2.2, md: 3 } }}>
+          {editProfileContent}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={avatarDialogOpen}

@@ -8,6 +8,7 @@ import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.service.AccountApprovalNotificationService;
 import com.seal.hackathon.auth.service.AccountApprovalService;
 import com.seal.hackathon.common.ApiException;
+import com.seal.hackathon.evaluation.service.AuditLogService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,8 @@ class AccountApprovalServiceTest {
     private StudentProfileRepository studentProfileRepository;
     @Mock
     private AccountApprovalNotificationService accountApprovalNotificationService;
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private AccountApprovalService accountApprovalService;

@@ -13,6 +13,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Nationalized;
 
 import java.time.LocalDateTime;
 
@@ -34,14 +35,20 @@ public class EventUpdateNotificationEntity {
     @Column(name = "event_id", nullable = false)
     private Integer eventId;
 
+    @Nationalized
     @Column(name = "event_name", nullable = false, length = 150)
     private String eventName;
 
+    @Nationalized
     @Column(name = "title", nullable = false, length = 180)
     private String title;
 
+    @Nationalized
     @Column(name = "message", nullable = false, length = 1000)
     private String message;
+
+    @Column(name = "announcement_audience", length = 30)
+    private String announcementAudience;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

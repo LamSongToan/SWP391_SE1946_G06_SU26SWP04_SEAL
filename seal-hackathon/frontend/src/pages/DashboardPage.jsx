@@ -40,9 +40,11 @@ import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
+import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
 import { authStorage, http, logout, resolveAssetUrl } from "../api/http";
 import { useSearchParams } from "react-router-dom";
 import AccountApprovalPanel from "../components/coordinator/AccountApprovalPanel";
+import AnnouncementManagementPanel from "../components/coordinator/AnnouncementManagementPanel";
 import AuditLogPanel from "../components/coordinator/AuditLogPanel";
 import CoordinatorScoringPanel from "../components/coordinator/CoordinatorScoringPanel";
 import EventConfigurationPanel from "../components/coordinator/EventConfigurationPanel";
@@ -78,6 +80,7 @@ const COORDINATOR_CORE_NAV = [
   { key: "guest-judges", label: "Guest Judges", icon: <GavelRoundedIcon fontSize="small" /> },
   { key: "judge-assignment", label: "Judge Assignment", icon: <AssignmentIndRoundedIcon fontSize="small" /> },
   { key: "mentor-assignment", label: "Mentor Assignment", icon: <SupervisorAccountRoundedIcon fontSize="small" /> },
+  { key: "announcements", label: "Announcements", icon: <CampaignRoundedIcon fontSize="small" /> },
   { key: "scoring-management", label: "Scoring Finalization", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
   { key: "audit-logs", label: "Audit Logs", icon: <HistoryRoundedIcon fontSize="small" /> },
 ];
@@ -94,6 +97,47 @@ const ACCOUNT_NAV = [
   { key: "directory", label: "User Directory", icon: <SearchRoundedIcon fontSize="small" /> },
   { key: "account", label: "Profile", icon: <PermIdentityRoundedIcon fontSize="small" /> },
   { key: "password", label: "Change Password", icon: <LockRoundedIcon fontSize="small" /> },
+];
+
+const STUDENT_NAV_SECTIONS = [
+  { title: "Workspace", items: HOME_NAV },
+  { title: "Team Flow", items: STUDENT_CORE_NAV },
+  { title: "Account", items: ACCOUNT_NAV },
+];
+
+const COORDINATOR_NAV_SECTIONS = [
+  { title: "Workspace", items: HOME_NAV },
+  {
+    title: "Event Operations",
+    items: [
+      COORDINATOR_CORE_NAV[1],
+      COORDINATOR_CORE_NAV[5],
+      COORDINATOR_CORE_NAV[6],
+    ],
+  },
+  {
+    title: "People & Assignments",
+    items: [
+      COORDINATOR_CORE_NAV[0],
+      COORDINATOR_CORE_NAV[2],
+      COORDINATOR_CORE_NAV[3],
+      COORDINATOR_CORE_NAV[4],
+    ],
+  },
+  { title: "Review & Logs", items: [COORDINATOR_CORE_NAV[7]] },
+  { title: "Account", items: ACCOUNT_NAV },
+];
+
+const MENTOR_NAV_SECTIONS = [
+  { title: "Workspace", items: HOME_NAV },
+  { title: "Mentoring", items: MENTOR_CORE_NAV },
+  { title: "Account", items: ACCOUNT_NAV },
+];
+
+const JUDGE_NAV_SECTIONS = [
+  { title: "Workspace", items: HOME_NAV },
+  { title: "Evaluation", items: JUDGE_CORE_NAV },
+  { title: "Account", items: ACCOUNT_NAV },
 ];
 
 const PROFILE_DRAFT_STORAGE_KEY = "seal-profile-draft";
@@ -261,72 +305,120 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
         ))}
       </Box>
 
-      {["STUDENT", "MENTOR", "JUDGE"].includes(currentRole) ? (
-        <Box
-          sx={{
-            mt: 2,
-            p: { xs: 2, md: 2.2 },
-            borderRadius: brand.radius.xl,
-            bgcolor: brand.colors.surface,
-            border: `1px solid ${brand.colors.line}`,
-            boxShadow: brand.shadow.sm,
-          }}
-        >
-          <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }}>
-            <Box>
-              <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950 }}>
-                Event Updates
-              </Typography>
-              <Typography sx={{ color: brand.colors.muted, fontSize: 13.5 }}>
-                Coordinator changes that may affect your current event workflow.
-              </Typography>
-            </Box>
-            <Chip label={`${eventNotifications.length} recent`} sx={{ alignSelf: { xs: "flex-start", md: "center" } }} />
-          </Stack>
+      <Box
+        sx={{
+          mt: 2,
+          p: { xs: 2, md: 2.2 },
+          borderRadius: brand.radius.lg,
+          bgcolor: brand.colors.surface,
+          border: `1px solid ${brand.colors.line}`,
+          boxShadow: brand.shadow.sm,
+        }}
+      >
+        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }}>
+          <Box>
+            <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950 }}>
+              Announcements
+            </Typography>
+            <Typography sx={{ color: brand.colors.muted, fontSize: 13.5 }}>
+              Deadline, registration, track, judging, and scoring notices for your current workflow.
+            </Typography>
+          </Box>
+          <Chip
+            icon={<EventRoundedIcon fontSize="small" />}
+            label={`${eventNotifications.length} active`}
+            sx={{ alignSelf: { xs: "flex-start", md: "center" }, fontWeight: 850 }}
+          />
+        </Stack>
 
-          {eventNotifications.length === 0 ? (
-            <Box className="ms-empty">
-              <Typography fontWeight={800}>No recent event updates</Typography>
-              <Typography color="text.secondary" variant="body2">
-                New event notices will appear here when deadlines, rounds, promotion rules, or scoring settings change.
-              </Typography>
-            </Box>
-          ) : (
-            <Stack spacing={1}>
-              {eventNotifications.map((item) => (
-                <Box
-                  key={item.notificationId}
-                  sx={{
-                    p: 1.4,
-                    borderRadius: brand.radius.md,
-                    border: `1px solid ${brand.colors.line}`,
-                    bgcolor: brand.colors.surfaceSoft,
-                  }}
-                >
-                  <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1}>
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
-                        {item.title}
-                      </Typography>
-                      <Typography sx={{ color: brand.colors.muted, fontSize: 13, mt: 0.35 }}>
-                        {item.eventName}
-                      </Typography>
-                      <Typography sx={{ color: brand.colors.text, fontSize: 13.5, mt: 0.8 }}>
+        {eventNotifications.length === 0 ? (
+          <Box
+            sx={{
+              p: 1.6,
+              borderRadius: brand.radius.md,
+              border: `1px dashed ${brand.colors.line}`,
+              bgcolor: brand.colors.surfaceSoft,
+            }}
+          >
+            <Typography fontWeight={850}>No active announcements</Typography>
+            <Typography color="text.secondary" variant="body2" sx={{ mt: 0.3 }}>
+              Notices about registration deadlines, incomplete teams, track balancing, and score finalization will appear here.
+            </Typography>
+          </Box>
+        ) : (
+          <Stack spacing={1.2}>
+            {eventNotifications.map((item) => (
+              <Box
+                key={item.notificationId}
+                sx={{
+                  p: { xs: 1.6, md: 1.8 },
+                  borderRadius: brand.radius.md,
+                  border: `1px solid ${brand.colors.line}`,
+                  bgcolor: "#FFFFFF",
+                  boxShadow: "0 8px 18px rgba(7, 26, 47, 0.04)",
+                }}
+              >
+                <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={1.6}>
+                  <Stack direction="row" spacing={1.3} alignItems="flex-start" sx={{ minWidth: 0, flex: 1 }}>
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 2.5,
+                        bgcolor: brand.colors.surfaceWarm,
+                        color: brand.colors.orange,
+                        display: "grid",
+                        placeItems: "center",
+                        flex: "0 0 36px",
+                      }}
+                    >
+                      <CampaignRoundedIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                    <Box sx={{ minWidth: 0, pt: 0.1 }}>
+                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                        <Typography sx={{ color: brand.colors.text, fontSize: 16, fontWeight: 950, lineHeight: 1.35 }}>
+                          {item.title}
+                        </Typography>
+                        {item.eventName ? (
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            label={item.eventName}
+                            sx={{
+                              height: 24,
+                              fontWeight: 800,
+                              color: brand.colors.muted,
+                              borderColor: brand.colors.line,
+                              "& .MuiChip-label": { px: 1, fontSize: 12, lineHeight: "24px" },
+                            }}
+                          />
+                        ) : null}
+                      </Stack>
+                      <Typography sx={{ color: brand.colors.text, fontSize: 14.5, lineHeight: 1.65, mt: 0.65, whiteSpace: "pre-wrap" }}>
                         {item.message}
                       </Typography>
                     </Box>
-                    <Chip
-                      icon={<HistoryRoundedIcon fontSize="small" />}
-                      label={formatDashboardDate(item.createdAt)}
-                      sx={{ alignSelf: { xs: "flex-start", md: "center" } }}
-                    />
                   </Stack>
-                </Box>
-              ))}
-            </Stack>
-          )}
-        </Box>
-      ) : null}
+                  <Chip
+                    icon={<HistoryRoundedIcon fontSize="small" />}
+                    label={formatDashboardDate(item.createdAt)}
+                    sx={{
+                      alignSelf: { xs: "flex-start", md: "center" },
+                      flexShrink: 0,
+                      height: 28,
+                      bgcolor: brand.colors.surfaceSoft,
+                      color: brand.colors.text,
+                      fontWeight: 850,
+                      "& .MuiChip-icon": { color: brand.colors.muted, fontSize: 16 },
+                      "& .MuiChip-label": { px: 1, fontSize: 12.5 },
+                    }}
+                  />
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Box>
     </Box>
   );
 }
@@ -393,6 +485,16 @@ export default function DashboardPage() {
     },
     [currentRole]
   );
+  const navSections = useMemo(() => {
+    if (currentRole === "COORDINATOR") return COORDINATOR_NAV_SECTIONS;
+    if (currentRole === "MENTOR") return MENTOR_NAV_SECTIONS;
+    if (currentRole === "JUDGE") return JUDGE_NAV_SECTIONS;
+    if (currentRole === "STUDENT") return STUDENT_NAV_SECTIONS;
+    return [
+      { title: "Workspace", items: HOME_NAV },
+      { title: "Account", items: ACCOUNT_NAV },
+    ];
+  }, [currentRole]);
   const allowedNavKeys = useMemo(
     () => new Set([...HOME_NAV, ...coreNavItems, ...ACCOUNT_NAV].map((item) => item.key)),
     [coreNavItems]
@@ -615,13 +717,6 @@ export default function DashboardPage() {
     let mounted = true;
 
     const loadEventNotifications = async () => {
-      if (!["STUDENT", "MENTOR", "JUDGE"].includes(currentRole)) {
-        if (mounted) {
-          setEventNotifications([]);
-        }
-        return;
-      }
-
       try {
         const response = await http.get("/api/dashboard/event-updates");
         if (mounted) {
@@ -634,11 +729,16 @@ export default function DashboardPage() {
       }
     };
 
+    if (activeKey !== "dashboard") {
+      return () => {
+        mounted = false;
+      };
+    }
     loadEventNotifications();
     return () => {
       mounted = false;
     };
-  }, [currentRole]);
+  }, [activeKey, currentRole]);
 
   const renderContent = () => {
     if (activeKey === "dashboard") return null;
@@ -652,6 +752,7 @@ export default function DashboardPage() {
       if (activeKey === "guest-judges") return <GuestJudgePanel />;
       if (activeKey === "judge-assignment") return <JudgeAssignmentPanel />;
       if (activeKey === "mentor-assignment") return <MentorAssignmentPanel />;
+      if (activeKey === "announcements") return <AnnouncementManagementPanel />;
       if (activeKey === "scoring-management") return <CoordinatorScoringPanel />;
       if (activeKey === "audit-logs") return <AuditLogPanel />;
       return null;
@@ -850,8 +951,13 @@ export default function DashboardPage() {
       </Box>
 
       <Box sx={{ flex: 1, overflowY: "auto", py: 0.75 }}>
-        {renderNavSection("Home", HOME_NAV)}
-        {coreNavItems.length ? renderNavSection("Modules", coreNavItems) : null}
+        {navSections
+          .filter((section) => section.items?.length)
+          .map((section) => (
+            <Box key={section.title}>
+              {renderNavSection(section.title, section.items)}
+            </Box>
+          ))}
       </Box>
     </Box>
   );

@@ -1,6 +1,7 @@
 package com.seal.hackathon.event;
 
 import com.seal.hackathon.common.ApiException;
+import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.event.dto.EventSetupCreateRequest;
 import com.seal.hackathon.event.dto.EventConfigurationUpdateRequest;
 import com.seal.hackathon.event.dto.EventUpsertRequest;
@@ -46,6 +47,8 @@ class EventManagementServiceTest {
     private RoundRepository roundRepository;
     @Mock
     private TeamRepository teamRepository;
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private EventManagementService eventManagementService;
@@ -96,7 +99,7 @@ class EventManagementServiceTest {
         event.setEventId(1);
         event.setStatus(EventStatus.DRAFT.getDbValue());
 
-        EventUpsertRequest request = newRequest("Fall", 2026, EventStatus.ONGOING.getDbValue());
+        EventUpsertRequest request = newRequest("Fall", 2026, EventStatus.ENDED.getDbValue());
         when(eventRepository.findById(1)).thenReturn(Optional.of(event));
         when(eventRepository.existsByYearAndSemesterIgnoreCaseAndEventIdNot(2026, "Fall", 1)).thenReturn(false);
 
@@ -142,7 +145,6 @@ class EventManagementServiceTest {
         when(eventRepository.existsByYearAndSemesterIgnoreCase(2026, "Fall")).thenReturn(false);
         when(eventRepository.save(any(HackathonEventEntity.class))).thenReturn(savedEvent);
         when(eventRepository.findById(10)).thenReturn(Optional.of(savedEvent));
-        when(eventRepository.existsById(10)).thenReturn(true);
         when(trackRepository.existsByEventIdAndNameIgnoreCase(10, "Web Platform")).thenReturn(false);
         when(trackRepository.save(any(TrackEntity.class))).thenReturn(savedTrack);
         when(roundRepository.save(any(RoundEntity.class))).thenReturn(savedRound);
@@ -383,7 +385,7 @@ class EventManagementServiceTest {
     void updateEvent_shouldRejectStartingWithInvalidTeams() {
         HackathonEventEntity event = new HackathonEventEntity();
         event.setEventId(10);
-        event.setStatus(EventStatus.ONGOING.getDbValue());
+        event.setStatus(EventStatus.DRAFT.getDbValue());
 
         when(eventRepository.findById(10)).thenReturn(Optional.of(event));
         when(eventRepository.existsByYearAndSemesterIgnoreCaseAndEventIdNot(2026, "Fall", 10)).thenReturn(false);
