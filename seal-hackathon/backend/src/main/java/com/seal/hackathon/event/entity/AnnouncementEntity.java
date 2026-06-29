@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,21 +21,13 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "EventUpdateNotification")
-public class EventUpdateNotificationEntity {
+@Table(name = "Announcement")
+public class AnnouncementEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "notification_id")
-    private Integer notificationId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "announcement_id")
-    private AnnouncementEntity announcement;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    @Column(name = "announcement_id")
+    private Integer announcementId;
 
     @Column(name = "event_id", nullable = false)
     private Integer eventId;
@@ -51,25 +44,34 @@ public class EventUpdateNotificationEntity {
     @Column(name = "message", nullable = false, length = 1000)
     private String message;
 
-    @Column(name = "announcement_audience", length = 30)
-    private String announcementAudience;
+    @Column(name = "audience", nullable = false, length = 30)
+    private String audience;
 
-    @Column(name = "is_read", nullable = false)
-    private Boolean read;
+    @Column(name = "recipient_count", nullable = false)
+    private Integer recipientCount;
 
-    @Column(name = "read_at")
-    private LocalDateTime readAt;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "created_by_user_id", nullable = false)
+    private UserEntity createdBy;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        if (read == null) {
-            read = Boolean.FALSE;
+        if (recipientCount == null) {
+            recipientCount = 0;
         }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

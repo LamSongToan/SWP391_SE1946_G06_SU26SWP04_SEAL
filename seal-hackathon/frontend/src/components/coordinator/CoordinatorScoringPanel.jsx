@@ -6,6 +6,8 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  FormControlLabel,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
@@ -31,6 +33,7 @@ import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedI
 import AutoFixHighRoundedIcon from "@mui/icons-material/AutoFixHighRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import HubRoundedIcon from "@mui/icons-material/HubRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
@@ -80,6 +83,47 @@ const EVENT_STATUS_TONE = {
   Ended: { bg: "#EEF1F6", color: "#64748B" },
   Draft: { bg: "#F4F6FB", color: "#16213E" },
 };
+
+const EXPORT_UNAVAILABLE_MESSAGE = "No criterion-level scores available to export.";
+
+function hasScoreValue(item) {
+  return item?.totalScore !== null && item?.totalScore !== undefined && item?.totalScore !== "";
+}
+
+function getLeaderboardPresentation(item, finalization) {
+  const normalizedQualificationStatus = String(item.qualificationStatus || "").toLowerCase();
+  const isDisqualified = normalizedQualificationStatus === "disqualified";
+  const qualificationApplied = finalization.qualificationCalculated;
+  const advancementApplied = finalization.advancementApplied;
+  const isTopTeam = qualificationApplied
+    && !isDisqualified
+    && (item.qualifiedNextRound || normalizedQualificationStatus === "qualified");
+  let resultLabel = "Pending";
+  let resultColor = isTopTeam ? "success" : "default";
+  if (isDisqualified) {
+    resultLabel = "Disqualified";
+    resultColor = "error";
+  }
+  if (qualificationApplied) {
+    if (!isDisqualified && normalizedQualificationStatus === "qualified") {
+      resultLabel = advancementApplied ? "Promoted" : "Qualified";
+      resultColor = "success";
+    } else if (normalizedQualificationStatus === "eliminated") {
+      resultLabel = "Eliminated";
+      resultColor = "default";
+    } else if (normalizedQualificationStatus === "not applicable") {
+      resultLabel = "N/A";
+      resultColor = "default";
+    }
+  } else if (!isDisqualified && item.projectedQualifiedNextRound === true) {
+    resultLabel = "Projected Top";
+    resultColor = "default";
+  } else if (!isDisqualified && item.projectedQualifiedNextRound === false) {
+    resultLabel = "Projected Out";
+    resultColor = "default";
+  }
+  return { isDisqualified, isTopTeam, resultLabel, resultColor };
+}
 
 function formatCompetitionWindow(event) {
   const start = event?.competitionStartAt || event?.registrationStartAt || event?.startDate;
@@ -487,6 +531,8 @@ export default function CoordinatorScoringPanel() {
   const [finalization, setFinalization] = useState(null);
   const [loading, setLoading] = useState(true);
   const [roundLoading, setRoundLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [includeCalibrationExport, setIncludeCalibrationExport] = useState(true);
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, templateId: null, templateName: "" });
   const [manualEliminationState, setManualEliminationState] = useState({
     open: false,
@@ -528,6 +574,14 @@ export default function CoordinatorScoringPanel() {
   const activeRankingGroup = useMemo(
     () => rankingGroups.find((group) => group.trackId === selectedTrackId) || rankingGroups[0] || null,
     [rankingGroups, selectedTrackId]
+  );
+  const hasRoundExportableScores = useMemo(
+    () => (finalization?.submissions || []).some(hasScoreValue),
+    [finalization]
+  );
+  const activeTrackHasExportableScores = useMemo(
+    () => (activeRankingGroup?.items || []).some(hasScoreValue),
+    [activeRankingGroup]
   );
 
   const loadRoundWorkspace = async (roundId) => {
@@ -705,6 +759,49 @@ export default function CoordinatorScoringPanel() {
     }
   };
 
+  const handleExportResearchDataset = async ({ trackId = null } = {}) => {
+    if (!selectedRoundId) return;
+    const targetGroup = trackId ? rankingGroups.find((group) => group.trackId === trackId) : null;
+    const canExport = trackId
+      ? (targetGroup?.items || []).some(hasScoreValue)
+      : hasRoundExportableScores;
+    if (!canExport) {
+      setError(EXPORT_UNAVAILABLE_MESSAGE);
+      setSuccess("");
+      return;
+    }
+    setError("");
+    setExportLoading(true);
+    try {
+      const params = {
+        includeCalibration: includeCalibrationExport,
+      };
+      if (trackId) {
+        params.trackId = trackId;
+      }
+      const response = await http.get(
+        `/api/coordinator/scoring/rounds/${selectedRoundId}/research-dataset.csv`,
+        { responseType: "blob", params }
+      );
+      const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = trackId
+        ? `seal-round-${selectedRoundId}-track-${trackId}-anonymized-scoring.csv`
+        : `seal-round-${selectedRoundId}-anonymized-scoring.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(href);
+      setSuccess("Anonymized scoring dataset exported.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to export anonymized scoring dataset"));
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const handleManualElimination = async () => {
     if (!selectedRoundId || !manualEliminationState.submissionId) return;
     const reason = String(manualEliminationState.reason || "").trim();
@@ -817,7 +914,16 @@ export default function CoordinatorScoringPanel() {
                 title="Leaderboard"
                 description={`${currentRound.roundOrder}. ${currentRound.roundName}`}
                 action={(
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    flexWrap="wrap"
+                    useFlexGap
+                    sx={{
+                      justifyContent: { xs: "flex-start", lg: "flex-end" },
+                      "& .MuiButton-root": { minHeight: 38 },
+                    }}
+                  >
                     <Button
                       variant="outlined"
                       startIcon={<RefreshRoundedIcon />}
@@ -825,6 +931,57 @@ export default function CoordinatorScoringPanel() {
                     >
                       Refresh
                     </Button>
+                    <FormControlLabel
+                      control={(
+                        <Checkbox
+                          size="small"
+                          checked={includeCalibrationExport}
+                          onChange={(event) => setIncludeCalibrationExport(event.target.checked)}
+                        />
+                      )}
+                      label="Include calibration"
+                      sx={{
+                        mr: 0.3,
+                        px: 1,
+                        border: `1px solid ${brand.colors.line}`,
+                        borderRadius: 999,
+                        bgcolor: "#FFFFFF",
+                        "& .MuiFormControlLabel-label": { fontSize: 13, fontWeight: 800, color: brand.colors.muted },
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      startIcon={<DownloadRoundedIcon />}
+                      disabled={exportLoading || !hasRoundExportableScores}
+                      title={!hasRoundExportableScores ? EXPORT_UNAVAILABLE_MESSAGE : ""}
+                      onClick={() => handleExportResearchDataset()}
+                    >
+                      {exportLoading ? "Exporting..." : "Export Round CSV"}
+                    </Button>
+                    {activeRankingGroup?.trackId ? (
+                      <Button
+                        variant="outlined"
+                        startIcon={<DownloadRoundedIcon />}
+                        disabled={exportLoading || !activeTrackHasExportableScores}
+                        title={!activeTrackHasExportableScores ? EXPORT_UNAVAILABLE_MESSAGE : ""}
+                        onClick={() => handleExportResearchDataset({ trackId: activeRankingGroup.trackId })}
+                      >
+                        Export Track CSV
+                      </Button>
+                    ) : null}
+                    {!hasRoundExportableScores ? (
+                      <Typography
+                        sx={{
+                          flexBasis: "100%",
+                          color: brand.colors.danger,
+                          fontSize: 12.5,
+                          fontWeight: 750,
+                          textAlign: { xs: "left", lg: "right" },
+                        }}
+                      >
+                        {EXPORT_UNAVAILABLE_MESSAGE}
+                      </Typography>
+                    ) : null}
                     {finalization.scoreLocked ? (
                       <>
                         {!finalization.advancementApplied ? (
@@ -915,100 +1072,149 @@ export default function CoordinatorScoringPanel() {
                   </Tabs>
 
                   {activeRankingGroup ? (
-                    <TableContainer>
-                      <Table>
-                        <TableHead>
-                          <TableRow sx={{ bgcolor: "#FBFCFE" }}>
-                            <TableCell sx={{ fontWeight: 900, width: 90 }}>Rank</TableCell>
-                            <TableCell sx={{ fontWeight: 900 }}>Team</TableCell>
-                            <TableCell sx={{ fontWeight: 900, width: 160 }}>Score</TableCell>
-                            <TableCell sx={{ fontWeight: 900, width: 180 }}>Status</TableCell>
-                            <TableCell sx={{ fontWeight: 900, width: 170, textAlign: "right" }}>Actions</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {activeRankingGroup.items.map((item) => {
-                            const normalizedQualificationStatus = String(item.qualificationStatus || "").toLowerCase();
-                            const isDisqualified = normalizedQualificationStatus === "disqualified";
-                            const qualificationApplied = finalization.qualificationCalculated;
-                            const advancementApplied = finalization.advancementApplied;
-                            const isTopTeam = qualificationApplied
-                              && !isDisqualified
-                              && (item.qualifiedNextRound || normalizedQualificationStatus === "qualified");
-                            let resultLabel = "Pending";
-                            let resultColor = isTopTeam ? "success" : "default";
-                            if (isDisqualified) {
-                              resultLabel = "Disqualified";
-                              resultColor = "error";
-                            }
-                            if (qualificationApplied) {
-                              if (!isDisqualified && normalizedQualificationStatus === "qualified") {
-                                resultLabel = advancementApplied ? "Promoted" : "Qualified";
-                                resultColor = "success";
-                              } else if (normalizedQualificationStatus === "eliminated") {
-                                resultLabel = "Eliminated";
-                                resultColor = "default";
-                              } else if (normalizedQualificationStatus === "not applicable") {
-                                resultLabel = "N/A";
-                                resultColor = "default";
-                              }
-                            } else if (!isDisqualified && item.projectedQualifiedNextRound === true) {
-                              resultLabel = "Projected Top";
-                              resultColor = "default";
-                            } else if (!isDisqualified && item.projectedQualifiedNextRound === false) {
-                              resultLabel = "Projected Out";
-                              resultColor = "default";
-                            }
-                            const firstDisqualifiedIndex = activeRankingGroup.items.findIndex(
-                              (entry) => String(entry.qualificationStatus || "").toLowerCase() === "disqualified"
-                            );
-                            const isFirstDisqualifiedRow = isDisqualified && firstDisqualifiedIndex === activeRankingGroup.items.indexOf(item);
-                            return (
-                              <TableRow
-                                key={item.submissionId}
-                                sx={{
-                                  bgcolor: isTopTeam ? "#EAF8EE" : "#FFFFFF",
-                                  "& td, & th": {
-                                    borderTop: isFirstDisqualifiedRow ? "2px dashed #E2E8F0" : undefined,
-                                  },
-                                  "&:last-child td, &:last-child th": { borderBottom: 0 },
-                                }}
-                              >
-                                <TableCell sx={{ color: brand.colors.text, fontWeight: 900 }}>
-                                  {item.rankPosition ? `#${item.rankPosition}` : "--"}
-                                </TableCell>
-                                <TableCell>
-                                  <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
-                                    {item.teamName}
-                                  </Typography>
-                                  {isDisqualified && item.qualificationNote ? (
-                                    <Typography sx={{ color: brand.colors.danger, fontSize: 12.5, mt: 0.45 }}>
-                                      {item.qualificationNote}
+                    <>
+                      <TableContainer sx={{ display: { xs: "none", md: "block" } }}>
+                        <Table>
+                          <TableHead>
+                            <TableRow sx={{ bgcolor: "#FBFCFE" }}>
+                              <TableCell sx={{ fontWeight: 900, width: 90 }}>Rank</TableCell>
+                              <TableCell sx={{ fontWeight: 900 }}>Team</TableCell>
+                              <TableCell sx={{ fontWeight: 900, width: 160 }}>Score</TableCell>
+                              <TableCell sx={{ fontWeight: 900, width: 180 }}>Status</TableCell>
+                              <TableCell sx={{ fontWeight: 900, width: 170, textAlign: "right" }}>Actions</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {activeRankingGroup.items.map((item) => {
+                              const { isDisqualified, isTopTeam, resultLabel, resultColor } = getLeaderboardPresentation(item, finalization);
+                              const firstDisqualifiedIndex = activeRankingGroup.items.findIndex(
+                                (entry) => String(entry.qualificationStatus || "").toLowerCase() === "disqualified"
+                              );
+                              const isFirstDisqualifiedRow = isDisqualified && firstDisqualifiedIndex === activeRankingGroup.items.indexOf(item);
+                              return (
+                                <TableRow
+                                  key={item.submissionId}
+                                  sx={{
+                                    bgcolor: isTopTeam ? "#EAF8EE" : "#FFFFFF",
+                                    "& td, & th": {
+                                      borderTop: isFirstDisqualifiedRow ? "2px dashed #E2E8F0" : undefined,
+                                    },
+                                    "&:last-child td, &:last-child th": { borderBottom: 0 },
+                                  }}
+                                >
+                                  <TableCell sx={{ color: brand.colors.text, fontWeight: 900 }}>
+                                    {item.rankPosition ? `#${item.rankPosition}` : "--"}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
+                                      {item.teamName}
                                     </Typography>
-                                  ) : null}
-                                </TableCell>
-                                <TableCell sx={{ color: brand.colors.text, fontWeight: 800 }}>
-                                  {item.totalScore ?? "--"}
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    size="small"
-                                    color={resultColor}
-                                    label={resultLabel}
-                                  />
-                                </TableCell>
-                                <TableCell sx={{ textAlign: "right" }}>
-                                  {!finalization.advancementApplied && !isDisqualified ? (
+                                    {isDisqualified && item.qualificationNote ? (
+                                      <Typography sx={{ color: brand.colors.danger, fontSize: 12.5, mt: 0.45 }}>
+                                        {item.qualificationNote}
+                                      </Typography>
+                                    ) : null}
+                                  </TableCell>
+                                  <TableCell sx={{ color: brand.colors.text, fontWeight: 800 }}>
+                                    {item.totalScore ?? "--"}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      size="small"
+                                      color={resultColor}
+                                      label={resultLabel}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ textAlign: "right" }}>
+                                    {!finalization.advancementApplied && !isDisqualified ? (
+                                      <Button
+                                        size="small"
+                                        variant="outlined"
+                                        color="error"
+                                        startIcon={<BlockRoundedIcon />}
+                                        sx={{
+                                          minWidth: 126,
+                                          whiteSpace: "nowrap",
+                                          justifyContent: "center",
+                                        }}
+                                        onClick={() => setManualEliminationState({
+                                          open: true,
+                                          submissionId: item.submissionId,
+                                          teamName: item.teamName,
+                                          reason: "",
+                                        })}
+                                      >
+                                        Disqualify
+                                      </Button>
+                                    ) : !finalization.advancementApplied && isDisqualified ? (
+                                      <Button
+                                        size="small"
+                                        variant="outlined"
+                                        color="inherit"
+                                        startIcon={<UndoRoundedIcon />}
+                                        onClick={() => handleUndoManualElimination(item.submissionId, item.teamName)}
+                                        sx={{
+                                          minWidth: 126,
+                                          whiteSpace: "nowrap",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        Undo
+                                      </Button>
+                                    ) : null}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                      <Stack spacing={1.2} sx={{ display: { xs: "flex", md: "none" }, p: 1.2 }}>
+                        {activeRankingGroup.items.map((item) => {
+                          const { isDisqualified, isTopTeam, resultLabel, resultColor } = getLeaderboardPresentation(item, finalization);
+                          const firstDisqualifiedIndex = activeRankingGroup.items.findIndex(
+                            (entry) => String(entry.qualificationStatus || "").toLowerCase() === "disqualified"
+                          );
+                          const isFirstDisqualifiedRow = isDisqualified && firstDisqualifiedIndex === activeRankingGroup.items.indexOf(item);
+                          return (
+                            <Box
+                              key={`mobile-leaderboard-${item.submissionId}`}
+                              sx={{
+                                p: 1.5,
+                                borderRadius: brand.radius.md,
+                                border: `1px solid ${isTopTeam ? "#B9E7C6" : brand.colors.line}`,
+                                borderTop: isFirstDisqualifiedRow ? "2px dashed #CBD5E1" : undefined,
+                                bgcolor: isTopTeam ? "#EAF8EE" : "#FFFFFF",
+                                boxShadow: brand.shadow.xs,
+                              }}
+                            >
+                              <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1.2}>
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography sx={{ color: brand.colors.text, fontSize: 18, fontWeight: 950 }}>
+                                    {item.rankPosition ? `#${item.rankPosition}` : "--"} {item.teamName}
+                                  </Typography>
+                                  <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.45 }}>
+                                    Score: <strong>{item.totalScore ?? "--"}</strong>
+                                  </Typography>
+                                </Box>
+                                <Chip size="small" color={resultColor} label={resultLabel} />
+                              </Stack>
+
+                              {isDisqualified && item.qualificationNote ? (
+                                <Typography sx={{ color: brand.colors.danger, fontSize: 12.5, mt: 1 }}>
+                                  {item.qualificationNote}
+                                </Typography>
+                              ) : null}
+
+                              {!finalization.advancementApplied ? (
+                                <Box sx={{ mt: 1.3 }}>
+                                  {!isDisqualified ? (
                                     <Button
+                                      fullWidth
                                       size="small"
                                       variant="outlined"
                                       color="error"
                                       startIcon={<BlockRoundedIcon />}
-                                      sx={{
-                                        minWidth: 126,
-                                        whiteSpace: "nowrap",
-                                        justifyContent: "center",
-                                      }}
                                       onClick={() => setManualEliminationState({
                                         open: true,
                                         submissionId: item.submissionId,
@@ -1018,29 +1224,25 @@ export default function CoordinatorScoringPanel() {
                                     >
                                       Disqualify
                                     </Button>
-                                  ) : !finalization.advancementApplied && isDisqualified ? (
+                                  ) : (
                                     <Button
+                                      fullWidth
                                       size="small"
                                       variant="outlined"
                                       color="inherit"
                                       startIcon={<UndoRoundedIcon />}
                                       onClick={() => handleUndoManualElimination(item.submissionId, item.teamName)}
-                                      sx={{
-                                        minWidth: 126,
-                                        whiteSpace: "nowrap",
-                                        justifyContent: "center",
-                                      }}
                                     >
                                       Undo
                                     </Button>
-                                  ) : null}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                                  )}
+                                </Box>
+                              ) : null}
+                            </Box>
+                          );
+                        })}
+                      </Stack>
+                    </>
                   ) : null}
                 </Box>
               </SectionCard>

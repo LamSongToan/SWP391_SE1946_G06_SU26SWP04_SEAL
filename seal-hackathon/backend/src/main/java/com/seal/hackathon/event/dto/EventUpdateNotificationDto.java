@@ -8,6 +8,8 @@ public record EventUpdateNotificationDto(
         String eventName,
         String title,
         String message,
+        Boolean read,
+        LocalDateTime readAt,
         LocalDateTime createdAt
 ) {
 }

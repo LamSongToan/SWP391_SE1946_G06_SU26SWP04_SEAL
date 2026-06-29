@@ -175,7 +175,16 @@ function pickDeadline(teams = []) {
     || "No deadline yet";
 }
 
-function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, stats, eventNotifications = [] }) {
+function DashboardOverview({
+  auth,
+  currentRole,
+  profileSummary,
+  avatarInitials,
+  stats,
+  eventNotifications = [],
+  onMarkNotificationRead = () => {},
+  onMarkAllNotificationsRead = () => {},
+}) {
   const displayName = profileSummary?.fullName || auth?.fullName || auth?.username || "SEAL participant";
   const isLeader = currentRole === "STUDENT" && stats.leaderTeams > 0;
   const displayRole = isLeader ? "TEAM_LEADER" : currentRole;
@@ -212,6 +221,7 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
       ["Current Round", stats.currentRound, EmojiEventsRoundedIcon, "Round data updates from the active event"],
     ];
   })();
+  const unreadCount = eventNotifications.filter((item) => !item.read).length;
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -281,7 +291,16 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
               border: `1px solid ${brand.colors.line}`,
               boxShadow: brand.shadow.sm,
               minHeight: 132,
+              position: "relative",
+              overflow: "hidden",
               transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
+              "&:before": {
+                content: '""',
+                position: "absolute",
+                inset: "0 auto 0 0",
+                width: 4,
+                bgcolor: "rgba(243,112,33,0.18)",
+              },
               "&:hover": {
                 transform: "translateY(-3px)",
                 borderColor: "rgba(243,112,33,0.3)",
@@ -313,6 +332,7 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
           bgcolor: brand.colors.surface,
           border: `1px solid ${brand.colors.line}`,
           boxShadow: brand.shadow.sm,
+          overflow: "hidden",
         }}
       >
         <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }}>
@@ -326,9 +346,19 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
           </Box>
           <Chip
             icon={<EventRoundedIcon fontSize="small" />}
-            label={`${eventNotifications.length} active`}
+            label={`${unreadCount} unread / ${eventNotifications.length} active`}
             sx={{ alignSelf: { xs: "flex-start", md: "center" }, fontWeight: 850 }}
           />
+          {unreadCount > 0 ? (
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={onMarkAllNotificationsRead}
+              sx={{ alignSelf: { xs: "flex-start", md: "center" }, borderRadius: 999, textTransform: "none", fontWeight: 850 }}
+            >
+              Mark all read
+            </Button>
+          ) : null}
         </Stack>
 
         {eventNotifications.length === 0 ? (
@@ -350,12 +380,19 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
             {eventNotifications.map((item) => (
               <Box
                 key={item.notificationId}
+                onClick={() => !item.read && onMarkNotificationRead(item.notificationId)}
                 sx={{
                   p: { xs: 1.6, md: 1.8 },
                   borderRadius: brand.radius.md,
-                  border: `1px solid ${brand.colors.line}`,
-                  bgcolor: "#FFFFFF",
+                  border: item.read ? `1px solid ${brand.colors.line}` : "1px solid rgba(243,112,33,0.36)",
+                  bgcolor: item.read ? "#FFFFFF" : "#FFF8F1",
                   boxShadow: "0 8px 18px rgba(7, 26, 47, 0.04)",
+                  cursor: item.read ? "default" : "pointer",
+                  transition: "background-color 160ms ease, border-color 160ms ease, transform 160ms ease",
+                  "&:hover": {
+                    transform: item.read ? "none" : "translateY(-1px)",
+                    borderColor: item.read ? brand.colors.line : "rgba(243,112,33,0.55)",
+                  },
                 }}
               >
                 <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={1.6}>
@@ -391,6 +428,13 @@ function DashboardOverview({ auth, currentRole, profileSummary, avatarInitials, 
                               borderColor: brand.colors.line,
                               "& .MuiChip-label": { px: 1, fontSize: 12, lineHeight: "24px" },
                             }}
+                          />
+                        ) : null}
+                        {!item.read ? (
+                          <Chip
+                            size="small"
+                            label="Unread"
+                            sx={{ height: 24, bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 900 }}
                           />
                         ) : null}
                       </Stack>
@@ -739,6 +783,38 @@ export default function DashboardPage() {
       mounted = false;
     };
   }, [activeKey, currentRole]);
+
+  const markNotificationRead = async (notificationId) => {
+    if (!notificationId) return;
+    setEventNotifications((current) => current.map((item) => (
+      item.notificationId === notificationId ? { ...item, read: true, readAt: new Date().toISOString() } : item
+    )));
+    try {
+      const response = await http.patch(`/api/dashboard/event-updates/${notificationId}/read`);
+      const updated = response.data?.data;
+      if (updated) {
+        setEventNotifications((current) => current.map((item) => (
+          item.notificationId === notificationId ? { ...item, ...updated } : item
+        )));
+      }
+    } catch {
+      setEventNotifications((current) => current.map((item) => (
+        item.notificationId === notificationId ? { ...item, read: false, readAt: null } : item
+      )));
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    const timestamp = new Date().toISOString();
+    setEventNotifications((current) => current.map((item) => ({ ...item, read: true, readAt: item.readAt || timestamp })));
+    try {
+      const response = await http.patch("/api/dashboard/event-updates/read-all");
+      setEventNotifications(response.data?.data || []);
+    } catch {
+      const response = await http.get("/api/dashboard/event-updates");
+      setEventNotifications(response.data?.data || []);
+    }
+  };
 
   const renderContent = () => {
     if (activeKey === "dashboard") return null;
@@ -1210,6 +1286,8 @@ export default function DashboardPage() {
               avatarInitials={avatarInitials}
               stats={dashboardStats}
               eventNotifications={eventNotifications}
+              onMarkNotificationRead={markNotificationRead}
+              onMarkAllNotificationsRead={markAllNotificationsRead}
             />
           ) : null}
 

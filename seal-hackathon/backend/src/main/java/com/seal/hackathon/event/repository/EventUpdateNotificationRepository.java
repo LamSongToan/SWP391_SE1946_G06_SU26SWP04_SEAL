@@ -17,6 +17,9 @@ public interface EventUpdateNotificationRepository extends JpaRepository<EventUp
     @EntityGraph(attributePaths = {"user"})
     List<EventUpdateNotificationEntity> findTop300ByOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = {"user"})
+    List<EventUpdateNotificationEntity> findByAnnouncementAnnouncementId(Integer announcementId);
+
     @Query("""
             select n
             from EventUpdateNotificationEntity n

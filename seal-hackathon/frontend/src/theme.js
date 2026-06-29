@@ -42,6 +42,7 @@ const theme = createTheme({
     h5: { fontWeight: 800, lineHeight: 1.24 },
     h6: { fontWeight: 800, lineHeight: 1.28 },
     body1: { fontSize: "14px", color: brand.colors.muted },
+    body2: { lineHeight: 1.62 },
     subtitle1: { fontWeight: 600 },
     button: {
       textTransform: "none",
@@ -56,6 +57,14 @@ const theme = createTheme({
         body: {
           background: brand.colors.surfaceSoft,
           fontFamily: brand.font.primary,
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
+        },
+        "*": {
+          boxSizing: "border-box",
+        },
+        "::selection": {
+          background: "rgba(243,112,33,0.22)",
         },
       },
     },
@@ -68,6 +77,25 @@ const theme = createTheme({
           borderRadius: 999,
           paddingInline: 16,
           fontWeight: 700,
+          minHeight: 38,
+          transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease",
+          "&:focus-visible": {
+            outline: `3px solid rgba(243,112,33,0.26)`,
+            outlineOffset: 2,
+          },
+        },
+        contained: {
+          boxShadow: "0 10px 22px rgba(7, 26, 47, 0.10)",
+          "&:hover": {
+            transform: "translateY(-1px)",
+            boxShadow: "0 14px 30px rgba(7, 26, 47, 0.13)",
+          },
+        },
+        outlined: {
+          backgroundColor: "rgba(255,255,255,0.72)",
+          "&:hover": {
+            backgroundColor: brand.colors.surfaceWarm,
+          },
         },
       },
     },
@@ -77,6 +105,7 @@ const theme = createTheme({
           border: `1px solid ${brand.colors.line}`,
           boxShadow: brand.shadow.sm,
           borderRadius: brand.radius.lg,
+          backgroundImage: "none",
         },
       },
     },
@@ -96,6 +125,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: brand.radius.md,
+          backgroundColor: brand.colors.surface,
+          transition: "box-shadow 160ms ease, background-color 160ms ease",
+          "&.Mui-focused": {
+            boxShadow: "0 0 0 4px rgba(243,112,33,0.12)",
+          },
         },
       },
     },
@@ -104,6 +138,16 @@ const theme = createTheme({
         root: {
           paddingTop: 13,
           paddingBottom: 13,
+          borderBottomColor: "#EDF2F7",
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: brand.radius.lg,
+          border: `1px solid ${brand.colors.line}`,
+          boxShadow: brand.shadow.lg,
         },
       },
     },

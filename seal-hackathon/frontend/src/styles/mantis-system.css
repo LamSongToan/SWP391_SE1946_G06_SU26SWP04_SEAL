@@ -15,13 +15,46 @@
   --se-warning: #fdb515;
   --se-danger: #e14d3d;
   --se-shadow: 0 8px 22px rgba(7, 26, 47, 0.08);
+  --se-shadow-xs: 0 3px 10px rgba(7, 26, 47, 0.05);
+  --se-shadow-md: 0 18px 48px rgba(7, 26, 47, 0.14);
   --se-radius: 12px;
   --se-sidebar-width: 270px;
+}
+
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
   background: var(--se-bg);
   color: var(--se-text);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  letter-spacing: -0.01em;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #edf2f8;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid #edf2f8;
+  border-radius: 999px;
+  background: #b8c7d9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8da1ba;
 }
 
 .ms-shell {
@@ -39,6 +72,13 @@ body {
   border-right: 1px solid var(--se-line);
   color: var(--se-text);
   box-shadow: 10px 0 34px rgba(7, 26, 47, 0.04);
+}
+
+.ms-sidebar .MuiListItemButton-root:focus-visible,
+.ms-topbar .MuiButtonBase-root:focus-visible,
+.MuiButtonBase-root:focus-visible {
+  outline: 3px solid rgba(243, 112, 33, 0.26);
+  outline-offset: 2px;
 }
 
 .ms-sidebar-inner {
@@ -145,6 +185,17 @@ body {
     linear-gradient(180deg, #f8fbff 0%, #f1f5fb 100%);
 }
 
+.ms-content::before {
+  content: "";
+  position: fixed;
+  inset: 72px 0 auto var(--se-sidebar-width);
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(243, 112, 33, 0.3), transparent);
+  opacity: 0.72;
+  z-index: 1;
+}
+
 .ms-topbar.MuiAppBar-root {
   background: rgba(255, 255, 255, 0.9);
   color: var(--se-text);
@@ -170,7 +221,9 @@ body {
 }
 
 .ms-page-body {
-  padding: 26px 30px 42px;
+  width: min(100%, 1480px);
+  margin-inline: auto;
+  padding: 26px 30px 48px;
 }
 
 .ms-breadcrumb {
@@ -236,6 +289,14 @@ body {
   box-shadow: 0 16px 42px rgba(7, 26, 47, 0.08);
 }
 
+.MuiCard-root {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.MuiCard-root:hover {
+  border-color: rgba(184, 199, 217, 0.95);
+}
+
 .ms-data-card .MuiCardContent-root {
   padding: 22px 24px;
 }
@@ -290,7 +351,7 @@ body {
 
 .ms-data-card .MuiTableBody-root .MuiTableRow-root:hover {
   background: #f7faff;
-  box-shadow: inset 4px 0 0 var(--se-primary);
+  box-shadow: inset 4px 0 0 var(--se-secondary);
 }
 
 .ms-data-card .MuiTableBody-root .MuiTableRow-root:last-child .MuiTableCell-root {
@@ -329,7 +390,38 @@ body {
   padding: 22px;
   border: 1px dashed var(--se-line-strong);
   border-radius: var(--se-radius);
-  background: var(--se-surface-soft);
+  background:
+    linear-gradient(135deg, rgba(255, 247, 240, 0.92), rgba(248, 251, 255, 0.92)),
+    var(--se-surface-soft);
+  color: var(--se-text);
+}
+
+.MuiDialogTitle-root {
+  color: var(--se-text);
+}
+
+.MuiDialogContent-root {
+  color: var(--se-muted);
+}
+
+.MuiFormHelperText-root {
+  margin-left: 2px;
+}
+
+.MuiTableContainer-root {
+  overflow-x: auto;
+}
+
+.MuiTable-root {
+  min-width: 720px;
+}
+
+.MuiTabs-root {
+  min-height: 48px;
+}
+
+.MuiTab-root {
+  min-height: 48px;
 }
 
 .seal-reveal {
@@ -737,11 +829,14 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .ms-content::before {
+    inset-left: 0;
+  }
 }
 
 @media (max-width: 899px) {
   .ms-page-body {
-    padding: 16px;
+    padding: 14px 14px 32px;
   }
 
   .ms-page-title {
@@ -754,5 +849,42 @@ body {
 
   .ms-auth-form-wrap {
     padding: 24px 16px;
+  }
+
+  .ms-breadcrumb {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .ms-data-card .MuiCardContent-root,
+  .MuiCardContent-root {
+    padding: 18px;
+  }
+
+  .MuiDialog-paper {
+    margin: 14px;
+  }
+}
+
+@media (max-width: 599px) {
+  .ms-topbar.MuiAppBar-root {
+    min-height: 64px;
+  }
+
+  .ms-page-body {
+    padding-inline: 12px;
+  }
+
+  .ms-centered-notification.MuiSnackbar-root {
+    top: 12px;
+  }
+
+  .MuiButton-root {
+    min-height: 40px;
+  }
+
+  .MuiTable-root {
+    min-width: 640px;
   }
 }

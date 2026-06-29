@@ -300,16 +300,16 @@ function ProfileSectionHeader({ title, description, action = null }) {
     <Stack
       direction={{ xs: "column", sm: "row" }}
       justifyContent="space-between"
-      alignItems={{ xs: "flex-start", sm: "center" }}
-      spacing={1.2}
-      sx={{ mb: 1.8 }}
+      alignItems={{ xs: "flex-start", sm: "flex-start" }}
+      spacing={1.5}
+      sx={{ mb: 2.2 }}
     >
       <Box>
         <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 950, lineHeight: 1.2 }}>
           {title}
         </Typography>
         {description ? (
-          <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.45 }}>
+          <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.6, lineHeight: 1.55 }}>
             {description}
           </Typography>
         ) : null}
@@ -1215,7 +1215,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
           <Grid2 size={{ xs: 12 }}>
             <Box
               sx={{
-                p: 1.7,
+                p: { xs: 1.8, md: 2 },
                 borderRadius: brand.radius.md,
                 border: `1px solid ${fieldErrors.profileLinks ? brand.colors.danger : brand.colors.line}`,
                 bgcolor: "#F8FAFC",
@@ -1223,16 +1223,16 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
             >
               <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={1.2}
+                spacing={1.6}
                 justifyContent="space-between"
-                alignItems={{ xs: "flex-start", sm: "center" }}
-                sx={{ mb: editableProfileLinks.length ? 1.4 : 0 }}
+                alignItems={{ xs: "flex-start", sm: "flex-start" }}
+                sx={{ mb: editableProfileLinks.length ? 1.8 : 1.2 }}
               >
                 <Box>
-                  <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 950 }}>
+                  <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 950, lineHeight: 1.25 }}>
                     Social links
                   </Typography>
-                  <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.35 }}>
+                  <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.6, lineHeight: 1.55 }}>
                     Add public links such as Facebook, GitHub, LinkedIn, or a personal site. You can type facebook.com/name without https.
                   </Typography>
                 </Box>
@@ -1502,7 +1502,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     <Box
                       sx={{
                         minHeight: "100%",
-                        p: { xs: 1.4, md: 1.6 },
+                        p: { xs: 1.7, md: 2 },
                         borderRadius: brand.radius.md,
                         bgcolor: "#F8FAFC",
                         border: `1px solid ${brand.colors.line}`,
@@ -1510,13 +1510,13 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                     >
                       <Stack
                         direction={{ xs: "column", sm: "row" }}
-                        spacing={1}
-                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        spacing={1.6}
+                        alignItems={{ xs: "flex-start", sm: "flex-start" }}
                         justifyContent="space-between"
-                        sx={{ mb: visibleProfileLinks.length ? 1.25 : 0 }}
+                        sx={{ mb: visibleProfileLinks.length ? 1.7 : 1.25 }}
                       >
                         <Box sx={{ minWidth: 0 }}>
-                          <Stack direction="row" spacing={0.9} alignItems="center">
+                          <Stack direction="row" spacing={1.1} alignItems="flex-start">
                             <Box
                               sx={{
                                 width: 28,
@@ -1532,10 +1532,10 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                               <LinkRoundedIcon fontSize="small" />
                             </Box>
                             <Box>
-                              <Typography sx={{ color: brand.colors.text, fontSize: 14.5, fontWeight: 950, lineHeight: 1.1 }}>
+                              <Typography sx={{ color: brand.colors.text, fontSize: 14.5, fontWeight: 950, lineHeight: 1.25 }}>
                                 Social links
                               </Typography>
-                              <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.25 }}>
+                              <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.55, lineHeight: 1.5 }}>
                                 Public profiles and portfolio links
                               </Typography>
                             </Box>
@@ -1558,7 +1558,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                           ))}
                         </Stack>
                       ) : (
-                        <Box sx={{ p: 1.2, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px dashed ${brand.colors.lineStrong}` }}>
+                        <Box sx={{ p: { xs: 1.35, md: 1.5 }, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px dashed ${brand.colors.lineStrong}` }}>
                           <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>
                             Add Facebook, GitHub, LinkedIn, portfolio, or another public profile link.
                           </Typography>

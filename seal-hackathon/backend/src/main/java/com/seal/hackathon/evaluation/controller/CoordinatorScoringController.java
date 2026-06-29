@@ -10,7 +10,9 @@ import com.seal.hackathon.evaluation.dto.RoundCriteriaUpdateRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
 import com.seal.hackathon.evaluation.service.CoordinatorScoringService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -107,6 +110,24 @@ public class CoordinatorScoringController {
                 "Round finalization snapshot fetched",
                 coordinatorScoringService.getRoundFinalization(authentication, roundId)
         ));
+    }
+
+    @GetMapping("/rounds/{roundId}/research-dataset.csv")
+    public ResponseEntity<byte[]> exportAnonymizedResearchDataset(Authentication authentication,
+                                                                  @PathVariable Integer roundId,
+                                                                  @RequestParam(required = false) Integer trackId,
+                                                                  @RequestParam(defaultValue = "true") boolean includeCalibration) {
+        String csv = coordinatorScoringService.exportAnonymizedScoringDatasetCsv(
+                authentication,
+                roundId,
+                trackId,
+                includeCalibration
+        );
+        byte[] payload = csv.getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"seal-round-" + roundId + "-anonymized-scoring.csv\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(payload);
     }
 
     @PostMapping("/rounds/{roundId}/finalize")

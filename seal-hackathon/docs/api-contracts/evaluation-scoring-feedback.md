@@ -49,6 +49,7 @@ The migration adds:
 | `GET` | `/api/mentor/dashboard` | Mentor | List assigned tracks, teams, and submissions |
 | `GET` | `/api/submissions/{submissionId}/feedback` | Student/Judge/Mentor/Coordinator | View feedback history for an authorized submission |
 | `POST` | `/api/submissions/{submissionId}/feedback` | Judge/Mentor | Append written feedback |
+| `GET` | `/api/coordinator/scoring/rounds/{roundId}/research-dataset.csv?trackId={trackId}&includeCalibration=true` | Coordinator | Download anonymized criterion-level judge scores as CSV for RBL/research analysis |
 
 ## Score Submit Request
 
@@ -87,3 +88,13 @@ Set `scoreLocked` to `false` when the coordinator reopens scoring for the round.
 ```
 
 Feedback entries are appended to `Feedback`; the API does not expose delete operations.
+
+## Research Dataset Export
+
+The research CSV export excludes direct personal identifiers such as user names, emails, team names, join codes, repository URLs, judge names, and free-text score comments. It preserves independent criterion-level judge scores with anonymized codes:
+
+```text
+event_code,event_semester,event_year,round_code,round_order,round_name,track_code,track_name,team_code,submission_code,submission_status,is_calibration,judge_code,criteria_code,criteria_name,criteria_type,criteria_weight,score_value,submitted_at,scored_at
+```
+
+Each row represents one score for one submission, one criterion, and one judge assignment. `trackId` is optional; omit it to export the entire round. Set `includeCalibration=false` to export official submissions only.

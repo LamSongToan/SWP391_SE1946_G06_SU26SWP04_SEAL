@@ -1,6 +1,7 @@
 package com.seal.hackathon.event.controller;
 
 import com.seal.hackathon.common.ApiResponse;
+import com.seal.hackathon.event.dto.AnnouncementRecipientPreviewDto;
 import com.seal.hackathon.event.dto.CreateAnnouncementRequest;
 import com.seal.hackathon.event.dto.SentAnnouncementDto;
 import com.seal.hackathon.event.dto.UpdateAnnouncementRequest;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -34,6 +36,17 @@ public class CoordinatorAnnouncementController {
         return ResponseEntity.ok(ApiResponse.ok(
                 "Sent announcements fetched",
                 notificationService.listSentAnnouncements(authentication)
+        ));
+    }
+
+    @GetMapping("/recipient-preview")
+    public ResponseEntity<ApiResponse<AnnouncementRecipientPreviewDto>> previewRecipients(
+            Authentication authentication,
+            @RequestParam Integer eventId,
+            @RequestParam String audience) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Announcement recipients previewed",
+                notificationService.previewRecipients(authentication, eventId, audience)
         ));
     }
 

@@ -14,7 +14,9 @@ export const brand = {
     green: "#18B984",
     surface: "#FFFFFF",
     surfaceSoft: "#F6F8FC",
+    surfaceSofter: "#FBFCFF",
     surfaceWarm: "#FFF7F0",
+    surfaceInfo: "#F2F7FF",
     line: "#DCE4EF",
     lineStrong: "#B8C7D9",
     text: "#172033",
@@ -37,11 +39,18 @@ export const brand = {
     md: "12px",
     lg: "18px",
     xl: "28px",
+    pill: "999px",
   },
   shadow: {
+    xs: "0 3px 10px rgba(7, 26, 47, 0.05)",
     sm: "0 8px 22px rgba(7, 26, 47, 0.08)",
     md: "0 18px 48px rgba(7, 26, 47, 0.14)",
+    lg: "0 28px 72px rgba(7, 26, 47, 0.18)",
     glow: "0 24px 70px rgba(243, 112, 33, 0.24)",
+  },
+  motion: {
+    fast: "150ms ease",
+    base: "190ms ease",
   },
 };
 

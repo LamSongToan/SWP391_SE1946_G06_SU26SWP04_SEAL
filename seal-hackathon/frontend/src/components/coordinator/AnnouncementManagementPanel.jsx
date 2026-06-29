@@ -27,10 +27,10 @@ import { getApiErrorMessage, http } from "../../api/http";
 import { brand } from "../../styles/designTokens";
 
 const AUDIENCE_OPTIONS = [
-  { value: "ALL", label: "All participants", hint: "Students, mentors, and judges in the event" },
-  { value: "STUDENTS", label: "Students", hint: "Only students currently in event teams" },
-  { value: "MENTORS", label: "Mentors", hint: "Only mentors assigned to event tracks" },
-  { value: "JUDGES", label: "Judges", hint: "Only judges assigned to event rounds" },
+  { value: "ALL", label: "All participants", hint: "Active students, mentors, and judges" },
+  { value: "STUDENTS", label: "Students", hint: "Active student accounts" },
+  { value: "MENTORS", label: "Mentors", hint: "Active mentors and assigned mentors" },
+  { value: "JUDGES", label: "Judges", hint: "Active judges and assigned judges" },
 ];
 
 const EMPTY_FORM = {
@@ -57,6 +57,13 @@ function audienceLabel(value) {
   return AUDIENCE_OPTIONS.find((item) => item.value === value)?.label || value || "Audience";
 }
 
+function emptyAudienceMessage(audience) {
+  if (audience === "STUDENTS") return "No active students found for this event/audience.";
+  if (audience === "MENTORS") return "No active mentors found for this event/audience.";
+  if (audience === "JUDGES") return "No active judges found for this event/audience.";
+  return "No active users found for this event/audience.";
+}
+
 export default function AnnouncementManagementPanel() {
   const [events, setEvents] = useState([]);
   const [sentAnnouncements, setSentAnnouncements] = useState([]);
@@ -67,6 +74,8 @@ export default function AnnouncementManagementPanel() {
   const [actionLoading, setActionLoading] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [editForm, setEditForm] = useState({ title: "", message: "" });
+  const [recipientPreview, setRecipientPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [apiAvailable, setApiAvailable] = useState(true);
@@ -75,8 +84,15 @@ export default function AnnouncementManagementPanel() {
     () => AUDIENCE_OPTIONS.find((item) => item.value === form.audience) || AUDIENCE_OPTIONS[0],
     [form.audience]
   );
+  const recipientCount = Number(recipientPreview?.recipientCount ?? 0);
+  const noRecipientMessage = emptyAudienceMessage(form.audience);
 
-  const canSend = apiAvailable && form.eventId && form.title.trim() && form.message.trim() && !sending;
+  const canSend = apiAvailable
+    && form.eventId
+    && form.title.trim()
+    && form.message.trim()
+    && recipientCount > 0
+    && !sending;
   const canUpdate = editForm.title.trim() && editForm.message.trim() && !actionLoading;
 
   const loadEvents = async () => {
@@ -125,11 +141,52 @@ export default function AnnouncementManagementPanel() {
     loadWorkspace();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRecipientPreview = async () => {
+      if (!apiAvailable || !form.eventId || !form.audience) {
+        setRecipientPreview(null);
+        return;
+      }
+      setPreviewLoading(true);
+      try {
+        const response = await http.get("/api/coordinator/announcements/recipient-preview", {
+          params: {
+            eventId: Number(form.eventId),
+            audience: form.audience,
+          },
+        });
+        if (!cancelled) {
+          setRecipientPreview(response.data?.data || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setRecipientPreview(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setPreviewLoading(false);
+        }
+      }
+    };
+
+    loadRecipientPreview();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiAvailable, form.eventId, form.audience]);
+
   const onChange = (key) => (event) => {
     setForm((current) => ({ ...current, [key]: event.target.value }));
   };
 
   const onSend = async () => {
+    if (recipientCount <= 0) {
+      setError(noRecipientMessage);
+      setSuccess("");
+      return;
+    }
     setSending(true);
     setError("");
     setSuccess("");
@@ -146,7 +203,7 @@ export default function AnnouncementManagementPanel() {
       setSuccess(`Announcement sent to ${sent?.recipientCount ?? 0} recipient(s).`);
       setForm((current) => ({ ...EMPTY_FORM, eventId: current.eventId, audience: current.audience }));
     } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to send announcement"));
+      setError(getApiErrorMessage(err, noRecipientMessage));
     } finally {
       setSending(false);
     }
@@ -255,7 +312,7 @@ export default function AnnouncementManagementPanel() {
           </Alert>
         ) : null}
 
-        <Card sx={{ borderRadius: brand.radius.lg, border: `1px solid ${brand.colors.line}`, boxShadow: brand.shadow.sm }}>
+        <Card sx={{ borderRadius: brand.radius.lg, border: `1px solid ${brand.colors.line}`, boxShadow: brand.shadow.sm, overflow: "hidden" }}>
           <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
             <Stack direction={{ xs: "column", lg: "row" }} spacing={2.2} alignItems="flex-start">
               <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -332,6 +389,11 @@ export default function AnnouncementManagementPanel() {
                   >
                     {sending ? "Sending..." : "Send announcement"}
                   </Button>
+                  {!previewLoading && form.eventId && recipientCount === 0 ? (
+                    <Typography sx={{ color: brand.colors.danger, fontSize: 13, fontWeight: 750 }}>
+                      {noRecipientMessage}
+                    </Typography>
+                  ) : null}
                 </Stack>
               </Box>
 
@@ -341,7 +403,8 @@ export default function AnnouncementManagementPanel() {
                   p: 1.6,
                   borderRadius: brand.radius.md,
                   border: `1px solid ${brand.colors.line}`,
-                  bgcolor: "#F8FAFC",
+                  bgcolor: brand.colors.surfaceInfo,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
                 }}
               >
                 <Typography sx={{ color: brand.colors.text, fontWeight: 950 }}>
@@ -354,12 +417,25 @@ export default function AnnouncementManagementPanel() {
                   label={selectedAudience.label}
                   sx={{ mt: 1.2, bgcolor: "#FFFFFF", fontWeight: 850 }}
                 />
+                <Box sx={{ mt: 1.4, p: 1.35, borderRadius: 2.5, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}`, boxShadow: brand.shadow.xs }}>
+                  <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 850, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Estimated Recipients
+                  </Typography>
+                  <Typography sx={{ color: brand.colors.text, fontSize: 28, fontWeight: 950, mt: 0.2 }}>
+                    {previewLoading ? "..." : recipientPreview?.recipientCount ?? 0}
+                  </Typography>
+                  {recipientCount === 0 && !previewLoading ? (
+                    <Typography sx={{ color: brand.colors.danger, fontSize: 12.5 }}>
+                      {noRecipientMessage}
+                    </Typography>
+                  ) : null}
+                </Box>
               </Box>
             </Stack>
           </CardContent>
         </Card>
 
-        <Card sx={{ borderRadius: brand.radius.lg, border: `1px solid ${brand.colors.line}`, boxShadow: brand.shadow.sm }}>
+        <Card sx={{ borderRadius: brand.radius.lg, border: `1px solid ${brand.colors.line}`, boxShadow: brand.shadow.sm, overflow: "hidden" }}>
           <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
             <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={1.2} sx={{ mb: 1.6 }}>
               <Box>
@@ -390,6 +466,12 @@ export default function AnnouncementManagementPanel() {
                       borderRadius: brand.radius.md,
                       border: `1px solid ${brand.colors.line}`,
                       bgcolor: "#FFFFFF",
+                      transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+                      "&:hover": {
+                        borderColor: "rgba(243,112,33,0.3)",
+                        boxShadow: brand.shadow.xs,
+                        transform: "translateY(-1px)",
+                      },
                     }}
                   >
                     <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} justifyContent="space-between">

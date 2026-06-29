@@ -15,6 +15,7 @@ import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaManagementDto;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaUpdateRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
+import com.seal.hackathon.evaluation.dto.ResearchDatasetRowProjection;
 import com.seal.hackathon.evaluation.entity.AuditLogEntity;
 import com.seal.hackathon.evaluation.entity.CriteriaTemplateEntity;
 import com.seal.hackathon.evaluation.entity.CriteriaTemplateItemEntity;
@@ -305,6 +306,95 @@ public class CoordinatorScoringService {
     public RoundFinalizationDto getRoundFinalization(Authentication authentication, Integer roundId) {
         currentCoordinator(authentication);
         return buildRoundFinalization(getRoundOrThrow(roundId));
+    }
+
+    @Transactional
+    public String exportAnonymizedScoringDatasetCsv(Authentication authentication,
+                                                    Integer roundId,
+                                                    Integer trackId,
+                                                    boolean includeCalibration) {
+        UserEntity coordinator = currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+        HackathonEventEntity event = getEventOrThrow(round.getEventId());
+        if (trackId != null) {
+            TrackEntity track = trackRepository.findById(trackId)
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Track not found"));
+            if (!Objects.equals(track.getEventId(), round.getEventId())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Track does not belong to the selected round event");
+            }
+        }
+        List<ResearchDatasetRowProjection> rows = scoreRepository.findResearchDatasetRows(
+                roundId,
+                trackId,
+                includeCalibration
+        );
+
+        StringBuilder csv = new StringBuilder();
+        appendCsvRow(csv, List.of(
+                "event_code",
+                "event_semester",
+                "event_year",
+                "round_code",
+                "round_order",
+                "round_name",
+                "track_code",
+                "track_name",
+                "team_code",
+                "submission_code",
+                "submission_status",
+                "is_calibration",
+                "judge_code",
+                "criteria_code",
+                "criteria_name",
+                "criteria_type",
+                "criteria_weight",
+                "score_value",
+                "submitted_at",
+                "scored_at"
+        ));
+
+        for (ResearchDatasetRowProjection row : rows) {
+            appendCsvRow(csv, List.of(
+                    anonymizedCode("EVENT", row.getEventId()),
+                    stringValue(row.getEventSemester()),
+                    stringValue(row.getEventYear()),
+                    anonymizedCode("ROUND", row.getRoundId()),
+                    stringValue(row.getRoundOrder()),
+                    stringValue(row.getRoundName()),
+                    anonymizedCode("TRACK", row.getTrackId()),
+                    stringValue(row.getTrackName()),
+                    anonymizedCode("TEAM", row.getTeamId()),
+                    anonymizedCode("SUBMISSION", row.getSubmissionId()),
+                    stringValue(row.getSubmissionStatus()),
+                    stringValue(row.getCalibration()),
+                    anonymizedCode("JUDGE_ASSIGNMENT", row.getJudgeAssignmentId()),
+                    anonymizedCode("CRITERIA", row.getCriteriaId()),
+                    stringValue(row.getCriteriaName()),
+                    stringValue(row.getCriteriaType()),
+                    stringValue(row.getCriteriaWeight()),
+                    stringValue(row.getScoreValue()),
+                    stringValue(row.getSubmittedAt()),
+                    stringValue(row.getScoredAt())
+            ));
+        }
+
+        Map<String, Object> exportAuditPayload = new LinkedHashMap<>();
+        exportAuditPayload.put("roundId", roundId);
+        exportAuditPayload.put("eventId", event.getEventId());
+        exportAuditPayload.put("trackId", trackId);
+        exportAuditPayload.put("includeCalibration", includeCalibration);
+        exportAuditPayload.put("rowCount", rows.size());
+
+        auditLogService.record(
+                coordinator,
+                "ANONYMIZED_SCORING_DATASET_EXPORTED",
+                TARGET_ENTITY_ROUND,
+                roundId,
+                null,
+                exportAuditPayload,
+                "Exported anonymized criterion-level scoring dataset for research analysis"
+        );
+        return csv.toString();
     }
 
     @Transactional
@@ -1408,6 +1498,40 @@ public class CoordinatorScoringService {
                 .findFirst()
                 .map(item -> item.totalScore() == null ? BigDecimal.ZERO : item.totalScore())
                 .orElse(BigDecimal.ZERO);
+    }
+
+    private void appendCsvRow(StringBuilder csv, List<String> values) {
+        for (int index = 0; index < values.size(); index += 1) {
+            if (index > 0) {
+                csv.append(',');
+            }
+            csv.append(escapeCsv(values.get(index)));
+        }
+        csv.append(System.lineSeparator());
+    }
+
+    private String escapeCsv(String value) {
+        String normalized = value == null ? "" : value;
+        boolean needsQuoting = normalized.contains(",")
+                || normalized.contains("\"")
+                || normalized.contains("\n")
+                || normalized.contains("\r");
+        if (!needsQuoting) {
+            return normalized;
+        }
+        return "\"" + normalized.replace("\"", "\"\"") + "\"";
+    }
+
+    private String anonymizedCode(String prefix, Integer id) {
+        return prefix + "_" + (id == null ? "UNKNOWN" : id);
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private <T> Integer nullableInt(T value, Function<T, Integer> mapper) {
+        return value == null ? 0 : mapper.apply(value);
     }
 
     private void assertCriteriaEditable(RoundEntity round) {

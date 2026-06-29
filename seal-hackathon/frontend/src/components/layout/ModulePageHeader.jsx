@@ -13,7 +13,8 @@ export default function ModulePageHeader({
   return (
     <Box
       sx={{
-        mb: 2.5,
+        mb: { xs: 2, md: 2.75 },
+        p: { xs: 0.25, md: 0 },
         ...sx,
       }}
     >
@@ -21,7 +22,7 @@ export default function ModulePageHeader({
         direction={{ xs: "column", md: "row" }}
         justifyContent="space-between"
         alignItems={{ xs: "flex-start", md: "flex-start" }}
-        spacing={1.5}
+        spacing={1.8}
       >
         <Box sx={{ minWidth: 0 }}>
           {eyebrow ? (
@@ -30,7 +31,7 @@ export default function ModulePageHeader({
                 color: brand.colors.orange,
                 fontSize: 12,
                 fontWeight: 950,
-                letterSpacing: 0.8,
+                letterSpacing: 1,
                 textTransform: "uppercase",
                 mb: 0.55,
               }}
@@ -42,9 +43,10 @@ export default function ModulePageHeader({
             <Typography
               sx={{
                 color: brand.colors.text,
-                fontSize: 22,
+                fontSize: { xs: 23, md: 26 },
                 fontWeight: 950,
                 lineHeight: 1.18,
+                letterSpacing: -0.45,
               }}
             >
               {title}
@@ -55,9 +57,10 @@ export default function ModulePageHeader({
             <Typography
               sx={{
                 color: brand.colors.muted,
-                fontSize: 14,
+                fontSize: { xs: 13.5, md: 14.5 },
                 mt: 0.6,
                 maxWidth: 760,
+                lineHeight: 1.62,
               }}
             >
               {description}
@@ -65,7 +68,14 @@ export default function ModulePageHeader({
           ) : null}
         </Box>
         {actions ? (
-          <Box sx={{ alignSelf: { xs: "stretch", md: "center" } }}>
+          <Box
+            sx={{
+              alignSelf: { xs: "stretch", md: "center" },
+              "& > *": {
+                width: { xs: "100%", sm: "auto" },
+              },
+            }}
+          >
             {actions}
           </Box>
         ) : null}
