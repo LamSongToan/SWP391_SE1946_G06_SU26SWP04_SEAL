@@ -4,6 +4,7 @@ import com.seal.hackathon.common.ApiResponse;
 import com.seal.hackathon.evaluation.dto.AuditLogDto;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateRequest;
+import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaManagementDto;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaUpdateRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
@@ -114,6 +115,45 @@ public class CoordinatorScoringController {
         return ResponseEntity.ok(ApiResponse.ok(
                 "Round scoring finalized",
                 coordinatorScoringService.finalizeRoundScores(authentication, roundId)
+        ));
+    }
+
+    @PostMapping("/rounds/{roundId}/qualification")
+    public ResponseEntity<ApiResponse<RoundFinalizationDto>> calculateQualification(Authentication authentication,
+                                                                                    @PathVariable Integer roundId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Round qualification calculated",
+                coordinatorScoringService.calculateRoundQualification(authentication, roundId)
+        ));
+    }
+
+    @PostMapping("/rounds/{roundId}/advance")
+    public ResponseEntity<ApiResponse<RoundFinalizationDto>> advanceRound(Authentication authentication,
+                                                                          @PathVariable Integer roundId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Round advancement applied",
+                coordinatorScoringService.applyRoundAdvancement(authentication, roundId)
+        ));
+    }
+
+    @PostMapping("/rounds/{roundId}/submissions/{submissionId}/disqualify")
+    public ResponseEntity<ApiResponse<RoundFinalizationDto>> manuallyDisqualify(Authentication authentication,
+                                                                                @PathVariable Integer roundId,
+                                                                                @PathVariable Integer submissionId,
+                                                                                @Valid @RequestBody ManualEliminationRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Team manually disqualified",
+                coordinatorScoringService.manuallyDisqualifySubmission(authentication, roundId, submissionId, request)
+        ));
+    }
+
+    @PostMapping("/rounds/{roundId}/submissions/{submissionId}/undo-disqualify")
+    public ResponseEntity<ApiResponse<RoundFinalizationDto>> undoManualDisqualification(Authentication authentication,
+                                                                                        @PathVariable Integer roundId,
+                                                                                        @PathVariable Integer submissionId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Team disqualification has been undone",
+                coordinatorScoringService.undoManualDisqualification(authentication, roundId, submissionId)
         ));
     }
 

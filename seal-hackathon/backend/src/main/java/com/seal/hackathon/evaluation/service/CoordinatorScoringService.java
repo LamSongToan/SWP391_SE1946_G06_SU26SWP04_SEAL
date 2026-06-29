@@ -11,6 +11,7 @@ import com.seal.hackathon.evaluation.dto.CriteriaDefinitionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateRequest;
 import com.seal.hackathon.evaluation.dto.FinalizationSubmissionDto;
+import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaManagementDto;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaUpdateRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
@@ -20,6 +21,7 @@ import com.seal.hackathon.evaluation.entity.CriteriaTemplateItemEntity;
 import com.seal.hackathon.evaluation.entity.JudgeAssignmentEntity;
 import com.seal.hackathon.evaluation.entity.JudgeEvaluationEntity;
 import com.seal.hackathon.evaluation.entity.RankingEntity;
+import com.seal.hackathon.evaluation.entity.RankingQualificationStatus;
 import com.seal.hackathon.evaluation.entity.ScoreEntity;
 import com.seal.hackathon.evaluation.entity.ScoringCriteriaEntity;
 import com.seal.hackathon.evaluation.repository.AuditLogRepository;
@@ -58,6 +60,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -65,6 +68,7 @@ import java.util.stream.Collectors;
 @Service
 public class CoordinatorScoringService {
 
+    private static final int DISQUALIFIED_RANK_BASE = 1_000_000;
     private static final String TARGET_ENTITY_ROUND = "ROUND";
     private static final String TARGET_ENTITY_EVENT = "EVENT";
     private static final String TARGET_ENTITY_TRACK = "TRACK";
@@ -316,6 +320,10 @@ public class CoordinatorScoringService {
             throw new ApiException(HttpStatus.CONFLICT, preview.finalizationNote());
         }
 
+        List<RankingEntity> existingRankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId);
+        Map<Integer, RankingEntity> disqualifiedRankingsByTeamId = existingRankings.stream()
+                .filter(item -> RankingQualificationStatus.from(item.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED)
+                .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
         rankingRepository.deleteByRoundRoundId(roundId);
         List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
         Map<Integer, FinalizationSubmissionDto> previewBySubmissionId = preview.submissions().stream()
@@ -324,21 +332,30 @@ public class CoordinatorScoringService {
         List<RankingEntity> rankings = new ArrayList<>();
         for (SubmissionEntity submission : submissions) {
             FinalizationSubmissionDto item = previewBySubmissionId.get(submission.getSubmissionId());
+            RankingEntity disqualifiedRanking = disqualifiedRankingsByTeamId.get(submission.getTeam().getTeamId());
             RankingEntity ranking = new RankingEntity();
             ranking.setRound(round);
             ranking.setTeam(submission.getTeam());
-            ranking.setRankPosition(item.rankPosition());
-            ranking.setTotalScore(item.totalScore());
-            ranking.setQualifiedNextRound(item.qualifiedNextRound());
+            ranking.setRankPosition(disqualifiedRanking == null
+                    ? item.rankPosition()
+                    : disqualifiedRanking.getRankPosition());
+            ranking.setTotalScore(item.totalScore() != null
+                    ? item.totalScore()
+                    : disqualifiedRanking == null ? BigDecimal.ZERO : disqualifiedRanking.getTotalScore());
+            ranking.setQualifiedNextRound(false);
+            if (disqualifiedRanking != null) {
+                ranking.setQualificationStatus(RankingQualificationStatus.DISQUALIFIED.getDbValue());
+                ranking.setQualificationNote(disqualifiedRanking.getQualificationNote());
+                ranking.setQualificationCalculatedAt(disqualifiedRanking.getQualificationCalculatedAt());
+            } else {
+                ranking.setQualificationStatus(resolvePersistedQualificationStatus(round).getDbValue());
+                ranking.setQualificationNote(item.qualificationNote());
+                ranking.setQualificationCalculatedAt(null);
+            }
             rankings.add(ranking);
-
-            submission.setStatus(item.qualifiedNextRound()
-                    ? SubmissionStatus.QUALIFIED.getDbValue()
-                    : SubmissionStatus.ELIMINATED.getDbValue());
         }
 
         rankingRepository.saveAll(rankings);
-        submissionRepository.saveAll(submissions);
         round.setScoreLocked(true);
         roundRepository.save(round);
 
@@ -355,6 +372,261 @@ public class CoordinatorScoringService {
     }
 
     @Transactional
+    public RoundFinalizationDto calculateRoundQualification(Authentication authentication, Integer roundId) {
+        UserEntity coordinator = currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+        if (!Boolean.TRUE.equals(round.getScoreLocked())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Finalize this round before calculating qualification");
+        }
+        if (Boolean.TRUE.equals(round.getFinalRound())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Qualification does not apply to the final round");
+        }
+
+        RoundEntity nextRound = nextRoundFor(round)
+                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "No next round is configured for qualification"));
+        Integer topN = round.getPromotionRuleTopN();
+        if (topN == null || topN < 1) {
+            throw new ApiException(HttpStatus.CONFLICT, "Configure a valid Top N promotion rule before calculating qualification");
+        }
+
+        List<RankingEntity> rankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId);
+        if (rankings.isEmpty()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Finalize this round before calculating qualification");
+        }
+        if (isQualificationCalculated(rankings)) {
+            throw new ApiException(HttpStatus.CONFLICT, "Qualification has already been calculated for this round");
+        }
+
+        List<Map<String, Object>> previousRankings = rankings.stream()
+                .map(this::toRankingMap)
+                .toList();
+        Map<Integer, SubmissionEntity> submissionsByTeamId = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId)
+                .stream()
+                .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
+        LocalDateTime calculatedAt = LocalDateTime.now();
+
+        for (RankingEntity ranking : rankings) {
+            if (RankingQualificationStatus.from(ranking.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED) {
+                ranking.setQualifiedNextRound(false);
+                continue;
+            }
+            boolean qualified = ranking.getRankPosition() != null && ranking.getRankPosition() <= topN;
+            ranking.setQualifiedNextRound(false);
+            ranking.setQualificationStatus((qualified
+                    ? RankingQualificationStatus.QUALIFIED
+                    : RankingQualificationStatus.ELIMINATED).getDbValue());
+            ranking.setQualificationNote(buildQualificationDecisionNote(qualified, nextRound, topN));
+            ranking.setQualificationCalculatedAt(calculatedAt);
+        }
+
+        rankingRepository.saveAll(rankings);
+
+        auditLogService.record(
+                coordinator,
+                "ROUND_QUALIFICATION_CALCULATED",
+                TARGET_ENTITY_ROUND,
+                roundId,
+                previousRankings,
+                rankings.stream().map(this::toRankingMap).toList(),
+                "Calculated qualification results for round " + round.getRoundName()
+        );
+        return buildRoundFinalization(round);
+    }
+
+    @Transactional
+    public RoundFinalizationDto applyRoundAdvancement(Authentication authentication, Integer roundId) {
+        UserEntity coordinator = currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+        if (!Boolean.TRUE.equals(round.getScoreLocked())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Finalize and qualify this round before promoting teams");
+        }
+        if (Boolean.TRUE.equals(round.getFinalRound())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Promotion to the next round does not apply to the final round");
+        }
+
+        RoundEntity nextRound = nextRoundFor(round)
+                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "No next round is configured for promotion"));
+        List<RankingEntity> rankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId);
+        if (rankings.isEmpty()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Finalize and qualify this round before promoting teams");
+        }
+        if (!isQualificationCalculated(rankings)) {
+            throw new ApiException(HttpStatus.CONFLICT, "Calculate qualification before promoting teams to the next round");
+        }
+
+        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        if (isAdvancementApplied(round, rankings, submissions)) {
+            throw new ApiException(HttpStatus.CONFLICT, "Promotion and elimination have already been applied for this round");
+        }
+
+        List<Map<String, Object>> previousRankings = rankings.stream()
+                .map(this::toRankingMap)
+                .toList();
+        Map<Integer, SubmissionEntity> submissionsByTeamId = submissions.stream()
+                .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
+
+        for (RankingEntity ranking : rankings) {
+            RankingQualificationStatus qualificationStatus = RankingQualificationStatus.from(ranking.getQualificationStatus());
+            SubmissionEntity submission = submissionsByTeamId.get(ranking.getTeam().getTeamId());
+            if (submission == null) {
+                continue;
+            }
+            if (qualificationStatus == RankingQualificationStatus.DISQUALIFIED) {
+                ranking.setQualifiedNextRound(false);
+                submission.setStatus(SubmissionStatus.DISQUALIFIED.getDbValue());
+            } else if (qualificationStatus == RankingQualificationStatus.QUALIFIED) {
+                ranking.setQualifiedNextRound(true);
+                submission.setStatus(SubmissionStatus.QUALIFIED.getDbValue());
+            } else if (qualificationStatus == RankingQualificationStatus.ELIMINATED) {
+                ranking.setQualifiedNextRound(false);
+                submission.setStatus(SubmissionStatus.ELIMINATED.getDbValue());
+            }
+        }
+
+        rankingRepository.saveAll(rankings);
+        submissionRepository.saveAll(new ArrayList<>(submissionsByTeamId.values()));
+
+        auditLogService.record(
+                coordinator,
+                "ROUND_ADVANCEMENT_APPLIED",
+                TARGET_ENTITY_ROUND,
+                roundId,
+                previousRankings,
+                rankings.stream().map(this::toRankingMap).toList(),
+                "Promoted qualified teams to " + nextRound.getRoundName() + " and eliminated the remaining teams for round " + round.getRoundName()
+        );
+        return buildRoundFinalization(round);
+    }
+
+    @Transactional
+    public RoundFinalizationDto manuallyDisqualifySubmission(Authentication authentication,
+                                                             Integer roundId,
+                                                             Integer submissionId,
+                                                             ManualEliminationRequest request) {
+        UserEntity coordinator = currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+
+        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        List<RankingEntity> rankings = new ArrayList<>(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId));
+        if (isAdvancementApplied(round, rankings, submissions)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Manual disqualification is locked after promotion to the next round has been applied");
+        }
+
+        SubmissionEntity submission = submissions.stream()
+                .filter(item -> item.getSubmissionId().equals(submissionId))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Submission not found in this round"));
+        RankingEntity targetRanking = rankings.stream()
+                .filter(item -> item.getTeam().getTeamId().equals(submission.getTeam().getTeamId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    RankingEntity ranking = new RankingEntity();
+                    ranking.setRound(round);
+                    ranking.setTeam(submission.getTeam());
+                    ranking.setRankPosition(DISQUALIFIED_RANK_BASE);
+                    ranking.setTotalScore(resolveSubmissionScoreForManualDisqualification(round, submissionId));
+                    rankings.add(ranking);
+                    return ranking;
+                });
+        if (RankingQualificationStatus.from(targetRanking.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED) {
+            throw new ApiException(HttpStatus.CONFLICT, "This team has already been manually disqualified");
+        }
+
+        String reason = normalizeRequired(request.reason(), "Elimination reason");
+        Integer affectedTrackId = submission.getTeam().getTrack().getTrackId();
+        List<Map<String, Object>> previousRankings = rankings.stream()
+                .map(this::toRankingMap)
+                .toList();
+        Map<Integer, SubmissionEntity> submissionsByTeamId = submissions.stream()
+                .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
+
+        targetRanking.setQualifiedNextRound(false);
+        targetRanking.setQualificationStatus(RankingQualificationStatus.DISQUALIFIED.getDbValue());
+        targetRanking.setQualificationNote("Disqualified: " + reason);
+        targetRanking.setQualificationCalculatedAt(LocalDateTime.now());
+        submission.setStatus(SubmissionStatus.DISQUALIFIED.getDbValue());
+
+        if (Boolean.TRUE.equals(round.getScoreLocked())) {
+            rebalanceTrackRankingsAfterDisqualification(round, rankings, submissionsByTeamId, affectedTrackId);
+        }
+
+        rankingRepository.saveAll(rankings);
+        submissionRepository.saveAll(new ArrayList<>(submissionsByTeamId.values()));
+
+        auditLogService.record(
+                coordinator,
+                "ROUND_TEAM_MANUALLY_DISQUALIFIED",
+                TARGET_ENTITY_SUBMISSION,
+                submissionId,
+                previousRankings,
+                rankings.stream().map(this::toRankingMap).toList(),
+                "Manually disqualified " + submission.getTeam().getTeamName() + " from round " + round.getRoundName()
+        );
+        return buildRoundFinalization(round);
+    }
+
+    @Transactional
+    public RoundFinalizationDto undoManualDisqualification(Authentication authentication,
+                                                           Integer roundId,
+                                                           Integer submissionId) {
+        UserEntity coordinator = currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+
+        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        List<RankingEntity> rankings = new ArrayList<>(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId));
+        if (isAdvancementApplied(round, rankings, submissions)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Undo disqualification is locked after promotion to the next round has been applied");
+        }
+
+        SubmissionEntity submission = submissions.stream()
+                .filter(item -> item.getSubmissionId().equals(submissionId))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Submission not found in this round"));
+        RankingEntity targetRanking = rankings.stream()
+                .filter(item -> item.getTeam().getTeamId().equals(submission.getTeam().getTeamId()))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "This team is not manually disqualified"));
+        if (RankingQualificationStatus.from(targetRanking.getQualificationStatus()) != RankingQualificationStatus.DISQUALIFIED) {
+            throw new ApiException(HttpStatus.CONFLICT, "This team is not manually disqualified");
+        }
+
+        Integer affectedTrackId = submission.getTeam().getTrack().getTrackId();
+        List<Map<String, Object>> previousRankings = rankings.stream()
+                .map(this::toRankingMap)
+                .toList();
+        Map<Integer, SubmissionEntity> submissionsByTeamId = submissions.stream()
+                .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
+
+        if (Boolean.TRUE.equals(round.getScoreLocked())) {
+            targetRanking.setQualificationStatus(resolvePersistedQualificationStatus(round).getDbValue());
+            targetRanking.setQualificationNote(buildPostDisqualificationNote(round));
+            targetRanking.setQualificationCalculatedAt(null);
+            targetRanking.setQualifiedNextRound(false);
+            rebalanceTrackRankingsAfterDisqualification(round, rankings, submissionsByTeamId, affectedTrackId);
+            rankingRepository.saveAll(rankings);
+        } else {
+            rankings.remove(targetRanking);
+            rankingRepository.delete(targetRanking);
+        }
+
+        submission.setStatus(resolveSubmissionStatusAfterUndoDisqualification(submissionId).getDbValue());
+        submissionRepository.saveAll(new ArrayList<>(submissionsByTeamId.values()));
+
+        auditLogService.record(
+                coordinator,
+                "ROUND_TEAM_DISQUALIFICATION_UNDONE",
+                TARGET_ENTITY_SUBMISSION,
+                submissionId,
+                previousRankings,
+                rankings.stream().map(this::toRankingMap).toList(),
+                "Undid manual disqualification for " + submission.getTeam().getTeamName() + " in round " + round.getRoundName()
+        );
+        return buildRoundFinalization(round);
+    }
+
+    @Transactional
     public RoundFinalizationDto reopenRoundFinalization(Authentication authentication, Integer roundId) {
         UserEntity coordinator = currentCoordinator(authentication);
         RoundEntity round = getRoundOrThrow(roundId);
@@ -364,11 +636,35 @@ public class CoordinatorScoringService {
 
         List<RankingEntity> previousRankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId);
         List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        if (isAdvancementApplied(round, previousRankings, submissions)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Cannot reopen this round after promotion to the next round has already been applied");
+        }
+        Set<Integer> promotedTeamIds = previousRankings.stream()
+                .filter(item -> Boolean.TRUE.equals(item.getQualifiedNextRound()))
+                .map(item -> item.getTeam().getTeamId())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Optional<RoundEntity> nextRound = nextRoundFor(round);
+        if (nextRound.isPresent()
+                && !promotedTeamIds.isEmpty()
+                && submissionRepository.existsByRoundRoundIdAndTeamTeamIdIn(nextRound.get().getRoundId(), promotedTeamIds)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Cannot reopen this round after promoted teams have already submitted to " + nextRound.get().getRoundName());
+        }
+        Set<Integer> disqualifiedTeamIds = previousRankings.stream()
+                .filter(item -> RankingQualificationStatus.from(item.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED)
+                .map(item -> item.getTeam().getTeamId())
+                .collect(Collectors.toSet());
         for (SubmissionEntity submission : submissions) {
-            submission.setStatus(SubmissionStatus.EVALUATING.getDbValue());
+            submission.setStatus(disqualifiedTeamIds.contains(submission.getTeam().getTeamId())
+                    ? SubmissionStatus.DISQUALIFIED.getDbValue()
+                    : SubmissionStatus.EVALUATING.getDbValue());
         }
         submissionRepository.saveAll(submissions);
-        rankingRepository.deleteByRoundRoundId(roundId);
+        rankingRepository.deleteAll(previousRankings.stream()
+                .filter(item -> RankingQualificationStatus.from(item.getQualificationStatus()) != RankingQualificationStatus.DISQUALIFIED)
+                .toList());
         round.setScoreLocked(false);
         roundRepository.save(round);
 
@@ -538,19 +834,18 @@ public class CoordinatorScoringService {
 
     private RoundFinalizationDto buildRoundFinalization(RoundEntity round) {
         HackathonEventEntity event = getEventOrThrow(round.getEventId());
+        Optional<RoundEntity> nextRound = nextRoundFor(round);
         List<ScoringCriteriaEntity> criteria = criteriaRepository.findByRoundRoundIdOrderByCriteriaIdAsc(round.getRoundId());
         List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(round.getRoundId());
         List<JudgeAssignmentEntity> assignments = judgeAssignmentRepository.findByRoundRoundIdOrderByTrackAndJudge(round.getRoundId());
         List<JudgeEvaluationEntity> evaluations = judgeEvaluationRepository.findBySubmissionRoundRoundId(round.getRoundId());
         List<ScoreEntity> scores = scoreRepository.findBySubmissionRoundRoundId(round.getRoundId());
         List<RankingEntity> existingRankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(round.getRoundId());
+        Set<Integer> disqualifiedTeamIds = existingRankings.stream()
+                .filter(item -> RankingQualificationStatus.from(item.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED)
+                .map(item -> item.getTeam().getTeamId())
+                .collect(Collectors.toSet());
 
-        Map<String, JudgeAssignmentEntity> assignmentByTrackJudge = assignments.stream()
-                .collect(Collectors.toMap(
-                        item -> item.getTrack().getTrackId() + ":" + item.getJudgeRole().getUserRoleId(),
-                        Function.identity(),
-                        (left, right) -> left
-                ));
         Map<Integer, List<JudgeAssignmentEntity>> assignmentsByTrack = assignments.stream()
                 .collect(Collectors.groupingBy(item -> item.getTrack().getTrackId()));
         Map<String, JudgeEvaluationEntity> evaluationBySubmissionAssignment = evaluations.stream()
@@ -568,6 +863,7 @@ public class CoordinatorScoringService {
 
         List<RoundSubmissionSnapshot> snapshots = new ArrayList<>();
         for (SubmissionEntity submission : submissions) {
+            RankingEntity existingRanking = rankingByTeamId.get(submission.getTeam().getTeamId());
             Integer trackId = submission.getTeam().getTrack().getTrackId();
             List<JudgeAssignmentEntity> trackAssignments = assignmentsByTrack.getOrDefault(trackId, List.of());
             int assignedJudgeCount = trackAssignments.size();
@@ -603,7 +899,10 @@ public class CoordinatorScoringService {
                     && judgeTotals.size() == assignedJudgeCount;
 
             String readinessNote;
-            if (criteria.isEmpty()) {
+            if (disqualifiedTeamIds.contains(submission.getTeam().getTeamId())) {
+                readinessNote = "Manually disqualified from this round";
+                ready = true;
+            } else if (criteria.isEmpty()) {
                 readinessNote = "No criteria configured for this round";
             } else if (assignedJudgeCount == 0) {
                 readinessNote = "No judges assigned for this track";
@@ -615,10 +914,10 @@ public class CoordinatorScoringService {
                 readinessNote = "Ready to finalize";
             }
 
-            BigDecimal totalScore = ready
+            BigDecimal totalScore = ready && !judgeTotals.isEmpty()
                     ? judgeTotals.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
                     .divide(BigDecimal.valueOf(judgeTotals.size()), 2, RoundingMode.HALF_UP)
-                    : null;
+                    : existingRanking == null ? null : existingRanking.getTotalScore();
 
             snapshots.add(new RoundSubmissionSnapshot(
                     submission,
@@ -630,13 +929,15 @@ public class CoordinatorScoringService {
             ));
         }
 
-        rankSnapshots(snapshots, round.getPromotionRuleTopN());
+        rankSnapshots(snapshots, disqualifiedTeamIds);
+        applyQualificationProjection(snapshots, round, nextRound.orElse(null));
         List<FinalizationSubmissionDto> submissionDtos = snapshots.stream()
-                .sorted(Comparator
-                        .comparing((RoundSubmissionSnapshot item) -> item.submission.getTeam().getTrack().getName())
-                        .thenComparing(item -> item.rankPosition == null ? Integer.MAX_VALUE : item.rankPosition)
-                        .thenComparing(item -> item.submission.getTeam().getTeamName()))
                 .map(item -> toFinalizationSubmissionDto(item, rankingByTeamId.get(item.submission.getTeam().getTeamId())))
+                .sorted(Comparator
+                        .comparing(FinalizationSubmissionDto::trackName)
+                        .thenComparing(item -> RankingQualificationStatus.from(item.qualificationStatus()) == RankingQualificationStatus.DISQUALIFIED ? 1 : 0)
+                        .thenComparing(item -> item.rankPosition() == null ? Integer.MAX_VALUE : item.rankPosition())
+                        .thenComparing(FinalizationSubmissionDto::teamName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
 
         int readyCount = (int) snapshots.stream().filter(item -> item.ready).count();
@@ -655,7 +956,7 @@ public class CoordinatorScoringService {
         } else if (readyCount < submissions.size()) {
             finalizationNote = "Every submission must have complete finalized judge evaluations before round finalization.";
         } else {
-            finalizationNote = "All submissions are ready. Finalization will lock scoring and write rankings.";
+            finalizationNote = "All submissions are ready. Finalization will lock scoring and write ranking results for this round.";
         }
 
         LocalDateTime finalizedAt = existingRankings.stream()
@@ -663,6 +964,17 @@ public class CoordinatorScoringService {
                 .filter(Objects::nonNull)
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
+        boolean qualificationCalculated = hasCompleteRankingSnapshot(existingRankings, submissions)
+                && isQualificationCalculated(existingRankings);
+        String qualificationNote = buildRoundQualificationNote(round, nextRound.orElse(null), qualificationCalculated);
+        boolean advancementApplied = hasCompleteRankingSnapshot(existingRankings, submissions)
+                && isAdvancementApplied(round, existingRankings, submissions);
+        String advancementNote = buildRoundAdvancementNote(
+                round,
+                nextRound.orElse(null),
+                qualificationCalculated,
+                advancementApplied
+        );
 
         return new RoundFinalizationDto(
                 event.getEventId(),
@@ -671,22 +983,32 @@ public class CoordinatorScoringService {
                 round.getRoundName(),
                 round.getRoundOrder(),
                 round.getPromotionRuleTopN(),
+                nextRound.map(RoundEntity::getRoundId).orElse(null),
+                nextRound.map(RoundEntity::getRoundName).orElse(null),
                 Boolean.TRUE.equals(round.getScoreLocked()),
                 criteria.size(),
                 submissions.size(),
                 readyCount,
                 canFinalize,
                 finalizationNote,
+                qualificationCalculated,
+                qualificationNote,
+                advancementApplied,
+                advancementNote,
                 finalizedAt,
                 submissionDtos
         );
     }
 
-    private void rankSnapshots(List<RoundSubmissionSnapshot> snapshots, Integer topN) {
+    private void rankSnapshots(List<RoundSubmissionSnapshot> snapshots,
+                               Set<Integer> disqualifiedTeamIds) {
         Map<Integer, List<RoundSubmissionSnapshot>> byTrack = snapshots.stream()
-                .filter(item -> item.ready && item.totalScore != null)
+                .filter(item -> item.ready
+                        && item.totalScore != null
+                        && !disqualifiedTeamIds.contains(item.submission.getTeam().getTeamId()))
                 .collect(Collectors.groupingBy(item -> item.submission.getTeam().getTrack().getTrackId()));
         byTrack.values().forEach(items -> {
+            // Keep tie-break ordering centralized so future qualification rules can swap strategies safely.
             items.sort(Comparator
                     .comparing((RoundSubmissionSnapshot item) -> item.totalScore, Comparator.reverseOrder())
                     .thenComparing(item -> item.submission.getSubmittedAt())
@@ -694,9 +1016,40 @@ public class CoordinatorScoringService {
             for (int index = 0; index < items.size(); index += 1) {
                 RoundSubmissionSnapshot item = items.get(index);
                 item.rankPosition = index + 1;
-                item.qualifiedNextRound = index < topN;
             }
         });
+    }
+
+    private void applyQualificationProjection(List<RoundSubmissionSnapshot> snapshots,
+                                              RoundEntity round,
+                                              RoundEntity nextRound) {
+        Integer topN = round.getPromotionRuleTopN();
+        boolean finalRound = Boolean.TRUE.equals(round.getFinalRound());
+        boolean hasNextRound = nextRound != null;
+
+        for (RoundSubmissionSnapshot item : snapshots) {
+            item.projectedQualifiedNextRound = null;
+            if (!item.ready || item.rankPosition == null) {
+                item.qualificationNote = "Qualification preview is unavailable until ranking is complete for this submission.";
+                continue;
+            }
+            if (finalRound) {
+                item.qualificationNote = "This is the final round, so next-round qualification does not apply.";
+                continue;
+            }
+            if (!hasNextRound) {
+                item.qualificationNote = "No next round is configured yet, so qualification remains pending.";
+                continue;
+            }
+            if (topN == null || topN < 1) {
+                item.qualificationNote = "Top N promotion is not configured yet for this round.";
+                continue;
+            }
+            item.projectedQualifiedNextRound = item.rankPosition <= topN;
+            item.qualificationNote = Boolean.TRUE.equals(item.projectedQualifiedNextRound)
+                    ? "Projected to advance by the configured Top " + topN + " rule. Run qualification calculation to confirm this result."
+                    : "Currently below the projected Top " + topN + " cutoff. Run qualification calculation to confirm elimination.";
+        }
     }
 
     private boolean hasCompleteCriteriaScores(List<ScoringCriteriaEntity> criteria, List<ScoreEntity> scores) {
@@ -793,12 +1146,16 @@ public class CoordinatorScoringService {
         Integer rankPosition = item.rankPosition != null
                 ? item.rankPosition
                 : existingRanking == null ? null : existingRanking.getRankPosition();
-        boolean qualifiedNextRound = item.qualifiedNextRound != null
-                ? item.qualifiedNextRound
-                : existingRanking != null && Boolean.TRUE.equals(existingRanking.getQualifiedNextRound());
+        boolean qualifiedNextRound = existingRanking != null && Boolean.TRUE.equals(existingRanking.getQualifiedNextRound());
         BigDecimal totalScore = item.totalScore != null
                 ? item.totalScore
                 : existingRanking == null ? null : existingRanking.getTotalScore();
+        String qualificationStatus = existingRanking == null || existingRanking.getQualificationStatus() == null
+                ? resolveDraftQualificationStatus(item)
+                : existingRanking.getQualificationStatus();
+        String qualificationNote = existingRanking == null || existingRanking.getQualificationNote() == null
+                ? item.qualificationNote
+                : existingRanking.getQualificationNote();
         return new FinalizationSubmissionDto(
                 item.submission.getSubmissionId(),
                 team.getTeamId(),
@@ -810,8 +1167,11 @@ public class CoordinatorScoringService {
                 item.assignedJudgeCount,
                 item.finalizedJudgeCount,
                 totalScore,
-                rankPosition,
+                effectiveRankPosition(existingRanking, rankPosition),
                 qualifiedNextRound,
+                item.projectedQualifiedNextRound,
+                qualificationStatus,
+                qualificationNote,
                 item.ready,
                 item.readinessNote
         );
@@ -844,7 +1204,210 @@ public class CoordinatorScoringService {
         payload.put("rankPosition", entity.getRankPosition());
         payload.put("totalScore", entity.getTotalScore());
         payload.put("qualifiedNextRound", entity.getQualifiedNextRound());
+        payload.put("qualificationStatus", entity.getQualificationStatus());
+        payload.put("qualificationNote", entity.getQualificationNote());
         return payload;
+    }
+
+    private Optional<RoundEntity> nextRoundFor(RoundEntity round) {
+        if (round.getRoundOrder() == null) {
+            return Optional.empty();
+        }
+        return roundRepository.findByEventIdAndRoundOrder(round.getEventId(), round.getRoundOrder() + 1);
+    }
+
+    private boolean isQualificationCalculated(List<RankingEntity> rankings) {
+        return !rankings.isEmpty() && rankings.stream()
+                .map(RankingEntity::getQualificationStatus)
+                .map(RankingQualificationStatus::from)
+                .allMatch(status -> status != RankingQualificationStatus.PENDING);
+    }
+
+    private boolean hasCompleteRankingSnapshot(List<RankingEntity> rankings,
+                                               List<SubmissionEntity> submissions) {
+        return rankings.size() >= submissions.size();
+    }
+
+    private boolean isAdvancementApplied(RoundEntity round,
+                                         List<RankingEntity> rankings,
+                                         List<SubmissionEntity> submissions) {
+        if (Boolean.TRUE.equals(round.getFinalRound())
+                || rankings.isEmpty()
+                || rankings.size() < submissions.size()
+                || !isQualificationCalculated(rankings)) {
+            return false;
+        }
+        Map<Integer, SubmissionEntity> submissionsByTeamId = submissions.stream()
+                .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
+        boolean hasDecision = false;
+        for (RankingEntity ranking : rankings) {
+            RankingQualificationStatus status = RankingQualificationStatus.from(ranking.getQualificationStatus());
+            SubmissionEntity submission = submissionsByTeamId.get(ranking.getTeam().getTeamId());
+            if (submission == null) {
+                return false;
+            }
+            if (status == RankingQualificationStatus.DISQUALIFIED) {
+                hasDecision = true;
+                if (Boolean.TRUE.equals(ranking.getQualifiedNextRound())
+                        || SubmissionStatus.from(submission.getStatus()) != SubmissionStatus.DISQUALIFIED) {
+                    return false;
+                }
+            } else if (status == RankingQualificationStatus.QUALIFIED) {
+                hasDecision = true;
+                if (!Boolean.TRUE.equals(ranking.getQualifiedNextRound())
+                        || SubmissionStatus.from(submission.getStatus()) != SubmissionStatus.QUALIFIED) {
+                    return false;
+                }
+            } else if (status == RankingQualificationStatus.ELIMINATED) {
+                hasDecision = true;
+                if (Boolean.TRUE.equals(ranking.getQualifiedNextRound())
+                        || SubmissionStatus.from(submission.getStatus()) != SubmissionStatus.ELIMINATED) {
+                    return false;
+                }
+            }
+        }
+        return hasDecision;
+    }
+
+    private RankingQualificationStatus resolvePersistedQualificationStatus(RoundEntity round) {
+        return Boolean.TRUE.equals(round.getFinalRound())
+                ? RankingQualificationStatus.NOT_APPLICABLE
+                : RankingQualificationStatus.PENDING;
+    }
+
+    private String resolveDraftQualificationStatus(RoundSubmissionSnapshot item) {
+        if (item.rankPosition == null || !item.ready) {
+            return RankingQualificationStatus.PENDING.getDbValue();
+        }
+        return RankingQualificationStatus.PENDING.getDbValue();
+    }
+
+    private String buildRoundQualificationNote(RoundEntity round,
+                                               RoundEntity nextRound,
+                                               boolean qualificationCalculated) {
+        if (Boolean.TRUE.equals(round.getFinalRound())) {
+            return "This is the final round, so next-round qualification is not applicable.";
+        }
+        if (qualificationCalculated) {
+            return nextRound == null
+                    ? "Qualification decisions have been recorded for this ranking set."
+                    : "Qualification decisions have been recorded. Apply promotion to unlock "
+                    + nextRound.getRoundName() + " for the qualified teams.";
+        }
+        if (nextRound == null) {
+            return "Ranking is available, but no next round is configured yet for qualification.";
+        }
+        if (round.getPromotionRuleTopN() == null || round.getPromotionRuleTopN() < 1) {
+            return "Ranking is available. Configure a Top N promotion rule before calculating qualification.";
+        }
+        if (!Boolean.TRUE.equals(round.getScoreLocked())) {
+            return "Finalize this round first, then calculate qualification for " + nextRound.getRoundName() + ".";
+        }
+        return "Round is finalized. Run qualification calculation to confirm which teams advance to "
+                + nextRound.getRoundName() + ".";
+    }
+
+    private String buildRoundAdvancementNote(RoundEntity round,
+                                             RoundEntity nextRound,
+                                             boolean qualificationCalculated,
+                                             boolean advancementApplied) {
+        if (Boolean.TRUE.equals(round.getFinalRound())) {
+            return "This is the final round, so promotion and elimination are not applicable.";
+        }
+        if (nextRound == null) {
+            return "No next round is configured, so promotion cannot be applied.";
+        }
+        if (!qualificationCalculated) {
+            return "Calculate qualification before promoting teams to " + nextRound.getRoundName() + ".";
+        }
+        if (advancementApplied) {
+            return "Qualified teams can now submit to " + nextRound.getRoundName() + ". Eliminated teams have been locked out.";
+        }
+        return "Qualification is ready. Promote the qualified teams to " + nextRound.getRoundName()
+                + " and eliminate the remaining teams.";
+    }
+
+    private String buildQualificationDecisionNote(boolean qualified,
+                                                  RoundEntity nextRound,
+                                                  Integer topN) {
+        return qualified
+                ? "Qualified by the Top " + topN + " rule for " + nextRound.getRoundName() + "."
+                : "Marked for elimination after finishing below the Top " + topN + " cutoff for " + nextRound.getRoundName() + ".";
+    }
+
+    private Integer effectiveRankPosition(RankingEntity existingRanking,
+                                          Integer computedRankPosition) {
+        if (existingRanking != null
+                && RankingQualificationStatus.from(existingRanking.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED) {
+            return null;
+        }
+        return computedRankPosition;
+    }
+
+    private void rebalanceTrackRankingsAfterDisqualification(RoundEntity round,
+                                                             List<RankingEntity> rankings,
+                                                             Map<Integer, SubmissionEntity> submissionsByTeamId,
+                                                             Integer affectedTrackId) {
+        List<RankingEntity> affectedTrackRankings = rankings.stream()
+                .filter(item -> item.getTeam().getTrack().getTrackId().equals(affectedTrackId))
+                .toList();
+
+        List<RankingEntity> activeRankings = affectedTrackRankings.stream()
+                .filter(item -> RankingQualificationStatus.from(item.getQualificationStatus()) != RankingQualificationStatus.DISQUALIFIED)
+                .sorted(rankingComparator(submissionsByTeamId))
+                .toList();
+        for (int index = 0; index < activeRankings.size(); index += 1) {
+            RankingEntity ranking = activeRankings.get(index);
+            ranking.setRankPosition(index + 1);
+            ranking.setQualifiedNextRound(false);
+            ranking.setQualificationStatus(resolvePersistedQualificationStatus(round).getDbValue());
+            ranking.setQualificationCalculatedAt(null);
+            ranking.setQualificationNote(buildPostDisqualificationNote(round));
+        }
+
+        List<RankingEntity> disqualifiedRankings = affectedTrackRankings.stream()
+                .filter(item -> RankingQualificationStatus.from(item.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED)
+                .sorted(Comparator.comparing(item -> item.getTeam().getTeamName(), String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        for (int index = 0; index < disqualifiedRankings.size(); index += 1) {
+            RankingEntity ranking = disqualifiedRankings.get(index);
+            ranking.setRankPosition(DISQUALIFIED_RANK_BASE + index);
+            ranking.setQualifiedNextRound(false);
+        }
+    }
+
+    private Comparator<RankingEntity> rankingComparator(Map<Integer, SubmissionEntity> submissionsByTeamId) {
+        return Comparator
+                .comparing(RankingEntity::getTotalScore, Comparator.reverseOrder())
+                .thenComparing(item -> {
+                    SubmissionEntity submission = submissionsByTeamId.get(item.getTeam().getTeamId());
+                    return submission == null ? null : submission.getSubmittedAt();
+                }, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(item -> item.getTeam().getTeamName(), String.CASE_INSENSITIVE_ORDER);
+    }
+
+    private String buildPostDisqualificationNote(RoundEntity round) {
+        if (Boolean.TRUE.equals(round.getFinalRound())) {
+            return "This is the final round, so next-round qualification does not apply.";
+        }
+        return "Manual disqualification changed the ranking. Run qualification calculation again for this track.";
+    }
+
+    private SubmissionStatus resolveSubmissionStatusAfterUndoDisqualification(Integer submissionId) {
+        if (scoreRepository.existsBySubmissionSubmissionId(submissionId)
+                || judgeEvaluationRepository.existsBySubmissionSubmissionId(submissionId)) {
+            return SubmissionStatus.EVALUATING;
+        }
+        return SubmissionStatus.SUBMITTED;
+    }
+
+    private BigDecimal resolveSubmissionScoreForManualDisqualification(RoundEntity round,
+                                                                       Integer submissionId) {
+        return buildRoundFinalization(round).submissions().stream()
+                .filter(item -> item.submissionId().equals(submissionId))
+                .findFirst()
+                .map(item -> item.totalScore() == null ? BigDecimal.ZERO : item.totalScore())
+                .orElse(BigDecimal.ZERO);
     }
 
     private void assertCriteriaEditable(RoundEntity round) {
@@ -914,7 +1477,8 @@ public class CoordinatorScoringService {
         private final boolean ready;
         private final String readinessNote;
         private Integer rankPosition;
-        private Boolean qualifiedNextRound;
+        private Boolean projectedQualifiedNextRound;
+        private String qualificationNote;
 
         private RoundSubmissionSnapshot(SubmissionEntity submission,
                                         int assignedJudgeCount,

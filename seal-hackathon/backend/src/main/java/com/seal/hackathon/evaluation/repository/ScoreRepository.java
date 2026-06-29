@@ -43,5 +43,7 @@ public interface ScoreRepository extends JpaRepository<ScoreEntity, Integer> {
     })
     List<ScoreEntity> findBySubmissionRoundRoundId(Integer roundId);
 
+    boolean existsBySubmissionSubmissionId(Integer submissionId);
+
     boolean existsBySubmissionRoundRoundId(Integer roundId);
 }

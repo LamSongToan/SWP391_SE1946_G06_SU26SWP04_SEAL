@@ -250,7 +250,7 @@ CREATE TABLE Submission (
     github_metadata NVARCHAR(MAX), 
     is_calibration BIT DEFAULT 0,
     status VARCHAR(50) DEFAULT 'Submitted',
-    CHECK (status IN ('Submitted', 'Evaluating', 'Qualified', 'Eliminated')),
+    CHECK (status IN ('Submitted', 'Evaluating', 'Qualified', 'Eliminated', 'Disqualified', 'Finalized')),
     submitted_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),
     submitted_by_user_role_id INT NULL,
@@ -396,6 +396,9 @@ CREATE TABLE Ranking (
     total_score DECIMAL(5,2) NOT NULL,
     qualified_next_round BIT DEFAULT 0,
     calculated_at DATETIME DEFAULT GETDATE(),
+    qualification_status VARCHAR(30) NOT NULL DEFAULT 'Pending',
+    qualification_note NVARCHAR(500) NULL,
+    qualification_calculated_at DATETIME2 NULL,
     FOREIGN KEY (team_id) REFERENCES Team(team_id) ON DELETE NO ACTION,
     FOREIGN KEY (round_id) REFERENCES Round(round_id) ON DELETE NO ACTION,
     FOREIGN KEY (prize_id) REFERENCES Prize(prize_id) ON DELETE NO ACTION

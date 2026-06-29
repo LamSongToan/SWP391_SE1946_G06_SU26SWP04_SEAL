@@ -524,8 +524,12 @@ public class EvaluationService {
         if (LocalDateTime.now().isBefore(submission.getRound().getSubmissionDeadline())) {
             return "Scoring opens only after the submission deadline has passed";
         }
-        if (SubmissionStatus.from(submission.getStatus()) == SubmissionStatus.ELIMINATED) {
+        SubmissionStatus submissionStatus = SubmissionStatus.from(submission.getStatus());
+        if (submissionStatus == SubmissionStatus.ELIMINATED) {
             return "Eliminated submissions cannot be scored";
+        }
+        if (submissionStatus == SubmissionStatus.DISQUALIFIED) {
+            return "Disqualified submissions cannot be scored";
         }
         if (evaluation != null && "Finalized".equalsIgnoreCase(evaluation.getStatus())) {
             return "Finalized scores cannot be changed unless the coordinator reopens the evaluation";

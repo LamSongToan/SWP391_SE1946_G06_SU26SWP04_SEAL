@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface SubmissionRepository extends JpaRepository<SubmissionEntity, Integer> {
 
@@ -98,4 +99,6 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
             """, nativeQuery = true)
     boolean existsQualifiedRanking(@Param("teamId") Integer teamId,
                                    @Param("roundId") Integer roundId);
+
+    boolean existsByRoundRoundIdAndTeamTeamIdIn(Integer roundId, Set<Integer> teamIds);
 }

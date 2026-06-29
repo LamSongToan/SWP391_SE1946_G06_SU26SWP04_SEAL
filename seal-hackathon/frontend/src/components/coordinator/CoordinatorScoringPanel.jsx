@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -13,17 +12,32 @@ import {
   DialogTitle,
   Divider,
   IconButton,
+  MenuItem,
   Stack,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tabs,
   TextField,
   Typography,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedInRounded";
 import AutoFixHighRoundedIcon from "@mui/icons-material/AutoFixHighRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
+import HubRoundedIcon from "@mui/icons-material/HubRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
+import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
+import UndoRoundedIcon from "@mui/icons-material/UndoRounded";
 import { getApiErrorMessage, http } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
 import ConfirmActionDialog from "../layout/ConfirmActionDialog";
@@ -61,7 +75,21 @@ function formatDateTime(value) {
   });
 }
 
+const EVENT_STATUS_TONE = {
+  Ongoing: { bg: "#FFF2E8", color: "#E17C32" },
+  Ended: { bg: "#EEF1F6", color: "#64748B" },
+  Draft: { bg: "#F4F6FB", color: "#16213E" },
+};
+
+function formatCompetitionWindow(event) {
+  const start = event?.competitionStartAt || event?.registrationStartAt || event?.startDate;
+  const end = event?.competitionEndAt || event?.registrationEndAt || event?.endDate;
+  if (!start || !end) return "Timeline not configured yet";
+  return `${formatDateTime(start)} - ${formatDateTime(end)}`;
+}
+
 function SectionCard({ title, description, action, children }) {
+  const hasHeader = Boolean(title || description || action);
   return (
     <Card
       sx={{
@@ -71,95 +99,231 @@ function SectionCard({ title, description, action, children }) {
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-        <Stack
-          direction={{ xs: "column", lg: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", lg: "center" }}
-          spacing={1.5}
-          sx={{ mb: 2 }}
-        >
-          <Box>
-            <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>
-              {title}
-            </Typography>
-            <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-              {description}
-            </Typography>
-          </Box>
-          {action}
-        </Stack>
+        {hasHeader ? (
+          <Stack
+            direction={{ xs: "column", lg: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", lg: "center" }}
+            spacing={1.5}
+            sx={{ mb: 2 }}
+          >
+            <Box>
+              <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950 }}>
+                {title}
+              </Typography>
+              <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
+                {description}
+              </Typography>
+            </Box>
+            {action}
+          </Stack>
+        ) : null}
         {children}
       </CardContent>
     </Card>
   );
 }
 
-function EventRoundSelector({
+function EventSelectionList({
   events,
-  selectedEventId,
-  onSelectEvent,
+  onOpenEvent,
+}) {
+  return (
+    <Stack spacing={2}>
+      {events.map((event) => {
+        const tone = EVENT_STATUS_TONE[event.status] || EVENT_STATUS_TONE.Draft;
+        return (
+          <Card
+            key={event.eventId}
+            sx={{
+              borderRadius: 3,
+              border: "1px solid rgba(226, 232, 240, 0.95)",
+              boxShadow: "0 20px 48px rgba(15, 23, 42, 0.08)",
+              overflow: "hidden",
+              bgcolor: "#FFFFFF",
+            }}
+          >
+            <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
+              <Stack
+                direction={{ xs: "column", lg: "row" }}
+                justifyContent="space-between"
+                sx={{ minHeight: 188 }}
+              >
+                <Box sx={{ flex: 1, p: { xs: 2.35, md: 3 } }}>
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1.1 }}>
+                    <Chip label={event.status} size="small" sx={{ bgcolor: tone.bg, color: tone.color, fontWeight: 900, height: 28 }} />
+                    {event.semester && event.year ? (
+                      <Chip label={`${event.semester}${event.year ? ` ${event.year}` : ""}`} size="small" sx={{ bgcolor: "#FFF6EE", color: "#E17C32", fontWeight: 900, height: 28 }} />
+                    ) : null}
+                  </Stack>
+                  <Typography sx={{ color: brand.colors.text, fontWeight: 950, fontSize: { xs: 24, md: 30 }, lineHeight: 1.12, mb: 0.7 }}>
+                    {event.name}
+                  </Typography>
+                  <Typography sx={{ color: brand.colors.muted, fontSize: 14.5, lineHeight: 1.55, mb: 2 }}>
+                    {event.description || "Open this event to review scoring rounds and leaderboards."}
+                  </Typography>
+
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} useFlexGap sx={{ flexWrap: "wrap" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.2,
+                        px: 1.6,
+                        py: 1.1,
+                        borderRadius: 2.5,
+                        bgcolor: "#FFFFFF",
+                        border: "1px solid #E7ECF3",
+                        boxShadow: "0 10px 24px rgba(15, 23, 42, 0.04)",
+                        minWidth: { xs: "100%", sm: 320 },
+                      }}
+                    >
+                      <Box sx={{ width: 34, height: 34, borderRadius: 2, bgcolor: "#FFF2E8", color: "#E17C32", display: "grid", placeItems: "center", flex: "0 0 34px" }}>
+                        <CalendarMonthRoundedIcon sx={{ fontSize: 19 }} />
+                      </Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ color: "#94A3B8", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                          Competition Window
+                        </Typography>
+                        <Typography sx={{ color: brand.colors.text, fontWeight: 850, mt: 0.35, lineHeight: 1.25 }}>
+                          {formatCompetitionWindow(event)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.2,
+                        px: 1.6,
+                        py: 1.1,
+                        borderRadius: 2.5,
+                        bgcolor: "#FFFFFF",
+                        border: "1px solid #E7ECF3",
+                        boxShadow: "0 10px 24px rgba(15, 23, 42, 0.04)",
+                        minWidth: { xs: "100%", sm: 220 },
+                      }}
+                    >
+                      <Box sx={{ width: 34, height: 34, borderRadius: 2, bgcolor: "#EEF4FF", color: "#4A7BFF", display: "grid", placeItems: "center", flex: "0 0 34px" }}>
+                        <HubRoundedIcon sx={{ fontSize: 19 }} />
+                      </Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ color: "#94A3B8", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                          Structure
+                        </Typography>
+                        <Typography sx={{ color: brand.colors.text, fontWeight: 850, mt: 0.35, lineHeight: 1.25 }}>
+                          {event.trackCount} tracks / {event.roundCount} rounds
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Box
+                  sx={{
+                    width: { xs: "100%", lg: 230 },
+                    borderLeft: { xs: "none", lg: "1px solid #E7ECF3" },
+                    borderTop: { xs: "1px solid #E7ECF3", lg: "none" },
+                    bgcolor: "#FFFFFF",
+                    p: { xs: 2.2, md: 2.5 },
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: 1.6,
+                  }}
+                >
+                  <Box>
+                    <Typography sx={{ color: "#94A3B8", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.6, mb: 1 }}>
+                      Quick View
+                    </Typography>
+                    <Stack spacing={0.9}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 1.2, py: 1, borderRadius: 999, bgcolor: "#FFF6EE" }}>
+                        <Typography sx={{ color: brand.colors.text, fontWeight: 900, fontSize: 17 }}>{event.trackCount}</Typography>
+                        <Typography sx={{ color: brand.colors.muted, fontWeight: 800, fontSize: 13 }}>tracks</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 1.2, py: 1, borderRadius: 999, bgcolor: "#F5F8FE" }}>
+                        <Typography sx={{ color: brand.colors.text, fontWeight: 900, fontSize: 17 }}>{event.roundCount}</Typography>
+                        <Typography sx={{ color: brand.colors.muted, fontWeight: 800, fontSize: 13 }}>rounds</Typography>
+                      </Box>
+                    </Stack>
+                  </Box>
+
+                  <Button
+                    variant="contained"
+                    endIcon={<OpenInNewRoundedIcon />}
+                    onClick={() => onOpenEvent(event.eventId)}
+                    sx={{
+                      borderRadius: 999,
+                      px: 2.2,
+                      py: 1.25,
+                      textTransform: "none",
+                      fontWeight: 800,
+                      boxShadow: "none",
+                      bgcolor: brand.colors.navy,
+                      "&:hover": {
+                        bgcolor: brand.colors.navySoft,
+                        boxShadow: "none",
+                      },
+                    }}
+                  >
+                    Open leaderboard
+                  </Button>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </Stack>
+  );
+}
+
+function RoundSelectorPanel({
+  event,
   rounds,
   selectedRoundId,
   onSelectRound,
+  onBack,
 }) {
   return (
     <SectionCard
-      title="Scoring Workspace"
-      description="Choose an event and round before reviewing readiness, rankings, and final score locking."
-      action={null}
+      title={event?.name || "Event Rounds"}
+      description="Choose a round to review its leaderboard."
+      action={(
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackRoundedIcon />}
+          onClick={onBack}
+          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+        >
+          Back To Events
+        </Button>
+      )}
     >
-      <Stack spacing={1.6}>
-        <Box>
-          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900, mb: 0.8 }}>
-            EVENTS
-          </Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {events.map((event) => (
-              <Chip
-                key={event.eventId}
-                label={event.name}
-                onClick={() => onSelectEvent(event.eventId)}
-                sx={{
-                  cursor: "pointer",
-                  fontWeight: 900,
-                  bgcolor: selectedEventId === event.eventId ? brand.colors.navy : brand.colors.surfaceSoft,
-                  color: selectedEventId === event.eventId ? brand.colors.inverse : brand.colors.text,
-                }}
-              />
-            ))}
-          </Stack>
-        </Box>
-
-        <Box>
-          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900, mb: 0.8 }}>
-            ROUNDS
-          </Typography>
-          {rounds.length === 0 ? (
-            <Box className="ms-empty">
-              <Typography fontWeight={800}>No rounds configured</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Configure event rounds first before managing scoring.
-              </Typography>
-            </Box>
-          ) : (
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {rounds.map((round) => (
-                <Chip
-                  key={round.roundId}
-                  label={`${round.roundOrder}. ${round.roundName}`}
-                  onClick={() => onSelectRound(round.roundId)}
-                  sx={{
-                    cursor: "pointer",
-                    fontWeight: 900,
-                    bgcolor: selectedRoundId === round.roundId ? brand.colors.orange : brand.colors.surfaceWarm,
-                    color: selectedRoundId === round.roundId ? brand.colors.inverse : brand.colors.text,
-                  }}
-                />
-              ))}
-            </Stack>
-          )}
-        </Box>
-      </Stack>
+      <Box sx={{ maxWidth: 360 }}>
+        <TextField
+          select
+          fullWidth
+          label="Round"
+          value={selectedRoundId ?? ""}
+          onChange={(eventArg) => onSelectRound(Number(eventArg.target.value))}
+          disabled={rounds.length === 0}
+          helperText={rounds.length === 0 ? "Configure event rounds first before managing scoring." : "Choose a round leaderboard to review."}
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "12px",
+              bgcolor: "#FFFFFF",
+            },
+          }}
+        >
+          {rounds.map((round) => (
+            <MenuItem key={round.roundId} value={round.roundId}>
+              {round.roundOrder}. {round.roundName}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Box>
     </SectionCard>
   );
 }
@@ -316,18 +480,54 @@ function TemplateDialog({ open, mode, initialValue, onClose, onSubmit, saving })
 export default function CoordinatorScoringPanel() {
   const [events, setEvents] = useState([]);
   const [rounds, setRounds] = useState([]);
+  const [viewMode, setViewMode] = useState("events");
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [selectedRoundId, setSelectedRoundId] = useState(null);
+  const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [finalization, setFinalization] = useState(null);
   const [loading, setLoading] = useState(true);
   const [roundLoading, setRoundLoading] = useState(false);
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, templateId: null, templateName: "" });
+  const [manualEliminationState, setManualEliminationState] = useState({
+    open: false,
+    submissionId: null,
+    teamName: "",
+    reason: "",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const currentRound = useMemo(
     () => rounds.find((round) => round.roundId === selectedRoundId) || null,
     [rounds, selectedRoundId]
+  );
+
+  const selectedEvent = useMemo(
+    () => events.find((event) => event.eventId === selectedEventId) || null,
+    [events, selectedEventId]
+  );
+
+  const rankingGroups = useMemo(() => {
+    const grouped = new Map();
+    for (const item of finalization?.submissions || []) {
+      const key = `${item.trackId}-${item.trackName}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          trackId: item.trackId,
+          trackName: item.trackName,
+          items: [],
+        });
+      }
+      grouped.get(key).items.push(item);
+    }
+    return Array.from(grouped.values()).sort((left, right) => (
+      left.trackName.localeCompare(right.trackName)
+    ));
+  }, [finalization]);
+
+  const activeRankingGroup = useMemo(
+    () => rankingGroups.find((group) => group.trackId === selectedTrackId) || rankingGroups[0] || null,
+    [rankingGroups, selectedTrackId]
   );
 
   const loadRoundWorkspace = async (roundId) => {
@@ -351,15 +551,12 @@ export default function CoordinatorScoringPanel() {
       const eventResponse = await http.get("/api/coordinator/events");
       const nextEvents = eventResponse.data?.data || [];
       setEvents(nextEvents);
-      if (nextEvents.length > 0) {
-        const initialEventId = selectedEventId && nextEvents.some((event) => event.eventId === selectedEventId)
-          ? selectedEventId
-          : nextEvents[0].eventId;
-        setSelectedEventId(initialEventId);
-      } else {
+      if (!selectedEventId || !nextEvents.some((event) => event.eventId === selectedEventId)) {
         setSelectedEventId(null);
         setRounds([]);
         setSelectedRoundId(null);
+        setFinalization(null);
+        setViewMode("events");
       }
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to load scoring workspace"));
@@ -433,6 +630,33 @@ export default function CoordinatorScoringPanel() {
     };
   }, [selectedRoundId]);
 
+  useEffect(() => {
+    if (rankingGroups.length === 0) {
+      setSelectedTrackId(null);
+      return;
+    }
+    if (!rankingGroups.some((group) => group.trackId === selectedTrackId)) {
+      setSelectedTrackId(rankingGroups[0].trackId);
+    }
+  }, [rankingGroups, selectedTrackId]);
+
+  const openEventLeaderboard = (eventId) => {
+    setSelectedEventId(eventId);
+    setSelectedRoundId(null);
+    setFinalization(null);
+    setSelectedTrackId(null);
+    setViewMode("leaderboard");
+  };
+
+  const returnToEventSelection = () => {
+    setViewMode("events");
+    setSelectedEventId(null);
+    setSelectedRoundId(null);
+    setSelectedTrackId(null);
+    setRounds([]);
+    setFinalization(null);
+  };
+
   const handleFinalizeRound = async () => {
     if (!selectedRoundId) return;
     setError("");
@@ -457,6 +681,65 @@ export default function CoordinatorScoringPanel() {
     }
   };
 
+  const handleCalculateQualification = async () => {
+    if (!selectedRoundId) return;
+    setError("");
+    try {
+      await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/qualification`);
+      setSuccess("Qualification results calculated and saved.");
+      await loadRoundWorkspace(selectedRoundId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to calculate qualification results"));
+    }
+  };
+
+  const handleAdvanceRound = async () => {
+    if (!selectedRoundId) return;
+    setError("");
+    try {
+      await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/advance`);
+      setSuccess("Qualified teams promoted and the remaining teams eliminated.");
+      await loadRoundWorkspace(selectedRoundId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to promote teams to the next round"));
+    }
+  };
+
+  const handleManualElimination = async () => {
+    if (!selectedRoundId || !manualEliminationState.submissionId) return;
+    const reason = String(manualEliminationState.reason || "").trim();
+    if (!reason) {
+      setError("Elimination reason is required.");
+      return;
+    }
+    setError("");
+    try {
+      await http.post(
+        `/api/coordinator/scoring/rounds/${selectedRoundId}/submissions/${manualEliminationState.submissionId}/disqualify`,
+        { reason }
+      );
+      setSuccess("Team disqualified and leaderboard recalculated.");
+      setManualEliminationState({ open: false, submissionId: null, teamName: "", reason: "" });
+      await loadRoundWorkspace(selectedRoundId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to manually disqualify team"));
+    }
+  };
+
+  const handleUndoManualElimination = async (submissionId, teamName) => {
+    if (!selectedRoundId || !submissionId) return;
+    setError("");
+    try {
+      await http.post(
+        `/api/coordinator/scoring/rounds/${selectedRoundId}/submissions/${submissionId}/undo-disqualify`
+      );
+      setSuccess(`${teamName} has been restored to the leaderboard.`);
+      await loadRoundWorkspace(selectedRoundId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to undo team disqualification"));
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -477,20 +760,29 @@ export default function CoordinatorScoringPanel() {
       />
 
       <Stack spacing={2}>
-        <ModulePageHeader
-          eyebrow="Evaluation Setup"
-          title="Scoring Finalization"
-          description="Review round readiness, rankings, and final score locking from one scoring workspace."
-        />
-
-        <EventRoundSelector
-          events={events}
-          selectedEventId={selectedEventId}
-          onSelectEvent={setSelectedEventId}
-          rounds={rounds}
-          selectedRoundId={selectedRoundId}
-          onSelectRound={setSelectedRoundId}
-        />
+        {viewMode === "events" ? (
+          <ModulePageHeader
+            eyebrow="Scoring Finalization"
+            title="Hackathon Events"
+            description="Choose an event to open its round leaderboard page."
+            actions={(
+              <Button
+                variant="outlined"
+                startIcon={<RefreshRoundedIcon />}
+                onClick={loadBootstrap}
+                sx={{ borderRadius: 999, px: 2.2, py: 1.25, textTransform: "none", fontWeight: 800 }}
+              >
+                Refresh
+              </Button>
+            )}
+          />
+        ) : (
+          <ModulePageHeader
+            eyebrow="Scoring Finalization"
+            title="Round Leaderboards"
+            description="Choose a round inside the selected event to review rankings and finalize scoring."
+          />
+        )}
 
         {events.length === 0 ? (
           <Box className="ms-empty">
@@ -505,125 +797,256 @@ export default function CoordinatorScoringPanel() {
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress sx={{ color: brand.colors.orange }} />
           </Box>
-        ) : currentRound ? (
+        ) : viewMode === "events" ? (
+          <EventSelectionList
+            events={events}
+            onOpenEvent={openEventLeaderboard}
+          />
+        ) : (
           <>
-            <SectionCard
-              title="Score Finalization"
-              description="Preview readiness, rank submissions per track, and lock round scoring when everything is complete."
-              action={(
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<RefreshRoundedIcon />}
-                    onClick={() => loadRoundWorkspace(selectedRoundId)}
-                  >
-                    Refresh
-                  </Button>
-                  {finalization?.scoreLocked ? (
+            <RoundSelectorPanel
+              event={selectedEvent}
+              rounds={rounds}
+              selectedRoundId={selectedRoundId}
+              onSelectRound={setSelectedRoundId}
+              onBack={returnToEventSelection}
+            />
+
+            {currentRound && finalization && rankingGroups.length > 0 ? (
+              <SectionCard
+                title="Leaderboard"
+                description={`${currentRound.roundOrder}. ${currentRound.roundName}`}
+                action={(
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     <Button
                       variant="outlined"
-                      color="warning"
-                      startIcon={<GavelRoundedIcon />}
-                      onClick={() => setConfirmState({ open: true, mode: "reopen-round" })}
+                      startIcon={<RefreshRoundedIcon />}
+                      onClick={() => loadRoundWorkspace(selectedRoundId)}
                     >
-                      Reopen Finalization
+                      Refresh
                     </Button>
-                  ) : (
-                    <Button
-                      variant="contained"
-                      startIcon={<AssignmentTurnedInRoundedIcon />}
-                      disabled={!finalization?.canFinalize}
-                      onClick={() => setConfirmState({ open: true, mode: "finalize-round" })}
-                    >
-                      Finalize Round
-                    </Button>
-                  )}
-                </Stack>
-              )}
-            >
-              {finalization ? (
-                <Stack spacing={1.5}>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    <Chip label={`${finalization.criteriaCount} criteria`} />
-                    <Chip label={`${finalization.readySubmissions}/${finalization.totalSubmissions} submissions ready`} />
-                    <Chip label={`Top ${finalization.promotionRuleTopN} per track`} />
-                    <Chip
-                      color={finalization.scoreLocked ? "success" : finalization.canFinalize ? "warning" : "default"}
-                      label={finalization.scoreLocked ? "Locked" : finalization.canFinalize ? "Ready to finalize" : "Blocked"}
-                    />
-                  </Stack>
-                  <Alert severity={finalization.canFinalize ? "success" : finalization.scoreLocked ? "info" : "warning"}>
-                    {finalization.finalizationNote}
-                    {finalization.scoreLocked && finalization.finalizedAt ? ` Finalized at ${formatDateTime(finalization.finalizedAt)}.` : ""}
-                  </Alert>
-
-                  <Stack spacing={1}>
-                    {(finalization.submissions || []).map((item) => (
-                      <Box
-                        key={item.submissionId}
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: { xs: "1fr", lg: "1.2fr 0.9fr 0.8fr 0.8fr 1fr" },
-                          gap: 1.2,
-                          p: 1.4,
-                          borderRadius: brand.radius.md,
-                          border: `1px solid ${brand.colors.line}`,
-                          bgcolor: item.ready ? "#F5FFF8" : brand.colors.surfaceSoft,
-                        }}
+                    {finalization.scoreLocked ? (
+                      <>
+                        {!finalization.advancementApplied ? (
+                          <Button
+                            variant="outlined"
+                            color="warning"
+                            startIcon={<GavelRoundedIcon />}
+                            onClick={() => setConfirmState({ open: true, mode: "reopen-round" })}
+                          >
+                            Reopen Finalization
+                          </Button>
+                        ) : null}
+                        {!finalization.qualificationCalculated
+                        && finalization.nextRoundId
+                        && Number(finalization.promotionRuleTopN || 0) > 0 ? (
+                          <Button
+                            variant="contained"
+                            color="success"
+                            startIcon={<AutoFixHighRoundedIcon />}
+                            onClick={() => setConfirmState({ open: true, mode: "qualification-round" })}
+                          >
+                            Calculate Qualification
+                          </Button>
+                        ) : null}
+                        {finalization.qualificationCalculated
+                        && !finalization.advancementApplied
+                        && finalization.nextRoundId ? (
+                          <Button
+                            variant="contained"
+                            startIcon={<AssignmentTurnedInRoundedIcon />}
+                            onClick={() => setConfirmState({ open: true, mode: "advance-round" })}
+                          >
+                            Promote To Next Round
+                          </Button>
+                        ) : null}
+                      </>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        startIcon={<AssignmentTurnedInRoundedIcon />}
+                        disabled={!finalization.canFinalize}
+                        onClick={() => setConfirmState({ open: true, mode: "finalize-round" })}
                       >
-                        <Box>
-                          <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
-                            {item.teamName}
-                          </Typography>
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>
-                            {item.trackName}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900 }}>
-                            Judge Coverage
-                          </Typography>
-                          <Typography sx={{ color: brand.colors.text, fontWeight: 800 }}>
-                            {item.finalizedJudgeCount}/{item.assignedJudgeCount} finalized
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900 }}>
-                            Weighted Score
-                          </Typography>
-                          <Typography sx={{ color: brand.colors.text, fontWeight: 800 }}>
-                            {item.totalScore ?? "--"}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900 }}>
-                            Ranking
-                          </Typography>
-                          <Typography sx={{ color: brand.colors.text, fontWeight: 800 }}>
-                            {item.rankPosition ? `#${item.rankPosition}` : "--"}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
-                            <Chip size="small" color={item.ready ? "success" : "default"} label={item.ready ? "Ready" : "Blocked"} />
-                            <Chip
-                              size="small"
-                              color={item.qualifiedNextRound ? "success" : "default"}
-                              label={item.qualifiedNextRound ? "Qualified" : item.submissionStatus}
-                            />
-                          </Stack>
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 12, mt: 0.8 }}>
-                            {item.readinessNote}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    ))}
+                        Finalize Round
+                      </Button>
+                    )}
                   </Stack>
-                </Stack>
-              ) : null}
-            </SectionCard>
+                )}
+              >
+                <Box
+                  sx={{
+                    border: `1px solid ${brand.colors.line}`,
+                    borderRadius: brand.radius.md,
+                    overflow: "hidden",
+                    bgcolor: "#FFFFFF",
+                  }}
+                >
+                  <Tabs
+                    value={activeRankingGroup?.trackId ?? false}
+                    onChange={(_, value) => setSelectedTrackId(value)}
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    sx={{
+                      px: 1,
+                      borderBottom: `1px solid ${brand.colors.line}`,
+                      bgcolor: brand.colors.surfaceSoft,
+                      "& .MuiTab-root": {
+                        textTransform: "none",
+                        fontWeight: 800,
+                        minHeight: 52,
+                      },
+                      "& .Mui-selected": {
+                        color: brand.colors.navy,
+                      },
+                      "& .MuiTabs-indicator": {
+                        backgroundColor: brand.colors.orange,
+                        height: 3,
+                      },
+                    }}
+                  >
+                    {rankingGroups.map((group) => (
+                      <Tab
+                        key={group.trackId}
+                        value={group.trackId}
+                        label={`${group.trackName} (${group.items.length})`}
+                      />
+                    ))}
+                  </Tabs>
+
+                  {activeRankingGroup ? (
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: "#FBFCFE" }}>
+                            <TableCell sx={{ fontWeight: 900, width: 90 }}>Rank</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Team</TableCell>
+                            <TableCell sx={{ fontWeight: 900, width: 160 }}>Score</TableCell>
+                            <TableCell sx={{ fontWeight: 900, width: 180 }}>Status</TableCell>
+                            <TableCell sx={{ fontWeight: 900, width: 170, textAlign: "right" }}>Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {activeRankingGroup.items.map((item) => {
+                            const normalizedQualificationStatus = String(item.qualificationStatus || "").toLowerCase();
+                            const isDisqualified = normalizedQualificationStatus === "disqualified";
+                            const qualificationApplied = finalization.qualificationCalculated;
+                            const advancementApplied = finalization.advancementApplied;
+                            const isTopTeam = qualificationApplied
+                              && !isDisqualified
+                              && (item.qualifiedNextRound || normalizedQualificationStatus === "qualified");
+                            let resultLabel = "Pending";
+                            let resultColor = isTopTeam ? "success" : "default";
+                            if (isDisqualified) {
+                              resultLabel = "Disqualified";
+                              resultColor = "error";
+                            }
+                            if (qualificationApplied) {
+                              if (!isDisqualified && normalizedQualificationStatus === "qualified") {
+                                resultLabel = advancementApplied ? "Promoted" : "Qualified";
+                                resultColor = "success";
+                              } else if (normalizedQualificationStatus === "eliminated") {
+                                resultLabel = "Eliminated";
+                                resultColor = "default";
+                              } else if (normalizedQualificationStatus === "not applicable") {
+                                resultLabel = "N/A";
+                                resultColor = "default";
+                              }
+                            } else if (!isDisqualified && item.projectedQualifiedNextRound === true) {
+                              resultLabel = "Projected Top";
+                              resultColor = "default";
+                            } else if (!isDisqualified && item.projectedQualifiedNextRound === false) {
+                              resultLabel = "Projected Out";
+                              resultColor = "default";
+                            }
+                            const firstDisqualifiedIndex = activeRankingGroup.items.findIndex(
+                              (entry) => String(entry.qualificationStatus || "").toLowerCase() === "disqualified"
+                            );
+                            const isFirstDisqualifiedRow = isDisqualified && firstDisqualifiedIndex === activeRankingGroup.items.indexOf(item);
+                            return (
+                              <TableRow
+                                key={item.submissionId}
+                                sx={{
+                                  bgcolor: isTopTeam ? "#EAF8EE" : "#FFFFFF",
+                                  "& td, & th": {
+                                    borderTop: isFirstDisqualifiedRow ? "2px dashed #E2E8F0" : undefined,
+                                  },
+                                  "&:last-child td, &:last-child th": { borderBottom: 0 },
+                                }}
+                              >
+                                <TableCell sx={{ color: brand.colors.text, fontWeight: 900 }}>
+                                  {item.rankPosition ? `#${item.rankPosition}` : "--"}
+                                </TableCell>
+                                <TableCell>
+                                  <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
+                                    {item.teamName}
+                                  </Typography>
+                                  {isDisqualified && item.qualificationNote ? (
+                                    <Typography sx={{ color: brand.colors.danger, fontSize: 12.5, mt: 0.45 }}>
+                                      {item.qualificationNote}
+                                    </Typography>
+                                  ) : null}
+                                </TableCell>
+                                <TableCell sx={{ color: brand.colors.text, fontWeight: 800 }}>
+                                  {item.totalScore ?? "--"}
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    size="small"
+                                    color={resultColor}
+                                    label={resultLabel}
+                                  />
+                                </TableCell>
+                                <TableCell sx={{ textAlign: "right" }}>
+                                  {!finalization.advancementApplied && !isDisqualified ? (
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="error"
+                                      startIcon={<BlockRoundedIcon />}
+                                      sx={{
+                                        minWidth: 126,
+                                        whiteSpace: "nowrap",
+                                        justifyContent: "center",
+                                      }}
+                                      onClick={() => setManualEliminationState({
+                                        open: true,
+                                        submissionId: item.submissionId,
+                                        teamName: item.teamName,
+                                        reason: "",
+                                      })}
+                                    >
+                                      Disqualify
+                                    </Button>
+                                  ) : !finalization.advancementApplied && isDisqualified ? (
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="inherit"
+                                      startIcon={<UndoRoundedIcon />}
+                                      onClick={() => handleUndoManualElimination(item.submissionId, item.teamName)}
+                                      sx={{
+                                        minWidth: 126,
+                                        whiteSpace: "nowrap",
+                                        justifyContent: "center",
+                                      }}
+                                    >
+                                      Undo
+                                    </Button>
+                                  ) : null}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : null}
+                </Box>
+              </SectionCard>
+            ) : null}
           </>
-        ) : null}
+        )}
       </Stack>
 
       <ConfirmActionDialog
@@ -631,16 +1054,28 @@ export default function CoordinatorScoringPanel() {
         title={
           confirmState.mode === "finalize-round"
             ? "Finalize round scores?"
+            : confirmState.mode === "qualification-round"
+            ? "Calculate qualification results?"
+            : confirmState.mode === "advance-round"
+            ? "Promote qualified teams to the next round?"
             : "Reopen round finalization?"
         }
         message={
           confirmState.mode === "finalize-round"
-            ? "This will lock the round, compute rankings for every track, and mark teams as qualified or eliminated."
-            : "This will unlock the round, clear saved rankings, and move qualified/eliminated submissions back to Evaluating."
+            ? "This will lock the round and save leaderboard rankings for every track."
+            : confirmState.mode === "qualification-round"
+            ? "This will apply the configured Top N rule per track and decide which teams are qualified or eliminated."
+            : confirmState.mode === "advance-round"
+            ? "This will promote the qualified teams to the next round, unlock their submission access there, and mark all remaining teams as eliminated."
+            : "This will unlock the round and clear the saved ranking snapshot for this round."
         }
         confirmLabel={
           confirmState.mode === "finalize-round"
             ? "Finalize"
+            : confirmState.mode === "qualification-round"
+            ? "Calculate"
+            : confirmState.mode === "advance-round"
+            ? "Promote"
             : "Reopen"
         }
         confirmColor="primary"
@@ -650,11 +1085,53 @@ export default function CoordinatorScoringPanel() {
           setConfirmState({ open: false, mode: null, templateId: null, templateName: "" });
           if (mode === "finalize-round") {
             await handleFinalizeRound();
+          } else if (mode === "qualification-round") {
+            await handleCalculateQualification();
+          } else if (mode === "advance-round") {
+            await handleAdvanceRound();
           } else if (mode === "reopen-round") {
             await handleReopenRound();
           }
         }}
       />
+
+      <Dialog
+        open={manualEliminationState.open}
+        onClose={() => setManualEliminationState({ open: false, submissionId: null, teamName: "", reason: "" })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 900 }}>
+          Manual Elimination
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mt: 0.5 }}>
+            <Typography sx={{ color: brand.colors.text }}>
+              Disqualify <strong>{manualEliminationState.teamName}</strong> from this round. A reason is required.
+            </Typography>
+            <TextField
+              label="Elimination Reason"
+              value={manualEliminationState.reason}
+              onChange={(event) => setManualEliminationState((current) => ({
+                ...current,
+                reason: event.target.value,
+              }))}
+              multiline
+              minRows={3}
+              required
+              placeholder="Describe the rule violation or reason for disqualification"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setManualEliminationState({ open: false, submissionId: null, teamName: "", reason: "" })}>
+            Cancel
+          </Button>
+          <Button color="error" variant="contained" onClick={handleManualElimination}>
+            Disqualify Team
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

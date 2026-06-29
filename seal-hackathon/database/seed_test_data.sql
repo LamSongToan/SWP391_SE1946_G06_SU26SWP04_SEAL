@@ -422,6 +422,490 @@ FROM ScoringCriteria
 WHERE round_id = @elim_round_id_2;
 GO
 
+-- =======================================================
+-- Seed 10-team leaderboard demo for Summer 2026 Elimination
+-- =======================================================
+DECLARE @summer_event_id INT = (
+    SELECT TOP 1 event_id
+    FROM HackathonEvent
+    WHERE name = N'SEAL Summer 2026'
+    ORDER BY event_id DESC
+);
+DECLARE @summer_round_id INT = (
+    SELECT TOP 1 round_id
+    FROM Round
+    WHERE event_id = @summer_event_id
+      AND round_name = N'Elimination'
+    ORDER BY round_id DESC
+);
+DECLARE @summer_track_web_id INT = (
+    SELECT TOP 1 track_id
+    FROM Track
+    WHERE event_id = @summer_event_id
+      AND name = N'Web Platform'
+    ORDER BY track_id DESC
+);
+DECLARE @summer_track_ai_id INT = (
+    SELECT TOP 1 track_id
+    FROM Track
+    WHERE event_id = @summer_event_id
+      AND name = N'AI & Data'
+    ORDER BY track_id DESC
+);
+DECLARE @summer_web_mentor_role_id INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'kiet.mentor' AND ur.role_type = 'Mentor'
+);
+DECLARE @summer_ai_mentor_role_id INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'vy.mentor' AND ur.role_type = 'Mentor'
+);
+DECLARE @summer_web_judge_role_1 INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'ngon.judge' AND ur.role_type = 'Judge'
+);
+DECLARE @summer_web_judge_role_2 INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'hao.judge' AND ur.role_type = 'Judge'
+);
+DECLARE @summer_ai_judge_role_1 INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'trinh.judge' AND ur.role_type = 'Judge'
+);
+DECLARE @summer_ai_judge_role_2 INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'ngon.judge' AND ur.role_type = 'Judge'
+);
+DECLARE @summer_existing_web_leader_role_id INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'an.student' AND ur.role_type = 'Student'
+);
+DECLARE @summer_existing_web_member_role_id INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'linh.student' AND ur.role_type = 'Student'
+);
+DECLARE @summer_existing_web_third_role_id INT = (
+    SELECT TOP 1 ur.user_role_id
+    FROM UserRole ur
+    JOIN [Users] u ON u.user_id = ur.user_id
+    WHERE u.username = 'mai.student' AND ur.role_type = 'Student'
+);
+DECLARE @summer_criteria_1 INT = (
+    SELECT TOP 1 criteria_id FROM ScoringCriteria
+    WHERE round_id = @summer_round_id AND criteria_name = N'Problem-Solution Fit'
+    ORDER BY criteria_id
+);
+DECLARE @summer_criteria_2 INT = (
+    SELECT TOP 1 criteria_id FROM ScoringCriteria
+    WHERE round_id = @summer_round_id AND criteria_name = N'Implementation Quality'
+    ORDER BY criteria_id
+);
+DECLARE @summer_criteria_3 INT = (
+    SELECT TOP 1 criteria_id FROM ScoringCriteria
+    WHERE round_id = @summer_round_id AND criteria_name = N'Presentation'
+    ORDER BY criteria_id
+);
+DECLARE @summer_now DATETIME = GETDATE();
+DECLARE @seed_password_hash VARCHAR(255) = (
+    SELECT TOP 1 password_hash FROM [Users] ORDER BY user_id
+);
+DECLARE @summer_web_assignment_1 INT;
+DECLARE @summer_web_assignment_2 INT;
+DECLARE @summer_ai_assignment_1 INT;
+DECLARE @summer_ai_assignment_2 INT;
+
+IF NOT EXISTS (
+    SELECT 1 FROM TrackMentor
+    WHERE track_id = @summer_track_web_id
+      AND user_role_id = @summer_web_mentor_role_id
+)
+BEGIN
+    INSERT INTO TrackMentor (track_id, user_role_id)
+    VALUES (@summer_track_web_id, @summer_web_mentor_role_id);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM TrackMentor
+    WHERE track_id = @summer_track_ai_id
+      AND user_role_id = @summer_ai_mentor_role_id
+)
+BEGIN
+    INSERT INTO TrackMentor (track_id, user_role_id)
+    VALUES (@summer_track_ai_id, @summer_ai_mentor_role_id);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM JudgeAssignment
+    WHERE round_id = @summer_round_id
+      AND track_id = @summer_track_web_id
+      AND user_role_id = @summer_web_judge_role_1
+)
+BEGIN
+    INSERT INTO JudgeAssignment (round_id, track_id, user_role_id)
+    VALUES (@summer_round_id, @summer_track_web_id, @summer_web_judge_role_1);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM JudgeAssignment
+    WHERE round_id = @summer_round_id
+      AND track_id = @summer_track_web_id
+      AND user_role_id = @summer_web_judge_role_2
+)
+BEGIN
+    INSERT INTO JudgeAssignment (round_id, track_id, user_role_id)
+    VALUES (@summer_round_id, @summer_track_web_id, @summer_web_judge_role_2);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM JudgeAssignment
+    WHERE round_id = @summer_round_id
+      AND track_id = @summer_track_ai_id
+      AND user_role_id = @summer_ai_judge_role_1
+)
+BEGIN
+    INSERT INTO JudgeAssignment (round_id, track_id, user_role_id)
+    VALUES (@summer_round_id, @summer_track_ai_id, @summer_ai_judge_role_1);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM JudgeAssignment
+    WHERE round_id = @summer_round_id
+      AND track_id = @summer_track_ai_id
+      AND user_role_id = @summer_ai_judge_role_2
+)
+BEGIN
+    INSERT INTO JudgeAssignment (round_id, track_id, user_role_id)
+    VALUES (@summer_round_id, @summer_track_ai_id, @summer_ai_judge_role_2);
+END;
+
+SELECT @summer_web_assignment_1 = judge_assignment_id
+FROM JudgeAssignment
+WHERE round_id = @summer_round_id
+  AND track_id = @summer_track_web_id
+  AND user_role_id = @summer_web_judge_role_1;
+
+SELECT @summer_web_assignment_2 = judge_assignment_id
+FROM JudgeAssignment
+WHERE round_id = @summer_round_id
+  AND track_id = @summer_track_web_id
+  AND user_role_id = @summer_web_judge_role_2;
+
+SELECT @summer_ai_assignment_1 = judge_assignment_id
+FROM JudgeAssignment
+WHERE round_id = @summer_round_id
+  AND track_id = @summer_track_ai_id
+  AND user_role_id = @summer_ai_judge_role_1;
+
+SELECT @summer_ai_assignment_2 = judge_assignment_id
+FROM JudgeAssignment
+WHERE round_id = @summer_round_id
+  AND track_id = @summer_track_ai_id
+  AND user_role_id = @summer_ai_judge_role_2;
+
+DECLARE @LeaderboardTeams TABLE (
+    team_name NVARCHAR(100),
+    track_id INT,
+    join_code VARCHAR(20),
+    repo_slug VARCHAR(120),
+    score_value DECIMAL(4,2),
+    use_existing_members BIT
+);
+
+INSERT INTO @LeaderboardTeams (team_name, track_id, join_code, repo_slug, score_value, use_existing_members)
+VALUES
+    (N'SEAL Coders', @summer_track_web_id, 'SEAL2026', 'seal-coders', 8.91, 1),
+    (N'Web Velocity', @summer_track_web_id, 'WEBV1001', 'web-velocity', 8.55, 0),
+    (N'Pixel Raiders', @summer_track_web_id, 'WEBV1002', 'pixel-raiders', 8.10, 0),
+    (N'Sprint Canvas', @summer_track_web_id, 'WEBV1003', 'sprint-canvas', 7.85, 0),
+    (N'Urban Web Crew', @summer_track_web_id, 'WEBV1004', 'urban-web-crew', 7.30, 0),
+    (N'AI Pioneers', @summer_track_ai_id, 'AIDT1001', 'ai-pioneers', 8.75, 0),
+    (N'Neural Forge', @summer_track_ai_id, 'AIDT1002', 'neural-forge', 8.40, 0),
+    (N'Signal Stack', @summer_track_ai_id, 'AIDT1003', 'signal-stack', 7.95, 0),
+    (N'Insight Loop', @summer_track_ai_id, 'AIDT1004', 'insight-loop', 7.65, 0),
+    (N'Data Vision', @summer_track_ai_id, 'AIDT1005', 'data-vision', 7.55, 0);
+
+DECLARE
+    @LeaderboardTeamName NVARCHAR(100),
+    @LeaderboardTrackId INT,
+    @LeaderboardJoinCode VARCHAR(20),
+    @LeaderboardRepoSlug VARCHAR(120),
+    @LeaderboardScore DECIMAL(4,2),
+    @UseExistingMembers BIT,
+    @LeaderboardTeamId INT,
+    @LeaderboardSubmissionId INT,
+    @LeaderboardLeaderRoleId INT,
+    @LeaderboardJudgeAssignment1 INT,
+    @LeaderboardJudgeAssignment2 INT,
+    @LeaderboardMemberIndex INT,
+    @LeaderboardUserId INT,
+    @LeaderboardUserRoleId INT,
+    @LeaderboardUsername VARCHAR(100),
+    @LeaderboardEmail VARCHAR(150),
+    @LeaderboardFullName NVARCHAR(150),
+    @LeaderboardStudentCode VARCHAR(30);
+
+DECLARE @LeaderboardMemberRoles TABLE (
+    slot_no INT PRIMARY KEY,
+    user_role_id INT NOT NULL
+);
+
+DECLARE leaderboard_cursor CURSOR FAST_FORWARD FOR
+SELECT team_name, track_id, join_code, repo_slug, score_value, use_existing_members
+FROM @LeaderboardTeams
+ORDER BY track_id, score_value DESC;
+
+OPEN leaderboard_cursor;
+FETCH NEXT FROM leaderboard_cursor INTO
+    @LeaderboardTeamName, @LeaderboardTrackId, @LeaderboardJoinCode, @LeaderboardRepoSlug, @LeaderboardScore, @UseExistingMembers;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    DELETE FROM @LeaderboardMemberRoles;
+    SET @LeaderboardTeamId = NULL;
+    SET @LeaderboardSubmissionId = NULL;
+    SET @LeaderboardLeaderRoleId = NULL;
+
+    IF @UseExistingMembers = 1
+    BEGIN
+        INSERT INTO @LeaderboardMemberRoles (slot_no, user_role_id)
+        VALUES
+            (1, @summer_existing_web_leader_role_id),
+            (2, @summer_existing_web_member_role_id),
+            (3, @summer_existing_web_third_role_id);
+
+        SET @LeaderboardLeaderRoleId = @summer_existing_web_leader_role_id;
+    END
+    ELSE
+    BEGIN
+        SET @LeaderboardMemberIndex = 1;
+
+        WHILE @LeaderboardMemberIndex <= 3
+        BEGIN
+            SET @LeaderboardUserId = NULL;
+            SET @LeaderboardUserRoleId = NULL;
+            SET @LeaderboardUsername = CONCAT('demo.', @LeaderboardRepoSlug, '.', @LeaderboardMemberIndex);
+            SET @LeaderboardEmail = CONCAT(@LeaderboardRepoSlug, '.', @LeaderboardMemberIndex, '@seal.demo.local');
+            SET @LeaderboardFullName = CONCAT(@LeaderboardTeamName, N' Member ', @LeaderboardMemberIndex);
+            SET @LeaderboardStudentCode = CONCAT('DM', RIGHT(CONCAT('0000', ABS(CHECKSUM(@LeaderboardRepoSlug)) % 10000), 4), @LeaderboardMemberIndex);
+
+            SELECT @LeaderboardUserId = user_id
+            FROM [Users]
+            WHERE email = @LeaderboardEmail;
+
+            IF @LeaderboardUserId IS NULL
+            BEGIN
+                INSERT INTO [Users] (username, email, password_hash, full_name, avatar_url, bio, status, is_approved)
+                VALUES (
+                    @LeaderboardUsername,
+                    @LeaderboardEmail,
+                    @seed_password_hash,
+                    @LeaderboardFullName,
+                    NULL,
+                    CONCAT(N'Demo member for ', @LeaderboardTeamName),
+                    'Active',
+                    1
+                );
+
+                SET @LeaderboardUserId = SCOPE_IDENTITY();
+            END;
+
+            SELECT @LeaderboardUserRoleId = user_role_id
+            FROM UserRole
+            WHERE user_id = @LeaderboardUserId
+              AND role_type = 'Student';
+
+            IF @LeaderboardUserRoleId IS NULL
+            BEGIN
+                INSERT INTO UserRole (user_id, role_type)
+                VALUES (@LeaderboardUserId, 'Student');
+
+                SET @LeaderboardUserRoleId = SCOPE_IDENTITY();
+            END;
+
+            IF NOT EXISTS (
+                SELECT 1 FROM StudentProfile WHERE user_role_id = @LeaderboardUserRoleId
+            )
+            BEGIN
+                INSERT INTO StudentProfile (user_role_id, student_type, student_code, university_name)
+                VALUES (@LeaderboardUserRoleId, 'FPT', @LeaderboardStudentCode, N'FPT University HCMC');
+            END;
+
+            INSERT INTO @LeaderboardMemberRoles (slot_no, user_role_id)
+            VALUES (@LeaderboardMemberIndex, @LeaderboardUserRoleId);
+
+            IF @LeaderboardMemberIndex = 1
+            BEGIN
+                SET @LeaderboardLeaderRoleId = @LeaderboardUserRoleId;
+            END;
+
+            SET @LeaderboardMemberIndex += 1;
+        END;
+    END;
+
+    SELECT @LeaderboardTeamId = team_id
+    FROM Team
+    WHERE team_name = @LeaderboardTeamName;
+
+    IF @LeaderboardTeamId IS NULL
+    BEGIN
+        INSERT INTO Team (track_id, user_role_id, team_name, join_code, status, created_at)
+        VALUES (@LeaderboardTrackId, @LeaderboardLeaderRoleId, @LeaderboardTeamName, @LeaderboardJoinCode, 'Ready', @summer_now);
+
+        SET @LeaderboardTeamId = SCOPE_IDENTITY();
+    END
+    ELSE
+    BEGIN
+        UPDATE Team
+        SET track_id = @LeaderboardTrackId,
+            user_role_id = @LeaderboardLeaderRoleId,
+            join_code = @LeaderboardJoinCode,
+            status = 'Ready'
+        WHERE team_id = @LeaderboardTeamId;
+    END;
+
+    INSERT INTO TeamMember (team_id, user_role_id)
+    SELECT @LeaderboardTeamId, mr.user_role_id
+    FROM @LeaderboardMemberRoles mr
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM TeamMember tm
+        WHERE tm.team_id = @LeaderboardTeamId
+          AND tm.user_role_id = mr.user_role_id
+    );
+
+    SELECT @LeaderboardSubmissionId = submission_id
+    FROM Submission
+    WHERE team_id = @LeaderboardTeamId
+      AND round_id = @summer_round_id;
+
+    IF @LeaderboardSubmissionId IS NULL
+    BEGIN
+        INSERT INTO Submission (
+            team_id, round_id, repository_url, demo_url, slide_url,
+            github_metadata, is_calibration, status, submitted_at, updated_at, submitted_by_user_role_id
+        )
+        VALUES (
+            @LeaderboardTeamId,
+            @summer_round_id,
+            CONCAT('https://github.com/seal-demo/', @LeaderboardRepoSlug),
+            CONCAT('https://youtu.be/demo-', @LeaderboardRepoSlug),
+            CONCAT('https://docs.google.com/presentation/d/', @LeaderboardRepoSlug),
+            NULL,
+            0,
+            'Evaluating',
+            @summer_now,
+            @summer_now,
+            @LeaderboardLeaderRoleId
+        );
+
+        SET @LeaderboardSubmissionId = SCOPE_IDENTITY();
+    END
+    ELSE
+    BEGIN
+        UPDATE Submission
+        SET repository_url = CONCAT('https://github.com/seal-demo/', @LeaderboardRepoSlug),
+            demo_url = CONCAT('https://youtu.be/demo-', @LeaderboardRepoSlug),
+            slide_url = CONCAT('https://docs.google.com/presentation/d/', @LeaderboardRepoSlug),
+            status = 'Evaluating',
+            updated_at = @summer_now,
+            submitted_by_user_role_id = @LeaderboardLeaderRoleId
+        WHERE submission_id = @LeaderboardSubmissionId;
+    END;
+
+    IF @LeaderboardTrackId = @summer_track_web_id
+    BEGIN
+        SET @LeaderboardJudgeAssignment1 = @summer_web_assignment_1;
+        SET @LeaderboardJudgeAssignment2 = @summer_web_assignment_2;
+    END
+    ELSE
+    BEGIN
+        SET @LeaderboardJudgeAssignment1 = @summer_ai_assignment_1;
+        SET @LeaderboardJudgeAssignment2 = @summer_ai_assignment_2;
+    END;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM JudgeEvaluation
+        WHERE submission_id = @LeaderboardSubmissionId
+          AND judge_assignment_id = @LeaderboardJudgeAssignment1
+    )
+    BEGIN
+        INSERT INTO JudgeEvaluation (submission_id, judge_assignment_id, status, finalized_at)
+        VALUES (@LeaderboardSubmissionId, @LeaderboardJudgeAssignment1, 'Finalized', @summer_now);
+    END
+    ELSE
+    BEGIN
+        UPDATE JudgeEvaluation
+        SET status = 'Finalized',
+            finalized_at = @summer_now
+        WHERE submission_id = @LeaderboardSubmissionId
+          AND judge_assignment_id = @LeaderboardJudgeAssignment1;
+    END;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM JudgeEvaluation
+        WHERE submission_id = @LeaderboardSubmissionId
+          AND judge_assignment_id = @LeaderboardJudgeAssignment2
+    )
+    BEGIN
+        INSERT INTO JudgeEvaluation (submission_id, judge_assignment_id, status, finalized_at)
+        VALUES (@LeaderboardSubmissionId, @LeaderboardJudgeAssignment2, 'Finalized', @summer_now);
+    END
+    ELSE
+    BEGIN
+        UPDATE JudgeEvaluation
+        SET status = 'Finalized',
+            finalized_at = @summer_now
+        WHERE submission_id = @LeaderboardSubmissionId
+          AND judge_assignment_id = @LeaderboardJudgeAssignment2;
+    END;
+
+    MERGE Score AS target
+    USING (
+        SELECT @LeaderboardSubmissionId AS submission_id, @LeaderboardJudgeAssignment1 AS judge_assignment_id, @summer_criteria_1 AS criteria_id, @LeaderboardScore AS score_value
+        UNION ALL SELECT @LeaderboardSubmissionId, @LeaderboardJudgeAssignment1, @summer_criteria_2, @LeaderboardScore
+        UNION ALL SELECT @LeaderboardSubmissionId, @LeaderboardJudgeAssignment1, @summer_criteria_3, @LeaderboardScore
+        UNION ALL SELECT @LeaderboardSubmissionId, @LeaderboardJudgeAssignment2, @summer_criteria_1, @LeaderboardScore
+        UNION ALL SELECT @LeaderboardSubmissionId, @LeaderboardJudgeAssignment2, @summer_criteria_2, @LeaderboardScore
+        UNION ALL SELECT @LeaderboardSubmissionId, @LeaderboardJudgeAssignment2, @summer_criteria_3, @LeaderboardScore
+    ) AS source
+    ON target.submission_id = source.submission_id
+       AND target.judge_assignment_id = source.judge_assignment_id
+       AND target.criteria_id = source.criteria_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            score_value = source.score_value,
+            comment = CONCAT(N'Seed leaderboard score for ', @LeaderboardTeamName),
+            scored_at = @summer_now
+    WHEN NOT MATCHED THEN
+        INSERT (submission_id, criteria_id, judge_assignment_id, score_value, comment, scored_at)
+        VALUES (source.submission_id, source.criteria_id, source.judge_assignment_id, source.score_value, CONCAT(N'Seed leaderboard score for ', @LeaderboardTeamName), @summer_now);
+
+    FETCH NEXT FROM leaderboard_cursor INTO
+        @LeaderboardTeamName, @LeaderboardTrackId, @LeaderboardJoinCode, @LeaderboardRepoSlug, @LeaderboardScore, @UseExistingMembers;
+END;
+
+CLOSE leaderboard_cursor;
+DEALLOCATE leaderboard_cursor;
+GO
+
 -- Verify seeded core data
 SELECT user_id, username, email, status, is_approved
 FROM [Users]

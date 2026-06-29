@@ -923,7 +923,7 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                         <InputLabel>Status</InputLabel>
                         <Select label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                           <MenuItem value="all">All statuses</MenuItem>
-                          {["Submitted", "Evaluating", "Qualified", "Eliminated"].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+                          {["Submitted", "Evaluating", "Qualified", "Eliminated", "Disqualified"].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
                         </Select>
                       </FormControl>
                       <Typography variant="body2" color="text.secondary" className="eval-filter-count">

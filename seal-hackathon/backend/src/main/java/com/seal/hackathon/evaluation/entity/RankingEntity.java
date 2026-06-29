@@ -49,6 +49,15 @@ public class RankingEntity {
     @Column(name = "qualified_next_round", nullable = false)
     private Boolean qualifiedNextRound = false;
 
+    @Column(name = "qualification_status", nullable = false, length = 30)
+    private String qualificationStatus = RankingQualificationStatus.PENDING.getDbValue();
+
+    @Column(name = "qualification_note", length = 500)
+    private String qualificationNote;
+
+    @Column(name = "qualification_calculated_at")
+    private LocalDateTime qualificationCalculatedAt;
+
     @Column(name = "calculated_at", nullable = false)
     private LocalDateTime calculatedAt;
 
@@ -56,6 +65,9 @@ public class RankingEntity {
     public void prePersist() {
         if (qualifiedNextRound == null) {
             qualifiedNextRound = false;
+        }
+        if (qualificationStatus == null || qualificationStatus.isBlank()) {
+            qualificationStatus = RankingQualificationStatus.PENDING.getDbValue();
         }
         if (calculatedAt == null) {
             calculatedAt = LocalDateTime.now();

@@ -15,6 +15,9 @@ public record FinalizationSubmissionDto(
         BigDecimal totalScore,
         Integer rankPosition,
         boolean qualifiedNextRound,
+        Boolean projectedQualifiedNextRound,
+        String qualificationStatus,
+        String qualificationNote,
         boolean ready,
         String readinessNote
 ) {
