@@ -96,6 +96,30 @@ public class EventUpdateNotificationService {
     }
 
     @Transactional
+    public int notifyResultsPublished(HackathonEventEntity event) {
+        Set<Integer> recipientIds = resolveRecipients(event.getEventId(), "ALL");
+        if (recipientIds.isEmpty()) {
+            return 0;
+        }
+
+        LocalDateTime createdAt = LocalDateTime.now();
+        String title = "Final results published";
+        String message = "Final results for " + event.getName()
+                + " are now available. Please review rankings, qualification status, and feedback on your dashboard.";
+
+        int savedCount = 0;
+        for (Integer userId : recipientIds) {
+            UserEntity user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                continue;
+            }
+            saveNotification(user, event, null, title, message, "RESULTS", createdAt);
+            savedCount += 1;
+        }
+        return savedCount;
+    }
+
+    @Transactional
     public SentAnnouncementDto sendAnnouncement(Authentication authentication, CreateAnnouncementRequest request) {
         UserEntity coordinator = currentCoordinator(authentication);
         HackathonEventEntity event = eventRepository.findById(request.eventId())

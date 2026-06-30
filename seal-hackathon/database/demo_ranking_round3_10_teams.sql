@@ -153,9 +153,18 @@ BEGIN
         SET @MemberIndex += 1;
     END;
 
-    SELECT @TeamId = team_id
+    SELECT TOP 1 @TeamId = team_id
     FROM Team
-    WHERE team_name = @TeamName;
+    WHERE join_code = @JoinCode
+    ORDER BY team_id;
+
+    IF @TeamId IS NULL
+    BEGIN
+        SELECT TOP 1 @TeamId = team_id
+        FROM Team
+        WHERE team_name = @TeamName
+        ORDER BY team_id;
+    END;
 
     IF @TeamId IS NULL
     BEGIN
@@ -169,10 +178,23 @@ BEGIN
         UPDATE Team
         SET track_id = @TrackId,
             user_role_id = @LeaderRoleId,
-            join_code = @JoinCode,
+            team_name = @TeamName,
+            join_code = CASE
+                WHEN NOT EXISTS (
+                    SELECT 1
+                    FROM Team
+                    WHERE join_code = @JoinCode
+                      AND team_id <> @TeamId
+                )
+                THEN @JoinCode
+                ELSE join_code
+            END,
             status = 'Ready'
         WHERE team_id = @TeamId;
     END;
+
+    DELETE FROM TeamMember
+    WHERE team_id = @TeamId;
 
     DECLARE member_cursor CURSOR LOCAL FAST_FORWARD FOR
     SELECT user_role_id
@@ -184,6 +206,16 @@ BEGIN
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
+        DELETE tm
+        FROM TeamMember tm
+        JOIN Team existing_team ON existing_team.team_id = tm.team_id
+        JOIN Track existing_track ON existing_track.track_id = existing_team.track_id
+        JOIN Team target_team ON target_team.team_id = @TeamId
+        JOIN Track target_track ON target_track.track_id = target_team.track_id
+        WHERE tm.user_role_id = @UserRoleId
+          AND existing_track.event_id = target_track.event_id
+          AND tm.team_id <> @TeamId;
+
         IF NOT EXISTS (
             SELECT 1
             FROM TeamMember tm

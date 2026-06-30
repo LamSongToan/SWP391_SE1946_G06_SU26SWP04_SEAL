@@ -8,6 +8,8 @@ import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaManagementDto;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaUpdateRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
+import com.seal.hackathon.evaluation.dto.ResultPublicationDto;
+import com.seal.hackathon.evaluation.dto.ScoreVarianceDashboardDto;
 import com.seal.hackathon.evaluation.service.CoordinatorScoringService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -109,6 +111,59 @@ public class CoordinatorScoringController {
         return ResponseEntity.ok(ApiResponse.ok(
                 "Round finalization snapshot fetched",
                 coordinatorScoringService.getRoundFinalization(authentication, roundId)
+        ));
+    }
+
+    @GetMapping("/events/{eventId}/result-publication")
+    public ResponseEntity<ApiResponse<ResultPublicationDto>> getResultPublication(Authentication authentication,
+                                                                                  @PathVariable Integer eventId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Result publication status fetched",
+                coordinatorScoringService.getResultPublicationStatus(authentication, eventId)
+        ));
+    }
+
+    @PostMapping("/events/{eventId}/publish-results")
+    public ResponseEntity<ApiResponse<ResultPublicationDto>> publishResults(Authentication authentication,
+                                                                            @PathVariable Integer eventId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Results published",
+                coordinatorScoringService.publishEventResults(authentication, eventId)
+        ));
+    }
+
+    @GetMapping("/rounds/{roundId}/ranking-report.csv")
+    public ResponseEntity<byte[]> exportRankingReportCsv(Authentication authentication,
+                                                         @PathVariable Integer roundId,
+                                                         @RequestParam(required = false) Integer trackId) {
+        String csv = coordinatorScoringService.exportRankingReportCsv(authentication, roundId, trackId);
+        byte[] payload = csv.getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"seal-round-" + roundId + "-ranking-report.csv\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(payload);
+    }
+
+    @GetMapping("/rounds/{roundId}/ranking-report.xls")
+    public ResponseEntity<byte[]> exportRankingReportExcel(Authentication authentication,
+                                                           @PathVariable Integer roundId,
+                                                           @RequestParam(required = false) Integer trackId) {
+        String html = coordinatorScoringService.exportRankingReportExcelHtml(authentication, roundId, trackId);
+        byte[] payload = html.getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"seal-round-" + roundId + "-ranking-report.xls\"")
+                .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+                .body(payload);
+    }
+
+    @GetMapping("/rounds/{roundId}/variance-dashboard")
+    public ResponseEntity<ApiResponse<ScoreVarianceDashboardDto>> getVarianceDashboard(Authentication authentication,
+                                                                                       @PathVariable Integer roundId,
+                                                                                       @RequestParam(required = false) Integer trackId,
+                                                                                       @RequestParam(defaultValue = "true") boolean includeCalibration) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Judge score variance dashboard fetched",
+                coordinatorScoringService.getScoreVarianceDashboard(authentication, roundId, trackId, includeCalibration)
         ));
     }
 

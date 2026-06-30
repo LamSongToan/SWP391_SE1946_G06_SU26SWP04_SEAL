@@ -10,12 +10,16 @@ import com.seal.hackathon.evaluation.dto.CriteriaDefinitionDto;
 import com.seal.hackathon.evaluation.dto.CriteriaDefinitionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateRequest;
+import com.seal.hackathon.evaluation.dto.CriterionVarianceDto;
 import com.seal.hackathon.evaluation.dto.FinalizationSubmissionDto;
 import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaManagementDto;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaUpdateRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
 import com.seal.hackathon.evaluation.dto.ResearchDatasetRowProjection;
+import com.seal.hackathon.evaluation.dto.ResultPublicationDto;
+import com.seal.hackathon.evaluation.dto.ScoreVarianceDashboardDto;
+import com.seal.hackathon.evaluation.dto.TeamCriterionVarianceDto;
 import com.seal.hackathon.evaluation.entity.AuditLogEntity;
 import com.seal.hackathon.evaluation.entity.CriteriaTemplateEntity;
 import com.seal.hackathon.evaluation.entity.CriteriaTemplateItemEntity;
@@ -38,6 +42,7 @@ import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
+import com.seal.hackathon.event.service.EventUpdateNotificationService;
 import com.seal.hackathon.submission.entity.SubmissionEntity;
 import com.seal.hackathon.submission.entity.SubmissionStatus;
 import com.seal.hackathon.submission.repository.SubmissionRepository;
@@ -103,6 +108,7 @@ public class CoordinatorScoringService {
     private final RankingRepository rankingRepository;
     private final AuditLogRepository auditLogRepository;
     private final AuditLogService auditLogService;
+    private final EventUpdateNotificationService notificationService;
 
     public CoordinatorScoringService(UserRepository userRepository,
                                      UserRoleRepository userRoleRepository,
@@ -118,7 +124,8 @@ public class CoordinatorScoringService {
                                      ScoreRepository scoreRepository,
                                      RankingRepository rankingRepository,
                                      AuditLogRepository auditLogRepository,
-                                     AuditLogService auditLogService) {
+                                     AuditLogService auditLogService,
+                                     EventUpdateNotificationService notificationService) {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.eventRepository = eventRepository;
@@ -134,6 +141,7 @@ public class CoordinatorScoringService {
         this.rankingRepository = rankingRepository;
         this.auditLogRepository = auditLogRepository;
         this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -308,6 +316,234 @@ public class CoordinatorScoringService {
         return buildRoundFinalization(getRoundOrThrow(roundId));
     }
 
+    @Transactional(readOnly = true)
+    public ResultPublicationDto getResultPublicationStatus(Authentication authentication, Integer eventId) {
+        currentCoordinator(authentication);
+        HackathonEventEntity event = getEventOrThrow(eventId);
+        RoundEntity finalRound = resolveFinalRound(eventId);
+        int rankingCount = finalRound == null
+                ? 0
+                : rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(finalRound.getRoundId()).size();
+        return toResultPublicationDto(
+                event,
+                finalRound,
+                rankingCount,
+                0,
+                isResultPublished(event)
+                        ? "Final results have already been published."
+                        : "Final results are not published yet."
+        );
+    }
+
+    @Transactional
+    public ResultPublicationDto publishEventResults(Authentication authentication, Integer eventId) {
+        UserEntity coordinator = currentCoordinator(authentication);
+        HackathonEventEntity event = getEventOrThrow(eventId);
+        RoundEntity finalRound = resolveFinalRound(eventId);
+        if (finalRound == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "Configure at least one round before publishing results");
+        }
+
+        List<RankingEntity> rankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(finalRound.getRoundId());
+        if (isResultPublished(event)) {
+            return toResultPublicationDto(
+                    event,
+                    finalRound,
+                    rankings.size(),
+                    0,
+                    "Final results have already been published."
+            );
+        }
+
+        RoundFinalizationDto finalization = buildRoundFinalization(finalRound);
+        if (!finalization.scoreLocked()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Finalize the final round before publishing event results");
+        }
+        if (finalization.totalSubmissions() == null || finalization.totalSubmissions() == 0) {
+            throw new ApiException(HttpStatus.CONFLICT, "No final-round submissions are available to publish");
+        }
+        if (!hasCompleteRankingSnapshot(rankings, findCompetitionSubmissions(finalRound.getRoundId()))) {
+            throw new ApiException(HttpStatus.CONFLICT, "Final-round ranking snapshot is incomplete");
+        }
+
+        Map<String, Object> previous = new LinkedHashMap<>();
+        previous.put("status", event.getStatus());
+        previous.put("publishedAt", event.getPublishedAt());
+
+        event.setStatus("Ended");
+        event.setPublishedAt(LocalDateTime.now());
+        HackathonEventEntity savedEvent = eventRepository.save(event);
+        int notificationCount = notificationService.notifyResultsPublished(savedEvent);
+
+        Map<String, Object> updated = new LinkedHashMap<>();
+        updated.put("status", savedEvent.getStatus());
+        updated.put("publishedAt", savedEvent.getPublishedAt());
+        updated.put("finalRoundId", finalRound.getRoundId());
+        updated.put("publishedRankingCount", rankings.size());
+        updated.put("notificationCount", notificationCount);
+
+        auditLogService.record(
+                coordinator,
+                "RESULTS_PUBLISHED",
+                TARGET_ENTITY_EVENT,
+                eventId,
+                previous,
+                updated,
+                "Published final results for " + savedEvent.getName()
+        );
+
+        return toResultPublicationDto(
+                savedEvent,
+                finalRound,
+                rankings.size(),
+                notificationCount,
+                "Final results published and participants notified."
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public String exportRankingReportCsv(Authentication authentication, Integer roundId, Integer trackId) {
+        currentCoordinator(authentication);
+        RoundFinalizationDto finalization = buildReportableRoundFinalization(roundId, trackId);
+        StringBuilder csv = new StringBuilder();
+        appendCsvRow(csv, rankingReportHeaders());
+        for (FinalizationSubmissionDto item : filterReportRows(finalization, trackId)) {
+            appendCsvRow(csv, rankingReportValues(finalization, item));
+        }
+        return csv.toString();
+    }
+
+    @Transactional(readOnly = true)
+    public String exportRankingReportExcelHtml(Authentication authentication, Integer roundId, Integer trackId) {
+        currentCoordinator(authentication);
+        RoundFinalizationDto finalization = buildReportableRoundFinalization(roundId, trackId);
+        StringBuilder html = new StringBuilder();
+        html.append("<html><head><meta charset=\"UTF-8\"></head><body>");
+        html.append("<h2>").append(escapeHtml(finalization.eventName())).append("</h2>");
+        html.append("<p>Round: ").append(escapeHtml(finalization.roundName())).append("</p>");
+        html.append("<table border=\"1\"><thead><tr>");
+        for (String header : rankingReportHeaders()) {
+            html.append("<th>").append(escapeHtml(header)).append("</th>");
+        }
+        html.append("</tr></thead><tbody>");
+        for (FinalizationSubmissionDto item : filterReportRows(finalization, trackId)) {
+            html.append("<tr>");
+            for (String value : rankingReportValues(finalization, item)) {
+                html.append("<td>").append(escapeHtml(value)).append("</td>");
+            }
+            html.append("</tr>");
+        }
+        html.append("</tbody></table></body></html>");
+        return html.toString();
+    }
+
+    @Transactional(readOnly = true)
+    public ScoreVarianceDashboardDto getScoreVarianceDashboard(Authentication authentication,
+                                                               Integer roundId,
+                                                               Integer trackId,
+                                                               boolean includeCalibration) {
+        currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+        HackathonEventEntity event = getEventOrThrow(round.getEventId());
+        TrackEntity selectedTrack = null;
+        if (trackId != null) {
+            selectedTrack = trackRepository.findById(trackId)
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Track not found"));
+            if (!Objects.equals(selectedTrack.getEventId(), round.getEventId())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Track does not belong to the selected round event");
+            }
+        }
+
+        List<ResearchDatasetRowProjection> rows = scoreRepository.findResearchDatasetRows(
+                roundId,
+                trackId,
+                includeCalibration
+        );
+        Map<Integer, FinalizationSubmissionDto> submissionsById = buildRoundFinalization(round)
+                .submissions()
+                .stream()
+                .collect(Collectors.toMap(FinalizationSubmissionDto::submissionId, Function.identity(), (left, right) -> left));
+
+        Map<String, VarianceBucket> buckets = new LinkedHashMap<>();
+        Map<Integer, CriterionVarianceAccumulator> criteria = new LinkedHashMap<>();
+        Set<Integer> scoredSubmissionIds = new HashSet<>();
+        Set<Integer> judgeAssignmentIds = new HashSet<>();
+
+        for (ResearchDatasetRowProjection row : rows) {
+            if (row.getScoreValue() == null || row.getCriteriaId() == null || row.getSubmissionId() == null) {
+                continue;
+            }
+            double scoreValue = row.getScoreValue().doubleValue();
+            scoredSubmissionIds.add(row.getSubmissionId());
+            if (row.getJudgeAssignmentId() != null) {
+                judgeAssignmentIds.add(row.getJudgeAssignmentId());
+            }
+
+            CriterionVarianceAccumulator accumulator = criteria.computeIfAbsent(
+                    row.getCriteriaId(),
+                    ignored -> new CriterionVarianceAccumulator(row)
+            );
+            accumulator.addScore(scoreValue, row.getJudgeAssignmentId());
+
+            String bucketKey = row.getSubmissionId() + ":" + row.getCriteriaId();
+            VarianceBucket bucket = buckets.computeIfAbsent(
+                    bucketKey,
+                    ignored -> new VarianceBucket(row, submissionsById.get(row.getSubmissionId()))
+            );
+            bucket.add(scoreValue);
+        }
+
+        List<TeamCriterionVarianceDto> teamCriteria = buckets.values().stream()
+                .filter(VarianceBucket::hasComparableScores)
+                .map(VarianceBucket::toDto)
+                .sorted(Comparator
+                        .comparing(TeamCriterionVarianceDto::trackName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(TeamCriterionVarianceDto::teamName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                        .thenComparing(TeamCriterionVarianceDto::criteriaName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .toList();
+
+        for (VarianceBucket bucket : buckets.values()) {
+            CriterionVarianceAccumulator accumulator = criteria.get(bucket.criteriaId);
+            if (accumulator != null && bucket.hasComparableScores()) {
+                accumulator.addBucket(bucket);
+            }
+        }
+
+        List<CriterionVarianceDto> criterionDtos = criteria.values().stream()
+                .map(CriterionVarianceAccumulator::toDto)
+                .sorted(Comparator.comparing(CriterionVarianceDto::averageVariance, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+
+        Double averageVariance = average(
+                criterionDtos.stream()
+                        .map(CriterionVarianceDto::averageVariance)
+                        .filter(Objects::nonNull)
+                        .toList()
+        );
+        Optional<CriterionVarianceDto> highestVarianceCriterion = criterionDtos.stream()
+                .filter(item -> item.averageVariance() != null)
+                .max(Comparator.comparing(CriterionVarianceDto::averageVariance));
+
+        return new ScoreVarianceDashboardDto(
+                event.getEventId(),
+                event.getName(),
+                round.getRoundId(),
+                round.getRoundName(),
+                selectedTrack == null ? null : selectedTrack.getTrackId(),
+                selectedTrack == null ? null : selectedTrack.getName(),
+                includeCalibration,
+                criteria.size(),
+                scoredSubmissionIds.size(),
+                judgeAssignmentIds.size(),
+                rows.size(),
+                roundDouble(averageVariance),
+                highestVarianceCriterion.map(item -> roundDouble(item.averageVariance())).orElse(null),
+                highestVarianceCriterion.map(CriterionVarianceDto::criteriaName).orElse(null),
+                criterionDtos,
+                teamCriteria
+        );
+    }
+
     @Transactional
     public String exportAnonymizedScoringDatasetCsv(Authentication authentication,
                                                     Integer roundId,
@@ -415,7 +651,7 @@ public class CoordinatorScoringService {
                 .filter(item -> RankingQualificationStatus.from(item.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED)
                 .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
         rankingRepository.deleteByRoundRoundId(roundId);
-        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        List<SubmissionEntity> submissions = findCompetitionSubmissions(roundId);
         Map<Integer, FinalizationSubmissionDto> previewBySubmissionId = preview.submissions().stream()
                 .collect(Collectors.toMap(FinalizationSubmissionDto::submissionId, Function.identity()));
 
@@ -490,7 +726,7 @@ public class CoordinatorScoringService {
         List<Map<String, Object>> previousRankings = rankings.stream()
                 .map(this::toRankingMap)
                 .toList();
-        Map<Integer, SubmissionEntity> submissionsByTeamId = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId)
+        Map<Integer, SubmissionEntity> submissionsByTeamId = findCompetitionSubmissions(roundId)
                 .stream()
                 .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
         LocalDateTime calculatedAt = LocalDateTime.now();
@@ -544,7 +780,7 @@ public class CoordinatorScoringService {
             throw new ApiException(HttpStatus.CONFLICT, "Calculate qualification before promoting teams to the next round");
         }
 
-        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        List<SubmissionEntity> submissions = findCompetitionSubmissions(roundId);
         if (isAdvancementApplied(round, rankings, submissions)) {
             throw new ApiException(HttpStatus.CONFLICT, "Promotion and elimination have already been applied for this round");
         }
@@ -596,7 +832,7 @@ public class CoordinatorScoringService {
         UserEntity coordinator = currentCoordinator(authentication);
         RoundEntity round = getRoundOrThrow(roundId);
 
-        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        List<SubmissionEntity> submissions = findCompetitionSubmissions(roundId);
         List<RankingEntity> rankings = new ArrayList<>(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId));
         if (isAdvancementApplied(round, rankings, submissions)) {
             throw new ApiException(HttpStatus.CONFLICT,
@@ -663,7 +899,7 @@ public class CoordinatorScoringService {
         UserEntity coordinator = currentCoordinator(authentication);
         RoundEntity round = getRoundOrThrow(roundId);
 
-        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        List<SubmissionEntity> submissions = findCompetitionSubmissions(roundId);
         List<RankingEntity> rankings = new ArrayList<>(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId));
         if (isAdvancementApplied(round, rankings, submissions)) {
             throw new ApiException(HttpStatus.CONFLICT,
@@ -725,7 +961,7 @@ public class CoordinatorScoringService {
         }
 
         List<RankingEntity> previousRankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId);
-        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId);
+        List<SubmissionEntity> submissions = findCompetitionSubmissions(roundId);
         if (isAdvancementApplied(round, previousRankings, submissions)) {
             throw new ApiException(HttpStatus.CONFLICT,
                     "Cannot reopen this round after promotion to the next round has already been applied");
@@ -926,7 +1162,7 @@ public class CoordinatorScoringService {
         HackathonEventEntity event = getEventOrThrow(round.getEventId());
         Optional<RoundEntity> nextRound = nextRoundFor(round);
         List<ScoringCriteriaEntity> criteria = criteriaRepository.findByRoundRoundIdOrderByCriteriaIdAsc(round.getRoundId());
-        List<SubmissionEntity> submissions = submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(round.getRoundId());
+        List<SubmissionEntity> submissions = findCompetitionSubmissions(round.getRoundId());
         List<JudgeAssignmentEntity> assignments = judgeAssignmentRepository.findByRoundRoundIdOrderByTrackAndJudge(round.getRoundId());
         List<JudgeEvaluationEntity> evaluations = judgeEvaluationRepository.findBySubmissionRoundRoundId(round.getRoundId());
         List<ScoreEntity> scores = scoreRepository.findBySubmissionRoundRoundId(round.getRoundId());
@@ -1265,6 +1501,212 @@ public class CoordinatorScoringService {
                 item.ready,
                 item.readinessNote
         );
+    }
+
+    private RoundEntity resolveFinalRound(Integer eventId) {
+        List<RoundEntity> rounds = roundRepository.findByEventIdOrderByRoundOrderAsc(eventId);
+        return rounds.stream()
+                .filter(round -> Boolean.TRUE.equals(round.getFinalRound()))
+                .findFirst()
+                .orElse(rounds.isEmpty() ? null : rounds.get(rounds.size() - 1));
+    }
+
+    private boolean isResultPublished(HackathonEventEntity event) {
+        return event != null && "Ended".equalsIgnoreCase(event.getStatus());
+    }
+
+    private List<SubmissionEntity> findCompetitionSubmissions(Integer roundId) {
+        return submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(roundId).stream()
+                .filter(submission -> !Boolean.TRUE.equals(submission.getCalibration()))
+                .toList();
+    }
+
+    private ResultPublicationDto toResultPublicationDto(HackathonEventEntity event,
+                                                        RoundEntity finalRound,
+                                                        Integer publishedRankingCount,
+                                                        Integer notificationCount,
+                                                        String message) {
+        RoundFinalizationDto finalization = finalRound == null ? null : buildRoundFinalization(finalRound);
+        boolean finalRoundScoreLocked = finalization != null && finalization.scoreLocked();
+        int finalRoundSubmissionCount = finalization == null || finalization.totalSubmissions() == null
+                ? 0
+                : finalization.totalSubmissions();
+        int rankingCount = publishedRankingCount == null ? 0 : publishedRankingCount;
+        boolean rankingSnapshotComplete = finalRound != null
+                && finalRoundSubmissionCount > 0
+                && rankingCount >= finalRoundSubmissionCount;
+        boolean published = isResultPublished(event);
+        boolean canPublish = published
+                || (finalRound != null
+                && finalRoundScoreLocked
+                && finalRoundSubmissionCount > 0
+                && rankingSnapshotComplete);
+        String readinessNote = buildResultPublicationReadinessNote(
+                published,
+                finalRound,
+                finalRoundScoreLocked,
+                finalRoundSubmissionCount,
+                rankingSnapshotComplete
+        );
+
+        return new ResultPublicationDto(
+                event.getEventId(),
+                event.getName(),
+                event.getStatus(),
+                published,
+                event.getPublishedAt(),
+                finalRound == null ? null : finalRound.getRoundId(),
+                finalRound == null ? null : finalRound.getRoundName(),
+                publishedRankingCount,
+                notificationCount,
+                message,
+                finalRoundScoreLocked,
+                finalRoundSubmissionCount,
+                rankingSnapshotComplete,
+                canPublish,
+                readinessNote
+        );
+    }
+
+    private String buildResultPublicationReadinessNote(boolean published,
+                                                       RoundEntity finalRound,
+                                                       boolean finalRoundScoreLocked,
+                                                       int finalRoundSubmissionCount,
+                                                       boolean rankingSnapshotComplete) {
+        if (published) {
+            return "Final results have already been published.";
+        }
+        if (finalRound == null) {
+            return "Configure at least one round before publishing results.";
+        }
+        if (!finalRoundScoreLocked) {
+            return "Finalize the final round (" + finalRound.getRoundName() + ") before publishing event results.";
+        }
+        if (finalRoundSubmissionCount == 0) {
+            return "No final-round submissions are available to publish.";
+        }
+        if (!rankingSnapshotComplete) {
+            return "Final-round ranking snapshot is incomplete. Re-finalize the final round before publishing.";
+        }
+        return "Final results are ready to publish.";
+    }
+
+    private RoundFinalizationDto buildReportableRoundFinalization(Integer roundId, Integer trackId) {
+        RoundEntity round = getRoundOrThrow(roundId);
+        if (trackId != null) {
+            TrackEntity track = trackRepository.findById(trackId)
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Track not found"));
+            if (!Objects.equals(track.getEventId(), round.getEventId())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Track does not belong to the selected round event");
+            }
+        }
+        RoundFinalizationDto finalization = buildRoundFinalization(round);
+        if (!finalization.scoreLocked()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Finalize this round before exporting ranking reports");
+        }
+        if (filterReportRows(finalization, trackId).isEmpty()) {
+            throw new ApiException(HttpStatus.CONFLICT, "No finalized ranking rows are available for this report");
+        }
+        return finalization;
+    }
+
+    private List<FinalizationSubmissionDto> filterReportRows(RoundFinalizationDto finalization, Integer trackId) {
+        return finalization.submissions().stream()
+                .filter(item -> trackId == null || Objects.equals(item.trackId(), trackId))
+                .toList();
+    }
+
+    private List<String> rankingReportHeaders() {
+        return List.of(
+                "event_name",
+                "round_name",
+                "round_order",
+                "track_name",
+                "rank_position",
+                "team_name",
+                "total_score",
+                "qualification_status",
+                "qualified_next_round",
+                "submission_status",
+                "assigned_judge_count",
+                "finalized_judge_count",
+                "readiness_note",
+                "repository_url"
+        );
+    }
+
+    private List<String> rankingReportValues(RoundFinalizationDto finalization, FinalizationSubmissionDto item) {
+        return List.of(
+                stringValue(finalization.eventName()),
+                stringValue(finalization.roundName()),
+                stringValue(finalization.roundOrder()),
+                stringValue(item.trackName()),
+                stringValue(item.rankPosition()),
+                stringValue(item.teamName()),
+                stringValue(item.totalScore()),
+                stringValue(item.qualificationStatus()),
+                stringValue(item.qualifiedNextRound()),
+                stringValue(item.submissionStatus()),
+                stringValue(item.assignedJudgeCount()),
+                stringValue(item.finalizedJudgeCount()),
+                stringValue(item.readinessNote()),
+                stringValue(item.repositoryUrl())
+        );
+    }
+
+    private String escapeHtml(String value) {
+        return stringValue(value)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
+    }
+
+    private Double average(List<Double> values) {
+        if (values == null || values.isEmpty()) {
+            return null;
+        }
+        return values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+    }
+
+    private Double variance(List<Double> values) {
+        if (values == null || values.size() < 2) {
+            return null;
+        }
+        double mean = values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        return values.stream()
+                .mapToDouble(value -> Math.pow(value - mean, 2))
+                .average()
+                .orElse(0);
+    }
+
+    private Double standardDeviation(Double variance) {
+        return variance == null ? null : Math.sqrt(variance);
+    }
+
+    private Double min(List<Double> values) {
+        return values == null || values.isEmpty()
+                ? null
+                : values.stream().mapToDouble(Double::doubleValue).min().orElse(0);
+    }
+
+    private Double max(List<Double> values) {
+        return values == null || values.isEmpty()
+                ? null
+                : values.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+    }
+
+    private Double range(List<Double> values) {
+        Double min = min(values);
+        Double max = max(values);
+        return min == null || max == null ? null : max - min;
+    }
+
+    private Double roundDouble(Double value) {
+        if (value == null || value.isNaN() || value.isInfinite()) {
+            return null;
+        }
+        return BigDecimal.valueOf(value).setScale(4, RoundingMode.HALF_UP).doubleValue();
     }
 
     private AuditLogDto toAuditLogDto(AuditLogEntity entity) {
@@ -1616,6 +2058,110 @@ public class CoordinatorScoringService {
             this.totalScore = totalScore;
             this.ready = ready;
             this.readinessNote = readinessNote;
+        }
+    }
+
+    private final class VarianceBucket {
+        private final Integer trackId;
+        private final String trackName;
+        private final Integer teamId;
+        private final String teamName;
+        private final Integer submissionId;
+        private final Integer criteriaId;
+        private final String criteriaName;
+        private final List<Double> scores = new ArrayList<>();
+
+        private VarianceBucket(ResearchDatasetRowProjection row, FinalizationSubmissionDto submission) {
+            this.trackId = row.getTrackId();
+            this.trackName = row.getTrackName();
+            this.teamId = row.getTeamId();
+            this.teamName = submission == null ? anonymizedCode("TEAM", row.getTeamId()) : submission.teamName();
+            this.submissionId = row.getSubmissionId();
+            this.criteriaId = row.getCriteriaId();
+            this.criteriaName = row.getCriteriaName();
+        }
+
+        private void add(double score) {
+            scores.add(score);
+        }
+
+        private boolean hasComparableScores() {
+            return scores.size() >= 2;
+        }
+
+        private TeamCriterionVarianceDto toDto() {
+            Double variance = variance(scores);
+            return new TeamCriterionVarianceDto(
+                    trackId,
+                    trackName,
+                    teamId,
+                    teamName,
+                    submissionId,
+                    criteriaId,
+                    criteriaName,
+                    scores.size(),
+                    roundDouble(average(scores)),
+                    roundDouble(min(scores)),
+                    roundDouble(max(scores)),
+                    roundDouble(range(scores)),
+                    roundDouble(variance),
+                    roundDouble(standardDeviation(variance))
+            );
+        }
+    }
+
+    private final class CriterionVarianceAccumulator {
+        private final Integer criteriaId;
+        private final String criteriaName;
+        private final String criteriaType;
+        private final BigDecimal criteriaWeight;
+        private final List<Double> scores = new ArrayList<>();
+        private final List<Double> bucketVariances = new ArrayList<>();
+        private final List<Double> bucketRanges = new ArrayList<>();
+        private final Set<Integer> judgeAssignmentIds = new HashSet<>();
+
+        private CriterionVarianceAccumulator(ResearchDatasetRowProjection row) {
+            this.criteriaId = row.getCriteriaId();
+            this.criteriaName = row.getCriteriaName();
+            this.criteriaType = row.getCriteriaType();
+            this.criteriaWeight = row.getCriteriaWeight();
+        }
+
+        private void addScore(double score, Integer judgeAssignmentId) {
+            scores.add(score);
+            if (judgeAssignmentId != null) {
+                judgeAssignmentIds.add(judgeAssignmentId);
+            }
+        }
+
+        private void addBucket(VarianceBucket bucket) {
+            Double variance = variance(bucket.scores);
+            Double range = range(bucket.scores);
+            if (variance != null) {
+                bucketVariances.add(variance);
+            }
+            if (range != null) {
+                bucketRanges.add(range);
+            }
+        }
+
+        private CriterionVarianceDto toDto() {
+            Double averageVariance = average(bucketVariances);
+            return new CriterionVarianceDto(
+                    criteriaId,
+                    criteriaName,
+                    criteriaType,
+                    criteriaWeight,
+                    bucketVariances.size(),
+                    scores.size(),
+                    judgeAssignmentIds.size(),
+                    roundDouble(average(scores)),
+                    roundDouble(min(scores)),
+                    roundDouble(max(scores)),
+                    roundDouble(average(bucketRanges)),
+                    roundDouble(averageVariance),
+                    roundDouble(standardDeviation(averageVariance))
+            );
         }
     }
 

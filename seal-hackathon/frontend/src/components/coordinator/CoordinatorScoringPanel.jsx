@@ -37,9 +37,12 @@ import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import HubRoundedIcon from "@mui/icons-material/HubRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
+import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
+import TableChartRoundedIcon from "@mui/icons-material/TableChartRounded";
 import UndoRoundedIcon from "@mui/icons-material/UndoRounded";
 import { getApiErrorMessage, http } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
@@ -78,6 +81,13 @@ function formatDateTime(value) {
   });
 }
 
+function formatMetric(value, fallback = "--") {
+  if (value === null || value === undefined || value === "") return fallback;
+  const number = Number(value);
+  if (Number.isNaN(number)) return value;
+  return number.toFixed(2);
+}
+
 const EVENT_STATUS_TONE = {
   Ongoing: { bg: "#FFF2E8", color: "#E17C32" },
   Ended: { bg: "#EEF1F6", color: "#64748B" },
@@ -88,6 +98,112 @@ const EXPORT_UNAVAILABLE_MESSAGE = "No criterion-level scores available to expor
 
 function hasScoreValue(item) {
   return item?.totalScore !== null && item?.totalScore !== undefined && item?.totalScore !== "";
+}
+
+const TOOL_BUTTON_SX = {
+  borderRadius: 999,
+  minHeight: 38,
+  px: 1.6,
+  textTransform: "none",
+  fontWeight: 900,
+  boxShadow: "none",
+  whiteSpace: "nowrap",
+  "&:hover": {
+    boxShadow: "none",
+  },
+};
+
+function ActionCluster({ children }) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.75,
+        flexWrap: "wrap",
+        px: 0.6,
+        py: 0.55,
+        border: `1px solid ${brand.colors.line}`,
+        borderRadius: 999,
+        bgcolor: "rgba(255,255,255,0.82)",
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function StatusStrip({ tone = "info", label, children }) {
+  const tones = {
+    success: { bg: "#ECFDF5", border: "#BDEBD8", color: "#047857" },
+    warning: { bg: "#FFF8E7", border: "#FFE1A6", color: "#B45309" },
+    info: { bg: brand.colors.surfaceInfo, border: "#CFE0FF", color: brand.colors.navyMuted },
+    danger: { bg: "#FFF1F0", border: "#FFC9C2", color: brand.colors.danger },
+  };
+  const palette = tones[tone] || tones.info;
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: { xs: "flex-start", md: "center" },
+        justifyContent: "space-between",
+        flexDirection: { xs: "column", md: "row" },
+        gap: 0.8,
+        px: 1.35,
+        py: 1,
+        border: `1px solid ${palette.border}`,
+        borderRadius: brand.radius.md,
+        bgcolor: palette.bg,
+      }}
+    >
+      <Chip
+        size="small"
+        label={label}
+        sx={{
+          height: 26,
+          bgcolor: "#FFFFFF",
+          color: palette.color,
+          fontWeight: 950,
+          border: `1px solid ${palette.border}`,
+        }}
+      />
+      <Typography sx={{ color: palette.color, fontSize: 12.5, fontWeight: 780, lineHeight: 1.45 }}>
+        {children}
+      </Typography>
+    </Box>
+  );
+}
+
+function MetricTile({ label, value, tone = "default" }) {
+  const accent = tone === "hot" ? brand.colors.orange : tone === "good" ? brand.colors.green : brand.colors.blue;
+  return (
+    <Box
+      sx={{
+        p: 1.55,
+        borderRadius: brand.radius.md,
+        border: `1px solid ${brand.colors.line}`,
+        bgcolor: "#FFFFFF",
+        boxShadow: brand.shadow.xs,
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 92,
+        "&:before": {
+          content: '""',
+          position: "absolute",
+          inset: "0 auto 0 0",
+          width: 4,
+          bgcolor: accent,
+        },
+      }}
+    >
+      <Typography sx={{ color: brand.colors.muted, fontSize: 11.5, fontWeight: 950, textTransform: "uppercase" }}>
+        {label}
+      </Typography>
+      <Typography sx={{ color: brand.colors.text, fontSize: 22, fontWeight: 950, mt: 0.7, lineHeight: 1.08 }}>
+        {value}
+      </Typography>
+    </Box>
+  );
 }
 
 function getLeaderboardPresentation(item, finalization) {
@@ -529,9 +645,13 @@ export default function CoordinatorScoringPanel() {
   const [selectedRoundId, setSelectedRoundId] = useState(null);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [finalization, setFinalization] = useState(null);
+  const [resultPublication, setResultPublication] = useState(null);
+  const [varianceDashboard, setVarianceDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [roundLoading, setRoundLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [reportExportLoading, setReportExportLoading] = useState(false);
+  const [varianceLoading, setVarianceLoading] = useState(false);
   const [includeCalibrationExport, setIncludeCalibrationExport] = useState(true);
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, templateId: null, templateName: "" });
   const [manualEliminationState, setManualEliminationState] = useState({
@@ -583,6 +703,16 @@ export default function CoordinatorScoringPanel() {
     () => (activeRankingGroup?.items || []).some(hasScoreValue),
     [activeRankingGroup]
   );
+  const hasReportableRanking = Boolean(finalization?.scoreLocked) && hasRoundExportableScores;
+  const publishReadinessNote = resultPublication?.publishReadinessNote
+    || resultPublication?.message
+    || "Load result publication status before publishing.";
+  const canAttemptPublishResults = Boolean(selectedEventId) && !resultPublication?.resultPublished;
+  const canPublishResults = Boolean(resultPublication?.canPublish) && canAttemptPublishResults;
+  const publicationStatusLabel = resultPublication?.resultPublished
+    ? "Published"
+    : canPublishResults ? "Ready to publish" : "Final round pending";
+  const publicationStatusTone = resultPublication?.resultPublished || canPublishResults ? "success" : "warning";
 
   const loadRoundWorkspace = async (roundId) => {
     if (!roundId) {
@@ -595,6 +725,39 @@ export default function CoordinatorScoringPanel() {
       setFinalization(response.data?.data || null);
     } finally {
       setRoundLoading(false);
+    }
+  };
+
+  const loadResultPublication = async (eventId) => {
+    if (!eventId) {
+      setResultPublication(null);
+      return;
+    }
+    try {
+      const response = await http.get(`/api/coordinator/scoring/events/${eventId}/result-publication`);
+      setResultPublication(response.data?.data || null);
+    } catch {
+      setResultPublication(null);
+    }
+  };
+
+  const loadVarianceDashboard = async (roundId, trackId = null) => {
+    if (!roundId) {
+      setVarianceDashboard(null);
+      return;
+    }
+    setVarianceLoading(true);
+    try {
+      const params = { includeCalibration: includeCalibrationExport };
+      if (trackId) {
+        params.trackId = trackId;
+      }
+      const response = await http.get(`/api/coordinator/scoring/rounds/${roundId}/variance-dashboard`, { params });
+      setVarianceDashboard(response.data?.data || null);
+    } catch {
+      setVarianceDashboard(null);
+    } finally {
+      setVarianceLoading(false);
     }
   };
 
@@ -622,6 +785,10 @@ export default function CoordinatorScoringPanel() {
   useEffect(() => {
     loadBootstrap();
   }, []);
+
+  useEffect(() => {
+    loadResultPublication(selectedEventId);
+  }, [selectedEventId]);
 
   useEffect(() => {
     let mounted = true;
@@ -667,6 +834,7 @@ export default function CoordinatorScoringPanel() {
     const run = async () => {
       if (!selectedRoundId) {
         setFinalization(null);
+        setVarianceDashboard(null);
         return;
       }
       setError("");
@@ -683,6 +851,14 @@ export default function CoordinatorScoringPanel() {
       cancelled = true;
     };
   }, [selectedRoundId]);
+
+  useEffect(() => {
+    if (!selectedRoundId) {
+      setVarianceDashboard(null);
+      return;
+    }
+    loadVarianceDashboard(selectedRoundId, activeRankingGroup?.trackId || null);
+  }, [selectedRoundId, activeRankingGroup?.trackId, includeCalibrationExport]);
 
   useEffect(() => {
     if (rankingGroups.length === 0) {
@@ -718,6 +894,7 @@ export default function CoordinatorScoringPanel() {
       await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/finalize`);
       setSuccess("Round scores finalized and locked.");
       await loadRoundWorkspace(selectedRoundId);
+      await loadResultPublication(selectedEventId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to finalize round scores"));
     }
@@ -730,6 +907,7 @@ export default function CoordinatorScoringPanel() {
       await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/reopen`);
       setSuccess("Round finalization reopened.");
       await loadRoundWorkspace(selectedRoundId);
+      await loadResultPublication(selectedEventId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to reopen round finalization"));
     }
@@ -759,6 +937,69 @@ export default function CoordinatorScoringPanel() {
     }
   };
 
+  const downloadBlob = (data, filename, mimeType) => {
+    const blob = new Blob([data], { type: mimeType });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(href);
+  };
+
+  const handlePublishResults = async () => {
+    if (!selectedEventId) return;
+    setError("");
+    if (!canPublishResults) {
+      setError(publishReadinessNote);
+      return;
+    }
+    try {
+      const response = await http.post(`/api/coordinator/scoring/events/${selectedEventId}/publish-results`);
+      const data = response.data?.data || null;
+      setResultPublication(data);
+      setSuccess(data?.message || "Final results published.");
+      await loadBootstrap();
+      await loadResultPublication(selectedEventId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to publish final results"));
+    }
+  };
+
+  const handleExportRankingReport = async (format, { trackId = null } = {}) => {
+    if (!selectedRoundId) return;
+    if (!hasReportableRanking) {
+      setError("Finalize this round before exporting ranking reports.");
+      setSuccess("");
+      return;
+    }
+    setError("");
+    setReportExportLoading(true);
+    try {
+      const params = {};
+      if (trackId) {
+        params.trackId = trackId;
+      }
+      const response = await http.get(
+        `/api/coordinator/scoring/rounds/${selectedRoundId}/ranking-report.${format}`,
+        { responseType: "blob", params }
+      );
+      const suffix = trackId ? `track-${trackId}` : "round";
+      downloadBlob(
+        response.data,
+        `seal-round-${selectedRoundId}-${suffix}-ranking-report.${format}`,
+        format === "csv" ? "text/csv;charset=utf-8" : "application/vnd.ms-excel;charset=utf-8"
+      );
+      setSuccess(format === "csv" ? "Ranking CSV report exported." : "Excel report exported.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to export ranking report"));
+    } finally {
+      setReportExportLoading(false);
+    }
+  };
+
   const handleExportResearchDataset = async ({ trackId = null } = {}) => {
     if (!selectedRoundId) return;
     const targetGroup = trackId ? rankingGroups.find((group) => group.trackId === trackId) : null;
@@ -783,17 +1024,13 @@ export default function CoordinatorScoringPanel() {
         `/api/coordinator/scoring/rounds/${selectedRoundId}/research-dataset.csv`,
         { responseType: "blob", params }
       );
-      const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
-      const href = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = href;
-      link.download = trackId
-        ? `seal-round-${selectedRoundId}-track-${trackId}-anonymized-scoring.csv`
-        : `seal-round-${selectedRoundId}-anonymized-scoring.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(href);
+      downloadBlob(
+        response.data,
+        trackId
+          ? `seal-round-${selectedRoundId}-track-${trackId}-anonymized-scoring.csv`
+          : `seal-round-${selectedRoundId}-anonymized-scoring.csv`,
+        "text/csv;charset=utf-8"
+      );
       setSuccess("Anonymized scoring dataset exported.");
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to export anonymized scoring dataset"));
@@ -921,116 +1158,155 @@ export default function CoordinatorScoringPanel() {
                     useFlexGap
                     sx={{
                       justifyContent: { xs: "flex-start", lg: "flex-end" },
-                      "& .MuiButton-root": { minHeight: 38 },
+                      alignItems: "center",
+                      maxWidth: 1060,
+                      "& .MuiButton-root": TOOL_BUTTON_SX,
                     }}
                   >
-                    <Button
-                      variant="outlined"
-                      startIcon={<RefreshRoundedIcon />}
-                      onClick={() => loadRoundWorkspace(selectedRoundId)}
-                    >
-                      Refresh
-                    </Button>
-                    <FormControlLabel
-                      control={(
-                        <Checkbox
-                          size="small"
-                          checked={includeCalibrationExport}
-                          onChange={(event) => setIncludeCalibrationExport(event.target.checked)}
-                        />
-                      )}
-                      label="Include calibration"
-                      sx={{
-                        mr: 0.3,
-                        px: 1,
-                        border: `1px solid ${brand.colors.line}`,
-                        borderRadius: 999,
-                        bgcolor: "#FFFFFF",
-                        "& .MuiFormControlLabel-label": { fontSize: 13, fontWeight: 800, color: brand.colors.muted },
-                      }}
-                    />
-                    <Button
-                      variant="outlined"
-                      startIcon={<DownloadRoundedIcon />}
-                      disabled={exportLoading || !hasRoundExportableScores}
-                      title={!hasRoundExportableScores ? EXPORT_UNAVAILABLE_MESSAGE : ""}
-                      onClick={() => handleExportResearchDataset()}
-                    >
-                      {exportLoading ? "Exporting..." : "Export Round CSV"}
-                    </Button>
-                    {activeRankingGroup?.trackId ? (
+                    <ActionCluster>
+                      <Button
+                        variant="outlined"
+                        startIcon={<RefreshRoundedIcon />}
+                        onClick={() => loadRoundWorkspace(selectedRoundId)}
+                      >
+                        Refresh
+                      </Button>
+                      <FormControlLabel
+                        control={(
+                          <Checkbox
+                            size="small"
+                            checked={includeCalibrationExport}
+                            onChange={(event) => setIncludeCalibrationExport(event.target.checked)}
+                          />
+                        )}
+                        label="Calibration"
+                        sx={{
+                          m: 0,
+                          px: 0.8,
+                          pr: 1.15,
+                          height: 34,
+                          borderRadius: 999,
+                          "& .MuiFormControlLabel-label": { fontSize: 12.5, fontWeight: 850, color: brand.colors.muted },
+                        }}
+                      />
+                    </ActionCluster>
+                    <ActionCluster>
                       <Button
                         variant="outlined"
                         startIcon={<DownloadRoundedIcon />}
-                        disabled={exportLoading || !activeTrackHasExportableScores}
-                        title={!activeTrackHasExportableScores ? EXPORT_UNAVAILABLE_MESSAGE : ""}
-                        onClick={() => handleExportResearchDataset({ trackId: activeRankingGroup.trackId })}
+                        disabled={exportLoading || !hasRoundExportableScores}
+                        title={!hasRoundExportableScores ? EXPORT_UNAVAILABLE_MESSAGE : ""}
+                        onClick={() => handleExportResearchDataset()}
                       >
-                        Export Track CSV
+                        {exportLoading ? "Exporting..." : "Round CSV"}
                       </Button>
-                    ) : null}
-                    {!hasRoundExportableScores ? (
-                      <Typography
-                        sx={{
-                          flexBasis: "100%",
-                          color: brand.colors.danger,
-                          fontSize: 12.5,
-                          fontWeight: 750,
-                          textAlign: { xs: "left", lg: "right" },
-                        }}
+                      {activeRankingGroup?.trackId ? (
+                        <Button
+                          variant="outlined"
+                          startIcon={<DownloadRoundedIcon />}
+                          disabled={exportLoading || !activeTrackHasExportableScores}
+                          title={!activeTrackHasExportableScores ? EXPORT_UNAVAILABLE_MESSAGE : ""}
+                          onClick={() => handleExportResearchDataset({ trackId: activeRankingGroup.trackId })}
+                        >
+                          Track CSV
+                        </Button>
+                      ) : null}
+                    </ActionCluster>
+                    <ActionCluster>
+                      <Button
+                        variant="outlined"
+                        startIcon={<TableChartRoundedIcon />}
+                        disabled={reportExportLoading || !hasReportableRanking}
+                        title={!hasReportableRanking ? "Finalize this round before exporting reports." : ""}
+                        onClick={() => handleExportRankingReport("csv")}
                       >
-                        {EXPORT_UNAVAILABLE_MESSAGE}
-                      </Typography>
-                    ) : null}
-                    {finalization.scoreLocked ? (
-                      <>
-                        {!finalization.advancementApplied ? (
-                          <Button
-                            variant="outlined"
-                            color="warning"
-                            startIcon={<GavelRoundedIcon />}
-                            onClick={() => setConfirmState({ open: true, mode: "reopen-round" })}
-                          >
-                            Reopen Finalization
-                          </Button>
-                        ) : null}
-                        {!finalization.qualificationCalculated
-                        && finalization.nextRoundId
-                        && Number(finalization.promotionRuleTopN || 0) > 0 ? (
-                          <Button
-                            variant="contained"
-                            color="success"
-                            startIcon={<AutoFixHighRoundedIcon />}
-                            onClick={() => setConfirmState({ open: true, mode: "qualification-round" })}
-                          >
-                            Calculate Qualification
-                          </Button>
-                        ) : null}
-                        {finalization.qualificationCalculated
-                        && !finalization.advancementApplied
-                        && finalization.nextRoundId ? (
-                          <Button
-                            variant="contained"
-                            startIcon={<AssignmentTurnedInRoundedIcon />}
-                            onClick={() => setConfirmState({ open: true, mode: "advance-round" })}
-                          >
-                            Promote To Next Round
-                          </Button>
-                        ) : null}
-                      </>
-                    ) : (
+                        Ranking CSV
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<TableChartRoundedIcon />}
+                        disabled={reportExportLoading || !hasReportableRanking}
+                        title={!hasReportableRanking ? "Finalize this round before exporting reports." : ""}
+                        onClick={() => handleExportRankingReport("xls")}
+                      >
+                        Excel
+                      </Button>
+                    </ActionCluster>
+                    <ActionCluster>
                       <Button
                         variant="contained"
-                        startIcon={<AssignmentTurnedInRoundedIcon />}
-                        disabled={!finalization.canFinalize}
-                        onClick={() => setConfirmState({ open: true, mode: "finalize-round" })}
+                        color="success"
+                        startIcon={<PublishRoundedIcon />}
+                        disabled={!selectedEventId || resultPublication?.resultPublished}
+                        title={canPublishResults ? "" : publishReadinessNote}
+                        onClick={handlePublishResults}
                       >
-                        Finalize Round
+                        {resultPublication?.resultPublished ? "Published" : "Publish"}
                       </Button>
-                    )}
+                    </ActionCluster>
+                    <ActionCluster>
+                      {finalization.scoreLocked ? (
+                        <>
+                          {!finalization.advancementApplied ? (
+                            <Button
+                              variant="outlined"
+                              color="warning"
+                              startIcon={<GavelRoundedIcon />}
+                              onClick={() => setConfirmState({ open: true, mode: "reopen-round" })}
+                            >
+                              Reopen
+                            </Button>
+                          ) : null}
+                          {!finalization.qualificationCalculated
+                          && finalization.nextRoundId
+                          && Number(finalization.promotionRuleTopN || 0) > 0 ? (
+                            <Button
+                              variant="contained"
+                              color="success"
+                              startIcon={<AutoFixHighRoundedIcon />}
+                              onClick={() => setConfirmState({ open: true, mode: "qualification-round" })}
+                            >
+                              Qualify
+                            </Button>
+                          ) : null}
+                          {finalization.qualificationCalculated
+                          && !finalization.advancementApplied
+                          && finalization.nextRoundId ? (
+                            <Button
+                              variant="contained"
+                              startIcon={<AssignmentTurnedInRoundedIcon />}
+                              onClick={() => setConfirmState({ open: true, mode: "advance-round" })}
+                            >
+                              Promote
+                            </Button>
+                          ) : null}
+                        </>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          startIcon={<AssignmentTurnedInRoundedIcon />}
+                          disabled={!finalization.canFinalize}
+                          onClick={() => setConfirmState({ open: true, mode: "finalize-round" })}
+                        >
+                          Finalize
+                        </Button>
+                      )}
+                    </ActionCluster>
                   </Stack>
                 )}
               >
+                <Stack spacing={1.1} sx={{ mb: 1.5 }}>
+                  {resultPublication ? (
+                    <StatusStrip tone={publicationStatusTone} label={publicationStatusLabel}>
+                      {publishReadinessNote}
+                    </StatusStrip>
+                  ) : null}
+                  {!hasRoundExportableScores ? (
+                    <StatusStrip tone="danger" label="Export unavailable">
+                      {EXPORT_UNAVAILABLE_MESSAGE}
+                    </StatusStrip>
+                  ) : null}
+                </Stack>
                 <Box
                   sx={{
                     border: `1px solid ${brand.colors.line}`,
@@ -1245,6 +1521,148 @@ export default function CoordinatorScoringPanel() {
                     </>
                   ) : null}
                 </Box>
+              </SectionCard>
+            ) : null}
+
+            {currentRound && finalization ? (
+              <SectionCard
+                title="Judge Score Variance Dashboard"
+                description="Compare judge spread per criterion for RBL and scoring consistency checks."
+                action={(
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    flexWrap="wrap"
+                    useFlexGap
+                    justifyContent={{ xs: "flex-start", lg: "flex-end" }}
+                    sx={{ "& .MuiButton-root": TOOL_BUTTON_SX }}
+                  >
+                    <Chip
+                      icon={<BarChartRoundedIcon fontSize="small" />}
+                      label={varianceLoading ? "Calculating..." : `${varianceDashboard?.scoreCount || 0} scores`}
+                      sx={{
+                        height: 34,
+                        fontWeight: 900,
+                        bgcolor: brand.colors.surfaceInfo,
+                        color: brand.colors.navyMuted,
+                        border: `1px solid ${brand.colors.line}`,
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      startIcon={<RefreshRoundedIcon />}
+                      onClick={() => loadVarianceDashboard(selectedRoundId, activeRankingGroup?.trackId || null)}
+                      disabled={varianceLoading}
+                    >
+                      Refresh Variance
+                    </Button>
+                  </Stack>
+                )}
+              >
+                {varianceLoading ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                    <CircularProgress sx={{ color: brand.colors.orange }} />
+                  </Box>
+                ) : !varianceDashboard || (varianceDashboard.criteria || []).length === 0 ? (
+                  <Box className="ms-empty">
+                    <Typography fontWeight={850}>No score variance data yet</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      The dashboard appears after at least two judge scores exist for the same criterion and submission.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={2}>
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" }, gap: 1.2 }}>
+                      {[
+                        ["Average Variance", formatMetric(varianceDashboard.averageVariance), "good"],
+                        ["Highest Variance", formatMetric(varianceDashboard.highestVariance), "hot"],
+                        ["Highest Criterion", varianceDashboard.highestVarianceCriterion || "--", "default"],
+                        ["Compared Teams", varianceDashboard.scoredSubmissionCount || 0, "default"],
+                      ].map(([label, value, tone]) => (
+                        <MetricTile key={label} label={label} value={value} tone={tone} />
+                      ))}
+                    </Box>
+
+                    <TableContainer sx={{ border: `1px solid ${brand.colors.line}`, borderRadius: brand.radius.md, overflow: "hidden" }}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: brand.colors.surfaceSoft }}>
+                            <TableCell sx={{ fontWeight: 900 }}>Criterion</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Scores</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Avg</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Range</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Variance</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Std Dev</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(varianceDashboard.criteria || []).map((item) => (
+                            <TableRow key={item.criteriaId}>
+                              <TableCell>
+                                <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
+                                  {item.criteriaName}
+                                </Typography>
+                                <Typography sx={{ color: brand.colors.muted, fontSize: 12.5 }}>
+                                  {item.criteriaType || "Criterion"} / {formatMetric(item.criteriaWeight)}%
+                                </Typography>
+                              </TableCell>
+                              <TableCell>{item.scoreCount}</TableCell>
+                              <TableCell>{formatMetric(item.averageScore)}</TableCell>
+                              <TableCell>{formatMetric(item.averageRange)}</TableCell>
+                              <TableCell>{formatMetric(item.averageVariance)}</TableCell>
+                              <TableCell>{formatMetric(item.standardDeviation)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+
+                    {(varianceDashboard.teamCriteria || []).length > 0 ? (
+                      <Box>
+                        <Typography sx={{ color: brand.colors.text, fontSize: 17, fontWeight: 950, mb: 1 }}>
+                          Highest team-level spreads
+                        </Typography>
+                        <TableContainer sx={{ border: `1px solid ${brand.colors.line}`, borderRadius: brand.radius.md }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: brand.colors.surfaceSoft }}>
+                                <TableCell sx={{ fontWeight: 900 }}>Team</TableCell>
+                                <TableCell sx={{ fontWeight: 900 }}>Criterion</TableCell>
+                                <TableCell sx={{ fontWeight: 900 }}>Judges</TableCell>
+                                <TableCell sx={{ fontWeight: 900 }}>Min</TableCell>
+                                <TableCell sx={{ fontWeight: 900 }}>Max</TableCell>
+                                <TableCell sx={{ fontWeight: 900 }}>Variance</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {(varianceDashboard.teamCriteria || [])
+                                .slice()
+                                .sort((left, right) => Number(right.variance || 0) - Number(left.variance || 0))
+                                .slice(0, 8)
+                                .map((item) => (
+                                  <TableRow key={`${item.submissionId}-${item.criteriaId}`}>
+                                    <TableCell>
+                                      <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>
+                                        {item.teamName}
+                                      </Typography>
+                                      <Typography sx={{ color: brand.colors.muted, fontSize: 12.5 }}>
+                                        {item.trackName}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell>{item.criteriaName}</TableCell>
+                                    <TableCell>{item.judgeCount}</TableCell>
+                                    <TableCell>{formatMetric(item.minScore)}</TableCell>
+                                    <TableCell>{formatMetric(item.maxScore)}</TableCell>
+                                    <TableCell>{formatMetric(item.variance)}</TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    ) : null}
+                  </Stack>
+                )}
               </SectionCard>
             ) : null}
           </>

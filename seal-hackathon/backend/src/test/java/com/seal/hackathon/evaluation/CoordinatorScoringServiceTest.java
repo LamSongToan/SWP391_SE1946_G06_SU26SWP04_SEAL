@@ -136,6 +136,30 @@ class CoordinatorScoringServiceTest {
     }
 
     @Test
+    void getRoundFinalization_shouldIgnoreCalibrationSubmissionsForCompetitionReadiness() {
+        RankingFixture fixture = seedRankingFixture(false);
+        SubmissionEntity calibration = submission(
+                804,
+                team(904, "Calibration Sample", fixture.alpha.getTeam().getTrack()),
+                fixture.round,
+                LocalDateTime.of(2026, 6, 20, 12, 0)
+        );
+        calibration.setCalibration(true);
+        mockCommonLookups(fixture, List.of(fixture.alpha, fixture.beta, fixture.gamma, calibration));
+        when(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(fixture.round.getRoundId())).thenReturn(List.of());
+
+        RoundFinalizationDto dto = coordinatorScoringService.getRoundFinalization(
+                auth(fixture.coordinator.getEmail()),
+                fixture.round.getRoundId()
+        );
+
+        Assertions.assertEquals(3, dto.totalSubmissions());
+        Assertions.assertTrue(dto.canFinalize());
+        Assertions.assertTrue(dto.submissions().stream()
+                .noneMatch(item -> "Calibration Sample".equals(item.teamName())));
+    }
+
+    @Test
     void finalizeRoundScores_shouldPersistRankingsWithoutPromotingOrEliminatingTeams() {
         RankingFixture fixture = seedRankingFixture(false);
         mockCommonLookups(fixture);
@@ -584,6 +608,10 @@ class CoordinatorScoringServiceTest {
     }
 
     private void mockCommonLookups(RankingFixture fixture) {
+        mockCommonLookups(fixture, List.of(fixture.alpha, fixture.beta, fixture.gamma));
+    }
+
+    private void mockCommonLookups(RankingFixture fixture, List<SubmissionEntity> submissions) {
         when(userRepository.findByEmailIgnoreCase(fixture.coordinator.getEmail())).thenReturn(Optional.of(fixture.coordinator));
         when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
                 fixture.coordinator.getUserId(),
@@ -595,7 +623,7 @@ class CoordinatorScoringServiceTest {
         when(eventRepository.findById(fixture.event.getEventId())).thenReturn(Optional.of(fixture.event));
         when(criteriaRepository.findByRoundRoundIdOrderByCriteriaIdAsc(fixture.round.getRoundId())).thenReturn(fixture.criteria);
         when(submissionRepository.findByRoundRoundIdOrderByTeamTeamNameAsc(fixture.round.getRoundId()))
-                .thenReturn(List.of(fixture.alpha, fixture.beta, fixture.gamma));
+                .thenReturn(submissions);
         when(judgeAssignmentRepository.findByRoundRoundIdOrderByTrackAndJudge(fixture.round.getRoundId()))
                 .thenReturn(fixture.assignments);
         when(judgeEvaluationRepository.findBySubmissionRoundRoundId(fixture.round.getRoundId()))
