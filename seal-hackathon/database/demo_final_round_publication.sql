@@ -203,7 +203,7 @@ VALUES
     (N'Web Velocity', 'WEBV1001', 'web-velocity-finals', 9.20),
     (N'Pixel Raiders', 'WEBV1002', 'pixel-raiders-finals', 8.85),
     (N'Neural Forge', 'AIDT1001', 'neural-forge-finals', 9.35),
-    (N'Signal Stack', 'AIDT1002', 'signal-stack-finals', 8.95);
+    (N'Signal Stack', 'AIDT1002', 'signal-stack-finals', 9.95);
 
 IF EXISTS (
     SELECT 1

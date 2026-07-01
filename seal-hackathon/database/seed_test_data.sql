@@ -637,7 +637,6 @@ VALUES
     (N'AI Pioneers', @summer_track_ai_id, 'AIDT1001', 'ai-pioneers', 8.75, 0),
     (N'Neural Forge', @summer_track_ai_id, 'AIDT1002', 'neural-forge', 8.40, 0),
     (N'Signal Stack', @summer_track_ai_id, 'AIDT1003', 'signal-stack', 7.95, 0),
-    (N'Insight Loop', @summer_track_ai_id, 'AIDT1004', 'insight-loop', 7.65, 0),
     (N'Data Vision', @summer_track_ai_id, 'AIDT1005', 'data-vision', 7.55, 0);
 
 DECLARE

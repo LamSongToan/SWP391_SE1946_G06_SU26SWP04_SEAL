@@ -6,6 +6,7 @@ import com.seal.hackathon.auth.entity.UserRoleEntity;
 import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.repository.UserRoleRepository;
 import com.seal.hackathon.common.ApiException;
+import com.seal.hackathon.evaluation.dto.AwardSelectionRequest;
 import com.seal.hackathon.evaluation.dto.FinalizationSubmissionDto;
 import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
@@ -274,7 +275,7 @@ class CoordinatorScoringServiceTest {
             persistedRankings.addAll(saved);
             return saved;
         });
-        when(submissionRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(submissionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         RoundFinalizationDto dto = coordinatorScoringService.applyRoundAdvancement(
                 auth(fixture.coordinator.getEmail()),
@@ -298,6 +299,85 @@ class CoordinatorScoringServiceTest {
         Assertions.assertTrue(alpha.qualifiedNextRound());
         Assertions.assertEquals(RankingQualificationStatus.QUALIFIED.getDbValue(), alpha.qualificationStatus());
         Assertions.assertEquals(RankingQualificationStatus.ELIMINATED.getDbValue(), beta.qualificationStatus());
+    }
+
+    @Test
+    void generateAwardRecommendations_shouldUseFinalizedRankingsAndExcludeOnlyDisqualifiedTeams() {
+        RankingFixture fixture = seedRankingFixture(false);
+        fixture.round.setScoreLocked(true);
+        fixture.event.setAwardsJson("[{\"awardName\":\"Champion\",\"quantity\":1},{\"awardName\":\"Best Innovation\",\"quantity\":1}]");
+        when(userRepository.findByEmailIgnoreCase(fixture.coordinator.getEmail())).thenReturn(Optional.of(fixture.coordinator));
+        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
+                fixture.coordinator.getUserId(),
+                RoleType.COORDINATOR.getDbValue()
+        )).thenReturn(Optional.of(fixture.coordinatorRole));
+        when(roundRepository.findById(fixture.round.getRoundId())).thenReturn(Optional.of(fixture.round));
+        when(eventRepository.findById(fixture.event.getEventId())).thenReturn(Optional.of(fixture.event));
+
+        RankingEntity alphaRanking = ranking(fixture.round, fixture.alpha.getTeam(), 1, "90.00");
+        alphaRanking.setQualificationStatus(RankingQualificationStatus.PENDING.getDbValue());
+        RankingEntity betaRanking = ranking(fixture.round, fixture.beta.getTeam(), 2, "82.00");
+        betaRanking.setQualificationStatus(RankingQualificationStatus.DISQUALIFIED.getDbValue());
+        RankingEntity gammaRanking = ranking(fixture.round, fixture.gamma.getTeam(), 3, "76.00");
+        gammaRanking.setQualificationStatus(RankingQualificationStatus.PENDING.getDbValue());
+        List<RankingEntity> persistedRankings = new ArrayList<>(List.of(alphaRanking, betaRanking, gammaRanking));
+
+        when(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(fixture.round.getRoundId()))
+                .thenAnswer(invocation -> persistedRankings);
+
+        var awards = coordinatorScoringService.generateAwardRecommendations(
+                auth(fixture.coordinator.getEmail()),
+                fixture.round.getRoundId()
+        );
+
+        Assertions.assertTrue(awards.canManage());
+        Assertions.assertEquals(2, awards.awards().size());
+        Assertions.assertEquals("Champion", awards.awards().get(0).awardName());
+        Assertions.assertEquals(1, awards.awards().get(0).winners().size());
+        Assertions.assertEquals("Alpha", awards.awards().get(0).winners().get(0).teamName());
+        Assertions.assertEquals("Best Innovation", awards.awards().get(1).awardName());
+        Assertions.assertEquals(1, awards.awards().get(1).winners().size());
+        Assertions.assertEquals("Gamma", awards.awards().get(1).winners().get(0).teamName());
+    }
+
+    @Test
+    void confirmAwardRecommendations_shouldPersistSelectedWinnersAndReturnUpdatedRecommendations() {
+        RankingFixture fixture = seedRankingFixture(false);
+        fixture.round.setScoreLocked(true);
+        fixture.event.setAwardsJson("[{\"awardName\":\"Champion\",\"quantity\":1},{\"awardName\":\"Best Innovation\",\"quantity\":1}]");
+        when(userRepository.findByEmailIgnoreCase(fixture.coordinator.getEmail())).thenReturn(Optional.of(fixture.coordinator));
+        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
+                fixture.coordinator.getUserId(),
+                RoleType.COORDINATOR.getDbValue()
+        )).thenReturn(Optional.of(fixture.coordinatorRole));
+        when(roundRepository.findById(fixture.round.getRoundId())).thenReturn(Optional.of(fixture.round));
+        when(eventRepository.findById(fixture.event.getEventId())).thenReturn(Optional.of(fixture.event));
+        when(eventRepository.save(any(HackathonEventEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RankingEntity alphaRanking = ranking(fixture.round, fixture.alpha.getTeam(), 1, "90.00");
+        alphaRanking.setQualificationStatus(RankingQualificationStatus.PENDING.getDbValue());
+        RankingEntity betaRanking = ranking(fixture.round, fixture.beta.getTeam(), 2, "82.00");
+        betaRanking.setQualificationStatus(RankingQualificationStatus.DISQUALIFIED.getDbValue());
+        RankingEntity gammaRanking = ranking(fixture.round, fixture.gamma.getTeam(), 3, "76.00");
+        gammaRanking.setQualificationStatus(RankingQualificationStatus.PENDING.getDbValue());
+        List<RankingEntity> persistedRankings = new ArrayList<>(List.of(alphaRanking, betaRanking, gammaRanking));
+
+        when(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(fixture.round.getRoundId()))
+                .thenAnswer(invocation -> persistedRankings);
+
+        var confirmed = coordinatorScoringService.confirmAwardRecommendations(
+                auth(fixture.coordinator.getEmail()),
+                fixture.round.getRoundId(),
+                List.of(
+                        new AwardSelectionRequest("Champion", List.of(fixture.alpha.getTeam().getTeamId())),
+                        new AwardSelectionRequest("Best Innovation", List.of(fixture.gamma.getTeam().getTeamId()))
+                )
+        );
+
+        Assertions.assertTrue(confirmed.canManage());
+        Assertions.assertEquals(2, confirmed.awards().size());
+        Assertions.assertEquals(List.of(fixture.alpha.getTeam().getTeamId()), confirmed.awards().get(0).selectedWinnerTeamIds());
+        Assertions.assertEquals(List.of(fixture.gamma.getTeam().getTeamId()), confirmed.awards().get(1).selectedWinnerTeamIds());
     }
 
     @Test

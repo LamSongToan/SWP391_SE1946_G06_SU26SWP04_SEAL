@@ -1,11 +1,15 @@
 package com.seal.hackathon.evaluation.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seal.hackathon.auth.entity.RoleType;
 import com.seal.hackathon.auth.entity.UserEntity;
 import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.repository.UserRoleRepository;
 import com.seal.hackathon.common.ApiException;
 import com.seal.hackathon.evaluation.dto.AuditLogDto;
+import com.seal.hackathon.evaluation.dto.AwardRecommendationSummaryDto;
+import com.seal.hackathon.evaluation.dto.AwardSelectionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaDefinitionDto;
 import com.seal.hackathon.evaluation.dto.CriteriaDefinitionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
@@ -36,6 +40,7 @@ import com.seal.hackathon.evaluation.repository.JudgeEvaluationRepository;
 import com.seal.hackathon.evaluation.repository.RankingRepository;
 import com.seal.hackathon.evaluation.repository.ScoreRepository;
 import com.seal.hackathon.evaluation.repository.ScoringCriteriaRepository;
+import com.seal.hackathon.event.dto.EventWizardAwardRequest;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.RoundEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
@@ -109,6 +114,7 @@ public class CoordinatorScoringService {
     private final AuditLogRepository auditLogRepository;
     private final AuditLogService auditLogService;
     private final EventUpdateNotificationService notificationService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public CoordinatorScoringService(UserRepository userRepository,
                                      UserRoleRepository userRoleRepository,
@@ -314,6 +320,127 @@ public class CoordinatorScoringService {
     public RoundFinalizationDto getRoundFinalization(Authentication authentication, Integer roundId) {
         currentCoordinator(authentication);
         return buildRoundFinalization(getRoundOrThrow(roundId));
+    }
+
+    @Transactional(readOnly = true)
+    public AwardRecommendationSummaryDto generateAwardRecommendations(Authentication authentication, Integer roundId) {
+        currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+        HackathonEventEntity event = getEventOrThrow(round.getEventId());
+        List<RankingEntity> rankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId);
+        List<AwardRecommendationSummaryDto.AwardRecommendationDto> awardDtos = new ArrayList<>();
+
+        List<com.seal.hackathon.event.dto.EventWizardAwardRequest> configuredAwards = readAwards(event.getAwardsJson());
+        if (configuredAwards.isEmpty()) {
+            return new AwardRecommendationSummaryDto(false, List.of());
+        }
+
+        List<RankingEntity> eligibleRankings = rankings.stream()
+                .filter(item -> {
+                    if (item.getRankPosition() == null || item.getRankPosition() <= 0) {
+                        return false;
+                    }
+                    try {
+                        RankingQualificationStatus status = RankingQualificationStatus.from(item.getQualificationStatus());
+                        return status != RankingQualificationStatus.DISQUALIFIED;
+                    } catch (IllegalArgumentException ex) {
+                        return true;
+                    }
+                })
+                .sorted(Comparator.comparing(RankingEntity::getRankPosition, Comparator.nullsLast(Integer::compareTo)))
+                .toList();
+
+        int nextEligibleIndex = 0;
+        for (com.seal.hackathon.event.dto.EventWizardAwardRequest award : configuredAwards) {
+            List<AwardRecommendationSummaryDto.AwardWinnerDto> winners = new ArrayList<>();
+            int quantity = Math.max(1, award.quantity() == null ? 1 : award.quantity());
+            for (int slot = 0; slot < quantity && nextEligibleIndex < eligibleRankings.size(); slot += 1) {
+                RankingEntity ranking = eligibleRankings.get(nextEligibleIndex);
+                nextEligibleIndex += 1;
+                winners.add(new AwardRecommendationSummaryDto.AwardWinnerDto(
+                        ranking.getTeam().getTeamId(),
+                        ranking.getTeam().getTeamName(),
+                        ranking.getRankPosition(),
+                        ranking.getTotalScore(),
+                        ranking.getQualificationStatus()
+                ));
+            }
+            awardDtos.add(new AwardRecommendationSummaryDto.AwardRecommendationDto(
+                    award.awardName(),
+                    quantity,
+                    winners,
+                    List.of()
+            ));
+        }
+
+        return new AwardRecommendationSummaryDto(Boolean.TRUE.equals(round.getScoreLocked()), awardDtos);
+    }
+
+    @Transactional
+    public AwardRecommendationSummaryDto confirmAwardRecommendations(Authentication authentication,
+                                                                     Integer roundId,
+                                                                     List<AwardSelectionRequest> selections) {
+        currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+        HackathonEventEntity event = getEventOrThrow(round.getEventId());
+
+        List<EventWizardAwardRequest> configuredAwards = readAwards(event.getAwardsJson());
+        if (configuredAwards.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "At least one award must be configured before confirming winners.");
+        }
+
+        Map<String, List<Integer>> selectedByAward = selections == null ? Map.of() : selections.stream()
+                .filter(selection -> selection != null && selection.awardName() != null && !selection.awardName().isBlank())
+                .collect(Collectors.toMap(
+                        AwardSelectionRequest::awardName,
+                        selection -> selection.winnerTeamIds() == null ? List.of() : selection.winnerTeamIds().stream().filter(Objects::nonNull).toList(),
+                        (left, right) -> right,
+                        LinkedHashMap::new
+                ));
+
+        List<AwardRecommendationSummaryDto.AwardRecommendationDto> updatedAwards = new ArrayList<>();
+        List<RankingEntity> rankings = rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(roundId);
+        Map<Integer, RankingEntity> rankingByTeamId = rankings.stream()
+                .filter(ranking -> ranking.getTeam() != null)
+                .collect(Collectors.toMap(ranking -> ranking.getTeam().getTeamId(), Function.identity(), (left, right) -> left, LinkedHashMap::new));
+
+        for (EventWizardAwardRequest award : configuredAwards) {
+            List<Integer> selectedWinnerTeamIds = selectedByAward.getOrDefault(award.awardName(), List.of());
+            List<AwardRecommendationSummaryDto.AwardWinnerDto> winners = new ArrayList<>();
+            for (Integer teamId : selectedWinnerTeamIds) {
+                RankingEntity ranking = rankingByTeamId.get(teamId);
+                if (ranking == null || ranking.getTeam() == null) {
+                    continue;
+                }
+                winners.add(new AwardRecommendationSummaryDto.AwardWinnerDto(
+                        ranking.getTeam().getTeamId(),
+                        ranking.getTeam().getTeamName(),
+                        ranking.getRankPosition(),
+                        ranking.getTotalScore(),
+                        ranking.getQualificationStatus()
+                ));
+            }
+            updatedAwards.add(new AwardRecommendationSummaryDto.AwardRecommendationDto(
+                    award.awardName(),
+                    Math.max(1, award.quantity() == null ? 1 : award.quantity()),
+                    winners,
+                    selectedWinnerTeamIds
+            ));
+        }
+
+        event.setAwardsJson(writeAwardSelectionSummary(event.getAwardsJson(), updatedAwards));
+        eventRepository.save(event);
+        auditLogService.record(
+                currentCoordinator(authentication),
+                "AWARD_SELECTION_CONFIRMED",
+                TARGET_ENTITY_EVENT,
+                round.getEventId(),
+                null,
+                updatedAwards.stream().map(award -> award.awardName() + "=" + award.selectedWinnerTeamIds()).toList(),
+                "Confirmed award winners for round " + roundId
+        );
+
+        return new AwardRecommendationSummaryDto(Boolean.TRUE.equals(round.getScoreLocked()), updatedAwards);
     }
 
     @Transactional(readOnly = true)
@@ -732,8 +859,11 @@ public class CoordinatorScoringService {
         LocalDateTime calculatedAt = LocalDateTime.now();
 
         for (RankingEntity ranking : rankings) {
-            if (RankingQualificationStatus.from(ranking.getQualificationStatus()) == RankingQualificationStatus.DISQUALIFIED) {
+            RankingQualificationStatus currentStatus = RankingQualificationStatus.from(ranking.getQualificationStatus());
+            if (currentStatus == RankingQualificationStatus.DISQUALIFIED) {
                 ranking.setQualifiedNextRound(false);
+                ranking.setQualificationStatus(RankingQualificationStatus.DISQUALIFIED.getDbValue());
+                ranking.setQualificationCalculatedAt(calculatedAt);
                 continue;
             }
             boolean qualified = ranking.getRankPosition() != null && ranking.getRankPosition() <= topN;
@@ -785,43 +915,67 @@ public class CoordinatorScoringService {
             throw new ApiException(HttpStatus.CONFLICT, "Promotion and elimination have already been applied for this round");
         }
 
-        List<Map<String, Object>> previousRankings = rankings.stream()
-                .map(this::toRankingMap)
-                .toList();
-        Map<Integer, SubmissionEntity> submissionsByTeamId = submissions.stream()
-                .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
+        try {
+            List<Map<String, Object>> previousRankings = rankings.stream()
+                    .map(this::toRankingMap)
+                    .toList();
+            Map<Integer, SubmissionEntity> submissionsByTeamId = submissions.stream()
+                    .collect(Collectors.toMap(item -> item.getTeam().getTeamId(), Function.identity(), (left, right) -> left));
 
-        for (RankingEntity ranking : rankings) {
-            RankingQualificationStatus qualificationStatus = RankingQualificationStatus.from(ranking.getQualificationStatus());
-            SubmissionEntity submission = submissionsByTeamId.get(ranking.getTeam().getTeamId());
-            if (submission == null) {
-                continue;
+            List<SubmissionEntity> validSubmissions = new ArrayList<>();
+
+            for (RankingEntity ranking : rankings) {
+                RankingQualificationStatus qualificationStatus = RankingQualificationStatus.from(ranking.getQualificationStatus());
+                SubmissionEntity submission = submissionsByTeamId.get(ranking.getTeam().getTeamId());
+                if (submission == null) {
+                    continue;
+                }
+                
+                if (qualificationStatus == RankingQualificationStatus.DISQUALIFIED) {
+                    ranking.setQualifiedNextRound(false);
+                    submission.setStatus(SubmissionStatus.DISQUALIFIED.getDbValue());
+                } else if (qualificationStatus == RankingQualificationStatus.QUALIFIED) {
+                    ranking.setQualifiedNextRound(true);
+                    submission.setStatus(SubmissionStatus.QUALIFIED.getDbValue());
+                } else if (qualificationStatus == RankingQualificationStatus.ELIMINATED) {
+                    ranking.setQualifiedNextRound(false);
+                    submission.setStatus(SubmissionStatus.ELIMINATED.getDbValue());
+                }
+                validSubmissions.add(submission);
             }
-            if (qualificationStatus == RankingQualificationStatus.DISQUALIFIED) {
-                ranking.setQualifiedNextRound(false);
-                submission.setStatus(SubmissionStatus.DISQUALIFIED.getDbValue());
-            } else if (qualificationStatus == RankingQualificationStatus.QUALIFIED) {
-                ranking.setQualifiedNextRound(true);
-                submission.setStatus(SubmissionStatus.QUALIFIED.getDbValue());
-            } else if (qualificationStatus == RankingQualificationStatus.ELIMINATED) {
-                ranking.setQualifiedNextRound(false);
-                submission.setStatus(SubmissionStatus.ELIMINATED.getDbValue());
+
+            rankingRepository.saveAll(rankings);
+            
+            // Try to save submissions, but skip any that fail validation
+            for (SubmissionEntity submission : validSubmissions) {
+                try {
+                    submissionRepository.save(submission);
+                } catch (Exception subEx) {
+                    String msg = subEx.getMessage() != null ? subEx.getMessage() : subEx.toString();
+                    if (msg.contains("team with")) {
+                        System.err.println("[WARN-ADVANCE] Skipped submission for team " + submission.getTeam().getTeamName() + 
+                                " - team validation failed: " + msg);
+                    } else {
+                        throw subEx;
+                    }
+                }
             }
+
+            auditLogService.record(
+                    coordinator,
+                    "ROUND_ADVANCEMENT_APPLIED",
+                    TARGET_ENTITY_ROUND,
+                    roundId,
+                    previousRankings,
+                    rankings.stream().map(this::toRankingMap).toList(),
+                    "Promoted qualified teams to " + nextRound.getRoundName() + " and eliminated the remaining teams for round " + round.getRoundName()
+            );
+            return buildRoundFinalization(round);
+        } catch (Exception ex) {
+            System.err.println("[ERROR-ADVANCE] Round advancement failed for round " + roundId + ": " + ex.getMessage());
+            ex.printStackTrace();
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to apply round advancement: " + ex.getMessage());
         }
-
-        rankingRepository.saveAll(rankings);
-        submissionRepository.saveAll(new ArrayList<>(submissionsByTeamId.values()));
-
-        auditLogService.record(
-                coordinator,
-                "ROUND_ADVANCEMENT_APPLIED",
-                TARGET_ENTITY_ROUND,
-                roundId,
-                previousRankings,
-                rankings.stream().map(this::toRankingMap).toList(),
-                "Promoted qualified teams to " + nextRound.getRoundName() + " and eliminated the remaining teams for round " + round.getRoundName()
-        );
-        return buildRoundFinalization(round);
     }
 
     @Transactional
@@ -1378,6 +1532,33 @@ public class CoordinatorScoringService {
         }
     }
 
+    private List<EventWizardAwardRequest> readAwards(String rawAwards) {
+        if (rawAwards == null || rawAwards.isBlank()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readValue(rawAwards, new TypeReference<List<EventWizardAwardRequest>>() {
+            });
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private String writeAwardSelectionSummary(String existingAwards, List<AwardRecommendationSummaryDto.AwardRecommendationDto> awards) {
+        try {
+            List<Map<String, Object>> payload = awards.stream().map(award -> {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("awardName", award.awardName());
+                item.put("quantity", award.quantity());
+                item.put("winnerTeamIds", award.selectedWinnerTeamIds());
+                return item;
+            }).toList();
+            return objectMapper.writeValueAsString(payload);
+        } catch (Exception ex) {
+            return existingAwards == null ? "[]" : existingAwards;
+        }
+    }
+
     private boolean hasCompleteCriteriaScores(List<ScoringCriteriaEntity> criteria, List<ScoreEntity> scores) {
         Set<Integer> scoreCriteriaIds = scores.stream()
                 .map(score -> score.getCriteria().getCriteriaId())
@@ -1749,10 +1930,19 @@ public class CoordinatorScoringService {
     }
 
     private boolean isQualificationCalculated(List<RankingEntity> rankings) {
-        return !rankings.isEmpty() && rankings.stream()
-                .map(RankingEntity::getQualificationStatus)
-                .map(RankingQualificationStatus::from)
-                .allMatch(status -> status != RankingQualificationStatus.PENDING);
+        if (rankings.isEmpty()) {
+            return false;
+        }
+        return rankings.stream()
+                .allMatch(ranking -> {
+                    try {
+                        RankingQualificationStatus status = RankingQualificationStatus.from(ranking.getQualificationStatus());
+                        return status != RankingQualificationStatus.PENDING;
+                    } catch (IllegalArgumentException ex) {
+                        // Invalid status - treat as not calculated
+                        return false;
+                    }
+                });
     }
 
     private boolean hasCompleteRankingSnapshot(List<RankingEntity> rankings,
