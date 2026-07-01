@@ -654,6 +654,13 @@ export default function CoordinatorScoringPanel() {
   const [reportExportLoading, setReportExportLoading] = useState(false);
   const [varianceLoading, setVarianceLoading] = useState(false);
   const [includeCalibrationExport, setIncludeCalibrationExport] = useState(true);
+  const [calibrationSessions, setCalibrationSessions] = useState([]);
+  const [selectedCalibrationSessionId, setSelectedCalibrationSessionId] = useState(null);
+  const [calibrationAnalytics, setCalibrationAnalytics] = useState(null);
+  const [calibrationSessionTitle, setCalibrationSessionTitle] = useState("");
+  const [calibrationSessionStatus, setCalibrationSessionStatus] = useState("Active");
+  const [calibrationScoreDraft, setCalibrationScoreDraft] = useState({ submissionId: "", criteriaId: "", judgeAssignmentId: "", scoreValue: "", comment: "" });
+  const [calibrationSaving, setCalibrationSaving] = useState(false);
   const [awardSelectionState, setAwardSelectionState] = useState({ open: false, awardName: null, selectedTeamIds: [] });
   const [savingAwards, setSavingAwards] = useState(false);
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, templateId: null, templateName: "" });
@@ -881,6 +888,44 @@ export default function CoordinatorScoringPanel() {
   }, [selectedRoundId, activeRankingGroup?.trackId, includeCalibrationExport]);
 
   useEffect(() => {
+    const loadCalibrationSessions = async () => {
+      if (!selectedRoundId) {
+        setCalibrationSessions([]);
+        setSelectedCalibrationSessionId(null);
+        setCalibrationAnalytics(null);
+        return;
+      }
+      try {
+        const response = await http.get(`/api/coordinator/scoring/rounds/${selectedRoundId}/calibration-sessions`);
+        const nextSessions = response.data?.data || [];
+        setCalibrationSessions(nextSessions);
+        if (!selectedCalibrationSessionId && nextSessions.length > 0) {
+          setSelectedCalibrationSessionId(nextSessions[0].sessionId);
+        }
+      } catch {
+        setCalibrationSessions([]);
+      }
+    };
+    loadCalibrationSessions();
+  }, [selectedRoundId]);
+
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      if (!selectedCalibrationSessionId) {
+        setCalibrationAnalytics(null);
+        return;
+      }
+      try {
+        const response = await http.get(`/api/coordinator/scoring/calibration-sessions/${selectedCalibrationSessionId}/analytics`);
+        setCalibrationAnalytics(response.data?.data || null);
+      } catch {
+        setCalibrationAnalytics(null);
+      }
+    };
+    loadAnalytics();
+  }, [selectedCalibrationSessionId]);
+
+  useEffect(() => {
     if (rankingGroups.length === 0) {
       setSelectedTrackId(null);
       return;
@@ -1105,6 +1150,53 @@ export default function CoordinatorScoringPanel() {
       await loadAwardRecommendations(selectedRoundId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to undo team disqualification"));
+    }
+  };
+
+  const handleCreateCalibrationSession = async () => {
+    if (!selectedRoundId) return;
+    setError("");
+    setCalibrationSaving(true);
+    try {
+      const response = await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/calibration-sessions`, {
+        title: calibrationSessionTitle.trim(),
+        status: calibrationSessionStatus,
+      });
+      const nextSession = response.data?.data || null;
+      if (nextSession) {
+        setCalibrationSessions((current) => [nextSession, ...current]);
+        setSelectedCalibrationSessionId(nextSession.sessionId);
+        setCalibrationSessionTitle("");
+        setCalibrationSessionStatus("Active");
+        setSuccess("Calibration session created.");
+      }
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to create calibration session"));
+    } finally {
+      setCalibrationSaving(false);
+    }
+  };
+
+  const handleSaveCalibrationScore = async () => {
+    if (!selectedCalibrationSessionId) return;
+    setError("");
+    setCalibrationSaving(true);
+    try {
+      await http.post(`/api/coordinator/scoring/calibration-sessions/${selectedCalibrationSessionId}/scores`, {
+        submissionId: Number(calibrationScoreDraft.submissionId),
+        criteriaId: Number(calibrationScoreDraft.criteriaId),
+        judgeAssignmentId: Number(calibrationScoreDraft.judgeAssignmentId),
+        scoreValue: Number(calibrationScoreDraft.scoreValue),
+        comment: calibrationScoreDraft.comment,
+      });
+      setCalibrationScoreDraft({ submissionId: "", criteriaId: "", judgeAssignmentId: "", scoreValue: "", comment: "" });
+      setSuccess("Calibration score saved.");
+      const response = await http.get(`/api/coordinator/scoring/calibration-sessions/${selectedCalibrationSessionId}/analytics`);
+      setCalibrationAnalytics(response.data?.data || null);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to save calibration score"));
+    } finally {
+      setCalibrationSaving(false);
     }
   };
 
@@ -1580,6 +1672,95 @@ export default function CoordinatorScoringPanel() {
                     </>
                   ) : null}
                 </Box>
+              </SectionCard>
+            ) : null}
+
+            {currentRound ? (
+              <SectionCard
+                title="Calibration Sessions"
+                description="Create a short calibration round so judges can align before the official scoring pass."
+              >
+                <Stack spacing={2}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1.2fr 0.7fr auto" }, gap: 1.2 }}>
+                    <TextField
+                      label="Session title"
+                      value={calibrationSessionTitle}
+                      onChange={(event) => setCalibrationSessionTitle(event.target.value)}
+                      placeholder="Mindset calibration"
+                    />
+                    <TextField
+                      label="Status"
+                      value={calibrationSessionStatus}
+                      onChange={(event) => setCalibrationSessionStatus(event.target.value)}
+                    />
+                    <Button variant="contained" onClick={handleCreateCalibrationSession} disabled={calibrationSaving || !calibrationSessionTitle.trim()}>
+                      {calibrationSaving ? "Saving..." : "Create session"}
+                    </Button>
+                  </Box>
+                  <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+                    <TextField
+                      select
+                      label="Active session"
+                      value={selectedCalibrationSessionId || ""}
+                      onChange={(event) => setSelectedCalibrationSessionId(event.target.value)}
+                      sx={{ minWidth: 220 }}
+                    >
+                      {calibrationSessions.map((session) => (
+                        <MenuItem key={session.sessionId} value={session.sessionId}>
+                          {session.title}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="Submission ID"
+                      value={calibrationScoreDraft.submissionId}
+                      onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, submissionId: event.target.value }))}
+                    />
+                    <TextField
+                      label="Criterion ID"
+                      value={calibrationScoreDraft.criteriaId}
+                      onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, criteriaId: event.target.value }))}
+                    />
+                    <TextField
+                      label="Judge assignment ID"
+                      value={calibrationScoreDraft.judgeAssignmentId}
+                      onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, judgeAssignmentId: event.target.value }))}
+                    />
+                    <TextField
+                      label="Score"
+                      value={calibrationScoreDraft.scoreValue}
+                      onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, scoreValue: event.target.value }))}
+                    />
+                  </Stack>
+                  <TextField
+                    label="Comment"
+                    multiline
+                    minRows={2}
+                    value={calibrationScoreDraft.comment}
+                    onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, comment: event.target.value }))}
+                  />
+                  <Button variant="outlined" onClick={handleSaveCalibrationScore} disabled={calibrationSaving}>Save calibration score</Button>
+                  {calibrationAnalytics ? (
+                    <Box sx={{ border: `1px solid ${brand.colors.line}`, borderRadius: brand.radius.md, p: 1.5, bgcolor: brand.colors.surfaceSoft }}>
+                      <Typography sx={{ fontWeight: 900, mb: 0.8 }}>Session analytics</Typography>
+                      <Typography sx={{ color: brand.colors.muted, mb: 1 }}>
+                        {calibrationAnalytics.scoreCount} score(s) • avg {formatMetric(calibrationAnalytics.averageScore)} • range {formatMetric(calibrationAnalytics.minScore)}-{formatMetric(calibrationAnalytics.maxScore)}
+                      </Typography>
+                      {calibrationAnalytics.scores?.length ? (
+                        <Stack spacing={0.7}>
+                          {calibrationAnalytics.scores.map((score) => (
+                            <Box key={score.scoreId} sx={{ bgcolor: "#FFFFFF", borderRadius: 2, p: 1, border: `1px solid ${brand.colors.line}` }}>
+                              <Typography sx={{ fontWeight: 800 }}>{score.teamName} • {score.criteriaName}</Typography>
+                              <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>{formatMetric(score.scoreValue)} • {score.comment || "No comment"}</Typography>
+                            </Box>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Typography sx={{ color: brand.colors.muted }}>No calibration scores yet.</Typography>
+                      )}
+                    </Box>
+                  ) : null}
+                </Stack>
               </SectionCard>
             ) : null}
 

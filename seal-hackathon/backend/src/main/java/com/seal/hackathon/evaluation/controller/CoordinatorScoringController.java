@@ -3,6 +3,10 @@ package com.seal.hackathon.evaluation.controller;
 import com.seal.hackathon.common.ApiResponse;
 import com.seal.hackathon.evaluation.dto.AuditLogDto;
 import com.seal.hackathon.evaluation.dto.AwardRecommendationSummaryDto;
+import com.seal.hackathon.evaluation.dto.CalibrationAnalyticsDto;
+import com.seal.hackathon.evaluation.dto.CalibrationScoreRequest;
+import com.seal.hackathon.evaluation.dto.CalibrationSessionDto;
+import com.seal.hackathon.evaluation.dto.CalibrationSessionRequest;
 import com.seal.hackathon.evaluation.dto.AwardSelectionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateRequest;
@@ -42,6 +46,48 @@ public class CoordinatorScoringController {
 
     public CoordinatorScoringController(CoordinatorScoringService coordinatorScoringService) {
         this.coordinatorScoringService = coordinatorScoringService;
+    }
+
+    @GetMapping("/rounds/{roundId}/calibration-sessions")
+    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE')")
+    public ResponseEntity<ApiResponse<List<CalibrationSessionDto>>> listCalibrationSessions(Authentication authentication,
+                                                                                             @PathVariable Integer roundId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Calibration sessions fetched",
+                coordinatorScoringService.listCalibrationSessions(authentication, roundId)
+        ));
+    }
+
+    @PostMapping("/rounds/{roundId}/calibration-sessions")
+    @PreAuthorize("hasRole('COORDINATOR')")
+    public ResponseEntity<ApiResponse<CalibrationSessionDto>> createCalibrationSession(Authentication authentication,
+                                                                                      @PathVariable Integer roundId,
+                                                                                      @Valid @RequestBody CalibrationSessionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                "Calibration session created",
+                coordinatorScoringService.createCalibrationSession(authentication, roundId, request)
+        ));
+    }
+
+    @PostMapping("/calibration-sessions/{sessionId}/scores")
+    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE')")
+    public ResponseEntity<ApiResponse<CalibrationSessionDto>> upsertCalibrationScore(Authentication authentication,
+                                                                                     @PathVariable Integer sessionId,
+                                                                                     @Valid @RequestBody CalibrationScoreRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Calibration score saved",
+                coordinatorScoringService.upsertCalibrationScore(authentication, sessionId, request)
+        ));
+    }
+
+    @GetMapping("/calibration-sessions/{sessionId}/analytics")
+    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE')")
+    public ResponseEntity<ApiResponse<CalibrationAnalyticsDto>> getCalibrationAnalytics(Authentication authentication,
+                                                                                         @PathVariable Integer sessionId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Calibration analytics fetched",
+                coordinatorScoringService.getCalibrationAnalytics(authentication, sessionId)
+        ));
     }
 
     @GetMapping("/rounds/{roundId}/criteria")

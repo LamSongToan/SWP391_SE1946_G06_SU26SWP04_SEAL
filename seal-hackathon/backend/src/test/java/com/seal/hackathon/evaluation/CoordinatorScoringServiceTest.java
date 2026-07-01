@@ -7,9 +7,15 @@ import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.repository.UserRoleRepository;
 import com.seal.hackathon.common.ApiException;
 import com.seal.hackathon.evaluation.dto.AwardSelectionRequest;
+import com.seal.hackathon.evaluation.dto.CalibrationAnalyticsDto;
+import com.seal.hackathon.evaluation.dto.CalibrationScoreRequest;
+import com.seal.hackathon.evaluation.dto.CalibrationSessionDto;
+import com.seal.hackathon.evaluation.dto.CalibrationSessionRequest;
 import com.seal.hackathon.evaluation.dto.FinalizationSubmissionDto;
 import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
+import com.seal.hackathon.evaluation.entity.CalibrationScoreEntity;
+import com.seal.hackathon.evaluation.entity.CalibrationSessionEntity;
 import com.seal.hackathon.evaluation.entity.JudgeAssignmentEntity;
 import com.seal.hackathon.evaluation.entity.JudgeEvaluationEntity;
 import com.seal.hackathon.evaluation.entity.RankingEntity;
@@ -17,6 +23,8 @@ import com.seal.hackathon.evaluation.entity.RankingQualificationStatus;
 import com.seal.hackathon.evaluation.entity.ScoreEntity;
 import com.seal.hackathon.evaluation.entity.ScoringCriteriaEntity;
 import com.seal.hackathon.evaluation.repository.AuditLogRepository;
+import com.seal.hackathon.evaluation.repository.CalibrationScoreRepository;
+import com.seal.hackathon.evaluation.repository.CalibrationSessionRepository;
 import com.seal.hackathon.evaluation.repository.CriteriaTemplateRepository;
 import com.seal.hackathon.evaluation.repository.JudgeAssignmentRepository;
 import com.seal.hackathon.evaluation.repository.JudgeEvaluationRepository;
@@ -95,6 +103,10 @@ class CoordinatorScoringServiceTest {
     private AuditLogRepository auditLogRepository;
     @Mock
     private AuditLogService auditLogService;
+    @Mock
+    private CalibrationSessionRepository calibrationSessionRepository;
+    @Mock
+    private CalibrationScoreRepository calibrationScoreRepository;
 
     @InjectMocks
     private CoordinatorScoringService coordinatorScoringService;
@@ -158,6 +170,141 @@ class CoordinatorScoringServiceTest {
         Assertions.assertTrue(dto.canFinalize());
         Assertions.assertTrue(dto.submissions().stream()
                 .noneMatch(item -> "Calibration Sample".equals(item.teamName())));
+    }
+
+    @Test
+    void createCalibrationSessionAndAnalytics_shouldStoreScoresAndSummaries() {
+        RankingFixture fixture = seedRankingFixture(false);
+        when(userRepository.findByEmailIgnoreCase(fixture.coordinator.getEmail())).thenReturn(Optional.of(fixture.coordinator));
+        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
+                fixture.coordinator.getUserId(),
+                RoleType.COORDINATOR.getDbValue()
+        )).thenReturn(Optional.of(fixture.coordinatorRole));
+        when(roundRepository.findById(fixture.round.getRoundId())).thenReturn(Optional.of(fixture.round));
+        ScoringCriteriaEntity criterion = new ScoringCriteriaEntity();
+        criterion.setCriteriaId(11);
+        criterion.setCriteriaName("Creativity");
+        criterion.setWeight(BigDecimal.TEN);
+        criterion.setCriteriaType("Core");
+        criterion.setRound(fixture.round);
+
+        JudgeAssignmentEntity assignment = new JudgeAssignmentEntity();
+        assignment.setJudgeAssignmentId(21);
+        assignment.setRound(fixture.round);
+        assignment.setTrack(fixture.alpha.getTeam().getTrack());
+        assignment.setJudgeRole(fixture.coordinatorRole);
+
+        CalibrationSessionEntity persistedSession = new CalibrationSessionEntity();
+        persistedSession.setSessionId(100);
+        List<CalibrationScoreEntity> persistedScores = new ArrayList<>();
+
+        when(criteriaRepository.findById(11)).thenReturn(Optional.of(criterion));
+        when(judgeAssignmentRepository.findById(21)).thenReturn(Optional.of(assignment));
+        when(submissionRepository.findDetailedById(fixture.alpha.getSubmissionId())).thenReturn(Optional.of(fixture.alpha));
+        when(calibrationSessionRepository.save(any(CalibrationSessionEntity.class))).thenAnswer(invocation -> {
+            CalibrationSessionEntity session = invocation.getArgument(0);
+            session.setSessionId(100);
+            persistedSession.setSessionId(session.getSessionId());
+            return session;
+        });
+        when(calibrationScoreRepository.save(any(CalibrationScoreEntity.class))).thenAnswer(invocation -> {
+            CalibrationScoreEntity score = invocation.getArgument(0);
+            score.setCalibrationScoreId(1000);
+            persistedScores.add(score);
+            return score;
+        });
+        when(calibrationSessionRepository.findById(100)).thenReturn(Optional.of(persistedSession));
+        when(calibrationScoreRepository.findBySessionSessionIdOrderByScoredAtDesc(100)).thenAnswer(invocation -> new ArrayList<>(persistedScores));
+
+        CalibrationSessionDto session = coordinatorScoringService.createCalibrationSession(
+                auth(fixture.coordinator.getEmail()),
+                fixture.round.getRoundId(),
+                new CalibrationSessionRequest("Mindset calibration", "Active")
+        );
+        Assertions.assertEquals("Mindset calibration", session.title());
+
+        coordinatorScoringService.upsertCalibrationScore(
+                auth(fixture.coordinator.getEmail()),
+                session.sessionId(),
+                new CalibrationScoreRequest(
+                        fixture.alpha.getSubmissionId(),
+                        11,
+                        21,
+                        new BigDecimal("8.50"),
+                        "Good baseline"
+                )
+        );
+
+        CalibrationAnalyticsDto analytics = coordinatorScoringService.getCalibrationAnalytics(
+                auth(fixture.coordinator.getEmail()),
+                session.sessionId()
+        );
+        Assertions.assertEquals(1, analytics.scoreCount());
+        Assertions.assertEquals(new BigDecimal("8.50"), analytics.averageScore());
+    }
+
+    @Test
+    void judgeCanSaveCalibrationScoreAndViewAnalytics() {
+        RankingFixture fixture = seedRankingFixture(false);
+        UserEntity judge = user("judge@seal.test", 30);
+        UserRoleEntity judgeRole = role(300, judge, RoleType.JUDGE);
+        ScoringCriteriaEntity criterion = new ScoringCriteriaEntity();
+        criterion.setCriteriaId(12);
+        criterion.setCriteriaName("Creativity");
+        criterion.setWeight(BigDecimal.TEN);
+        criterion.setCriteriaType("Core");
+        criterion.setRound(fixture.round);
+
+        JudgeAssignmentEntity assignment = new JudgeAssignmentEntity();
+        assignment.setJudgeAssignmentId(22);
+        assignment.setRound(fixture.round);
+        assignment.setTrack(fixture.alpha.getTeam().getTrack());
+        assignment.setJudgeRole(judgeRole);
+
+        CalibrationSessionEntity session = new CalibrationSessionEntity();
+        session.setSessionId(101);
+        List<CalibrationScoreEntity> persistedScores = new ArrayList<>();
+
+        when(userRepository.findByEmailIgnoreCase(judge.getEmail())).thenReturn(Optional.of(judge));
+        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
+                judge.getUserId(),
+                RoleType.COORDINATOR.getDbValue()
+        )).thenReturn(Optional.empty());
+        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
+                judge.getUserId(),
+                RoleType.JUDGE.getDbValue()
+        )).thenReturn(Optional.of(judgeRole));
+        when(criteriaRepository.findById(12)).thenReturn(Optional.of(criterion));
+        when(judgeAssignmentRepository.findById(22)).thenReturn(Optional.of(assignment));
+        when(submissionRepository.findDetailedById(fixture.alpha.getSubmissionId())).thenReturn(Optional.of(fixture.alpha));
+        when(calibrationSessionRepository.findById(101)).thenReturn(Optional.of(session));
+        when(calibrationScoreRepository.save(any(CalibrationScoreEntity.class))).thenAnswer(invocation -> {
+            CalibrationScoreEntity score = invocation.getArgument(0);
+            score.setCalibrationScoreId(2000);
+            persistedScores.add(score);
+            return score;
+        });
+        when(calibrationScoreRepository.findBySessionSessionIdOrderByScoredAtDesc(101)).thenAnswer(invocation -> new ArrayList<>(persistedScores));
+
+        coordinatorScoringService.upsertCalibrationScore(
+                auth(judge.getEmail()),
+                101,
+                new CalibrationScoreRequest(
+                        fixture.alpha.getSubmissionId(),
+                        12,
+                        22,
+                        new BigDecimal("8.25"),
+                        "Aligned"
+                )
+        );
+
+        CalibrationAnalyticsDto analytics = coordinatorScoringService.getCalibrationAnalytics(
+                auth(judge.getEmail()),
+                101
+        );
+
+        Assertions.assertEquals(1, analytics.scoreCount());
+        Assertions.assertEquals(new BigDecimal("8.25"), analytics.averageScore());
     }
 
     @Test

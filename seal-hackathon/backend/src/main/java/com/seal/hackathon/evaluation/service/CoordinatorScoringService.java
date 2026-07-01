@@ -10,6 +10,11 @@ import com.seal.hackathon.common.ApiException;
 import com.seal.hackathon.evaluation.dto.AuditLogDto;
 import com.seal.hackathon.evaluation.dto.AwardRecommendationSummaryDto;
 import com.seal.hackathon.evaluation.dto.AwardSelectionRequest;
+import com.seal.hackathon.evaluation.dto.CalibrationAnalyticsDto;
+import com.seal.hackathon.evaluation.dto.CalibrationScoreDto;
+import com.seal.hackathon.evaluation.dto.CalibrationScoreRequest;
+import com.seal.hackathon.evaluation.dto.CalibrationSessionDto;
+import com.seal.hackathon.evaluation.dto.CalibrationSessionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaDefinitionDto;
 import com.seal.hackathon.evaluation.dto.CriteriaDefinitionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
@@ -25,6 +30,8 @@ import com.seal.hackathon.evaluation.dto.ResultPublicationDto;
 import com.seal.hackathon.evaluation.dto.ScoreVarianceDashboardDto;
 import com.seal.hackathon.evaluation.dto.TeamCriterionVarianceDto;
 import com.seal.hackathon.evaluation.entity.AuditLogEntity;
+import com.seal.hackathon.evaluation.entity.CalibrationScoreEntity;
+import com.seal.hackathon.evaluation.entity.CalibrationSessionEntity;
 import com.seal.hackathon.evaluation.entity.CriteriaTemplateEntity;
 import com.seal.hackathon.evaluation.entity.CriteriaTemplateItemEntity;
 import com.seal.hackathon.evaluation.entity.JudgeAssignmentEntity;
@@ -34,6 +41,8 @@ import com.seal.hackathon.evaluation.entity.RankingQualificationStatus;
 import com.seal.hackathon.evaluation.entity.ScoreEntity;
 import com.seal.hackathon.evaluation.entity.ScoringCriteriaEntity;
 import com.seal.hackathon.evaluation.repository.AuditLogRepository;
+import com.seal.hackathon.evaluation.repository.CalibrationScoreRepository;
+import com.seal.hackathon.evaluation.repository.CalibrationSessionRepository;
 import com.seal.hackathon.evaluation.repository.CriteriaTemplateRepository;
 import com.seal.hackathon.evaluation.repository.JudgeAssignmentRepository;
 import com.seal.hackathon.evaluation.repository.JudgeEvaluationRepository;
@@ -114,6 +123,8 @@ public class CoordinatorScoringService {
     private final AuditLogRepository auditLogRepository;
     private final AuditLogService auditLogService;
     private final EventUpdateNotificationService notificationService;
+    private final CalibrationSessionRepository calibrationSessionRepository;
+    private final CalibrationScoreRepository calibrationScoreRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public CoordinatorScoringService(UserRepository userRepository,
@@ -131,7 +142,9 @@ public class CoordinatorScoringService {
                                      RankingRepository rankingRepository,
                                      AuditLogRepository auditLogRepository,
                                      AuditLogService auditLogService,
-                                     EventUpdateNotificationService notificationService) {
+                                     EventUpdateNotificationService notificationService,
+                                     CalibrationSessionRepository calibrationSessionRepository,
+                                     CalibrationScoreRepository calibrationScoreRepository) {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.eventRepository = eventRepository;
@@ -148,6 +161,80 @@ public class CoordinatorScoringService {
         this.auditLogRepository = auditLogRepository;
         this.auditLogService = auditLogService;
         this.notificationService = notificationService;
+        this.calibrationSessionRepository = calibrationSessionRepository;
+        this.calibrationScoreRepository = calibrationScoreRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CalibrationSessionDto> listCalibrationSessions(Authentication authentication, Integer roundId) {
+        currentUserWithAnyScoringRole(authentication);
+        getRoundOrThrow(roundId);
+        return calibrationSessionRepository.findByRoundRoundIdOrderByCreatedAtDesc(roundId)
+                .stream()
+                .map(this::toCalibrationSessionDto)
+                .toList();
+    }
+
+    @Transactional
+    public CalibrationSessionDto createCalibrationSession(Authentication authentication,
+                                                          Integer roundId,
+                                                          CalibrationSessionRequest request) {
+        currentCoordinator(authentication);
+        RoundEntity round = getRoundOrThrow(roundId);
+        CalibrationSessionEntity session = new CalibrationSessionEntity();
+        session.setRound(round);
+        session.setTitle(normalizeRequired(request.title(), "Session title"));
+        session.setStatus(normalizeOptional(request.status()));
+        session.setCreatedAt(LocalDateTime.now());
+        return toCalibrationSessionDto(calibrationSessionRepository.save(session));
+    }
+
+    @Transactional
+    public CalibrationSessionDto upsertCalibrationScore(Authentication authentication,
+                                                        Integer sessionId,
+                                                        CalibrationScoreRequest request) {
+        currentUserWithAnyScoringRole(authentication);
+        CalibrationSessionEntity session = calibrationSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Calibration session not found"));
+        SubmissionEntity submission = submissionRepository.findDetailedById(request.submissionId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Submission not found"));
+        ScoringCriteriaEntity criteria = criteriaRepository.findById(request.criteriaId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Criterion not found"));
+        JudgeAssignmentEntity assignment = judgeAssignmentRepository.findById(request.judgeAssignmentId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Judge assignment not found"));
+
+        CalibrationScoreEntity score = new CalibrationScoreEntity();
+        score.setSession(session);
+        score.setSubmission(submission);
+        score.setCriteria(criteria);
+        score.setJudgeAssignment(assignment);
+        score.setScoreValue(request.scoreValue().setScale(2, RoundingMode.HALF_UP));
+        score.setComment(normalizeOptional(request.comment()));
+        score.setScoredAt(LocalDateTime.now());
+        calibrationScoreRepository.save(score);
+        return toCalibrationSessionDto(session);
+    }
+
+    @Transactional(readOnly = true)
+    public CalibrationAnalyticsDto getCalibrationAnalytics(Authentication authentication, Integer sessionId) {
+        currentUserWithAnyScoringRole(authentication);
+        CalibrationSessionEntity session = calibrationSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Calibration session not found"));
+        List<CalibrationScoreEntity> scores = calibrationScoreRepository.findBySessionSessionIdOrderByScoredAtDesc(sessionId);
+        List<CalibrationScoreDto> scoreDtos = scores.stream().map(this::toCalibrationScoreDto).toList();
+        BigDecimal average = scoreDtos.isEmpty() ? BigDecimal.ZERO : scoreDtos.stream()
+                .map(CalibrationScoreDto::scoreValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(scoreDtos.size()), 2, RoundingMode.HALF_UP);
+        BigDecimal min = scoreDtos.isEmpty() ? BigDecimal.ZERO : scoreDtos.stream()
+                .map(CalibrationScoreDto::scoreValue)
+                .min(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+        BigDecimal max = scoreDtos.isEmpty() ? BigDecimal.ZERO : scoreDtos.stream()
+                .map(CalibrationScoreDto::scoreValue)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+        return new CalibrationAnalyticsDto(session.getSessionId(), scoreDtos.size(), average, min, max, scoreDtos);
     }
 
     @Transactional(readOnly = true)
@@ -2210,6 +2297,26 @@ public class CoordinatorScoringService {
         return user;
     }
 
+    private UserEntity currentUserWithAnyScoringRole(Authentication authentication) {
+        if (authentication == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+        UserEntity user = userRepository.findByEmailIgnoreCase(authentication.getName())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+        boolean hasCoordinator = userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
+                user.getUserId(),
+                RoleType.COORDINATOR.getDbValue()
+        ).isPresent();
+        boolean hasJudge = userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
+                user.getUserId(),
+                RoleType.JUDGE.getDbValue()
+        ).isPresent();
+        if (!hasCoordinator && !hasJudge) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Scoring role is required");
+        }
+        return user;
+    }
+
     private String normalizeRequired(String value, String fieldName) {
         String normalized = value == null ? "" : value.trim();
         if (normalized.isBlank()) {
@@ -2223,6 +2330,31 @@ public class CoordinatorScoringService {
             return null;
         }
         return value.trim();
+    }
+
+    private CalibrationSessionDto toCalibrationSessionDto(CalibrationSessionEntity session) {
+        Integer roundId = session.getRound() == null ? null : session.getRound().getRoundId();
+        return new CalibrationSessionDto(
+                session.getSessionId(),
+                roundId,
+                session.getTitle(),
+                session.getStatus(),
+                session.getCreatedAt()
+        );
+    }
+
+    private CalibrationScoreDto toCalibrationScoreDto(CalibrationScoreEntity score) {
+        return new CalibrationScoreDto(
+                score.getCalibrationScoreId(),
+                score.getSubmission().getSubmissionId(),
+                score.getSubmission().getTeam().getTeamName(),
+                score.getCriteria().getCriteriaId(),
+                score.getCriteria().getCriteriaName(),
+                score.getJudgeAssignment().getJudgeAssignmentId(),
+                score.getScoreValue(),
+                score.getComment(),
+                score.getScoredAt()
+        );
     }
 
     private static final class RoundSubmissionSnapshot {

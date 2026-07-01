@@ -6,11 +6,11 @@ import {
   Card,
   CardContent,
   Chip,
-  LinearProgress,
   CircularProgress,
   Divider,
   FormControl,
   InputLabel,
+  LinearProgress,
   MenuItem,
   Select,
   Stack,
@@ -48,6 +48,13 @@ function formatDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatMetric(value, fallback = "--") {
+  if (value === null || value === undefined || value === "") return fallback;
+  const number = Number(value);
+  if (Number.isNaN(number)) return value;
+  return number.toFixed(2);
 }
 
 function buildScoreState(criteria = []) {
@@ -481,6 +488,11 @@ export default function EvaluationWorkspacePanel({ role, type }) {
   const [feedbackText, setFeedbackText] = useState("");
   const [mentorFeedbackText, setMentorFeedbackText] = useState("");
   const [feedbackHistory, setFeedbackHistory] = useState([]);
+  const [calibrationSessions, setCalibrationSessions] = useState([]);
+  const [selectedCalibrationSessionId, setSelectedCalibrationSessionId] = useState(null);
+  const [calibrationAnalytics, setCalibrationAnalytics] = useState(null);
+  const [calibrationScoreDraft, setCalibrationScoreDraft] = useState({ criteriaId: "", scoreValue: "", comment: "" });
+  const [calibrationSaving, setCalibrationSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -566,6 +578,67 @@ export default function EvaluationWorkspacePanel({ role, type }) {
     }
   };
 
+  const loadCalibrationSessions = async (roundId) => {
+    if (!roundId) {
+      setCalibrationSessions([]);
+      setSelectedCalibrationSessionId(null);
+      setCalibrationAnalytics(null);
+      return;
+    }
+    try {
+      const response = await http.get(`/api/coordinator/scoring/rounds/${roundId}/calibration-sessions`);
+      const nextSessions = response.data?.data || [];
+      setCalibrationSessions(nextSessions);
+      setSelectedCalibrationSessionId((current) => {
+        if (current && nextSessions.some((session) => session.sessionId === current)) {
+          return current;
+        }
+        return nextSessions[0]?.sessionId || null;
+      });
+    } catch (err) {
+      setCalibrationSessions([]);
+      setSelectedCalibrationSessionId(null);
+      setCalibrationAnalytics(null);
+      setError(getApiErrorMessage(err, "Failed to load calibration sessions"));
+    }
+  };
+
+  const loadCalibrationAnalytics = async (sessionId) => {
+    if (!sessionId) {
+      setCalibrationAnalytics(null);
+      return;
+    }
+    try {
+      const response = await http.get(`/api/coordinator/scoring/calibration-sessions/${sessionId}/analytics`);
+      setCalibrationAnalytics(response.data?.data || null);
+    } catch (err) {
+      setCalibrationAnalytics(null);
+      setError(getApiErrorMessage(err, "Failed to load calibration analytics"));
+    }
+  };
+
+  const saveCalibrationScore = async () => {
+    if (!selectedSubmission?.submissionId || !selectedCalibrationSessionId || !calibrationScoreDraft.criteriaId) return;
+    setCalibrationSaving(true);
+    setError("");
+    try {
+      await http.post(`/api/coordinator/scoring/calibration-sessions/${selectedCalibrationSessionId}/scores`, {
+        submissionId: selectedSubmission.submissionId,
+        criteriaId: Number(calibrationScoreDraft.criteriaId),
+        judgeAssignmentId: scoreForm?.judgeAssignmentId,
+        scoreValue: Number(calibrationScoreDraft.scoreValue),
+        comment: calibrationScoreDraft.comment.trim() || null,
+      });
+      setCalibrationScoreDraft({ criteriaId: calibrationScoreDraft.criteriaId, scoreValue: "", comment: "" });
+      setSuccess("Calibration score saved.");
+      await loadCalibrationAnalytics(selectedCalibrationSessionId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to save calibration score"));
+    } finally {
+      setCalibrationSaving(false);
+    }
+  };
+
   useEffect(() => {
     loadDashboard();
   }, [role]);
@@ -582,6 +655,40 @@ export default function EvaluationWorkspacePanel({ role, type }) {
       loadFeedback(selectedSubmission);
     }
   }, [selectedSubmission?.submissionId, isJudge]);
+
+  useEffect(() => {
+    if (!isJudge) {
+      setCalibrationSessions([]);
+      setSelectedCalibrationSessionId(null);
+      setCalibrationAnalytics(null);
+      return;
+    }
+    if (!selectedSubmission?.roundId) {
+      setCalibrationSessions([]);
+      setSelectedCalibrationSessionId(null);
+      setCalibrationAnalytics(null);
+      return;
+    }
+    loadCalibrationSessions(selectedSubmission.roundId);
+  }, [isJudge, selectedSubmission?.roundId]);
+
+  useEffect(() => {
+    if (!isJudge) return;
+    if (!selectedCalibrationSessionId) {
+      setCalibrationAnalytics(null);
+      return;
+    }
+    loadCalibrationAnalytics(selectedCalibrationSessionId);
+  }, [isJudge, selectedCalibrationSessionId]);
+
+  useEffect(() => {
+    if (scoreForm?.criteria?.length && !calibrationScoreDraft.criteriaId) {
+      setCalibrationScoreDraft((current) => ({
+        ...current,
+        criteriaId: String(scoreForm.criteria[0].criteriaId),
+      }));
+    }
+  }, [scoreForm?.criteria]);
 
   useEffect(() => {
     if (loading) return;
@@ -850,6 +957,77 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                           onFinalize={() => setConfirmFinalize(true)}
                           saving={saving}
                         />
+                      ) : null}
+
+                      {isJudge ? (
+                        <Box className="eval-subpanel">
+                          <Typography variant="h6" fontWeight={850} sx={{ mb: 1.2 }}>Calibration Session</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.4 }}>
+                            Use a shared session to align your mindset before final scoring.
+                          </Typography>
+                          {calibrationSessions.length === 0 ? (
+                            <Box className="eval-empty-inline">No calibration sessions are available for this round yet.</Box>
+                          ) : (
+                            <>
+                              <FormControl size="small" fullWidth sx={{ mb: 1.4 }}>
+                                <InputLabel>Session</InputLabel>
+                                <Select
+                                  label="Session"
+                                  value={selectedCalibrationSessionId || ""}
+                                  onChange={(event) => setSelectedCalibrationSessionId(event.target.value)}
+                                >
+                                  {calibrationSessions.map((session) => (
+                                    <MenuItem key={session.sessionId} value={session.sessionId}>
+                                      {session.title || `Session ${session.sessionId}`}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                              <Stack direction={{ xs: "column", md: "row" }} spacing={1.4} sx={{ mb: 1.4 }}>
+                                <FormControl size="small" sx={{ minWidth: 220 }}>
+                                  <InputLabel>Criterion</InputLabel>
+                                  <Select
+                                    label="Criterion"
+                                    value={calibrationScoreDraft.criteriaId}
+                                    onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, criteriaId: event.target.value }))}
+                                  >
+                                    {(scoreForm?.criteria || []).map((criterion) => (
+                                      <MenuItem key={criterion.criteriaId} value={String(criterion.criteriaId)}>
+                                        {criterion.criteriaName}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                                <TextField
+                                  size="small"
+                                  label="Score"
+                                  type="number"
+                                  inputProps={{ min: 0, max: 10, step: 0.25 }}
+                                  value={calibrationScoreDraft.scoreValue}
+                                  onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, scoreValue: event.target.value }))}
+                                />
+                              </Stack>
+                              <TextField
+                                size="small"
+                                label="Calibration note"
+                                fullWidth
+                                multiline
+                                minRows={2}
+                                value={calibrationScoreDraft.comment}
+                                onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, comment: event.target.value }))}
+                                sx={{ mb: 1.4 }}
+                              />
+                              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+                                <Typography variant="body2" color="text.secondary">
+                                  {calibrationAnalytics ? `${calibrationAnalytics.scoreCount} score(s) • avg ${formatMetric(calibrationAnalytics.averageScore)} • range ${formatMetric(calibrationAnalytics.minScore)}-${formatMetric(calibrationAnalytics.maxScore)}` : "No analytics yet."}
+                                </Typography>
+                                <Button variant="outlined" size="small" onClick={() => saveCalibrationScore()} disabled={calibrationSaving || !calibrationScoreDraft.criteriaId || calibrationScoreDraft.scoreValue === ""}>
+                                  {calibrationSaving ? "Saving..." : "Save calibration score"}
+                                </Button>
+                              </Stack>
+                            </>
+                          )}
+                        </Box>
                       ) : null}
 
                       <Box className="eval-subpanel eval-scroll-target" ref={feedbackSectionRef}>
