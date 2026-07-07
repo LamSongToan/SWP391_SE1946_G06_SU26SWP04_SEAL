@@ -13,6 +13,7 @@ import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
+import com.seal.hackathon.event.service.EventUpdateNotificationService;
 import com.seal.hackathon.submission.entity.SubmissionEntity;
 import com.seal.hackathon.submission.repository.SubmissionRepository;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
@@ -57,6 +58,7 @@ public class TeamService {
     private final HackathonEventRepository eventRepository;
     private final SubmissionRepository submissionRepository;
     private final AuditLogService auditLogService;
+    private final EventUpdateNotificationService notificationService;
 
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository memberRepository,
@@ -66,7 +68,8 @@ public class TeamService {
                        TrackRepository trackRepository,
                        HackathonEventRepository eventRepository,
                        SubmissionRepository submissionRepository,
-                       AuditLogService auditLogService) {
+                       AuditLogService auditLogService,
+                       EventUpdateNotificationService notificationService) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.invitationRepository = invitationRepository;
@@ -76,6 +79,7 @@ public class TeamService {
         this.eventRepository = eventRepository;
         this.submissionRepository = submissionRepository;
         this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -100,7 +104,14 @@ public class TeamService {
         HackathonEventEntity event = getEventOrThrow(eventId);
         return trackRepository.findByEventIdOrderByTrackIdAsc(eventId)
                 .stream()
-                .map(track -> new TrackDto(track.getTrackId(), track.getEventId(), track.getName()))
+                .map(track -> new TrackDto(
+                        track.getTrackId(),
+                        track.getEventId(),
+                        track.getName(),
+                        track.getMinTeams(),
+                        track.getMaxTeams(),
+                        teamRepository.countByTrackTrackId(track.getTrackId())
+                ))
                 .toList();
     }
 
@@ -130,12 +141,12 @@ public class TeamService {
         }
 
         long memberCount = memberRepository.countByTeamTeamId(teamId);
-        if (memberCount < MIN_TEAM_SIZE || memberCount > MAX_TEAM_SIZE) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "A team must have 3 to 5 members before registering");
-        }
-
         HackathonEventEntity event = getEventOrThrow(request.eventId());
         requireEventRegistrationAvailable(event);
+        if (memberCount < minTeamSize(event) || memberCount > maxTeamSize(event)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "A team must have "
+                    + minTeamSize(event) + " to " + maxTeamSize(event) + " members before registering");
+        }
 
         List<TeamMemberEntity> members = memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(teamId);
         for (TeamMemberEntity member : members) {
@@ -170,7 +181,7 @@ public class TeamService {
         TeamEntity team = getTeamOrThrow(teamId);
         requireLeader(team, leader);
         requireTeamRegistrationOpen(team);
-        requireAvailableInvitationSlot(teamId);
+        requireAvailableInvitationSlot(team);
 
         UserEntity invitedUser = findUserByIdentifier(identifier);
         requireActiveAccount(invitedUser);
@@ -223,7 +234,7 @@ public class TeamService {
         requireInvitee(invitation, student);
         requirePending(invitation);
         requireTeamRegistrationOpen(invitation.getTeam());
-        requireAvailableSlot(invitation.getTeam().getTeamId());
+        requireAvailableSlot(invitation.getTeam());
         validateCanJoin(invitation.getTeam(), student);
 
         addMember(invitation.getTeam(), student);
@@ -270,7 +281,7 @@ public class TeamService {
         TeamEntity team = teamRepository.findByJoinCodeIgnoreCase(joinCode)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Invalid team join code"));
         requireTeamRegistrationOpen(team);
-        requireAvailableSlot(team.getTeamId());
+        requireAvailableSlot(team);
         validateCanJoin(team, student);
         addMember(team, student);
         updateTeamMembershipStatus(team);
@@ -383,15 +394,41 @@ public class TeamService {
     }
 
     private void updateTeamMembershipStatus(TeamEntity team) {
+        String previousStatus = team.getStatus();
         long memberCount = memberRepository.countByTeamTeamId(team.getTeamId());
-        team.setStatus(resolveTeamStatus(memberCount));
+        HackathonEventEntity activeEvent = getActiveEvent(team);
+        int minSize = activeEvent == null ? MIN_TEAM_SIZE : minTeamSize(activeEvent);
+        int maxSize = activeEvent == null ? MAX_TEAM_SIZE : maxTeamSize(activeEvent);
+        boolean valid = memberCount >= minSize && memberCount <= maxSize;
+        team.setStatus(valid ? TEAM_STATUS_READY : TEAM_STATUS_FORMING);
         teamRepository.save(team);
+        if (activeEvent != null
+                && TEAM_STATUS_READY.equalsIgnoreCase(String.valueOf(previousStatus))
+                && !valid) {
+            notificationService.notifyTeamIneligible(
+                    team,
+                    activeEvent,
+                    buildMembershipValidationMessage(memberCount, minSize, maxSize)
+            );
+        }
     }
 
     private String resolveTeamStatus(long memberCount) {
         return memberCount >= MIN_TEAM_SIZE && memberCount <= MAX_TEAM_SIZE
                 ? TEAM_STATUS_READY
                 : TEAM_STATUS_FORMING;
+    }
+
+    private String buildMembershipValidationMessage(long memberCount, int minSize, int maxSize) {
+        if (memberCount < minSize) {
+            return "Your team currently has " + memberCount + "/" + minSize
+                    + " required members. Add more members before the next deadline.";
+        }
+        if (memberCount > maxSize) {
+            return "Your team currently has " + memberCount + " members, exceeding the maximum of "
+                    + maxSize + ". Please adjust the roster.";
+        }
+        return "Please review your team roster and event registration requirements.";
     }
 
     private Map<String, Object> buildTeamRegistrationAuditPayload(HackathonEventEntity event, TrackEntity track) {
@@ -460,16 +497,20 @@ public class TeamService {
         }
     }
 
-    private void requireAvailableSlot(Integer teamId) {
-        if (memberRepository.countByTeamTeamId(teamId) >= MAX_TEAM_SIZE) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Team already has the maximum of 5 members");
+    private void requireAvailableSlot(TeamEntity team) {
+        HackathonEventEntity event = getActiveEvent(team);
+        int maxSize = event == null ? MAX_TEAM_SIZE : maxTeamSize(event);
+        if (memberRepository.countByTeamTeamId(team.getTeamId()) >= maxSize) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Team already has the maximum of " + maxSize + " members");
         }
     }
 
-    private void requireAvailableInvitationSlot(Integer teamId) {
-        long occupiedSlots = memberRepository.countByTeamTeamId(teamId)
-                + invitationRepository.countByTeamTeamIdAndStatusIgnoreCase(teamId, "Pending");
-        if (occupiedSlots >= MAX_TEAM_SIZE) {
+    private void requireAvailableInvitationSlot(TeamEntity team) {
+        HackathonEventEntity event = getActiveEvent(team);
+        int maxSize = event == null ? MAX_TEAM_SIZE : maxTeamSize(event);
+        long occupiedSlots = memberRepository.countByTeamTeamId(team.getTeamId())
+                + invitationRepository.countByTeamTeamIdAndStatusIgnoreCase(team.getTeamId(), "Pending");
+        if (occupiedSlots >= maxSize) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Team has no available slots after pending invitations");
         }
     }
@@ -497,13 +538,74 @@ public class TeamService {
             if (requestedTrackId == null) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Choose a track before registering this team");
             }
-            return tracks.stream()
+            TrackEntity selected = tracks.stream()
                     .filter(track -> track.getTrackId().equals(requestedTrackId))
                     .findFirst()
                     .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Selected track does not belong to this event"));
+            requireTrackCapacity(selected);
+            return selected;
         }
 
-        return tracks.get(ThreadLocalRandom.current().nextInt(tracks.size()));
+        if ("SINGLE_TRACK".equals(mode)) {
+            TrackEntity sharedTrack = tracks.get(0);
+            requireTrackCapacity(sharedTrack);
+            return sharedTrack;
+        }
+
+        List<TrackEntity> availableTracks = tracks.stream()
+                .filter(this::trackHasCapacity)
+                .toList();
+        if (availableTracks.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "No track has available team capacity");
+        }
+        return chooseBalancedTrack(availableTracks);
+    }
+
+    private boolean trackHasCapacity(TrackEntity track) {
+        return track.getMaxTeams() == null || teamRepository.countByTrackTrackId(track.getTrackId()) < track.getMaxTeams();
+    }
+
+    private TrackEntity chooseBalancedTrack(List<TrackEntity> availableTracks) {
+        Map<Integer, Long> teamCountsByTrackId = availableTracks.stream()
+                .collect(LinkedHashMap::new,
+                        (map, track) -> map.put(track.getTrackId(), teamRepository.countByTrackTrackId(track.getTrackId())),
+                        Map::putAll);
+
+        int largestMinimumShortage = availableTracks.stream()
+                .mapToInt(track -> Math.max(
+                        0,
+                        (track.getMinTeams() == null ? 0 : track.getMinTeams())
+                                - teamCountsByTrackId.getOrDefault(track.getTrackId(), 0L).intValue()
+                ))
+                .max()
+                .orElse(0);
+
+        List<TrackEntity> prioritizedTracks = largestMinimumShortage > 0
+                ? availableTracks.stream()
+                .filter(track -> Math.max(
+                        0,
+                        (track.getMinTeams() == null ? 0 : track.getMinTeams())
+                                - teamCountsByTrackId.getOrDefault(track.getTrackId(), 0L).intValue()
+                ) == largestMinimumShortage)
+                .toList()
+                : availableTracks;
+
+        long lowestTeamCount = prioritizedTracks.stream()
+                .mapToLong(track -> teamCountsByTrackId.getOrDefault(track.getTrackId(), 0L))
+                .min()
+                .orElse(0L);
+
+        List<TrackEntity> balancedCandidates = prioritizedTracks.stream()
+                .filter(track -> teamCountsByTrackId.getOrDefault(track.getTrackId(), 0L) == lowestTeamCount)
+                .toList();
+
+        return balancedCandidates.get(ThreadLocalRandom.current().nextInt(balancedCandidates.size()));
+    }
+
+    private void requireTrackCapacity(TrackEntity track) {
+        if (!trackHasCapacity(track)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Track already reached its maximum team capacity");
+        }
     }
 
     private TeamDto toTeamDto(TeamEntity team, Integer currentUserRoleId) {
@@ -515,10 +617,12 @@ public class TeamService {
         HackathonEventEntity event = getActiveEvent(team);
         TrackEntity activeTrack = event == null ? null : team.getTrack();
         boolean deletable = teamRepository.countSubmissionsByTeamId(team.getTeamId()) == 0;
-        boolean valid = memberCount >= MIN_TEAM_SIZE && memberCount <= MAX_TEAM_SIZE;
+        int minSize = event == null ? MIN_TEAM_SIZE : minTeamSize(event);
+        int maxSize = event == null ? MAX_TEAM_SIZE : maxTeamSize(event);
+        boolean valid = memberCount >= minSize && memberCount <= maxSize;
         String validationMessage;
         if (!valid) {
-            validationMessage = "Invite " + Math.max(0, MIN_TEAM_SIZE - memberCount) + " more member(s) to reach the required minimum";
+            validationMessage = "Invite " + Math.max(0, minSize - memberCount) + " more member(s) to reach the required minimum";
         } else if (event == null) {
             validationMessage = "Team is ready. Register it into an event next.";
         } else {
@@ -616,5 +720,13 @@ public class TeamService {
             team.setTrack(null);
             teamRepository.save(team);
         }
+    }
+
+    private int minTeamSize(HackathonEventEntity event) {
+        return event.getMinTeamSize() == null ? MIN_TEAM_SIZE : Math.max(1, event.getMinTeamSize());
+    }
+
+    private int maxTeamSize(HackathonEventEntity event) {
+        return event.getMaxTeamSize() == null ? MAX_TEAM_SIZE : Math.max(minTeamSize(event), event.getMaxTeamSize());
     }
 }

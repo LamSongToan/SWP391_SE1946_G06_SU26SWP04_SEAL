@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 public record TrackUpsertRequest(
         @NotBlank
         @Size(max = 100)
-        String name
+        String name,
+        Integer minTeams,
+        Integer maxTeams
 ) {
 }

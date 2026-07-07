@@ -80,7 +80,8 @@ public class PublicEventService {
                             ))
                             .toList();
 
-                    boolean registrationAvailable = isRegistrationAvailable(event, now);
+                    String registrationStatus = registrationStatus(event, now);
+                    boolean registrationAvailable = "OPEN".equals(registrationStatus);
                     return new PublicEventCatalogDto(
                             event.getEventId(),
                             event.getName(),
@@ -93,6 +94,7 @@ public class PublicEventService {
                             event.getCompetitionStartAt(),
                             event.getCompetitionEndAt(),
                             event.getTrackSelectionMode(),
+                            registrationStatus,
                             registrationAvailable,
                             rounds
                     );
@@ -100,13 +102,19 @@ public class PublicEventService {
                 .toList();
     }
 
-    private boolean isRegistrationAvailable(HackathonEventEntity event, LocalDateTime now) {
+    private String registrationStatus(HackathonEventEntity event, LocalDateTime now) {
         if (!"Ongoing".equalsIgnoreCase(event.getStatus())) {
-            return false;
+            return "UNAVAILABLE";
         }
         if (event.getRegistrationStartAt() == null || event.getRegistrationEndAt() == null) {
-            return false;
+            return "UNCONFIGURED";
         }
-        return !now.isBefore(event.getRegistrationStartAt()) && !now.isAfter(event.getRegistrationEndAt());
+        if (now.isBefore(event.getRegistrationStartAt())) {
+            return "NOT_OPEN_YET";
+        }
+        if (now.isAfter(event.getRegistrationEndAt())) {
+            return "CLOSED";
+        }
+        return "OPEN";
     }
 }

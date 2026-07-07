@@ -200,7 +200,7 @@ export default function AnnouncementManagementPanel() {
       const response = await http.post("/api/coordinator/announcements", payload);
       const sent = response.data?.data;
       setSentAnnouncements((current) => (sent ? [sent, ...current] : current));
-      setSuccess(`Announcement sent to ${sent?.recipientCount ?? 0} recipient(s).`);
+      setSuccess(`Announcement sent to ${sent?.recipientCount ?? 0} recipient(s) via dashboard notification and email.`);
       setForm((current) => ({ ...EMPTY_FORM, eventId: current.eventId, audience: current.audience }));
     } catch (err) {
       setError(getApiErrorMessage(err, noRecipientMessage));
@@ -286,7 +286,7 @@ export default function AnnouncementManagementPanel() {
       <ModulePageHeader
         eyebrow="Announcements"
         title="Announcement Center"
-        description="Create event announcements for students, mentors, and judges, then review what has already been sent."
+        description="Create event announcements for students, mentors, and judges, then send them through both dashboard notifications and email."
         actions={(
           <Button
             variant="outlined"
@@ -325,7 +325,7 @@ export default function AnnouncementManagementPanel() {
                       Send Announcement
                     </Typography>
                     <Typography sx={{ color: brand.colors.muted, fontSize: 13.5 }}>
-                      Compose a notice that appears on recipients' dashboards.
+                      Compose a notice that appears on recipients' dashboards and is also sent by email.
                     </Typography>
                   </Box>
                 </Stack>

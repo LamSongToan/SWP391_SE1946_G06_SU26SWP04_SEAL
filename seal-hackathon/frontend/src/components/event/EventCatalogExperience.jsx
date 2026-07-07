@@ -79,6 +79,44 @@ function getStatusTone(status) {
   return { bg: "#fff7ed", color: "#ea580c" };
 }
 
+function getRegistrationState(event) {
+  const status = String(event?.registrationStatus || "").toUpperCase();
+  if (status === "OPEN" || event?.registrationAvailable) {
+    return {
+      label: "Registration open",
+      shortLabel: "Open",
+      color: "success",
+      variant: "filled",
+      helper: `Closes ${formatDateTime(event.registrationEndAt)}`,
+    };
+  }
+  if (status === "NOT_OPEN_YET") {
+    return {
+      label: `Registration opens ${formatDateTime(event.registrationStartAt)}`,
+      shortLabel: "Opens later",
+      color: "info",
+      variant: "outlined",
+      helper: `Teams can register from ${formatDateTime(event.registrationStartAt)} until ${formatDateTime(event.registrationEndAt)}`,
+    };
+  }
+  if (status === "CLOSED") {
+    return {
+      label: "Registration closed",
+      shortLabel: "Closed",
+      color: "default",
+      variant: "outlined",
+      helper: `Closed ${formatDateTime(event.registrationEndAt)}`,
+    };
+  }
+  return {
+    label: "Registration is not available",
+    shortLabel: "Unavailable",
+    color: "default",
+    variant: "outlined",
+    helper: "Registration timeline has not been configured yet",
+  };
+}
+
 function buildCriteriaSummary(rounds) {
   const criterionMap = new Map();
   (rounds || []).forEach((round) => {
@@ -96,8 +134,11 @@ export default function EventCatalogExperience({
   events = [],
   mode = "public",
   onRegister,
+  onIndividualRegister,
   canRegisterEvent,
+  canRegisterIndividually,
   registerLabelForEvent,
+  individualRegisterLabelForEvent,
   disableReasonForEvent,
   sectionTitle = "Event Catalog",
   sectionDescription = "Browse events and open one to review the full brief.",
@@ -165,24 +206,42 @@ export default function EventCatalogExperience({
 
     if (mode === "student") {
       const disabled = canRegisterEvent ? !canRegisterEvent(selectedEvent) : false;
+      const individualDisabled = canRegisterIndividually ? !canRegisterIndividually(selectedEvent) : disabled;
       const label = registerLabelForEvent
         ? registerLabelForEvent(selectedEvent)
         : "Register team";
       return (
-        <Button
-          variant="contained"
-          startIcon={<HowToRegRoundedIcon />}
-          onClick={() => onRegister?.(selectedEvent)}
-          disabled={disabled}
-          sx={{
-            minWidth: 220,
-            height: 48,
-            bgcolor: brand.colors.orange,
-            "&:hover": { bgcolor: brand.colors.orangeDark },
-          }}
-        >
-          {label}
-        </Button>
+        <Stack spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
+          <Button
+            variant="contained"
+            startIcon={<HowToRegRoundedIcon />}
+            onClick={() => onRegister?.(selectedEvent)}
+            disabled={disabled}
+            sx={{
+              minWidth: 220,
+              height: 48,
+              bgcolor: brand.colors.orange,
+              "&:hover": { bgcolor: brand.colors.orangeDark },
+            }}
+          >
+            {label}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<GroupsRoundedIcon />}
+            onClick={() => onIndividualRegister?.(selectedEvent)}
+            disabled={individualDisabled}
+            sx={{
+              minWidth: 220,
+              height: 42,
+              color: "#fff",
+              borderColor: "rgba(255,255,255,0.55)",
+              "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,0.1)" },
+            }}
+          >
+            {individualRegisterLabelForEvent ? individualRegisterLabelForEvent(selectedEvent) : "Register individually"}
+          </Button>
+        </Stack>
       );
     }
 
@@ -260,14 +319,13 @@ export default function EventCatalogExperience({
                       sx={{ fontWeight: 700 }}
                     />
                   </Stack>
-                  {event.registrationAvailable ? (
-                    <Chip
-                      label="Open"
-                      size="small"
-                      color="success"
-                      icon={<TaskAltRoundedIcon fontSize="small" />}
-                    />
-                  ) : null}
+                  <Chip
+                    label={getRegistrationState(event).shortLabel}
+                    size="small"
+                    color={getRegistrationState(event).color}
+                    variant={getRegistrationState(event).variant}
+                    icon={event.registrationAvailable ? <TaskAltRoundedIcon fontSize="small" /> : undefined}
+                  />
                 </Stack>
                 <Typography sx={{ fontSize: 18, fontWeight: 900, color: "text.primary", lineHeight: 1.2 }}>
                   {event.name}
@@ -432,6 +490,17 @@ export default function EventCatalogExperience({
                           fontWeight: 800,
                         }}
                       />
+                      <Chip
+                        label={getRegistrationState(selectedEvent).shortLabel}
+                        color={getRegistrationState(selectedEvent).color}
+                        variant={getRegistrationState(selectedEvent).variant}
+                        sx={{
+                          bgcolor: selectedEvent.registrationAvailable ? "#16a34a" : "rgba(255,255,255,0.12)",
+                          color: "#fff",
+                          borderColor: "rgba(255,255,255,0.38)",
+                          fontWeight: 900,
+                        }}
+                      />
                     </Stack>
                     <Typography sx={{ fontSize: { xs: 30, md: 44 }, fontWeight: 950, lineHeight: 1.04 }}>
                       {selectedEvent.name}
@@ -462,8 +531,9 @@ export default function EventCatalogExperience({
                 {[
                   {
                     icon: <AccessTimeRoundedIcon sx={{ color: brand.colors.orange }} />,
-                    title: "Registration window",
+                    title: getRegistrationState(selectedEvent).shortLabel,
                     body: `${formatDateTime(selectedEvent.registrationStartAt)} - ${formatDateTime(selectedEvent.registrationEndAt)}`,
+                    helper: getRegistrationState(selectedEvent).helper,
                   },
                   {
                     icon: <EventAvailableRoundedIcon sx={{ color: brand.colors.orange }} />,
@@ -502,6 +572,11 @@ export default function EventCatalogExperience({
                       <Typography sx={{ mt: 0.6, fontWeight: 900, color: "text.primary", lineHeight: 1.5 }}>
                         {item.body}
                       </Typography>
+                      {item.helper ? (
+                        <Typography sx={{ mt: 0.35, color: "text.secondary", fontSize: 12.5, lineHeight: 1.45 }}>
+                          {item.helper}
+                        </Typography>
+                      ) : null}
                     </Box>
                   </Stack>
                 ))}
@@ -541,15 +616,12 @@ export default function EventCatalogExperience({
                     {selectedEvent.description || "This event description will be published by the coordinator."}
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {selectedEvent.registrationAvailable ? (
-                      <Chip
-                        color="success"
-                        icon={<CheckCircleRoundedIcon fontSize="small" />}
-                        label="Registration is currently open"
-                      />
-                    ) : (
-                      <Chip variant="outlined" label="Registration is not open right now" />
-                    )}
+                    <Chip
+                      color={getRegistrationState(selectedEvent).color}
+                      variant={getRegistrationState(selectedEvent).variant}
+                      icon={selectedEvent.registrationAvailable ? <CheckCircleRoundedIcon fontSize="small" /> : undefined}
+                      label={getRegistrationState(selectedEvent).label}
+                    />
                     <Chip variant="outlined" label={formatSemesterLabel(selectedEvent)} />
                     <Chip variant="outlined" label={`${selectedEvent.rounds?.length || 0} published rounds`} />
                   </Stack>

@@ -2,12 +2,10 @@ package com.seal.hackathon.evaluation.controller;
 
 import com.seal.hackathon.common.ApiResponse;
 import com.seal.hackathon.evaluation.dto.AuditLogDto;
-import com.seal.hackathon.evaluation.dto.AwardRecommendationSummaryDto;
 import com.seal.hackathon.evaluation.dto.CalibrationAnalyticsDto;
 import com.seal.hackathon.evaluation.dto.CalibrationScoreRequest;
 import com.seal.hackathon.evaluation.dto.CalibrationSessionDto;
 import com.seal.hackathon.evaluation.dto.CalibrationSessionRequest;
-import com.seal.hackathon.evaluation.dto.AwardSelectionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateRequest;
 import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
@@ -159,25 +157,6 @@ public class CoordinatorScoringController {
         return ResponseEntity.ok(ApiResponse.ok(
                 "Round finalization snapshot fetched",
                 coordinatorScoringService.getRoundFinalization(authentication, roundId)
-        ));
-    }
-
-    @GetMapping("/rounds/{roundId}/award-recommendations")
-    public ResponseEntity<ApiResponse<AwardRecommendationSummaryDto>> getAwardRecommendations(Authentication authentication,
-                                                                                               @PathVariable Integer roundId) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                "Award recommendations fetched",
-                coordinatorScoringService.generateAwardRecommendations(authentication, roundId)
-        ));
-    }
-
-    @PostMapping("/rounds/{roundId}/award-recommendations")
-    public ResponseEntity<ApiResponse<AwardRecommendationSummaryDto>> confirmAwardRecommendations(Authentication authentication,
-                                                                                                     @PathVariable Integer roundId,
-                                                                                                     @RequestBody List<AwardSelectionRequest> selections) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                "Award recommendations confirmed",
-                coordinatorScoringService.confirmAwardRecommendations(authentication, roundId, selections)
         ));
     }
 

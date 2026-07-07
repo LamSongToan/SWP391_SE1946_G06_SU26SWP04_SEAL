@@ -61,6 +61,12 @@ public class HackathonEventEntity {
     @Column(name = "track_selection_mode")
     private String trackSelectionMode;
 
+    @Column(name = "min_team_size")
+    private Integer minTeamSize;
+
+    @Column(name = "max_team_size")
+    private Integer maxTeamSize;
+
     @Column(name = "ranking_method")
     private String rankingMethod;
 

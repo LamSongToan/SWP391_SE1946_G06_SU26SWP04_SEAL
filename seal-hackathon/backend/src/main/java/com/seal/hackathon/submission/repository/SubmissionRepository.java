@@ -101,4 +101,6 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
                                    @Param("roundId") Integer roundId);
 
     boolean existsByRoundRoundIdAndTeamTeamIdIn(Integer roundId, Set<Integer> teamIds);
+
+    long countByTeamTeamId(Integer teamId);
 }

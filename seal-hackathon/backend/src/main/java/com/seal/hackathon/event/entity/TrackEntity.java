@@ -25,4 +25,10 @@ public class TrackEntity {
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Column(name = "min_teams")
+    private Integer minTeams;
+
+    @Column(name = "max_teams")
+    private Integer maxTeams;
 }

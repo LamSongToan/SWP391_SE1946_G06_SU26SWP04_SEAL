@@ -13,6 +13,8 @@ public record EventWizardRequest(
         LocalDateTime competitionStartAt,
         LocalDateTime competitionEndAt,
         String trackSelectionMode,
+        Integer minTeamSize,
+        Integer maxTeamSize,
         List<EventWizardTrackRequest> tracks,
         List<EventWizardRoundRequest> qualifyingRounds,
         EventWizardRoundRequest finalRound,

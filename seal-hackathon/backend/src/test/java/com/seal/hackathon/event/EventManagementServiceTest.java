@@ -17,6 +17,7 @@ import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
 import com.seal.hackathon.event.service.EventManagementService;
+import com.seal.hackathon.event.service.EventUpdateNotificationService;
 import com.seal.hackathon.team.repository.TeamRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,8 @@ class EventManagementServiceTest {
     private TeamRepository teamRepository;
     @Mock
     private AuditLogService auditLogService;
+    @Mock
+    private EventUpdateNotificationService notificationService;
 
     @InjectMocks
     private EventManagementService eventManagementService;
@@ -151,7 +154,7 @@ class EventManagementServiceTest {
 
         EventSetupCreateRequest request = new EventSetupCreateRequest(
                 newRequest("Fall", 2026, EventStatus.DRAFT.getDbValue()),
-                List.of(new TrackUpsertRequest("Web Platform")),
+                List.of(new TrackUpsertRequest("Web Platform", null, null)),
                 List.of(newRoundRequest(1))
         );
 
@@ -165,7 +168,7 @@ class EventManagementServiceTest {
     void createEventWithInitialConfiguration_shouldRejectDeadlineOutsideEventRange() {
         EventSetupCreateRequest request = new EventSetupCreateRequest(
                 newRequest("Fall", 2026, EventStatus.DRAFT.getDbValue()),
-                List.of(new TrackUpsertRequest("Web Platform")),
+                List.of(new TrackUpsertRequest("Web Platform", null, null)),
                 List.of(new RoundUpsertRequest(
                         "Elimination",
                         1,
@@ -184,7 +187,7 @@ class EventManagementServiceTest {
     void createEventWithInitialConfiguration_shouldRejectNonConsecutiveRoundOrder() {
         EventSetupCreateRequest request = new EventSetupCreateRequest(
                 newRequest("Fall", 2026, EventStatus.DRAFT.getDbValue()),
-                List.of(new TrackUpsertRequest("Web Platform")),
+                List.of(new TrackUpsertRequest("Web Platform", null, null)),
                 List.of(
                         newRoundRequest(1),
                         new RoundUpsertRequest(
@@ -479,8 +482,8 @@ class EventManagementServiceTest {
         eventManagementService.updateEventConfiguration(10, new EventConfigurationUpdateRequest(
                 newRequest("Fall", 2026, EventStatus.ONGOING.getDbValue()),
                 List.of(
-                        new TrackConfigurationRequest(1, "Web Platform"),
-                        new TrackConfigurationRequest(null, "AI")
+                        new TrackConfigurationRequest(1, "Web Platform", null, null),
+                        new TrackConfigurationRequest(null, "AI", null, null)
                 ),
                 List.of(
                         new RoundConfigurationRequest(

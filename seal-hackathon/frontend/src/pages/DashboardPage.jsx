@@ -51,6 +51,7 @@ import EventConfigurationPanel from "../components/coordinator/EventConfiguratio
 import GuestJudgePanel from "../components/coordinator/GuestJudgePanel";
 import JudgeAssignmentPanel from "../components/coordinator/JudgeAssignmentPanel";
 import MentorAssignmentPanel from "../components/coordinator/MentorAssignmentPanel";
+import TeamFormationPanel from "../components/coordinator/TeamFormationPanel";
 import UserProfilePanel from "../components/profile/UserProfilePanel";
 import UserDirectoryPanel from "../components/user/UserDirectoryPanel";
 import ChangePasswordPage from "./ChangePasswordPage";
@@ -77,6 +78,7 @@ const STUDENT_CORE_NAV = [
 const COORDINATOR_CORE_NAV = [
   { key: "users", label: "User Management", icon: <ManageAccountsRoundedIcon fontSize="small" /> },
   { key: "event-config", label: "Event Configuration", icon: <EventRoundedIcon fontSize="small" /> },
+  { key: "team-formation", label: "Team Management", icon: <GroupsRoundedIcon fontSize="small" /> },
   { key: "guest-judges", label: "Guest Judges", icon: <GavelRoundedIcon fontSize="small" /> },
   { key: "judge-assignment", label: "Judge Assignment", icon: <AssignmentIndRoundedIcon fontSize="small" /> },
   { key: "mentor-assignment", label: "Mentor Assignment", icon: <SupervisorAccountRoundedIcon fontSize="small" /> },
@@ -111,20 +113,21 @@ const COORDINATOR_NAV_SECTIONS = [
     title: "Event Operations",
     items: [
       COORDINATOR_CORE_NAV[1],
-      COORDINATOR_CORE_NAV[5],
+      COORDINATOR_CORE_NAV[2],
       COORDINATOR_CORE_NAV[6],
+      COORDINATOR_CORE_NAV[7],
     ],
   },
   {
     title: "People & Assignments",
     items: [
       COORDINATOR_CORE_NAV[0],
-      COORDINATOR_CORE_NAV[2],
       COORDINATOR_CORE_NAV[3],
       COORDINATOR_CORE_NAV[4],
+      COORDINATOR_CORE_NAV[5],
     ],
   },
-  { title: "Review & Logs", items: [COORDINATOR_CORE_NAV[7]] },
+  { title: "Review & Logs", items: [COORDINATOR_CORE_NAV[8]] },
   { title: "Account", items: ACCOUNT_NAV },
 ];
 
@@ -175,6 +178,85 @@ function pickDeadline(teams = []) {
     || "No deadline yet";
 }
 
+function getAnnouncementTone(item = {}) {
+  const category = String(item.category || "").toUpperCase();
+  if (["TEAM_MATCHING", "TEAM_INELIGIBLE"].includes(category)) {
+    return {
+      label: category === "TEAM_INELIGIBLE" ? "Team action" : "Team update",
+      Icon: GroupsRoundedIcon,
+      unreadBorder: category === "TEAM_INELIGIBLE" ? "1px solid rgba(217,119,6,0.4)" : "1px solid rgba(22,163,74,0.38)",
+      unreadBg: category === "TEAM_INELIGIBLE" ? "#FFF8E7" : "#F0FDF4",
+      iconBg: category === "TEAM_INELIGIBLE" ? "#FEF3C7" : "#DCFCE7",
+      iconColor: category === "TEAM_INELIGIBLE" ? "#B45309" : "#15803D",
+      chipBg: category === "TEAM_INELIGIBLE" ? "#FEF3C7" : "#DCFCE7",
+      chipColor: category === "TEAM_INELIGIBLE" ? "#B45309" : "#15803D",
+      hoverBorder: category === "TEAM_INELIGIBLE" ? "rgba(217,119,6,0.58)" : "rgba(22,163,74,0.58)",
+    };
+  }
+  if (["RESULTS", "AWARD"].includes(category)) {
+    return {
+      label: category === "AWARD" ? "Award" : "Results",
+      Icon: EmojiEventsRoundedIcon,
+      unreadBorder: "1px solid rgba(234,88,12,0.38)",
+      unreadBg: "#FFF7ED",
+      iconBg: "#FFEDD5",
+      iconColor: "#EA580C",
+      chipBg: "#FFEDD5",
+      chipColor: "#EA580C",
+      hoverBorder: "rgba(234,88,12,0.58)",
+    };
+  }
+  if (category === "REGISTRATION_DEADLINE") {
+    return {
+      label: "Deadline",
+      Icon: CalendarMonthRoundedIcon,
+      unreadBorder: "1px solid rgba(37,99,235,0.34)",
+      unreadBg: "#EFF6FF",
+      iconBg: "#DBEAFE",
+      iconColor: "#2563EB",
+      chipBg: "#DBEAFE",
+      chipColor: "#2563EB",
+      hoverBorder: "rgba(37,99,235,0.55)",
+    };
+  }
+  if (category === "EVENT_ROUND_UPDATE") {
+    return {
+      label: "Event update",
+      Icon: EventRoundedIcon,
+      unreadBorder: "1px solid rgba(15,118,110,0.34)",
+      unreadBg: "#F0FDFA",
+      iconBg: "#CCFBF1",
+      iconColor: "#0F766E",
+      chipBg: "#CCFBF1",
+      chipColor: "#0F766E",
+      hoverBorder: "rgba(15,118,110,0.52)",
+    };
+  }
+  return {
+    label: "Announcement",
+    Icon: CampaignRoundedIcon,
+    unreadBorder: "1px solid rgba(243,112,33,0.36)",
+    unreadBg: "#FFF8F1",
+    iconBg: brand.colors.surfaceWarm,
+    iconColor: brand.colors.orange,
+    chipBg: brand.colors.surfaceWarm,
+    chipColor: brand.colors.orange,
+    hoverBorder: "rgba(243,112,33,0.55)",
+  };
+}
+
+function notificationCategory(item = {}) {
+  return String(item.category || "").toUpperCase();
+}
+
+function isTeamNotification(category) {
+  return ["TEAM_MATCHING", "TEAM_INELIGIBLE"].includes(category);
+}
+
+function isResultNotification(category) {
+  return ["RESULTS", "AWARD"].includes(category);
+}
+
 function DashboardOverview({
   auth,
   currentRole,
@@ -185,6 +267,7 @@ function DashboardOverview({
   onMarkNotificationRead = () => {},
   onMarkAllNotificationsRead = () => {},
 }) {
+  const [announcementFilter, setAnnouncementFilter] = useState("ALL");
   const displayName = profileSummary?.fullName || auth?.fullName || auth?.username || "SEAL participant";
   const isLeader = currentRole === "STUDENT" && stats.leaderTeams > 0;
   const displayRole = isLeader ? "TEAM_LEADER" : currentRole;
@@ -222,6 +305,22 @@ function DashboardOverview({
     ];
   })();
   const unreadCount = eventNotifications.filter((item) => !item.read).length;
+  const filterOptions = [
+    { key: "ALL", label: "All", count: eventNotifications.length },
+    { key: "UNREAD", label: "Unread", count: unreadCount },
+    { key: "ANNOUNCEMENT", label: "Announcements", count: eventNotifications.filter((item) => !isTeamNotification(notificationCategory(item)) && !isResultNotification(notificationCategory(item))).length },
+    { key: "TEAM", label: "Team updates", count: eventNotifications.filter((item) => isTeamNotification(notificationCategory(item))).length },
+    { key: "RESULTS", label: "Results", count: eventNotifications.filter((item) => isResultNotification(notificationCategory(item))).length },
+  ];
+  const filteredNotifications = eventNotifications.filter((item) => {
+    const category = notificationCategory(item);
+    if (announcementFilter === "ALL") return true;
+    if (announcementFilter === "UNREAD") return !item.read;
+    if (announcementFilter === "ANNOUNCEMENT") return !isTeamNotification(category) && !isResultNotification(category);
+    if (announcementFilter === "TEAM") return isTeamNotification(category);
+    if (announcementFilter === "RESULTS") return isResultNotification(category);
+    return category === announcementFilter;
+  });
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -361,6 +460,29 @@ function DashboardOverview({
           ) : null}
         </Stack>
 
+        {eventNotifications.length ? (
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
+            {filterOptions.map((option) => (
+              <Chip
+                key={option.key}
+                label={`${option.label} (${option.count})`}
+                onClick={() => setAnnouncementFilter(option.key)}
+                variant={announcementFilter === option.key ? "filled" : "outlined"}
+                sx={{
+                  height: 30,
+                  fontWeight: 850,
+                  bgcolor: announcementFilter === option.key ? brand.colors.navy : "#FFFFFF",
+                  color: announcementFilter === option.key ? "#FFFFFF" : brand.colors.text,
+                  borderColor: announcementFilter === option.key ? brand.colors.navy : brand.colors.line,
+                  "&:hover": {
+                    bgcolor: announcementFilter === option.key ? brand.colors.navy : brand.colors.surfaceSoft,
+                  },
+                }}
+              />
+            ))}
+          </Stack>
+        ) : null}
+
         {eventNotifications.length === 0 ? (
           <Box
             sx={{
@@ -372,94 +494,151 @@ function DashboardOverview({
           >
             <Typography fontWeight={850}>No active announcements</Typography>
             <Typography color="text.secondary" variant="body2" sx={{ mt: 0.3 }}>
-              Notices about registration deadlines, incomplete teams, track balancing, and score finalization will appear here.
+              Notices about registration deadlines, team eligibility, event changes, and score publication will appear here.
+            </Typography>
+          </Box>
+        ) : filteredNotifications.length === 0 ? (
+          <Box
+            sx={{
+              p: 1.6,
+              borderRadius: brand.radius.md,
+              border: `1px dashed ${brand.colors.line}`,
+              bgcolor: brand.colors.surfaceSoft,
+            }}
+          >
+            <Typography fontWeight={850}>No notices in this filter</Typography>
+            <Typography color="text.secondary" variant="body2" sx={{ mt: 0.3 }}>
+              Try another filter, or wait for new event/team updates to arrive.
             </Typography>
           </Box>
         ) : (
           <Stack spacing={1.2}>
-            {eventNotifications.map((item) => (
-              <Box
-                key={item.notificationId}
-                onClick={() => !item.read && onMarkNotificationRead(item.notificationId)}
-                sx={{
-                  p: { xs: 1.6, md: 1.8 },
-                  borderRadius: brand.radius.md,
-                  border: item.read ? `1px solid ${brand.colors.line}` : "1px solid rgba(243,112,33,0.36)",
-                  bgcolor: item.read ? "#FFFFFF" : "#FFF8F1",
-                  boxShadow: "0 8px 18px rgba(7, 26, 47, 0.04)",
-                  cursor: item.read ? "default" : "pointer",
-                  transition: "background-color 160ms ease, border-color 160ms ease, transform 160ms ease",
-                  "&:hover": {
-                    transform: item.read ? "none" : "translateY(-1px)",
-                    borderColor: item.read ? brand.colors.line : "rgba(243,112,33,0.55)",
-                  },
-                }}
-              >
-                <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={1.6}>
-                  <Stack direction="row" spacing={1.3} alignItems="flex-start" sx={{ minWidth: 0, flex: 1 }}>
-                    <Box
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 2.5,
-                        bgcolor: brand.colors.surfaceWarm,
-                        color: brand.colors.orange,
-                        display: "grid",
-                        placeItems: "center",
-                        flex: "0 0 36px",
-                      }}
-                    >
-                      <CampaignRoundedIcon sx={{ fontSize: 20 }} />
-                    </Box>
-                    <Box sx={{ minWidth: 0, pt: 0.1 }}>
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                        <Typography sx={{ color: brand.colors.text, fontSize: 16, fontWeight: 950, lineHeight: 1.35 }}>
-                          {item.title}
-                        </Typography>
-                        {item.eventName ? (
+            {filteredNotifications.map((item) => {
+              const tone = getAnnouncementTone(item);
+              const NoticeIcon = tone.Icon;
+              const isTeamUpdate = isTeamNotification(notificationCategory(item));
+              return (
+                <Box
+                  key={item.notificationId}
+                  onClick={() => !item.read && onMarkNotificationRead(item.notificationId)}
+                  sx={{
+                    p: { xs: 1.6, md: 1.8 },
+                    borderRadius: brand.radius.md,
+                    border: item.read ? `1px solid ${brand.colors.line}` : tone.unreadBorder,
+                    bgcolor: item.read ? "#FFFFFF" : tone.unreadBg,
+                    boxShadow: "0 8px 18px rgba(7, 26, 47, 0.04)",
+                    cursor: item.read ? "default" : "pointer",
+                    transition: "background-color 160ms ease, border-color 160ms ease, transform 160ms ease",
+                    "&:hover": {
+                      transform: item.read ? "none" : "translateY(-1px)",
+                      borderColor: item.read ? brand.colors.line : tone.hoverBorder,
+                    },
+                  }}
+                >
+                  <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={1.6}>
+                    <Stack direction="row" spacing={1.3} alignItems="flex-start" sx={{ minWidth: 0, flex: 1 }}>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 2.5,
+                          bgcolor: tone.iconBg,
+                          color: tone.iconColor,
+                          display: "grid",
+                          placeItems: "center",
+                          flex: "0 0 36px",
+                        }}
+                      >
+                        <NoticeIcon sx={{ fontSize: 20 }} />
+                      </Box>
+                      <Box sx={{ minWidth: 0, pt: 0.1 }}>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                          <Typography sx={{ color: brand.colors.text, fontSize: 16, fontWeight: 950, lineHeight: 1.35 }}>
+                            {item.title}
+                          </Typography>
                           <Chip
                             size="small"
-                            variant="outlined"
-                            label={item.eventName}
+                            label={tone.label}
                             sx={{
                               height: 24,
-                              fontWeight: 800,
-                              color: brand.colors.muted,
-                              borderColor: brand.colors.line,
+                              bgcolor: tone.chipBg,
+                              color: tone.chipColor,
+                              fontWeight: 900,
                               "& .MuiChip-label": { px: 1, fontSize: 12, lineHeight: "24px" },
                             }}
                           />
+                          {item.eventName ? (
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              label={item.eventName}
+                              sx={{
+                                height: 24,
+                                fontWeight: 800,
+                                color: brand.colors.muted,
+                                borderColor: brand.colors.line,
+                                "& .MuiChip-label": { px: 1, fontSize: 12, lineHeight: "24px" },
+                              }}
+                            />
+                          ) : null}
+                          {!item.read ? (
+                            <Chip
+                              size="small"
+                              label="Unread"
+                              sx={{ height: 24, bgcolor: tone.chipBg, color: tone.chipColor, fontWeight: 900 }}
+                            />
+                          ) : null}
+                        </Stack>
+                        <Typography sx={{ color: brand.colors.text, fontSize: 14.5, lineHeight: 1.65, mt: 0.65, whiteSpace: "pre-wrap" }}>
+                          {item.message}
+                        </Typography>
+                        {isTeamUpdate ? (
+                          <Box
+                            sx={{
+                              mt: 1,
+                              p: 1.1,
+                              borderRadius: 2.5,
+                              border: "1px solid #BBF7D0",
+                              bgcolor: "#F8FFF9",
+                            }}
+                          >
+                            <Typography sx={{ color: "#15803D", fontSize: 12.5, fontWeight: 950, mb: 0.7 }}>
+                              Next steps
+                            </Typography>
+                            <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
+                              {(notificationCategory(item) === "TEAM_INELIGIBLE"
+                                ? ["Review member count", "Add missing members", "Check event rules", "Open team workspace"]
+                                : ["Check team members", "Confirm track/mentor", "Review submission deadline", "Open team workspace"]).map((step) => (
+                                <Chip
+                                  key={step}
+                                  size="small"
+                                  label={step}
+                                  sx={{ bgcolor: "#DCFCE7", color: "#166534", fontWeight: 850 }}
+                                />
+                              ))}
+                            </Stack>
+                          </Box>
                         ) : null}
-                        {!item.read ? (
-                          <Chip
-                            size="small"
-                            label="Unread"
-                            sx={{ height: 24, bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 900 }}
-                          />
-                        ) : null}
-                      </Stack>
-                      <Typography sx={{ color: brand.colors.text, fontSize: 14.5, lineHeight: 1.65, mt: 0.65, whiteSpace: "pre-wrap" }}>
-                        {item.message}
-                      </Typography>
-                    </Box>
+                      </Box>
+                    </Stack>
+                    <Chip
+                      icon={<HistoryRoundedIcon fontSize="small" />}
+                      label={formatDashboardDate(item.createdAt)}
+                      sx={{
+                        alignSelf: { xs: "flex-start", md: "center" },
+                        flexShrink: 0,
+                        height: 28,
+                        bgcolor: brand.colors.surfaceSoft,
+                        color: brand.colors.text,
+                        fontWeight: 850,
+                        "& .MuiChip-icon": { color: brand.colors.muted, fontSize: 16 },
+                        "& .MuiChip-label": { px: 1, fontSize: 12.5 },
+                      }}
+                    />
                   </Stack>
-                  <Chip
-                    icon={<HistoryRoundedIcon fontSize="small" />}
-                    label={formatDashboardDate(item.createdAt)}
-                    sx={{
-                      alignSelf: { xs: "flex-start", md: "center" },
-                      flexShrink: 0,
-                      height: 28,
-                      bgcolor: brand.colors.surfaceSoft,
-                      color: brand.colors.text,
-                      fontWeight: 850,
-                      "& .MuiChip-icon": { color: brand.colors.muted, fontSize: 16 },
-                      "& .MuiChip-label": { px: 1, fontSize: 12.5 },
-                    }}
-                  />
-                </Stack>
-              </Box>
-            ))}
+                </Box>
+              );
+            })}
           </Stack>
         )}
       </Box>
@@ -825,6 +1004,7 @@ export default function DashboardPage() {
     if (currentRole === "COORDINATOR") {
       if (activeKey === "users") return <AccountApprovalPanel />;
       if (activeKey === "event-config") return <EventConfigurationPanel onDirtyChange={() => {}} />;
+      if (activeKey === "team-formation") return <TeamFormationPanel />;
       if (activeKey === "guest-judges") return <GuestJudgePanel />;
       if (activeKey === "judge-assignment") return <JudgeAssignmentPanel />;
       if (activeKey === "mentor-assignment") return <MentorAssignmentPanel />;

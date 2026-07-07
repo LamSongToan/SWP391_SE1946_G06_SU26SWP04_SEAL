@@ -38,7 +38,8 @@ const CREATE_STEPS = [
 
 const TRACK_ASSIGNMENT_OPTIONS = [
   { value: "TEAM_SELECT", label: "Teams choose their track" },
-  { value: "SYSTEM_ASSIGN", label: "System assigns track automatically" },
+  { value: "SYSTEM_ASSIGN", label: "System assigns track automatically (balanced)" },
+  { value: "SINGLE_TRACK", label: "All teams compete in one shared track" },
 ];
 
 const FINAL_ROUND_RANKING_METHOD = "FINAL_SCORE";
@@ -196,6 +197,8 @@ function createTrack(track = {}) {
   return {
     trackId: track.trackId ?? null,
     name: track.name || "",
+    minTeams: track.minTeams ?? "",
+    maxTeams: track.maxTeams ?? "",
   };
 }
 
@@ -255,6 +258,8 @@ function createEmptyWizard() {
     competitionStartAt: "",
     competitionEndAt: "",
     trackAssignmentMode: "TEAM_SELECT",
+    minTeamSize: 3,
+    maxTeamSize: 5,
     tracks: [],
     qualifyingRounds: [],
     finalRound: createFinalRound(),
@@ -279,6 +284,8 @@ function mapEventToWizard(detail) {
     competitionStartAt: detail.competitionStartAt ? toDateTimeInput(detail.competitionStartAt) : "",
     competitionEndAt: detail.competitionEndAt ? toDateTimeInput(detail.competitionEndAt) : "",
     trackAssignmentMode: detail.trackSelectionMode || "TEAM_SELECT",
+    minTeamSize: detail.minTeamSize ?? 3,
+    maxTeamSize: detail.maxTeamSize ?? 5,
     tracks: (detail.tracks || []).length ? detail.tracks.map(createTrack) : [],
     qualifyingRounds: (detail.qualifyingRounds || []).length
       ? detail.qualifyingRounds.map((round, index) => createQualifyingRound(round, index + 1))
@@ -423,9 +430,16 @@ function buildPayload(form) {
     competitionStartAt: form.competitionStartAt || null,
     competitionEndAt: form.competitionEndAt || null,
     trackSelectionMode: form.trackAssignmentMode,
+    minTeamSize: Number(form.minTeamSize || 3),
+    maxTeamSize: Number(form.maxTeamSize || 5),
     tracks: form.tracks
       .filter((track) => track.name.trim())
-      .map((track) => ({ trackId: track.trackId, name: track.name.trim() })),
+      .map((track) => ({
+        trackId: track.trackId,
+        name: track.name.trim(),
+        minTeams: track.minTeams === "" || track.minTeams == null ? null : Number(track.minTeams),
+        maxTeams: track.maxTeams === "" || track.maxTeams == null ? null : Number(track.maxTeams),
+      })),
     qualifyingRounds: form.qualifyingRounds
       .filter((round) => round.roundName.trim())
       .map((round, index) => ({
@@ -497,10 +511,16 @@ function getStepIssues(stepIndex, form) {
   }
 
   if (stepIndex === 2) {
+    if (Number(form.minTeamSize || 0) < 1) issues.push("Minimum team size must be at least 1.");
+    if (Number(form.maxTeamSize || 0) < Number(form.minTeamSize || 0)) issues.push("Maximum team size must be greater than or equal to minimum team size.");
     const validTracks = form.tracks.filter((track) => track.name.trim());
     if (!validTracks.length) issues.push("Create at least one track.");
     const uniqueNames = new Set(validTracks.map((track) => track.name.trim().toLowerCase()));
     if (uniqueNames.size !== validTracks.length) issues.push("Track names must be unique.");
+    validTracks.forEach((track, index) => {
+      if (track.minTeams !== "" && Number(track.minTeams) < 1) issues.push(`Track ${index + 1} minimum teams must be at least 1.`);
+      if (track.maxTeams !== "" && Number(track.maxTeams) < Number(track.minTeams || 1)) issues.push(`Track ${index + 1} maximum teams must be greater than or equal to minimum teams.`);
+    });
     return issues;
   }
 
@@ -557,6 +577,26 @@ function getStepIssues(stepIndex, form) {
 
 function getAllPublishIssues(form) {
   return [0, 1, 2, 3, 4].flatMap((index) => getStepIssues(index, form));
+}
+
+function getEventConfigurationError(error, fallback) {
+  const message = getApiErrorMessage(error, fallback);
+  const normalized = String(message || "").trim().toLowerCase();
+  const genericServerError = normalized === "unexpected server error" || normalized === "request failed";
+
+  if (!genericServerError) {
+    return message;
+  }
+
+  if (error?.response?.status === 409) {
+    return "Event setup conflicts with existing data. Check duplicate semester/year or duplicate track names, then try again.";
+  }
+
+  if (error?.response?.status === 400) {
+    return "Some event setup values are invalid. Check date order, team size min/max, track capacity min/max, and criteria weights.";
+  }
+
+  return "Event setup could not be saved. Please check: semester/year uniqueness, unique track names, registration before competition, team/track min-max values, and criteria weights.";
 }
 
 function StepHeader({ title, description }) {
@@ -929,8 +969,8 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
     setDirty(true);
   };
 
-  const updateTrack = (index, value) => {
-    const nextTracks = wizard.tracks.map((track, trackIndex) => (trackIndex === index ? { ...track, name: value } : track));
+  const updateTrack = (index, key, value) => {
+    const nextTracks = wizard.tracks.map((track, trackIndex) => (trackIndex === index ? { ...track, [key]: value } : track));
     updateWizard("tracks", nextTracks);
   };
 
@@ -1064,7 +1104,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
         setWizard(mapEventToWizard(refreshed.data?.data));
       }
     } catch (error) {
-      setWizardError(getApiErrorMessage(error, "Failed to save draft"));
+      setWizardError(getEventConfigurationError(error, "Failed to save draft"));
     } finally {
       setSaving(false);
     }
@@ -1101,7 +1141,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
       const refreshed = await http.get(`/api/coordinator/events/${eventId}/wizard`);
       setWizard(mapEventToWizard(refreshed.data?.data));
     } catch (error) {
-      setWizardError(getApiErrorMessage(error, "Failed to publish event"));
+      setWizardError(getEventConfigurationError(error, "Failed to publish event"));
     } finally {
       setSaving(false);
     }
@@ -1714,6 +1754,26 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                       </MenuItem>
                     ))}
                   </TextField>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 2 }}>
+                    <TextField
+                      label="Min members per team"
+                      type="number"
+                      value={wizard.minTeamSize}
+                      onChange={(event) => updateWizard("minTeamSize", event.target.value)}
+                      disabled={!editable}
+                      inputProps={{ min: 1, max: 20 }}
+                      sx={{ ...CONFIG_FIELD_SX, flex: 1 }}
+                    />
+                    <TextField
+                      label="Max members per team"
+                      type="number"
+                      value={wizard.maxTeamSize}
+                      onChange={(event) => updateWizard("maxTeamSize", event.target.value)}
+                      disabled={!editable}
+                      inputProps={{ min: 1, max: 20 }}
+                      sx={{ ...CONFIG_FIELD_SX, flex: 1 }}
+                    />
+                  </Stack>
                   <Stack spacing={1.5}>
                     {wizard.tracks.map((track, index) => (
                       <Card key={`track-${track.trackId || index}`} variant="outlined" sx={CONFIG_SUBSECTION_SX}>
@@ -1723,9 +1783,27 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                               fullWidth
                               label={`Track ${index + 1}`}
                               value={track.name}
-                              onChange={(event) => updateTrack(index, event.target.value)}
+                              onChange={(event) => updateTrack(index, "name", event.target.value)}
                               disabled={!editable}
                               sx={CONFIG_FIELD_SX}
+                            />
+                            <TextField
+                              label="Min teams"
+                              type="number"
+                              value={track.minTeams}
+                              onChange={(event) => updateTrack(index, "minTeams", event.target.value)}
+                              disabled={!editable}
+                              inputProps={{ min: 1 }}
+                              sx={{ ...CONFIG_FIELD_SX, width: { xs: "100%", md: 140 } }}
+                            />
+                            <TextField
+                              label="Max teams"
+                              type="number"
+                              value={track.maxTeams}
+                              onChange={(event) => updateTrack(index, "maxTeams", event.target.value)}
+                              disabled={!editable}
+                              inputProps={{ min: 1 }}
+                              sx={{ ...CONFIG_FIELD_SX, width: { xs: "100%", md: 140 } }}
                             />
                             {editable ? (
                               <Button
@@ -2093,4 +2171,3 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
     </Box>
   );
 }
-

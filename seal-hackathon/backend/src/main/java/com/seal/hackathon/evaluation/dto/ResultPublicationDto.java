@@ -1,6 +1,7 @@
 package com.seal.hackathon.evaluation.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ResultPublicationDto(
         Integer eventId,
@@ -17,6 +18,9 @@ public record ResultPublicationDto(
         Integer finalRoundSubmissionCount,
         boolean rankingSnapshotComplete,
         boolean canPublish,
-        String publishReadinessNote
+        String publishReadinessNote,
+        Integer awardedTeamCount,
+        List<AwardResultDto> awards,
+        List<TeamAwardHistoryDto> teamAwardHistory
 ) {
 }

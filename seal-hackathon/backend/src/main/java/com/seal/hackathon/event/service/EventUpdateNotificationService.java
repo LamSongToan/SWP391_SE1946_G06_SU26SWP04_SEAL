@@ -5,27 +5,41 @@ import com.seal.hackathon.auth.entity.RoleType;
 import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.repository.UserRoleRepository;
 import com.seal.hackathon.common.ApiException;
+import com.seal.hackathon.evaluation.dto.TeamAwardHistoryDto;
 import com.seal.hackathon.event.dto.AnnouncementRecipientPreviewDto;
 import com.seal.hackathon.event.dto.CreateAnnouncementRequest;
 import com.seal.hackathon.event.dto.EventUpdateNotificationDto;
 import com.seal.hackathon.event.dto.SentAnnouncementDto;
 import com.seal.hackathon.event.dto.UpdateAnnouncementRequest;
 import com.seal.hackathon.event.entity.AnnouncementEntity;
+import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.EventUpdateNotificationEntity;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
+import com.seal.hackathon.event.entity.RoundEntity;
 import com.seal.hackathon.event.repository.AnnouncementRepository;
 import com.seal.hackathon.event.repository.EventUpdateNotificationRepository;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.JudgeAssignmentRepository;
 import com.seal.hackathon.event.repository.TrackMentorRepository;
 import com.seal.hackathon.evaluation.service.AuditLogService;
+import com.seal.hackathon.team.entity.TeamEntity;
+import com.seal.hackathon.team.entity.TeamMemberEntity;
 import com.seal.hackathon.team.repository.TeamMemberRepository;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,6 +50,9 @@ import java.util.Set;
 @Service
 public class EventUpdateNotificationService {
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("MMM d, yyyy 'at' hh:mm a", Locale.US);
+
     private final EventUpdateNotificationRepository notificationRepository;
     private final AnnouncementRepository announcementRepository;
     private final UserRepository userRepository;
@@ -45,6 +62,13 @@ public class EventUpdateNotificationService {
     private final TrackMentorRepository trackMentorRepository;
     private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final AuditLogService auditLogService;
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+
+    @Value("${app.mail.from:}")
+    private String mailFrom;
+
+    @Value("${spring.mail.host:}")
+    private String mailHost;
 
     public EventUpdateNotificationService(EventUpdateNotificationRepository notificationRepository,
                                           AnnouncementRepository announcementRepository,
@@ -54,7 +78,8 @@ public class EventUpdateNotificationService {
                                           TeamMemberRepository teamMemberRepository,
                                           TrackMentorRepository trackMentorRepository,
                                           JudgeAssignmentRepository judgeAssignmentRepository,
-                                          AuditLogService auditLogService) {
+                                          AuditLogService auditLogService,
+                                          ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.notificationRepository = notificationRepository;
         this.announcementRepository = announcementRepository;
         this.userRepository = userRepository;
@@ -64,35 +89,68 @@ public class EventUpdateNotificationService {
         this.trackMentorRepository = trackMentorRepository;
         this.judgeAssignmentRepository = judgeAssignmentRepository;
         this.auditLogService = auditLogService;
+        this.mailSenderProvider = mailSenderProvider;
     }
 
     @Transactional
-    public void notifyEventUpdated(HackathonEventEntity event) {
-        Set<Integer> recipientIds = new LinkedHashSet<>();
-        recipientIds.addAll(teamMemberRepository.findDistinctStudentUserIdsByEventId(event.getEventId()));
-        recipientIds.addAll(trackMentorRepository.findDistinctMentorUserIdsByEventId(event.getEventId()));
-        recipientIds.addAll(judgeAssignmentRepository.findDistinctJudgeUserIdsByEventId(event.getEventId()));
-
-        if (recipientIds.isEmpty()) {
-            return;
+    public int notifyEventUpdated(HackathonEventEntity event) {
+        if (!isNotifiableEvent(event)) {
+            return 0;
         }
-
         String title = "Event update available";
         String message = "The coordinator updated " + event.getName()
                 + ". Please review the latest rounds, promotion rules, deadlines, and scoring updates on your dashboard.";
+        return notifyRecipients(
+                resolveEventStakeholders(event.getEventId()),
+                event,
+                title,
+                message,
+                "EVENT_ROUND_UPDATE",
+                LocalDateTime.now(),
+                "SEAL Hackathon event updated"
+        );
+    }
 
-        for (Integer userId : recipientIds) {
-            userRepository.findById(userId).ifPresent((user) -> {
-                EventUpdateNotificationEntity notification = new EventUpdateNotificationEntity();
-                notification.setUser(user);
-                notification.setEventId(event.getEventId());
-                notification.setEventName(event.getName());
-                notification.setTitle(title);
-                notification.setMessage(message);
-                notification.setAnnouncementAudience("AUTO");
-                notificationRepository.save(notification);
-            });
+    @Transactional
+    public int notifyRegistrationDeadline(HackathonEventEntity event) {
+        if (!isNotifiableEvent(event) || event.getRegistrationEndAt() == null) {
+            return 0;
         }
+        String title = "Registration deadline updated";
+        String message = "Registration for " + event.getName()
+                + " closes on " + formatDateTime(event.getRegistrationEndAt())
+                + ". Please complete your team setup before the deadline.";
+        return notifyRecipients(
+                resolveRecipients(event.getEventId(), "STUDENTS"),
+                event,
+                title,
+                message,
+                "REGISTRATION_DEADLINE",
+                LocalDateTime.now(),
+                "SEAL Hackathon registration deadline"
+        );
+    }
+
+    @Transactional
+    public int notifyRoundUpdated(HackathonEventEntity event, RoundEntity round) {
+        if (!isNotifiableEvent(event) || round == null) {
+            return 0;
+        }
+        String deadlineText = round.getSubmissionDeadline() == null
+                ? "No submission deadline configured yet"
+                : "Submission deadline: " + formatDateTime(round.getSubmissionDeadline());
+        String title = "Round update available";
+        String message = round.getRoundName() + " in " + event.getName()
+                + " was updated. " + deadlineText + ". Please review the latest round timeline and requirements.";
+        return notifyRecipients(
+                resolveEventStakeholders(event.getEventId()),
+                event,
+                title,
+                message,
+                "EVENT_ROUND_UPDATE",
+                LocalDateTime.now(),
+                "SEAL Hackathon round updated"
+        );
     }
 
     @Transactional
@@ -105,18 +163,144 @@ public class EventUpdateNotificationService {
         LocalDateTime createdAt = LocalDateTime.now();
         String title = "Final results published";
         String message = "Final results for " + event.getName()
-                + " are now available. Please review rankings, qualification status, and feedback on your dashboard.";
+                + " are now available. Please review rankings, qualification status, awards, and feedback on your dashboard.";
 
-        int savedCount = 0;
-        for (Integer userId : recipientIds) {
-            UserEntity user = userRepository.findById(userId).orElse(null);
+        return notifyRecipients(
+                recipientIds,
+                event,
+                title,
+                message,
+                "RESULTS",
+                createdAt,
+                "SEAL Hackathon final results published"
+        );
+    }
+
+    @Transactional
+    public int notifyAwardsGranted(HackathonEventEntity event, List<TeamAwardHistoryDto> awards) {
+        if (event == null || awards == null || awards.isEmpty()) {
+            return 0;
+        }
+        int notificationCount = 0;
+        LocalDateTime createdAt = LocalDateTime.now();
+        for (TeamAwardHistoryDto award : awards) {
+            if (award == null || award.teamId() == null || award.awardName() == null) {
+                continue;
+            }
+            String title = "Award received";
+            String message = "Your team " + award.teamName()
+                    + " received " + award.awardName()
+                    + " in " + event.getName()
+                    + ". Check the published results for ranking and score details.";
+            String subject = "SEAL Hackathon award received";
+            for (TeamMemberEntity member : teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(award.teamId())) {
+                UserEntity user = member.getStudent().getUserRole().getUser();
+                if (user == null) {
+                    continue;
+                }
+                saveNotification(user, event, null, title, message, "AWARD", createdAt);
+                sendBestEffortEmail(user, subject, buildEmailBody(user, title, message));
+                notificationCount += 1;
+            }
+        }
+        return notificationCount;
+    }
+
+    @Transactional
+    public void notifyTeamMatched(UserEntity user, HackathonEventEntity event, TeamEntity team) {
+        if (user == null || event == null || team == null) {
+            return;
+        }
+        String title = "Team assignment confirmed";
+        String message = "You have been assigned to " + team.getTeamName()
+                + " for " + event.getName()
+                + ". Please check your team workspace for members, track, mentor, and submission details.";
+        saveNotification(user, event, null, title, message, "TEAM_MATCHING", LocalDateTime.now());
+        sendTeamMatchedEmail(user, event, team);
+    }
+
+    @Transactional
+    public int notifyTeamIneligible(TeamEntity team,
+                                    HackathonEventEntity event,
+                                    String validationMessage) {
+        if (team == null || event == null) {
+            return 0;
+        }
+        String title = "Team no longer eligible";
+        String message = team.getTeamName() + " is currently not eligible for " + event.getName()
+                + ". " + normalizeOptionalText(validationMessage, "Please update your team before the next deadline.");
+        int notificationCount = 0;
+        LocalDateTime createdAt = LocalDateTime.now();
+        for (TeamMemberEntity member : teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(team.getTeamId())) {
+            UserEntity user = member.getStudent().getUserRole().getUser();
             if (user == null) {
                 continue;
             }
-            saveNotification(user, event, null, title, message, "RESULTS", createdAt);
-            savedCount += 1;
+            saveNotification(user, event, null, title, message, "TEAM_INELIGIBLE", createdAt);
+            sendBestEffortEmail(user, "SEAL Hackathon team eligibility update", buildEmailBody(user, title, message));
+            notificationCount += 1;
         }
-        return savedCount;
+        return notificationCount;
+    }
+
+    private void sendTeamMatchedEmail(UserEntity user, HackathonEventEntity event, TeamEntity team) {
+        if (mailHost == null || mailHost.isBlank() || user.getEmail() == null || user.getEmail().isBlank()) {
+            return;
+        }
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            return;
+        }
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
+            if (mailFrom != null && !mailFrom.isBlank()) {
+                helper.setFrom(mailFrom);
+            }
+            helper.setTo(user.getEmail());
+            helper.setSubject("You have been assigned to a SEAL Hackathon team");
+            helper.setText(buildTeamMatchedEmailBody(user, event, team), true);
+            mailSender.send(message);
+        } catch (MailException | MessagingException ignored) {
+            // In-app notification is authoritative; email is best-effort for local/demo environments.
+        }
+    }
+
+    private String buildTeamMatchedEmailBody(UserEntity user, HackathonEventEntity event, TeamEntity team) {
+        String recipientName = user.getFullName() == null || user.getFullName().isBlank()
+                ? user.getUsername()
+                : user.getFullName().trim();
+        String trackName = team.getTrack() == null || team.getTrack().getName() == null
+                ? "Track pending"
+                : team.getTrack().getName();
+
+        return """
+                <div style="margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1d2638;">
+                  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dfe6ef;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;background:linear-gradient(135deg,#0f766e 0%%,#16a34a 100%%);color:#ffffff;">
+                      <div style="font-size:28px;font-weight:800;letter-spacing:0.5px;">SEAL</div>
+                      <div style="margin-top:8px;font-size:15px;opacity:0.92;">Team assignment confirmed</div>
+                    </div>
+                    <div style="padding:32px;">
+                      <p style="margin:0 0 12px;font-size:15px;">Hello %s,</p>
+                      <p style="margin:0 0 18px;font-size:15px;line-height:1.65;">
+                        You have been assigned to <strong>%s</strong> for <strong>%s</strong>.
+                      </p>
+                      <div style="margin:0 0 18px;padding:18px;border-radius:14px;background:#f0fdf4;border:1px solid #bbf7d0;">
+                        <div style="font-size:13px;font-weight:700;color:#15803d;letter-spacing:1.2px;text-transform:uppercase;">Your team</div>
+                        <div style="margin-top:10px;font-size:20px;font-weight:800;color:#1d2638;">%s</div>
+                        <div style="margin-top:6px;font-size:14px;color:#4f5d75;">Track: %s</div>
+                      </div>
+                      <p style="margin:0;font-size:14px;line-height:1.6;color:#4f5d75;">
+                        Please open your SEAL dashboard to check team members, track/mentor details, and submission deadlines.
+                      </p>
+                    </div>
+                    <div style="padding:18px 32px;background:#f8fafc;border-top:1px solid #e5edf5;font-size:12px;color:#637381;">
+                      SEAL Hackathon Management System
+                    </div>
+                  </div>
+                </div>
+                """.formatted(recipientName, team.getTeamName(), event.getName(), team.getTeamName(), trackName);
     }
 
     @Transactional
@@ -152,9 +336,19 @@ public class EventUpdateNotificationService {
                 continue;
             }
             saveNotification(user, event, savedAnnouncement, title, message, audience, createdAt);
+            sendBestEffortEmail(
+                    user,
+                    "SEAL Hackathon announcement",
+                    buildEmailBody(user, title, message)
+            );
         }
         if (!recipientIds.contains(coordinator.getUserId())) {
             saveNotification(coordinator, event, savedAnnouncement, title, message, "COORDINATOR_COPY", createdAt);
+            sendBestEffortEmail(
+                    coordinator,
+                    "SEAL Hackathon announcement copy",
+                    buildEmailBody(coordinator, title, message)
+            );
         }
 
         auditLogService.record(
@@ -318,6 +512,7 @@ public class EventUpdateNotificationService {
                         notification.getEventName(),
                         notification.getTitle(),
                         notification.getMessage(),
+                        notification.getAnnouncementAudience(),
                         Boolean.TRUE.equals(notification.getRead()),
                         notification.getReadAt(),
                         notification.getCreatedAt()
@@ -375,6 +570,14 @@ public class EventUpdateNotificationService {
         return recipientIds;
     }
 
+    private Set<Integer> resolveEventStakeholders(Integer eventId) {
+        Set<Integer> recipientIds = new LinkedHashSet<>();
+        recipientIds.addAll(teamMemberRepository.findDistinctStudentUserIdsByEventId(eventId));
+        recipientIds.addAll(trackMentorRepository.findDistinctMentorUserIdsByEventId(eventId));
+        recipientIds.addAll(judgeAssignmentRepository.findDistinctJudgeUserIdsByEventId(eventId));
+        return recipientIds;
+    }
+
     private String emptyAudienceMessage(String audience) {
         if ("STUDENTS".equalsIgnoreCase(audience)) {
             return "No active students found for this event/audience.";
@@ -406,6 +609,29 @@ public class EventUpdateNotificationService {
         notification.setRead(false);
         notification.setCreatedAt(createdAt);
         return notificationRepository.save(notification);
+    }
+
+    private int notifyRecipients(Set<Integer> recipientIds,
+                                 HackathonEventEntity event,
+                                 String title,
+                                 String message,
+                                 String category,
+                                 LocalDateTime createdAt,
+                                 String emailSubject) {
+        if (event == null || recipientIds == null || recipientIds.isEmpty()) {
+            return 0;
+        }
+        int savedCount = 0;
+        for (Integer userId : recipientIds) {
+            UserEntity user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                continue;
+            }
+            saveNotification(user, event, null, title, message, category, createdAt);
+            sendBestEffortEmail(user, emailSubject, buildEmailBody(user, title, message));
+            savedCount += 1;
+        }
+        return savedCount;
     }
 
     private SentAnnouncementDto updateLegacyAnnouncement(Integer announcementId,
@@ -548,10 +774,94 @@ public class EventUpdateNotificationService {
                 notification.getEventName(),
                 notification.getTitle(),
                 notification.getMessage(),
+                notification.getAnnouncementAudience(),
                 Boolean.TRUE.equals(notification.getRead()),
                 notification.getReadAt(),
                 notification.getCreatedAt()
         );
+    }
+
+    private void sendBestEffortEmail(UserEntity user, String subject, String htmlBody) {
+        if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
+            return;
+        }
+        if (mailHost == null || mailHost.isBlank()) {
+            return;
+        }
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            return;
+        }
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
+            if (mailFrom != null && !mailFrom.isBlank()) {
+                helper.setFrom(mailFrom);
+            }
+            helper.setTo(user.getEmail());
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+            mailSender.send(message);
+        } catch (MailException | MessagingException ignored) {
+            // In-app notification is authoritative; email is best-effort for local/demo environments.
+        }
+    }
+
+    private String buildEmailBody(UserEntity user, String title, String message) {
+        return """
+                <div style="margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1d2638;">
+                  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dfe6ef;border-radius:16px;overflow:hidden;">
+                    <div style="padding:24px 32px;background:linear-gradient(135deg,#071a2f 0%%,#0d2a47 55%%,#f37021 135%%);color:#ffffff;">
+                      <div style="font-size:28px;font-weight:800;letter-spacing:0.5px;">SEAL</div>
+                      <div style="margin-top:8px;font-size:15px;opacity:0.92;">%s</div>
+                    </div>
+                    <div style="padding:32px;">
+                      <p style="margin:0 0 12px;font-size:15px;">Hello %s,</p>
+                      <p style="margin:0;font-size:15px;line-height:1.7;color:#334155;">%s</p>
+                    </div>
+                    <div style="padding:18px 32px;background:#f8fafc;border-top:1px solid #e5edf5;font-size:12px;color:#637381;">
+                      Open your SEAL dashboard for the latest details.
+                    </div>
+                  </div>
+                </div>
+                """.formatted(
+                title,
+                resolveRecipientName(user),
+                message
+        );
+    }
+
+    private String resolveRecipientName(UserEntity user) {
+        if (user == null) {
+            return "SEAL participant";
+        }
+        if (user.getFullName() != null && !user.getFullName().isBlank()) {
+            return user.getFullName().trim();
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername().trim();
+        }
+        return user.getEmail() == null || user.getEmail().isBlank() ? "SEAL participant" : user.getEmail().trim();
+    }
+
+    private String normalizeOptionalText(String value, String fallback) {
+        String normalized = value == null ? "" : value.trim();
+        return normalized.isBlank() ? fallback : normalized;
+    }
+
+    private String formatDateTime(LocalDateTime value) {
+        return value == null ? "an upcoming update" : value.format(DATE_TIME_FORMATTER);
+    }
+
+    private boolean isNotifiableEvent(HackathonEventEntity event) {
+        if (event == null || event.getEventId() == null) {
+            return false;
+        }
+        try {
+            return EventStatus.from(event.getStatus()) != EventStatus.DRAFT;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     private UserEntity currentUser(Authentication authentication) {
