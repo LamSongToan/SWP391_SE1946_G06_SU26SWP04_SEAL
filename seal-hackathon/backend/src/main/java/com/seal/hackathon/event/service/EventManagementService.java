@@ -67,6 +67,7 @@ public class EventManagementService {
     private final TeamRepository teamRepository;
     private final ObjectMapper objectMapper;
     private final AuditLogService auditLogService;
+    private final EventUpdateNotificationService notificationService;
 
     public EventManagementService(HackathonEventRepository eventRepository,
                                    TrackRepository trackRepository,
@@ -74,7 +75,8 @@ public class EventManagementService {
                                    ScoringCriteriaRepository scoringCriteriaRepository,
                                    TeamRepository teamRepository,
                                    ObjectMapper objectMapper,
-                                   AuditLogService auditLogService) {
+                                   AuditLogService auditLogService,
+                                   EventUpdateNotificationService notificationService) {
         this.eventRepository = eventRepository;
         this.trackRepository = trackRepository;
         this.roundRepository = roundRepository;
@@ -82,6 +84,7 @@ public class EventManagementService {
         this.teamRepository = teamRepository;
         this.objectMapper = objectMapper;
         this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -184,6 +187,7 @@ public class EventManagementService {
         event.setStatus(publishedStatus.getDbValue());
         event.setPublishedAt(LocalDateTime.now());
         eventRepository.saveAndFlush(event);
+        notifyEventChanges(event, null);
         auditLogService.record(
                 "EVENT_PUBLISHED",
                 "EVENT",
@@ -233,11 +237,14 @@ public class EventManagementService {
     public EventManagementDto updateEvent(Integer eventId, EventUpsertRequest request) {
         validateEventDateRange(request.startDate(), request.endDate());
         HackathonEventEntity event = getEventOrThrow(eventId);
+        LocalDateTime previousRegistrationEndAt = event.getRegistrationEndAt();
         String semester = normalizeSemester(request.semester());
         ensureSemesterYearUnique(request.year(), semester, eventId);
         validateExistingRoundDeadlines(eventId, request.startDate(), request.endDate());
         applyEventRequest(event, request, semester, false);
-        return toEventDto(eventRepository.save(event));
+        HackathonEventEntity saved = eventRepository.save(event);
+        notifyEventChanges(saved, previousRegistrationEndAt);
+        return toEventDto(saved);
     }
 
     @Transactional
@@ -245,7 +252,7 @@ public class EventManagementService {
         validateInitialConfiguration(
                 request.event().startDate(),
                 request.event().endDate(),
-                request.tracks().stream().map(track -> new TrackUpsertRequest(track.name())).toList(),
+                request.tracks().stream().map(track -> new TrackUpsertRequest(track.name(), track.minTeams(), track.maxTeams())).toList(),
                 request.rounds().stream().map(round -> new RoundUpsertRequest(
                         round.roundName(),
                         round.roundOrder(),
@@ -255,6 +262,7 @@ public class EventManagementService {
         );
 
         HackathonEventEntity event = getEventOrThrow(eventId);
+        LocalDateTime previousRegistrationEndAt = event.getRegistrationEndAt();
         String semester = normalizeSemester(request.event().semester());
         ensureSemesterYearUnique(request.event().year(), semester, eventId);
         applyEventRequestWithoutConfiguredReadiness(event, request.event(), semester);
@@ -263,6 +271,7 @@ public class EventManagementService {
         syncTracks(eventId, request.tracks());
         syncRounds(eventId, request.rounds());
 
+        notifyEventChanges(event, previousRegistrationEndAt);
         return toEventDto(event);
     }
 
@@ -305,6 +314,8 @@ public class EventManagementService {
         TrackEntity track = new TrackEntity();
         track.setEventId(eventId);
         track.setName(trackName);
+        track.setMinTeams(normalizeMinTeams(request.minTeams()));
+        track.setMaxTeams(normalizeMaxTeams(request.minTeams(), request.maxTeams()));
         TrackDto dto = toTrackDto(trackRepository.save(track));
         auditLogService.record(
                 "TRACK_CREATED",
@@ -330,6 +341,8 @@ public class EventManagementService {
             throw new ApiException(HttpStatus.CONFLICT, "Track name already exists in this event");
         }
         track.setName(nextName);
+        track.setMinTeams(normalizeMinTeams(request.minTeams()));
+        track.setMaxTeams(normalizeMaxTeams(request.minTeams(), request.maxTeams()));
         TrackDto updated = toTrackDto(trackRepository.save(track));
         auditLogService.record(
                 "TRACK_UPDATED",
@@ -386,6 +399,7 @@ public class EventManagementService {
         round.setEventId(eventId);
         applyRoundRequest(round, request);
         RoundManagementDto dto = toRoundDto(roundRepository.save(round));
+        notificationService.notifyRoundUpdated(event, round);
         auditLogService.record(
                 "ROUND_CREATED",
                 "ROUND",
@@ -411,6 +425,7 @@ public class EventManagementService {
         reorderRoundsForMove(roundsInEvent, roundId, request.roundOrder());
         applyRoundRequest(round, request);
         RoundManagementDto updated = toRoundDto(roundRepository.save(round));
+        notificationService.notifyRoundUpdated(event, round);
         auditLogService.record(
                 "ROUND_UPDATED",
                 "ROUND",
@@ -526,6 +541,22 @@ public class EventManagementService {
         }
     }
 
+    private int normalizeTeamSize(Integer value, int fallback) {
+        return value == null ? fallback : Math.max(1, value);
+    }
+
+    private Integer normalizeMinTeams(Integer value) {
+        return value == null ? null : Math.max(1, value);
+    }
+
+    private Integer normalizeMaxTeams(Integer minTeams, Integer maxTeams) {
+        if (maxTeams == null) {
+            return null;
+        }
+        int normalizedMin = normalizeMinTeams(minTeams) == null ? 1 : normalizeMinTeams(minTeams);
+        return Math.max(normalizedMin, maxTeams);
+    }
+
     private void validateRoundInsertPosition(Integer requestedOrder, int maxAllowedOrder) {
         if (requestedOrder == null || requestedOrder < 1 || requestedOrder > maxAllowedOrder) {
             throw new ApiException(
@@ -637,13 +668,18 @@ public class EventManagementService {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "Track does not belong to this event");
                 }
                 existing.setName(request.name().trim());
+                existing.setMinTeams(normalizeMinTeams(request.minTeams()));
+                existing.setMaxTeams(normalizeMaxTeams(request.minTeams(), request.maxTeams()));
                 trackRepository.save(existing);
                 requestedIds.add(existing.getTrackId());
             } else {
                 TrackEntity created = new TrackEntity();
                 created.setEventId(eventId);
                 created.setName(request.name().trim());
-                trackRepository.save(created);
+                created.setMinTeams(normalizeMinTeams(request.minTeams()));
+                created.setMaxTeams(normalizeMaxTeams(request.minTeams(), request.maxTeams()));
+                TrackEntity saved = trackRepository.save(created);
+                requestedIds.add(saved.getTrackId());
             }
         }
 
@@ -790,10 +826,13 @@ public class EventManagementService {
     }
 
     private void validateTeamsReadyForEvent(Integer eventId) {
-        long invalidTeams = teamRepository.countInvalidTeamSizesByEventId(eventId, MIN_TEAM_SIZE, MAX_TEAM_SIZE);
+        HackathonEventEntity event = getEventOrThrow(eventId);
+        int minSize = event.getMinTeamSize() == null ? MIN_TEAM_SIZE : event.getMinTeamSize();
+        int maxSize = event.getMaxTeamSize() == null ? MAX_TEAM_SIZE : event.getMaxTeamSize();
+        long invalidTeams = teamRepository.countInvalidTeamSizesByEventId(eventId, minSize, maxSize);
         if (invalidTeams > 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
-                    "All teams must have 3 to 5 members before the event can start");
+                    "All teams must have " + minSize + " to " + maxSize + " members before the event can start");
         }
     }
 
@@ -836,7 +875,12 @@ public class EventManagementService {
                 ? Collections.emptyList()
                 : request.tracks().stream()
                 .filter(track -> track != null && track.name() != null && !track.name().trim().isBlank())
-                .map(track -> new EventWizardTrackRequest(track.trackId(), track.name().trim()))
+                .map(track -> new EventWizardTrackRequest(
+                        track.trackId(),
+                        track.name().trim(),
+                        normalizeMinTeams(track.minTeams()),
+                        normalizeMaxTeams(track.minTeams(), track.maxTeams())
+                ))
                 .toList();
 
         List<EventWizardRoundRequest> sanitizedQualifyingRounds = request == null || request.qualifyingRounds() == null
@@ -887,6 +931,8 @@ public class EventManagementService {
                 request == null ? null : request.competitionStartAt(),
                 request == null ? null : request.competitionEndAt(),
                 request == null || request.trackSelectionMode() == null ? "TEAM_SELECT" : request.trackSelectionMode().trim(),
+                normalizeTeamSize(request == null ? null : request.minTeamSize(), MIN_TEAM_SIZE),
+                normalizeTeamSize(request == null ? null : request.maxTeamSize(), MAX_TEAM_SIZE),
                 sanitizedTracks,
                 sanitizedQualifyingRounds,
                 sanitizedFinalRound,
@@ -905,6 +951,8 @@ public class EventManagementService {
         event.setCompetitionStartAt(snapshot.competitionStartAt());
         event.setCompetitionEndAt(snapshot.competitionEndAt());
         event.setTrackSelectionMode(snapshot.trackSelectionMode());
+        event.setMinTeamSize(snapshot.minTeamSize());
+        event.setMaxTeamSize(Math.max(snapshot.minTeamSize(), snapshot.maxTeamSize()));
         event.setRankingMethod(snapshot.rankingMethod());
         event.setAwardsJson(writeAwards(snapshot.awards()));
         event.setScoringCriteriaJson(null);
@@ -912,10 +960,26 @@ public class EventManagementService {
         event.setEndDate(snapshot.competitionEndAt() == null ? null : snapshot.competitionEndAt().toLocalDate());
     }
 
+    private void notifyEventChanges(HackathonEventEntity event, LocalDateTime previousRegistrationEndAt) {
+        if (event == null) {
+            return;
+        }
+        notificationService.notifyEventUpdated(event);
+        if (previousRegistrationEndAt == null || !previousRegistrationEndAt.equals(event.getRegistrationEndAt())) {
+            notificationService.notifyRegistrationDeadline(event);
+        }
+    }
+
     private void syncWizardTracks(Integer eventId, List<EventWizardTrackRequest> requests) {
         List<TrackEntity> existingTracks = trackRepository.findByEventIdOrderByTrackIdAsc(eventId);
         Map<Integer, TrackEntity> existingById = existingTracks.stream()
                 .collect(java.util.stream.Collectors.toMap(TrackEntity::getTrackId, track -> track));
+        Map<String, TrackEntity> existingByName = existingTracks.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        track -> track.getName().trim().toLowerCase(Locale.ROOT),
+                        track -> track,
+                        (left, right) -> left
+                ));
         Set<Integer> requestedIds = new HashSet<>();
         Set<String> uniqueNames = new HashSet<>();
 
@@ -925,18 +989,21 @@ public class EventManagementService {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Track names must be unique");
             }
 
-            if (request.trackId() != null) {
-                TrackEntity existing = existingById.get(request.trackId());
-                if (existing == null) {
-                    throw new ApiException(HttpStatus.BAD_REQUEST, "Track does not belong to this event");
-                }
+            TrackEntity existing = request.trackId() == null ? existingByName.get(normalized) : existingById.get(request.trackId());
+            if (existing != null) {
                 existing.setName(request.name().trim());
+                existing.setMinTeams(normalizeMinTeams(request.minTeams()));
+                existing.setMaxTeams(normalizeMaxTeams(request.minTeams(), request.maxTeams()));
                 trackRepository.save(existing);
                 requestedIds.add(existing.getTrackId());
+            } else if (request.trackId() != null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Track does not belong to this event");
             } else {
                 TrackEntity created = new TrackEntity();
                 created.setEventId(eventId);
                 created.setName(request.name().trim());
+                created.setMinTeams(normalizeMinTeams(request.minTeams()));
+                created.setMaxTeams(normalizeMaxTeams(request.minTeams(), request.maxTeams()));
                 TrackEntity savedTrack = trackRepository.save(created);
                 requestedIds.add(savedTrack.getTrackId());
             }
@@ -1323,8 +1390,15 @@ public class EventManagementService {
                 event.getCompetitionStartAt(),
                 event.getCompetitionEndAt(),
                 event.getTrackSelectionMode(),
+                event.getMinTeamSize(),
+                event.getMaxTeamSize(),
                 tracks.stream()
-                        .map(track -> new EventWizardTrackRequest(track.getTrackId(), track.getName()))
+                        .map(track -> new EventWizardTrackRequest(
+                                track.getTrackId(),
+                                track.getName(),
+                                track.getMinTeams(),
+                                track.getMaxTeams()
+                        ))
                         .toList(),
                 qualifyingRounds,
                 finalRound,
@@ -1347,7 +1421,14 @@ public class EventManagementService {
     }
 
     private TrackDto toTrackDto(TrackEntity track) {
-        return new TrackDto(track.getTrackId(), track.getEventId(), track.getName());
+        return new TrackDto(
+                track.getTrackId(),
+                track.getEventId(),
+                track.getName(),
+                track.getMinTeams(),
+                track.getMaxTeams(),
+                teamRepository.countByTrackTrackId(track.getTrackId())
+        );
     }
 
     private RoundManagementDto toRoundDto(RoundEntity round) {
@@ -1375,6 +1456,8 @@ public class EventManagementService {
         payload.put("competitionStartAt", event.getCompetitionStartAt());
         payload.put("competitionEndAt", event.getCompetitionEndAt());
         payload.put("trackSelectionMode", event.getTrackSelectionMode());
+        payload.put("minTeamSize", event.getMinTeamSize());
+        payload.put("maxTeamSize", event.getMaxTeamSize());
         payload.put("rankingMethod", event.getRankingMethod());
         payload.put("publishedAt", event.getPublishedAt());
         return payload;
@@ -1390,6 +1473,8 @@ public class EventManagementService {
             LocalDateTime competitionStartAt,
             LocalDateTime competitionEndAt,
             String trackSelectionMode,
+            Integer minTeamSize,
+            Integer maxTeamSize,
             List<EventWizardTrackRequest> tracks,
             List<EventWizardRoundRequest> qualifyingRounds,
             EventWizardRoundRequest finalRound,

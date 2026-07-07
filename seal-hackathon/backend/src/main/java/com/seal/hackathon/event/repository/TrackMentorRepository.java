@@ -33,4 +33,10 @@ public interface TrackMentorRepository extends JpaRepository<TrackMentorEntity, 
             WHERE tm.track.eventId = :eventId
             """)
     List<Integer> findDistinctMentorUserIdsByEventId(@Param("eventId") Integer eventId);
+
+    @EntityGraph(attributePaths = {
+        "mentor", "mentor.userRole", "mentor.userRole.user",
+        "track"
+    })
+    List<TrackMentorEntity> findByTrackEventId(Integer eventId);
 }

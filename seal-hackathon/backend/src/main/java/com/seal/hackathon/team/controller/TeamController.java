@@ -4,10 +4,12 @@ import com.seal.hackathon.common.ApiResponse;
 import com.seal.hackathon.event.dto.TrackDto;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.InviteTeamMemberRequest;
+import com.seal.hackathon.team.dto.IndividualRegistrationDto;
 import com.seal.hackathon.team.dto.JoinTeamRequest;
 import com.seal.hackathon.team.dto.RegisterTeamForEventRequest;
 import com.seal.hackathon.team.dto.TeamDto;
 import com.seal.hackathon.team.dto.TeamInvitationDto;
+import com.seal.hackathon.team.service.TeamFormationService;
 import com.seal.hackathon.team.service.TeamService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -30,14 +32,24 @@ import java.util.List;
 public class TeamController {
 
     private final TeamService teamService;
+    private final TeamFormationService teamFormationService;
 
-    public TeamController(TeamService teamService) {
+    public TeamController(TeamService teamService, TeamFormationService teamFormationService) {
         this.teamService = teamService;
+        this.teamFormationService = teamFormationService;
     }
 
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<TeamDto>>> getMyTeams(Authentication authentication) {
         return ResponseEntity.ok(ApiResponse.ok("Teams fetched", teamService.listMyTeams(authentication)));
+    }
+
+    @GetMapping("/my/individual-registrations")
+    public ResponseEntity<ApiResponse<List<IndividualRegistrationDto>>> getMyIndividualRegistrations(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Individual registrations fetched",
+                teamFormationService.listMyIndividualRegistrations(authentication)
+        ));
     }
 
     @GetMapping("/{teamId}")
@@ -49,6 +61,16 @@ public class TeamController {
     @GetMapping("/events/{eventId}/tracks")
     public ResponseEntity<ApiResponse<List<TrackDto>>> getRegistrationTracks(@PathVariable Integer eventId) {
         return ResponseEntity.ok(ApiResponse.ok("Registration tracks fetched", teamService.listRegistrationTracks(eventId)));
+    }
+
+    @PostMapping("/events/{eventId}/individual-registration")
+    public ResponseEntity<ApiResponse<IndividualRegistrationDto>> registerIndividual(
+            Authentication authentication,
+            @PathVariable Integer eventId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Individual registration saved",
+                teamFormationService.registerIndividual(authentication, eventId)
+        ));
     }
 
     @PostMapping

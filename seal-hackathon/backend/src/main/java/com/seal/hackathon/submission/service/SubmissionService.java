@@ -235,8 +235,11 @@ public class SubmissionService {
         }
 
         long memberCount = memberRepository.countByTeamTeamId(team.getTeamId());
-        if (memberCount < MIN_TEAM_SIZE || memberCount > MAX_TEAM_SIZE) {
-            throw new ApiException(HttpStatus.CONFLICT, "A submission requires a valid team with 3 to 5 members");
+        int minSize = minTeamSize(event);
+        int maxSize = maxTeamSize(event);
+        if (memberCount < minSize || memberCount > maxSize) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "A submission requires a valid team with " + minSize + " to " + maxSize + " members");
         }
 
         if (round.getRoundOrder() != null && round.getRoundOrder() > 1) {
@@ -267,8 +270,10 @@ public class SubmissionService {
         if (LocalDateTime.now().isAfter(round.getSubmissionDeadline())) {
             return "The submission deadline for this round has passed";
         }
-        if (memberCount < MIN_TEAM_SIZE || memberCount > MAX_TEAM_SIZE) {
-            return "A submission requires a valid team with 3 to 5 members";
+        int minSize = minTeamSize(event);
+        int maxSize = maxTeamSize(event);
+        if (memberCount < minSize || memberCount > maxSize) {
+            return "A submission requires a valid team with " + minSize + " to " + maxSize + " members";
         }
         if (existing == null && round.getRoundOrder() != null && round.getRoundOrder() > 1) {
             return roundRepository.findByEventIdAndRoundOrder(event.getEventId(), round.getRoundOrder() - 1)
@@ -283,6 +288,14 @@ public class SubmissionService {
         requireRepositoryUrl(request.repositoryUrl());
         validateOptionalHttpUrl(request.demoUrl(), "Demo URL");
         validateOptionalHttpUrl(request.slideUrl(), "Slide URL");
+    }
+
+    private int minTeamSize(HackathonEventEntity event) {
+        return event.getMinTeamSize() == null ? MIN_TEAM_SIZE : Math.max(1, event.getMinTeamSize());
+    }
+
+    private int maxTeamSize(HackathonEventEntity event) {
+        return event.getMaxTeamSize() == null ? MAX_TEAM_SIZE : Math.max(minTeamSize(event), event.getMaxTeamSize());
     }
 
     private void requireRepositoryUrl(String value) {

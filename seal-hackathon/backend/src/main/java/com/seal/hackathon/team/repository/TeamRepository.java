@@ -25,6 +25,15 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
     @Query("SELECT t FROM TeamEntity t WHERE t.teamId = :teamId")
     Optional<TeamEntity> findDetailedById(@Param("teamId") Integer teamId);
 
+    @EntityGraph(attributePaths = {"track", "leader", "leader.userRole", "leader.userRole.user"})
+    @Query("""
+            SELECT t
+            FROM TeamEntity t
+            WHERE t.track.eventId = :eventId
+            ORDER BY t.track.trackId ASC, t.teamName ASC
+            """)
+    List<TeamEntity> findDetailedByEventId(@Param("eventId") Integer eventId);
+
     @Query("""
             SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END
             FROM TeamEntity t
@@ -37,6 +46,9 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
     Optional<TeamEntity> findByJoinCodeIgnoreCase(String joinCode);
 
     long countByTrackTrackId(Integer trackId);
+
+    @EntityGraph(attributePaths = {"track", "leader", "leader.userRole", "leader.userRole.user"})
+    List<TeamEntity> findByTrackTrackIdOrderByTeamNameAsc(Integer trackId);
 
     @Query("""
             SELECT COUNT(t)

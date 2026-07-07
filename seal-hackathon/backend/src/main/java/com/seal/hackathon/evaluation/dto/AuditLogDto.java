@@ -7,6 +7,7 @@ public record AuditLogDto(
         Integer userId,
         String actorName,
         String actorUsername,
+        String actorEmail,
         String actionType,
         String targetEntity,
         Integer targetId,

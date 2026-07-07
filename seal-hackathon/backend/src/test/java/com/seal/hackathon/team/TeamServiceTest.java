@@ -12,6 +12,7 @@ import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
+import com.seal.hackathon.event.service.EventUpdateNotificationService;
 import com.seal.hackathon.submission.repository.SubmissionRepository;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.RegisterTeamForEventRequest;
@@ -61,6 +62,8 @@ class TeamServiceTest {
     private SubmissionRepository submissionRepository;
     @Mock
     private AuditLogService auditLogService;
+    @Mock
+    private EventUpdateNotificationService notificationService;
 
     @InjectMocks
     private TeamService teamService;
@@ -221,6 +224,48 @@ class TeamServiceTest {
         Assertions.assertEquals(11, result.leaderUserRoleId());
         Assertions.assertFalse(result.currentUserLeader());
         verify(teamRepository).save(team);
+    }
+
+    @Test
+    void registerTeamForEvent_shouldPreferTrackNeedingMoreTeamsWhenSystemAssigns() {
+        StudentProfileEntity leader = student(1, 10, "leader@example.com", "Team Leader");
+        TeamEntity team = new TeamEntity();
+        team.setTeamId(40);
+        team.setLeader(leader);
+        team.setTeamName("Balanced Track Team");
+
+        HackathonEventEntity event = registrationOpenEvent(30);
+        event.setTrackSelectionMode("SYSTEM_ASSIGN");
+
+        TrackEntity webTrack = track(20, 30, "Web Track");
+        webTrack.setMinTeams(3);
+        TrackEntity aiTrack = track(21, 30, "AI Track");
+        aiTrack.setMinTeams(1);
+
+        stubCurrentStudent(leader);
+        when(teamRepository.findDetailedById(40)).thenReturn(Optional.of(team));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(event));
+        when(memberRepository.countByTeamTeamId(40)).thenReturn(3L);
+        when(memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(40)).thenReturn(List.of(
+                teamMember(team, leader),
+                teamMember(team, student(2, 11, "member1@example.com", "Member One")),
+                teamMember(team, student(3, 12, "member2@example.com", "Member Two"))
+        ));
+        when(teamRepository.existsByEventIdAndTeamNameIgnoreCase(30, "Balanced Track Team")).thenReturn(false);
+        when(teamRepository.countByTrackTrackId(20)).thenReturn(0L);
+        when(teamRepository.countByTrackTrackId(21)).thenReturn(0L);
+        when(trackRepository.findByEventIdOrderByTrackIdAsc(30)).thenReturn(List.of(webTrack, aiTrack));
+        when(teamRepository.save(any(TeamEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(submissionRepository.findTopByTeamTeamIdOrderBySubmittedAtDesc(40)).thenReturn(Optional.empty());
+
+        TeamDto result = teamService.registerTeamForEvent(
+                authentication("leader@example.com"),
+                40,
+                new RegisterTeamForEventRequest(30, null)
+        );
+
+        Assertions.assertEquals(20, result.trackId());
+        Assertions.assertEquals("Web Track", result.trackName());
     }
 
     private void stubCurrentStudent(StudentProfileEntity student) {

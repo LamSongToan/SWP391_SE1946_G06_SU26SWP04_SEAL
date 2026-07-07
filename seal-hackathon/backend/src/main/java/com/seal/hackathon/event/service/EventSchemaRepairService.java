@@ -91,6 +91,31 @@ public class EventSchemaRepairService {
                         FOREIGN KEY (announcement_id) REFERENCES dbo.Announcement(announcement_id);
                     END;
                 END;
+
+                IF OBJECT_ID('dbo.Round', 'U') IS NOT NULL
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM sys.columns
+                        WHERE object_id = OBJECT_ID('dbo.Round')
+                          AND name = 'promotion_rule_top_n'
+                          AND is_nullable = 0
+                    )
+                    BEGIN
+                        ALTER TABLE dbo.Round ALTER COLUMN promotion_rule_top_n INT NULL;
+                    END;
+
+                    IF EXISTS (
+                        SELECT 1
+                        FROM sys.columns
+                        WHERE object_id = OBJECT_ID('dbo.Round')
+                          AND name = 'submission_deadline'
+                          AND is_nullable = 0
+                    )
+                    BEGIN
+                        ALTER TABLE dbo.Round ALTER COLUMN submission_deadline DATETIME2 NULL;
+                    END;
+                END;
                 """);
     }
 }

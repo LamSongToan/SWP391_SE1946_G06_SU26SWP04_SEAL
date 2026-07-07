@@ -15,6 +15,7 @@ public record PublicEventCatalogDto(
         LocalDateTime competitionStartAt,
         LocalDateTime competitionEndAt,
         String trackSelectionMode,
+        String registrationStatus,
         boolean registrationAvailable,
         List<PublicEventRoundDto> rounds
 ) {

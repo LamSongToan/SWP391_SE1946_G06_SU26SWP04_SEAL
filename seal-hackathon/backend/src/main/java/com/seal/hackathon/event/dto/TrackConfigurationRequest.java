@@ -7,6 +7,8 @@ public record TrackConfigurationRequest(
         Integer trackId,
         @NotBlank
         @Size(max = 100)
-        String name
+        String name,
+        Integer minTeams,
+        Integer maxTeams
 ) {
 }

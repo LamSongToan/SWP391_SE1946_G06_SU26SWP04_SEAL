@@ -4,9 +4,7 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
-  Collapse,
   Divider,
   MenuItem,
   Stack,
@@ -14,66 +12,18 @@ import {
   Typography,
 } from "@mui/material";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
-import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
-import DnsRoundedIcon from "@mui/icons-material/DnsRounded";
-import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import CenteredNotification from "../layout/CenteredNotification";
 import ModulePageHeader from "../layout/ModulePageHeader";
 import { getApiErrorMessage, http } from "../../api/http";
 import { brand } from "../../styles/designTokens";
 
-const ACTION_OPTIONS = [
-  "",
-  "ACCOUNT_APPROVED",
-  "ACCOUNT_REJECTED",
-  "ACCOUNT_RESUBMITTED",
-  "ACCOUNT_SUSPENDED",
-  "USER_UPDATED",
-  "ANNOUNCEMENT_SENT",
-  "ANNOUNCEMENT_UPDATED",
-  "ANNOUNCEMENT_DELETED",
-  "GUEST_JUDGE_CREATED",
-  "GUEST_JUDGE_PASSWORD_RESET",
-  "GUEST_JUDGE_DEACTIVATED",
-  "EVENT_CREATED",
-  "EVENT_UPDATED",
-  "EVENT_PUBLISHED",
-  "EVENT_DELETED",
-  "ROUND_CREATED",
-  "ROUND_UPDATED",
-  "ROUND_SUBMISSION_OPENED",
-  "ROUND_SUBMISSION_CLOSED",
-  "ROUND_SCORING_FINALIZED",
-  "ROUND_SCORING_REOPENED",
-  "TRACK_CREATED",
-  "TRACK_UPDATED",
-  "TRACK_DELETED",
-  "TEAM_REGISTERED_FOR_EVENT",
-  "SUBMISSION_CREATED",
-  "SUBMISSION_UPDATED",
-  "ROUND_CRITERIA_UPDATED",
-  "CRITERIA_TEMPLATE_CREATED",
-  "CRITERIA_TEMPLATE_UPDATED",
-  "CRITERIA_TEMPLATE_DELETED",
-  "CRITERIA_TEMPLATE_APPLIED",
-  "JUDGE_SCORES_SAVED_DRAFT",
-  "JUDGE_SCORES_FINALIZED",
-  "JUDGE_EVALUATION_REOPENED",
-  "SUBMISSION_FEEDBACK_ADDED",
-];
-
 function formatDateTime(value) {
   if (!value) return "Unknown";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-GB", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
+  return date.toLocaleString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
   });
 }
 
@@ -86,109 +36,37 @@ function formatActionLabel(value) {
     .join(" ");
 }
 
-function formatTargetLabel(log) {
-  const parts = [];
-  if (log.targetEntity) {
-    parts.push(log.targetEntity);
-  }
-  if (log.targetName) {
-    parts.push(log.targetName);
-  } else if (log.targetId) {
-    parts.push(`ID ${log.targetId}`);
-  }
-  return parts.join(" - ") || "General";
+function formatDayHeading(value) {
+  if (!value) return "Unknown date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-function getActorInitials(log) {
-  const source = log.actorName || log.actorUsername || "System";
-  return source
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((segment) => segment.charAt(0).toUpperCase())
-    .join("") || "S";
-}
-
-function formatCommitHash(log) {
-  return String(log.logId || "000000").padStart(6, "0").slice(-6);
-}
-
-function formatCommitMessage(log) {
+function formatLogContent(log) {
   const action = formatActionLabel(log.actionType);
-  const target = log.targetName || log.targetEntity || "workspace";
-  return `${action} on ${target}`;
+  const target = log.targetName || log.targetEntity || (log.targetId ? `ID ${log.targetId}` : "");
+  const reason = String(log.reason || "").trim();
+  if (reason && target) return `${action} - ${target} - ${reason}`;
+  if (target) return `${action} - ${target}`;
+  if (reason) return `${action} - ${reason}`;
+  return action;
 }
 
-function hasAuditDetails(log) {
-  return Boolean(log.reason || log.ipAddress || log.deviceInfo || log.oldValue || log.newValue);
-}
-
-function formatPayload(value) {
-  if (!value) return "";
-  try {
-    return JSON.stringify(JSON.parse(value), null, 2);
-  } catch {
-    return String(value);
-  }
-}
-
-function renderKeyValue(label, value, icon = null) {
-  return (
-    <Stack spacing={0.4} sx={{ minWidth: 0 }}>
-      <Stack direction="row" spacing={0.8} alignItems="center">
-        {icon}
-        <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 800 }}>
-          {label}
-        </Typography>
-      </Stack>
-      <Typography
-        sx={{
-          color: brand.colors.text,
-          fontSize: 14,
-          fontWeight: 700,
-          wordBreak: "break-word",
-        }}
-      >
-        {value || "N/A"}
-      </Typography>
-    </Stack>
-  );
-}
-
-function JsonBlock({ title, value, tone = "dark" }) {
-  if (!value) return null;
-  return (
-    <Box sx={{ flex: 1, minWidth: 0 }}>
-      <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 900, mb: 0.75 }}>
-        {title}
-      </Typography>
-      <Box
-        component="pre"
-        sx={{
-          m: 0,
-          p: 1.25,
-          borderRadius: brand.radius.sm,
-          bgcolor: tone === "dark" ? "#0f172a" : "#172554",
-          color: "#e2e8f0",
-          fontSize: 12,
-          overflowX: "auto",
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          minHeight: 108,
-        }}
-      >
-        {formatPayload(value)}
-      </Box>
-    </Box>
-  );
+function actorLabel(log) {
+  const name = log.actorName || "System";
+  const email = log.actorEmail || "";
+  return email ? `${name} (${email})` : name;
 }
 
 export default function AuditLogPanel() {
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
-  const [actionType, setActionType] = useState("");
   const [logs, setLogs] = useState([]);
-  const [expandedLogId, setExpandedLogId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -210,10 +88,8 @@ export default function AuditLogPanel() {
     try {
       const params = {};
       if (selectedEventId) params.eventId = selectedEventId;
-      if (actionType) params.actionType = actionType;
       const response = await http.get("/api/coordinator/scoring/audit-logs", { params });
       setLogs(response.data?.data || []);
-      setExpandedLogId(null);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to load audit logs"));
       setLogs([]);
@@ -240,7 +116,28 @@ export default function AuditLogPanel() {
   useEffect(() => {
     if (loading) return;
     loadLogs({ silent: false });
-  }, [selectedEventId, actionType]);
+  }, [selectedEventId]);
+
+  const groupedLogs = useMemo(() => {
+    const groups = [];
+    const byDate = new Map();
+
+    logs.forEach((log) => {
+      const dateKey = log.timestamp ? new Date(log.timestamp).toDateString() : "unknown";
+      if (!byDate.has(dateKey)) {
+        const group = {
+          key: dateKey,
+          label: formatDayHeading(log.timestamp),
+          items: [],
+        };
+        byDate.set(dateKey, group);
+        groups.push(group);
+      }
+      byDate.get(dateKey).items.push(log);
+    });
+
+    return groups;
+  }, [logs]);
 
   if (loading) {
     return (
@@ -257,7 +154,7 @@ export default function AuditLogPanel() {
       <ModulePageHeader
         eyebrow="Audit Trail"
         title="Audit Log & Activity Tracking"
-        description="Review who changed what, on which object, when it happened, and how the data changed before and after."
+        description="A clean activity stream showing the log content, who performed it, and when it happened."
         actions={(
           <Button
             variant="outlined"
@@ -283,7 +180,7 @@ export default function AuditLogPanel() {
               Activity stream
             </Typography>
             <Typography sx={{ color: brand.colors.muted, fontSize: 14 }}>
-              Filter by event or action to inspect approvals, event updates, track and round changes, submissions, and scoring work.
+              Filter by event, then read the audit history as a simple chronological timeline.
             </Typography>
           </Stack>
 
@@ -308,21 +205,6 @@ export default function AuditLogPanel() {
                 </MenuItem>
               ))}
             </TextField>
-
-            <TextField
-              select
-              label="Action"
-              value={actionType}
-              onChange={(event) => setActionType(event.target.value)}
-              sx={{ minWidth: 280 }}
-            >
-              <MenuItem value="">All actions</MenuItem>
-              {ACTION_OPTIONS.filter(Boolean).map((item) => (
-                <MenuItem key={item} value={item}>
-                  {formatActionLabel(item)}
-                </MenuItem>
-              ))}
-            </TextField>
           </Stack>
 
           {logs.length === 0 ? (
@@ -333,137 +215,66 @@ export default function AuditLogPanel() {
               </Typography>
             </Box>
           ) : (
-            <Stack spacing={1.1}>
-              {logs.map((log) => (
-                <Box
-                  key={log.logId}
-                  sx={{
-                    borderRadius: brand.radius.md,
-                    border: `1px solid ${brand.colors.line}`,
-                    bgcolor: "#FFFFFF",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Stack
-                    direction={{ xs: "column", md: "row" }}
-                    spacing={1.4}
-                    alignItems={{ xs: "stretch", md: "center" }}
-                    sx={{ p: { xs: 1.35, md: 1.55 } }}
-                  >
-                    <Stack direction="row" spacing={1.15} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          bgcolor: brand.colors.surfaceWarm,
-                          color: brand.colors.orange,
-                          border: "1px solid #FED7AA",
-                          display: "grid",
-                          placeItems: "center",
-                          fontSize: 12,
-                          fontWeight: 950,
-                          flex: "0 0 40px",
-                        }}
-                      >
-                        {getActorInitials(log)}
-                      </Box>
+            <Stack spacing={2.4}>
+              {groupedLogs.map((group) => (
+                <Box key={group.key} sx={{ position: "relative", pl: { xs: 2.5, md: 3.5 } }}>
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: { xs: 10, md: 14 },
+                      top: 34,
+                      bottom: 0,
+                      width: 2,
+                      bgcolor: "#E2E8F0",
+                    }}
+                  />
 
-                      <Box sx={{ minWidth: 0 }}>
-                        <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
-                          <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 950, lineHeight: 1.25 }}>
-                            {formatCommitMessage(log)}
-                          </Typography>
-                          <Chip
-                            size="small"
-                            label={`#${formatCommitHash(log)}`}
-                            sx={{ height: 22, borderRadius: 1, fontWeight: 850 }}
-                          />
-                        </Stack>
-                        <Typography sx={{ color: brand.colors.muted, fontSize: 13, mt: 0.35 }}>
-                          {log.actorName || log.actorUsername || "System"} - {formatDateTime(log.timestamp)}
-                        </Typography>
-                      </Box>
-                    </Stack>
-
-                    <Stack
-                      direction="row"
-                      spacing={0.8}
-                      alignItems="center"
-                      justifyContent={{ xs: "flex-start", md: "flex-end" }}
-                      flexWrap="wrap"
-                      useFlexGap
-                      sx={{ flex: "0 0 auto" }}
-                    >
-                      <Chip size="small" variant="outlined" label={log.targetEntity || "General"} />
-                      <Chip
-                        size="small"
-                        variant="outlined"
-                        label={log.targetName || (log.targetId ? `ID ${log.targetId}` : "No target")}
-                      />
-                      <Button
-                        size="small"
-                        variant={expandedLogId === log.logId ? "contained" : "outlined"}
-                        disabled={!hasAuditDetails(log)}
-                        endIcon={(
-                          <ExpandMoreRoundedIcon
-                            sx={{
-                              fontSize: 18,
-                              transition: "transform 0.18s ease",
-                              transform: expandedLogId === log.logId ? "rotate(180deg)" : "rotate(0deg)",
-                            }}
-                          />
-                        )}
-                        onClick={() => setExpandedLogId((current) => (current === log.logId ? null : log.logId))}
-                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 850 }}
-                      >
-                        Details
-                      </Button>
-                    </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.2, position: "relative", zIndex: 1 }}>
+                    <Box
+                      sx={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: "50%",
+                        border: `2px solid ${brand.colors.muted}`,
+                        bgcolor: "#FFFFFF",
+                        ml: { xs: -2.1, md: -2.7 },
+                      }}
+                    />
+                    <Typography sx={{ color: brand.colors.text, fontSize: 16, fontWeight: 500 }}>
+                      Logs on {group.label}
+                    </Typography>
                   </Stack>
 
-                  <Collapse in={expandedLogId === log.logId} timeout="auto" unmountOnExit>
-                    <Divider />
-                    <Box sx={{ p: { xs: 1.35, md: 1.55 }, bgcolor: "#F8FAFC" }}>
-                      <Stack
-                        direction={{ xs: "column", md: "row" }}
-                        spacing={1.6}
-                        useFlexGap
-                        flexWrap="wrap"
-                      >
-                        {renderKeyValue(
-                          "Actor",
-                          log.actorName
-                            ? `${log.actorName}${log.actorUsername ? ` (@${log.actorUsername})` : ""}`
-                            : "Unknown",
-                          <PersonOutlineRoundedIcon sx={{ fontSize: 15, color: brand.colors.muted }} />
-                        )}
-                        {renderKeyValue(
-                          "Target",
-                          formatTargetLabel(log),
-                          <DnsRoundedIcon sx={{ fontSize: 15, color: brand.colors.muted }} />
-                        )}
-                        {renderKeyValue(
-                          "Action",
-                          formatActionLabel(log.actionType),
-                          <EditNoteRoundedIcon sx={{ fontSize: 15, color: brand.colors.muted }} />
-                        )}
-                        {log.reason ? renderKeyValue("Reason", log.reason) : null}
-                        {log.ipAddress ? renderKeyValue("IP Address", log.ipAddress) : null}
-                        {log.deviceInfo ? renderKeyValue("Device", log.deviceInfo) : null}
-                      </Stack>
-
-                      {(log.oldValue || log.newValue) && (
-                        <>
-                          <Divider sx={{ my: 1.4 }} />
-                          <Stack direction={{ xs: "column", xl: "row" }} spacing={1.25}>
-                            <JsonBlock title="OLD VALUE" value={log.oldValue} tone="dark" />
-                            <JsonBlock title="NEW VALUE" value={log.newValue} tone="blue" />
-                          </Stack>
-                        </>
-                      )}
-                    </Box>
-                  </Collapse>
+                  <Box
+                    sx={{
+                      borderRadius: brand.radius.md,
+                      border: `1px solid ${brand.colors.line}`,
+                      bgcolor: "#FFFFFF",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {group.items.map((log, index) => (
+                      <Box key={log.logId}>
+                        <Box sx={{ px: { xs: 1.5, md: 2.1 }, py: 1.5 }}>
+                          <Typography
+                            sx={{
+                              color: brand.colors.text,
+                              fontSize: 16,
+                              fontWeight: 900,
+                              lineHeight: 1.35,
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {formatLogContent(log)}
+                          </Typography>
+                          <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 0.45 }}>
+                            {actorLabel(log)} updated at {formatDateTime(log.timestamp)}
+                          </Typography>
+                        </Box>
+                        {index < group.items.length - 1 ? <Divider /> : null}
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               ))}
             </Stack>

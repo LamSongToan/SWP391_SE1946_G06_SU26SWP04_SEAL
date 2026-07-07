@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
+  Card,
+  CardContent,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -23,11 +26,48 @@ function normalizeTrackMode(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+function formatDateTime(value) {
+  if (!value) return "not scheduled";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function registrationUnavailableLabel(event) {
+  const status = String(event?.registrationStatus || "").toUpperCase();
+  if (status === "NOT_OPEN_YET") {
+    return `Registration opens ${formatDateTime(event.registrationStartAt)}`;
+  }
+  if (status === "CLOSED") {
+    return "Registration closed";
+  }
+  return "Registration unavailable";
+}
+
+function registrationUnavailableReason(event) {
+  const status = String(event?.registrationStatus || "").toUpperCase();
+  if (status === "NOT_OPEN_YET") {
+    return `Registration has not opened yet. It opens on ${formatDateTime(event.registrationStartAt)}.`;
+  }
+  if (status === "CLOSED") {
+    return `Registration closed on ${formatDateTime(event.registrationEndAt)}.`;
+  }
+  return "This event is visible, but registration is not available right now.";
+}
+
 export default function EventRegistrationPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [individualSaving, setIndividualSaving] = useState(false);
   const [events, setEvents] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [individualRegistrations, setIndividualRegistrations] = useState([]);
   const [tracksByEvent, setTracksByEvent] = useState({});
   const [registerDialog, setRegisterDialog] = useState({
     open: false,
@@ -55,12 +95,14 @@ export default function EventRegistrationPanel() {
     setLoading(true);
     setError("");
     try {
-      const [eventResponse, teamResponse] = await Promise.all([
+      const [eventResponse, teamResponse, individualResponse] = await Promise.all([
         http.get("/api/public/events/catalog"),
         http.get("/api/teams/my"),
+        http.get("/api/teams/my/individual-registrations"),
       ]);
       setEvents(eventResponse.data?.data || []);
       setTeams(teamResponse.data?.data || []);
+      setIndividualRegistrations(individualResponse.data?.data || []);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to load event registration workspace"));
     } finally {
@@ -80,6 +122,16 @@ export default function EventRegistrationPanel() {
   const userRegisteredEventIds = useMemo(
     () => new Set(teams.filter((team) => team.eventId).map((team) => String(team.eventId))),
     [teams]
+  );
+
+  const registeredTeams = useMemo(
+    () => teams.filter((team) => team.eventId),
+    [teams]
+  );
+
+  const individualRegistrationByEvent = useMemo(
+    () => new Map(individualRegistrations.map((registration) => [String(registration.eventId), registration])),
+    [individualRegistrations]
   );
 
   const getEventTrackOptions = (eventId) => tracksByEvent[eventId] || [];
@@ -164,18 +216,48 @@ export default function EventRegistrationPanel() {
     }
   };
 
+  const registerIndividually = async (event) => {
+    if (!event?.eventId) return;
+    setIndividualSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await http.post(`/api/teams/events/${event.eventId}/individual-registration`);
+      const registration = response.data?.data;
+      if (registration?.assignedTeamName) {
+        setSuccess(`You were automatically matched into ${registration.assignedTeamName}.`);
+      } else {
+        setSuccess("Individual registration saved. The system will wait until enough students are available, then auto-form a 3-5 member team for this event.");
+      }
+      await loadWorkspace();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to register individually"));
+    } finally {
+      setIndividualSaving(false);
+    }
+  };
+
   const canRegisterEvent = (event) =>
     event.registrationAvailable && !userRegisteredEventIds.has(String(event.eventId)) && teamOptions.length > 0;
+
+  const canRegisterIndividually = (event) =>
+    !individualSaving
+    && event.registrationAvailable
+    && !userRegisteredEventIds.has(String(event.eventId))
+    && !individualRegistrationByEvent.has(String(event.eventId));
 
   const registerLabelForEvent = (event) => {
     if (userRegisteredEventIds.has(String(event.eventId))) {
       return "Already joined this event";
     }
+    if (individualRegistrationByEvent.has(String(event.eventId))) {
+      return "Individual registration saved";
+    }
     if (!event.registrationAvailable) {
-      return "Registration closed";
+      return registrationUnavailableLabel(event);
     }
     if (!teamOptions.length) {
-      return "Need a ready team";
+      return "Register individually or create a ready team";
     }
     return "Register team";
   };
@@ -184,11 +266,14 @@ export default function EventRegistrationPanel() {
     if (userRegisteredEventIds.has(String(event.eventId))) {
       return "One of your teams is already registered in this event.";
     }
-    if (!teamOptions.length) {
-      return "Create a ready team with 3 to 5 members first, then come back to register.";
+    if (individualRegistrationByEvent.has(String(event.eventId))) {
+      return "You already registered individually for this event. Check your matching status above.";
     }
     if (!event.registrationAvailable) {
-      return "This event is visible, but the registration window is not open right now.";
+      return registrationUnavailableReason(event);
+    }
+    if (!teamOptions.length) {
+      return "Create a ready team, or register individually so the system can match you into a team.";
     }
     return "";
   };
@@ -232,14 +317,118 @@ export default function EventRegistrationPanel() {
         )}
       />
 
+      {registeredTeams.length ? (
+        <Card className="ms-data-card" sx={{ mb: 2 }}>
+          <CardContent>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between" sx={{ mb: 1.4 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 950 }}>My event team status</Typography>
+                <Typography color="text.secondary" variant="body2">
+                  Quick check for your registered team, assigned track, member readiness, and next submission step.
+                </Typography>
+              </Box>
+              <Chip
+                label={`${registeredTeams.length} active event team(s)`}
+                color="success"
+                variant="outlined"
+                sx={{ alignSelf: { xs: "flex-start", sm: "center" }, fontWeight: 850 }}
+              />
+            </Stack>
+            <Stack spacing={1}>
+              {registeredTeams.map((team) => (
+                <Box
+                  key={team.teamId}
+                  sx={{
+                    p: 1.5,
+                    border: "1px solid #e7ebf3",
+                    borderRadius: 3,
+                    bgcolor: team.membershipValid ? "#F0FDF4" : "#FFF7ED",
+                  }}
+                >
+                  <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} justifyContent="space-between">
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 950 }}>{team.teamName}</Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {team.eventName || "Event pending"} | {team.trackName || "Track pending"} | {team.currentUserLeader ? "Leader" : "Member"}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ mt: 0.45, color: team.membershipValid ? "#15803D" : "#EA580C", fontWeight: 750 }}
+                      >
+                        {team.validationMessage || "Team membership status is ready."}
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ alignItems: "center" }}>
+                      <Chip size="small" label={`Members ${team.memberCount ?? 0}/5`} />
+                      <Chip size="small" label={team.latestSubmissionStatus || "No submission yet"} variant="outlined" />
+                      <Chip size="small" label={team.currentRoundName || "Round pending"} variant="outlined" />
+                      {team.submissionDeadline ? (
+                        <Chip size="small" color="warning" label={`Due ${formatDateTime(team.submissionDeadline)}`} />
+                      ) : null}
+                    </Stack>
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {individualRegistrations.length ? (
+        <Card className="ms-data-card" sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography sx={{ fontWeight: 950, mb: 0.5 }}>Individual matching status</Typography>
+            <Typography color="text.secondary" variant="body2" sx={{ mb: 1.4 }}>
+              Follow events where you registered without a team. The system will wait for enough individual registrations, then build a 3-5 member team automatically.
+            </Typography>
+            <Stack spacing={1}>
+              {individualRegistrations.map((registration) => (
+                <Box
+                  key={registration.individualRegistrationId}
+                  sx={{
+                    p: 1.4,
+                    border: "1px solid #e7ebf3",
+                    borderRadius: 3,
+                    bgcolor: registration.assignedTeamName ? "#F0FDF4" : "#FFF7ED",
+                  }}
+                >
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
+                    <Box>
+                      <Typography sx={{ fontWeight: 900 }}>{registration.eventName}</Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {registration.assignedTeamName
+                          ? `Assigned to ${registration.assignedTeamName}. Check Team Management for members, track, and submissions.`
+                          : "Waiting for automatic matching. The system will form a 3-5 member team when enough individual registrations are available."}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={registration.assignedTeamName ? "Matched" : "Waiting"}
+                      color={registration.assignedTeamName ? "success" : "warning"}
+                      sx={{ alignSelf: { xs: "flex-start", sm: "center" }, fontWeight: 850 }}
+                    />
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <EventCatalogExperience
         events={events}
         mode="student"
         sectionTitle="Choose an event for your team"
-        sectionDescription="Use the same event catalog flow as the public site, then register one ready team into the event you want to join."
+        sectionDescription="Use the same event catalog flow as the public site, then register one ready team into the event you want to join, or register individually and wait for automatic team matching."
         onRegister={openRegisterDialog}
+        onIndividualRegister={registerIndividually}
         canRegisterEvent={canRegisterEvent}
+        canRegisterIndividually={canRegisterIndividually}
         registerLabelForEvent={registerLabelForEvent}
+        individualRegisterLabelForEvent={(event) => {
+          if (individualRegistrationByEvent.has(String(event.eventId))) return "Individual registration saved";
+          if (!event.registrationAvailable) return registrationUnavailableLabel(event);
+          return individualSaving ? "Registering..." : "Register individually";
+        }}
         disableReasonForEvent={disableReasonForEvent}
       />
 
@@ -276,14 +465,16 @@ export default function EventRegistrationPanel() {
                 label="Track"
                 value={registerDialog.trackId}
                 onChange={(event) => setRegisterDialog((current) => ({ ...current, trackId: event.target.value }))}
-                helperText="This event allows teams to choose their own track."
+                helperText="This event allows teams to choose their own track. Tracks that already reached max capacity cannot be selected."
                 fullWidth
               >
-                {getEventTrackOptions(registerDialog.event?.eventId).map((track) => (
-                  <MenuItem key={track.trackId} value={String(track.trackId)}>
-                    {track.name}
+                {getEventTrackOptions(registerDialog.event?.eventId).map((track) => {
+                  const full = track.maxTeams != null && Number(track.teamCount || 0) >= Number(track.maxTeams);
+                  return (
+                  <MenuItem key={track.trackId} value={String(track.trackId)} disabled={full}>
+                    {track.name} {track.maxTeams != null ? `(${track.teamCount || 0}/${track.maxTeams})` : ""}{full ? " - Full" : ""}
                   </MenuItem>
-                ))}
+                );})}
               </TextField>
             ) : (
               <Box
@@ -296,7 +487,7 @@ export default function EventRegistrationPanel() {
               >
                 <Typography sx={{ fontWeight: 800 }}>Track assignment</Typography>
                 <Typography color="text.secondary" variant="body2">
-                  This event will assign the track automatically after registration.
+                  This event will assign the track automatically after registration, prioritizing balanced distribution across tracks.
                 </Typography>
               </Box>
             )}

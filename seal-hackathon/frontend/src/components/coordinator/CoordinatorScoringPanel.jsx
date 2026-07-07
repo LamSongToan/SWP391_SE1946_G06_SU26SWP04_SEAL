@@ -39,7 +39,6 @@ import HubRoundedIcon from "@mui/icons-material/HubRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import PublishRoundedIcon from "@mui/icons-material/PublishRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
-import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 import TableChartRoundedIcon from "@mui/icons-material/TableChartRounded";
@@ -646,7 +645,6 @@ export default function CoordinatorScoringPanel() {
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [finalization, setFinalization] = useState(null);
   const [resultPublication, setResultPublication] = useState(null);
-  const [awardRecommendations, setAwardRecommendations] = useState(null);
   const [varianceDashboard, setVarianceDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [roundLoading, setRoundLoading] = useState(false);
@@ -661,8 +659,6 @@ export default function CoordinatorScoringPanel() {
   const [calibrationSessionStatus, setCalibrationSessionStatus] = useState("Active");
   const [calibrationScoreDraft, setCalibrationScoreDraft] = useState({ submissionId: "", criteriaId: "", judgeAssignmentId: "", scoreValue: "", comment: "" });
   const [calibrationSaving, setCalibrationSaving] = useState(false);
-  const [awardSelectionState, setAwardSelectionState] = useState({ open: false, awardName: null, selectedTeamIds: [] });
-  const [savingAwards, setSavingAwards] = useState(false);
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, templateId: null, templateName: "" });
   const [manualEliminationState, setManualEliminationState] = useState({
     open: false,
@@ -723,6 +719,8 @@ export default function CoordinatorScoringPanel() {
     ? "Published"
     : canPublishResults ? "Ready to publish" : "Final round pending";
   const publicationStatusTone = resultPublication?.resultPublished || canPublishResults ? "success" : "warning";
+  const publishedAwards = resultPublication?.awards || [];
+  const teamAwardHistory = resultPublication?.teamAwardHistory || [];
 
   const loadRoundWorkspace = async (roundId) => {
     if (!roundId) {
@@ -748,19 +746,6 @@ export default function CoordinatorScoringPanel() {
       setResultPublication(response.data?.data || null);
     } catch {
       setResultPublication(null);
-    }
-  };
-
-  const loadAwardRecommendations = async (roundId) => {
-    if (!roundId) {
-      setAwardRecommendations(null);
-      return;
-    }
-    try {
-      const response = await http.get(`/api/coordinator/scoring/rounds/${roundId}/award-recommendations`);
-      setAwardRecommendations(response.data?.data || null);
-    } catch {
-      setAwardRecommendations(null);
     }
   };
 
@@ -812,10 +797,6 @@ export default function CoordinatorScoringPanel() {
   useEffect(() => {
     loadResultPublication(selectedEventId);
   }, [selectedEventId]);
-
-  useEffect(() => {
-    loadAwardRecommendations(selectedRoundId);
-  }, [selectedRoundId]);
 
   useEffect(() => {
     let mounted = true;
@@ -960,7 +941,6 @@ export default function CoordinatorScoringPanel() {
       setSuccess("Round scores finalized and locked.");
       await loadRoundWorkspace(selectedRoundId);
       await loadResultPublication(selectedEventId);
-      await loadAwardRecommendations(selectedRoundId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to finalize round scores"));
     }
@@ -974,7 +954,6 @@ export default function CoordinatorScoringPanel() {
       setSuccess("Round finalization reopened.");
       await loadRoundWorkspace(selectedRoundId);
       await loadResultPublication(selectedEventId);
-      await loadAwardRecommendations(selectedRoundId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to reopen round finalization"));
     }
@@ -987,7 +966,6 @@ export default function CoordinatorScoringPanel() {
       await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/qualification`);
       setSuccess("Qualification results calculated and saved.");
       await loadRoundWorkspace(selectedRoundId);
-      await loadAwardRecommendations(selectedRoundId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to calculate qualification results"));
     }
@@ -1000,7 +978,6 @@ export default function CoordinatorScoringPanel() {
       await http.post(`/api/coordinator/scoring/rounds/${selectedRoundId}/advance`);
       setSuccess("Qualified teams promoted and the remaining teams eliminated.");
       await loadRoundWorkspace(selectedRoundId);
-      await loadAwardRecommendations(selectedRoundId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to promote teams to the next round"));
     }
@@ -1033,13 +1010,11 @@ export default function CoordinatorScoringPanel() {
       // Important: reload everything after publishing to ensure UI state is fresh
       await loadBootstrap();
       await loadResultPublication(selectedEventId);
-      // Reload finalization and award data after publish
+      // Reload finalization after publish
       const finalizationResponse = await http.get(`/api/coordinator/scoring/rounds/${selectedRoundId}/finalization`);
       if (finalizationResponse?.data?.data) {
         setFinalization(finalizationResponse.data.data);
       }
-      // Reload award recommendations after publishing
-      await loadAwardRecommendations(selectedRoundId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to publish final results"));
     }
@@ -1132,7 +1107,7 @@ export default function CoordinatorScoringPanel() {
       setSuccess("Team disqualified and leaderboard recalculated.");
       setManualEliminationState({ open: false, submissionId: null, teamName: "", reason: "" });
       await loadRoundWorkspace(selectedRoundId);
-      await loadAwardRecommendations(selectedRoundId);
+      await loadResultPublication(selectedEventId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to manually disqualify team"));
     }
@@ -1147,7 +1122,7 @@ export default function CoordinatorScoringPanel() {
       );
       setSuccess(`${teamName} has been restored to the leaderboard.`);
       await loadRoundWorkspace(selectedRoundId);
-      await loadAwardRecommendations(selectedRoundId);
+      await loadResultPublication(selectedEventId);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to undo team disqualification"));
     }
@@ -1197,31 +1172,6 @@ export default function CoordinatorScoringPanel() {
       setError(getApiErrorMessage(err, "Failed to save calibration score"));
     } finally {
       setCalibrationSaving(false);
-    }
-  };
-
-  const handleSaveAwardSelections = async () => {
-    if (!selectedRoundId) return;
-    setError("");
-    setSavingAwards(true);
-    try {
-      const payload = (awardRecommendations?.awards || []).map((award) => ({
-        awardName: award.awardName,
-        winnerTeamIds: (award.selectedWinnerTeamIds && award.selectedWinnerTeamIds.length)
-          ? award.selectedWinnerTeamIds
-          : (award.winners || []).map((winner) => winner.teamId),
-      }));
-      const response = await http.post(
-        `/api/coordinator/scoring/rounds/${selectedRoundId}/award-recommendations`,
-        payload
-      );
-      setAwardRecommendations(response.data?.data || null);
-      setSuccess("Award winners confirmed for this round.");
-      setAwardSelectionState({ open: false, awardName: null, selectedTeamIds: [] });
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to save award selections"));
-    } finally {
-      setSavingAwards(false);
     }
   };
 
@@ -1766,61 +1716,107 @@ export default function CoordinatorScoringPanel() {
 
             {currentRound && finalization ? (
               <SectionCard
-                title="Award Recommendations"
-                description="Preview the configured awards against the finalized ranking snapshot."
-                action={(
-                  <Button
-                    variant="contained"
-                    startIcon={<SaveRoundedIcon />}
-                    onClick={handleSaveAwardSelections}
-                    disabled={savingAwards || !awardRecommendations?.awards?.length}
-                  >
-                    {savingAwards ? "Saving..." : "Confirm Awards"}
-                  </Button>
-                )}
+                title="Award Results"
+                description="Awards are assigned automatically from the final ranking when event results are published."
               >
-                {awardRecommendations?.awards?.length ? (
-                  <Stack spacing={1.4}>
-                    {awardRecommendations.awards.map((award) => (
-                      <Box key={award.awardName} sx={{ border: `1px solid ${brand.colors.line}`, borderRadius: brand.radius.md, p: 1.6, bgcolor: brand.colors.surfaceSoft }}>
-                        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={1}>
-                          <Box>
-                            <Typography sx={{ color: brand.colors.text, fontWeight: 950 }}>{award.awardName}</Typography>
-                            <Typography sx={{ color: brand.colors.muted, fontSize: 13.5 }}>
-                              {award.winners.length} recommended winner{award.winners.length === 1 ? "" : "s"}
-                            </Typography>
-                          </Box>
-                          <Chip size="small" label={`${award.quantity} slot${award.quantity === 1 ? "" : "s"}`} sx={{ bgcolor: "#FFF7E8", color: brand.colors.orange, fontWeight: 900 }} />
-                        </Stack>
-                        {award.winners.length ? (
+                {resultPublication?.resultPublished ? (
+                  publishedAwards.length ? (
+                    <Stack spacing={1.5}>
+                      {publishedAwards.map((award) => (
+                        <Box
+                          key={award.awardName}
+                          sx={{ border: `1px solid ${brand.colors.line}`, borderRadius: brand.radius.md, p: 1.6, bgcolor: brand.colors.surfaceSoft }}
+                        >
+                          <Stack
+                            direction={{ xs: "column", md: "row" }}
+                            justifyContent="space-between"
+                            alignItems={{ xs: "flex-start", md: "center" }}
+                            spacing={1}
+                          >
+                            <Box>
+                              <Typography sx={{ color: brand.colors.text, fontWeight: 950 }}>{award.awardName}</Typography>
+                              <Typography sx={{ color: brand.colors.muted, fontSize: 13.5 }}>
+                                {award.winners.length} awarded team{award.winners.length === 1 ? "" : "s"}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              size="small"
+                              label={`${award.quantity} slot${award.quantity === 1 ? "" : "s"}`}
+                              sx={{ bgcolor: "#FFF7E8", color: brand.colors.orange, fontWeight: 900 }}
+                            />
+                          </Stack>
+
                           <Stack spacing={0.7} sx={{ mt: 1.1 }}>
                             {award.winners.map((winner) => (
-                              <Box key={`${award.awardName}-${winner.teamId}`} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 1.2, py: 0.9, borderRadius: 2, bgcolor: "#FFFFFF" }}>
-                                <Box>
-                                  <Typography sx={{ color: brand.colors.text, fontWeight: 850 }}>{winner.teamName}</Typography>
-                                  <Typography sx={{ color: brand.colors.muted, fontSize: 12.5 }}>
-                                    Rank #{winner.rankPosition ?? "--"} • {winner.qualificationStatus || "Pending"}
+                              <Box
+                                key={`${award.awardName}-${winner.teamId}`}
+                                sx={{ px: 1.2, py: 1, borderRadius: 2, bgcolor: "#FFFFFF", border: `1px solid ${brand.colors.line}` }}
+                              >
+                                <Stack
+                                  direction={{ xs: "column", md: "row" }}
+                                  justifyContent="space-between"
+                                  alignItems={{ xs: "flex-start", md: "center" }}
+                                  spacing={0.6}
+                                >
+                                  <Box>
+                                    <Typography sx={{ color: brand.colors.text, fontWeight: 850 }}>{winner.teamName}</Typography>
+                                    <Typography sx={{ color: brand.colors.muted, fontSize: 12.5 }}>
+                                      {winner.trackName || "Unassigned track"} • Rank #{winner.rankPosition ?? "--"}
+                                    </Typography>
+                                  </Box>
+                                  <Typography sx={{ color: brand.colors.muted, fontSize: 13, fontWeight: 800 }}>
+                                    {formatMetric(winner.totalScore)}
                                   </Typography>
-                                </Box>
-                                <Typography sx={{ color: brand.colors.muted, fontSize: 13, fontWeight: 800 }}>
-                                  {winner.totalScore ?? "--"}
+                                </Stack>
+                                <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.45 }}>
+                                  Awarded at {formatDateTime(winner.awardedAt)}
                                 </Typography>
                               </Box>
                             ))}
                           </Stack>
-                        ) : (
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 13.5, mt: 1.1 }}>
-                            No eligible teams remain for this award after excluding disqualified entries.
-                          </Typography>
-                        )}
-                      </Box>
-                    ))}
-                  </Stack>
+                        </Box>
+                      ))}
+
+                      <TableContainer sx={{ border: `1px solid ${brand.colors.line}`, borderRadius: 3 }}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow sx={{ bgcolor: brand.colors.surfaceSoft }}>
+                              <TableCell sx={{ fontWeight: 900 }}>Team</TableCell>
+                              <TableCell sx={{ fontWeight: 900 }}>Track</TableCell>
+                              <TableCell sx={{ fontWeight: 900 }}>Award</TableCell>
+                              <TableCell sx={{ fontWeight: 900 }}>Rank</TableCell>
+                              <TableCell sx={{ fontWeight: 900 }}>Score</TableCell>
+                              <TableCell sx={{ fontWeight: 900 }}>Awarded At</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {teamAwardHistory.map((item) => (
+                              <TableRow key={item.teamPrizeId}>
+                                <TableCell>{item.teamName}</TableCell>
+                                <TableCell>{item.trackName || "--"}</TableCell>
+                                <TableCell>{item.awardName}</TableCell>
+                                <TableCell>{item.rankPosition ?? "--"}</TableCell>
+                                <TableCell>{formatMetric(item.totalScore)}</TableCell>
+                                <TableCell>{formatDateTime(item.awardedAt)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Stack>
+                  ) : (
+                    <Box className="ms-empty">
+                      <Typography fontWeight={850}>No awards were generated</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        The event results were published, but no eligible teams matched the configured awards.
+                      </Typography>
+                    </Box>
+                  )
                 ) : (
                   <Box className="ms-empty">
-                    <Typography fontWeight={850}>No award recommendations yet</Typography>
+                    <Typography fontWeight={850}>Awards will be generated automatically</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Configure awards for the event and finalize the round to preview suggested winners.
+                      Publish the final event results to generate awards from ranking and save them into team award history.
                     </Typography>
                   </Box>
                 )}
