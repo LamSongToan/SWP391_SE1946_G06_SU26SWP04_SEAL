@@ -88,7 +88,7 @@ public class TeamFormationService {
     }
 
     @Transactional
-    public IndividualRegistrationDto registerIndividual(Authentication authentication, Integer eventId) {
+    public IndividualRegistrationDto registerIndividual(Authentication authentication, Integer eventId, Integer requestedTrackId) {
         StudentProfileEntity student = currentStudent(authentication);
         HackathonEventEntity event = getEventOrThrow(eventId);
         requireEventRegistrationAvailable(event);
@@ -103,6 +103,7 @@ public class TeamFormationService {
         IndividualRegistrationEntity registration = new IndividualRegistrationEntity();
         registration.setEvent(event);
         registration.setStudent(student);
+        registration.setPreferredTrack(resolvePreferredTrack(event, requestedTrackId));
         IndividualRegistrationEntity saved = individualRegistrationRepository.save(registration);
         autoMatchWaitingIndividuals(event);
         return individualRegistrationRepository
@@ -213,6 +214,11 @@ public class TeamFormationService {
         if (teamMemberRepository.existsMembershipInEvent(registration.getStudent().getUserRoleId(), eventId)) {
             throw new ApiException(HttpStatus.CONFLICT, "Student already belongs to a team in this event");
         }
+        if ("TEAM_SELECT".equals(normalizeTrackMode(event))
+                && registration.getPreferredTrack() != null
+                && !registration.getPreferredTrack().getTrackId().equals(team.getTrack().getTrackId())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "This student is waiting for a different track");
+        }
         addMember(team, registration.getStudent());
         updateTeamMembershipStatus(team, event);
         markMatched(registration, team);
@@ -244,23 +250,66 @@ public class TeamFormationService {
         );
         int minSize = minTeamSize(event);
         int maxSize = maxTeamSize(event);
+        if ("TEAM_SELECT".equals(normalizeTrackMode(event))) {
+            autoMatchWaitingIndividualsByPreferredTrack(event, waiting, minSize, maxSize);
+            return;
+        }
         while (waiting.size() >= minSize) {
-            int teamSize = Math.min(maxSize, waiting.size());
-            if (waiting.size() - teamSize > 0 && waiting.size() - teamSize < minSize) {
-                teamSize = waiting.size() - minSize;
-            }
+            int teamSize = determineTeamSize(waiting.size(), minSize, maxSize);
             if (teamSize < minSize) {
                 break;
             }
             List<IndividualRegistrationEntity> group = new ArrayList<>(waiting.subList(0, teamSize));
             waiting.subList(0, teamSize).clear();
-            createAutoMatchedTeam(event, group);
+            createAutoMatchedTeam(event, group, resolveAutoTrack(event));
         }
     }
 
-    private void createAutoMatchedTeam(HackathonEventEntity event, List<IndividualRegistrationEntity> group) {
+    private void autoMatchWaitingIndividualsByPreferredTrack(HackathonEventEntity event,
+                                                             List<IndividualRegistrationEntity> waiting,
+                                                             int minSize,
+                                                             int maxSize) {
+        List<TrackEntity> tracks = trackRepository.findByEventIdOrderByTrackIdAsc(event.getEventId());
+        for (TrackEntity track : tracks) {
+            List<IndividualRegistrationEntity> trackWaiting = waiting.stream()
+                    .filter(registration -> registration.getPreferredTrack() != null
+                            && registration.getPreferredTrack().getTrackId().equals(track.getTrackId()))
+                    .collect(Collectors.toCollection(ArrayList::new));
+            while (trackWaiting.size() >= minSize && trackHasCapacity(track)) {
+                int teamSize = determineTeamSize(trackWaiting.size(), minSize, maxSize);
+                if (teamSize < minSize) {
+                    break;
+                }
+                List<IndividualRegistrationEntity> group = new ArrayList<>(trackWaiting.subList(0, teamSize));
+                trackWaiting.subList(0, teamSize).clear();
+                createAutoMatchedTeam(event, group, track);
+            }
+        }
+
+        List<IndividualRegistrationEntity> legacyWaiting = waiting.stream()
+                .filter(registration -> registration.getPreferredTrack() == null)
+                .collect(Collectors.toCollection(ArrayList::new));
+        while (legacyWaiting.size() >= minSize) {
+            int teamSize = determineTeamSize(legacyWaiting.size(), minSize, maxSize);
+            if (teamSize < minSize) {
+                break;
+            }
+            List<IndividualRegistrationEntity> group = new ArrayList<>(legacyWaiting.subList(0, teamSize));
+            legacyWaiting.subList(0, teamSize).clear();
+            createAutoMatchedTeam(event, group, resolveAutoTrack(event));
+        }
+    }
+
+    private int determineTeamSize(int waitingCount, int minSize, int maxSize) {
+        int teamSize = Math.min(maxSize, waitingCount);
+        if (waitingCount - teamSize > 0 && waitingCount - teamSize < minSize) {
+            teamSize = waitingCount - minSize;
+        }
+        return teamSize;
+    }
+
+    private void createAutoMatchedTeam(HackathonEventEntity event, List<IndividualRegistrationEntity> group, TrackEntity track) {
         Collections.shuffle(group);
-        TrackEntity track = resolveAutoTrack(event);
         IndividualRegistrationEntity leaderRegistration = group.get(0);
         TeamEntity team = new TeamEntity();
         team.setLeader(leaderRegistration.getStudent());
@@ -289,7 +338,7 @@ public class TeamFormationService {
         if (tracks.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "This event does not have any tracks configured yet");
         }
-        String mode = event.getTrackSelectionMode() == null ? "TEAM_SELECT" : event.getTrackSelectionMode().trim().toUpperCase(Locale.ROOT);
+        String mode = normalizeTrackMode(event);
         if ("SINGLE_TRACK".equals(mode)) {
             TrackEntity track = tracks.get(0);
             requireTrackCapacity(track);
@@ -302,6 +351,34 @@ public class TeamFormationService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "No track has available team capacity");
         }
         return chooseBalancedTrack(available);
+    }
+
+    private TrackEntity resolvePreferredTrack(HackathonEventEntity event, Integer requestedTrackId) {
+        List<TrackEntity> tracks = trackRepository.findByEventIdOrderByTrackIdAsc(event.getEventId());
+        if (tracks.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "This event does not have any tracks configured yet");
+        }
+
+        String mode = normalizeTrackMode(event);
+        if ("TEAM_SELECT".equals(mode)) {
+            if (requestedTrackId == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Choose a track before registering individually");
+            }
+            TrackEntity selected = tracks.stream()
+                    .filter(track -> track.getTrackId().equals(requestedTrackId))
+                    .findFirst()
+                    .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Selected track does not belong to this event"));
+            requireTrackCapacity(selected);
+            return selected;
+        }
+
+        if ("SINGLE_TRACK".equals(mode)) {
+            TrackEntity sharedTrack = tracks.get(0);
+            requireTrackCapacity(sharedTrack);
+            return sharedTrack;
+        }
+
+        return null;
     }
 
     private String generateAutoTeamName(HackathonEventEntity event) {
@@ -405,6 +482,12 @@ public class TeamFormationService {
 
     private boolean trackHasCapacity(TrackEntity track) {
         return track.getMaxTeams() == null || teamRepository.countByTrackTrackId(track.getTrackId()) < track.getMaxTeams();
+    }
+
+    private String normalizeTrackMode(HackathonEventEntity event) {
+        return event.getTrackSelectionMode() == null
+                ? "TEAM_SELECT"
+                : event.getTrackSelectionMode().trim().toUpperCase(Locale.ROOT);
     }
 
     private TrackEntity chooseBalancedTrack(List<TrackEntity> availableTracks) {
@@ -541,10 +624,13 @@ public class TeamFormationService {
     private IndividualRegistrationDto toIndividualDto(IndividualRegistrationEntity registration) {
         UserEntity user = registration.getStudent().getUserRole().getUser();
         TeamEntity team = registration.getAssignedTeam();
+        TrackEntity track = team != null ? team.getTrack() : registration.getPreferredTrack();
         return new IndividualRegistrationDto(
                 registration.getIndividualRegistrationId(),
                 registration.getEvent().getEventId(),
                 registration.getEvent().getName(),
+                track == null ? null : track.getTrackId(),
+                track == null ? null : track.getName(),
                 registration.getStudent().getUserRoleId(),
                 user.getUsername(),
                 user.getEmail(),

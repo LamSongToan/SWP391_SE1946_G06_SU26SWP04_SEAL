@@ -30,9 +30,6 @@ import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import CalendarTodayRoundedIcon from "@mui/icons-material/CalendarTodayRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
-import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import { authStorage, http, resolveAssetUrl } from "../../api/http";
 import { brand } from "../../styles/designTokens";
@@ -48,61 +45,10 @@ const EMPTY_FORM = {
   fullName: "",
   avatarUrl: "",
   bio: "",
-  profileLinks: "",
   studentType: "",
   studentCode: "",
   universityName: "",
 };
-
-const MAX_PROFILE_LINKS = 5;
-const SOCIAL_LINK_PRESETS = ["Facebook", "GitHub", "LinkedIn", "Portfolio"];
-
-function parseProfileLinks(value, options = {}) {
-  const keepEmpty = Boolean(options.keepEmpty);
-  if (!value) return [];
-  if (Array.isArray(value)) {
-    return value
-      .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        label: String(item.label || "").trim(),
-        url: String(item.url || "").trim(),
-      }))
-      .filter((item) => keepEmpty || item.label || item.url)
-      .slice(0, MAX_PROFILE_LINKS);
-  }
-
-  try {
-    const parsed = JSON.parse(value);
-    return parseProfileLinks(parsed, options);
-  } catch {
-    return [];
-  }
-}
-
-function serializeProfileLinks(links, options = {}) {
-  const normalized = parseProfileLinks(links, options);
-  return normalized.length ? JSON.stringify(normalized) : "";
-}
-
-function normalizeProfileLinkUrl(url) {
-  const trimmedUrl = String(url || "").trim();
-  if (!trimmedUrl) return "";
-  if (/^https?:\/\//i.test(trimmedUrl)) {
-    return trimmedUrl;
-  }
-  return `https://${trimmedUrl}`;
-}
-
-function normalizeProfileLinksForStorage(value) {
-  const normalized = parseProfileLinks(value)
-    .map((link) => ({
-      label: link.label.trim(),
-      url: normalizeProfileLinkUrl(link.url),
-    }))
-    .filter((link) => link.label || link.url);
-
-  return normalized.length ? JSON.stringify(normalized) : "";
-}
 
 function readProfileDraft() {
   try {
@@ -123,7 +69,6 @@ function toFormFromProfile(profile) {
     fullName: profile?.fullName || "",
     avatarUrl: profile?.avatarUrl || "",
     bio: profile?.bio || "",
-    profileLinks: profile?.profileLinks || "",
     studentType: profile?.studentType || "",
     studentCode: profile?.studentCode || "",
     universityName: profile?.universityName || "",
@@ -173,49 +118,6 @@ function formatActivityTarget(item) {
   if (item?.targetEntity) return item.targetEntity;
   if (item?.targetId) return `ID ${item.targetId}`;
   return "SEAL workspace";
-}
-
-function getProfileLinkLabel(link) {
-  if (link?.label?.trim()) return link.label.trim();
-  try {
-    return new URL(link.url).hostname.replace(/^www\./, "");
-  } catch {
-    return "Profile link";
-  }
-}
-
-function getProfileLinkDomain(link) {
-  try {
-    return new URL(normalizeProfileLinkUrl(link.url)).hostname.replace(/^www\./, "");
-  } catch {
-    return normalizeProfileLinkUrl(link.url);
-  }
-}
-
-function isValidProfileUrl(url) {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function validateProfileLinks(value) {
-  const links = parseProfileLinks(value);
-  if (links.length > MAX_PROFILE_LINKS) return `Add ${MAX_PROFILE_LINKS} links or fewer`;
-  const serialized = normalizeProfileLinksForStorage(links);
-  if (serialized.length > 2000) return "Profile links are too long";
-
-  for (const link of links) {
-    const normalizedUrl = normalizeProfileLinkUrl(link.url);
-    if (!normalizedUrl) return "Each link needs a URL";
-    if (link.label.length > 40) return "Link labels must be 40 characters or fewer";
-    if (normalizedUrl.length > 300) return "Each link URL must be 300 characters or fewer";
-    if (!isValidProfileUrl(normalizedUrl)) return "Enter a valid social link or website URL";
-  }
-
-  return "";
 }
 
 function clamp(value, min, max) {
@@ -345,62 +247,6 @@ function ProfileInfoPill({ icon, label, value }) {
         </Typography>
       </Box>
     </Stack>
-  );
-}
-
-function ProfileLinkButton({ link }) {
-  return (
-    <Button
-      component="a"
-      href={normalizeProfileLinkUrl(link.url)}
-      target="_blank"
-      rel="noreferrer"
-      sx={{
-        justifyContent: "flex-start",
-        width: { xs: "100%", sm: "auto" },
-        minWidth: { xs: "100%", sm: 210 },
-        maxWidth: { xs: "100%", sm: 260 },
-        borderRadius: brand.radius.md,
-        px: 1.25,
-        py: 1,
-        color: brand.colors.navy,
-        border: `1px solid ${brand.colors.line}`,
-        bgcolor: "#FFFFFF",
-        textTransform: "none",
-        boxShadow: "0 8px 22px rgba(7, 26, 47, 0.06)",
-        "&:hover": {
-          borderColor: "#FDBA74",
-          bgcolor: brand.colors.surfaceWarm,
-          boxShadow: "0 12px 28px rgba(243, 112, 33, 0.13)",
-        },
-      }}
-    >
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%", minWidth: 0 }}>
-        <Box
-          sx={{
-            width: 34,
-            height: 34,
-            borderRadius: 2,
-            bgcolor: brand.colors.surfaceWarm,
-            color: brand.colors.orange,
-            display: "grid",
-            placeItems: "center",
-            flex: "0 0 34px",
-          }}
-        >
-          <LinkRoundedIcon fontSize="small" />
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1, textAlign: "left" }}>
-          <Typography sx={{ color: brand.colors.text, fontSize: 13.5, fontWeight: 950, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {getProfileLinkLabel(link)}
-          </Typography>
-          <Typography sx={{ color: brand.colors.muted, fontSize: 12, fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {getProfileLinkDomain(link)}
-          </Typography>
-        </Box>
-        <OpenInNewRoundedIcon sx={{ fontSize: 17, color: brand.colors.muted, flex: "0 0 auto" }} />
-      </Stack>
-    </Button>
   );
 }
 
@@ -609,7 +455,6 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         username: form.username,
         avatarUrl: form.avatarUrl,
         bio: form.bio,
-        profileLinks: form.profileLinks,
         studentType: form.studentType,
         studentCode: form.studentCode,
         universityName: form.universityName,
@@ -619,13 +464,10 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         username: profile?.username || "",
         avatarUrl: profile?.avatarUrl || "",
         bio: profile?.bio || "",
-        profileLinks: profile?.profileLinks || "",
         studentType: profile?.studentType || "",
         studentCode: profile?.studentCode || "",
         universityName: profile?.universityName || "",
       };
-  const editableProfileLinks = useMemo(() => parseProfileLinks(form.profileLinks, { keepEmpty: true }), [form.profileLinks]);
-  const visibleProfileLinks = useMemo(() => parseProfileLinks(displayProfile.profileLinks), [displayProfile.profileLinks]);
   const displayAvatarSrc = withAssetVersion(
     resolveAssetUrl(displayProfile.avatarUrl),
     profile?.__avatarVersion
@@ -747,8 +589,6 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
       case "bio":
         if (trimmedValue.length > 500) return "Bio must be 500 characters or fewer";
         return "";
-      case "profileLinks":
-        return validateProfileLinks(value);
       default:
         return "";
     }
@@ -758,7 +598,6 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     username: validateField("username", nextForm.username),
     fullName: validateField("fullName", nextForm.fullName),
     bio: validateField("bio", nextForm.bio),
-    profileLinks: validateField("profileLinks", nextForm.profileLinks),
   });
 
   const hasClientErrors = Object.values(collectClientErrors()).some(Boolean);
@@ -770,15 +609,13 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
       fullName: form.fullName.trim(),
       avatarUrl: form.avatarUrl || "",
       bio: form.bio || "",
-      profileLinks: normalizeProfileLinksForStorage(form.profileLinks),
     }) !== JSON.stringify({
       username: profile.username || "",
       fullName: profile.fullName || "",
       avatarUrl: profile.avatarUrl || "",
       bio: profile.bio || "",
-      profileLinks: normalizeProfileLinksForStorage(profile.profileLinks),
     });
-  }, [form.avatarUrl, form.bio, form.fullName, form.profileLinks, form.username, profile]);
+  }, [form.avatarUrl, form.bio, form.fullName, form.username, profile]);
 
   useEffect(() => {
     if (!profile?.email) return;
@@ -817,14 +654,13 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
             fullName: form.fullName,
             avatarUrl: form.avatarUrl,
             bio: form.bio,
-            profileLinks: form.profileLinks,
           },
         })
       );
     } else if (editMode && !profileDirty) {
       clearProfileDraft();
     }
-  }, [editMode, form.avatarUrl, form.bio, form.fullName, form.profileLinks, form.username, onDirtyChange, profile?.email, profileDirty]);
+  }, [editMode, form.avatarUrl, form.bio, form.fullName, form.username, onDirtyChange, profile?.email, profileDirty]);
 
   useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
@@ -887,36 +723,6 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     });
   };
 
-  const setProfileLinksValue = (nextLinks) => {
-    setForm((prev) => {
-      const nextForm = { ...prev, profileLinks: serializeProfileLinks(nextLinks, { keepEmpty: true }) };
-      setTouched((prevTouched) => ({ ...prevTouched, profileLinks: true }));
-      setFieldErrors((prevErrors) => ({
-        ...prevErrors,
-        profileLinks: validateField("profileLinks", nextForm.profileLinks),
-      }));
-      return nextForm;
-    });
-  };
-
-  const onProfileLinkChange = (index, key) => (event) => {
-    const nextLinks = [...editableProfileLinks];
-    nextLinks[index] = {
-      ...nextLinks[index],
-      [key]: event.target.value,
-    };
-    setProfileLinksValue(nextLinks);
-  };
-
-  const addProfileLink = (label = "") => {
-    if (editableProfileLinks.length >= MAX_PROFILE_LINKS) return;
-    setProfileLinksValue([...editableProfileLinks, { label, url: "" }]);
-  };
-
-  const removeProfileLink = (index) => {
-    setProfileLinksValue(editableProfileLinks.filter((_, itemIndex) => itemIndex !== index));
-  };
-
   const getFieldErrors = (err) => {
     const response = err?.response?.data;
     const message = response?.message || "";
@@ -953,7 +759,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
     setSaving(true);
     setError("");
     setSuccess("");
-    const allTouched = { username: true, fullName: true, bio: true, profileLinks: true };
+    const allTouched = { username: true, fullName: true, bio: true };
     const clientErrors = collectClientErrors(form);
     setTouched(allTouched);
     setFieldErrors(clientErrors);
@@ -968,22 +774,12 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
         fullName: form.fullName,
         avatarUrl: form.avatarUrl,
         bio: form.bio,
-        profileLinks: normalizeProfileLinksForStorage(form.profileLinks),
         studentType: null,
         studentCode: null,
         universityName: null,
       };
       const response = await http.put("/api/users/me", payload);
-      const responseProfile = response.data?.data || profile || {};
-      const responseHasProfileLinks = Object.prototype.hasOwnProperty.call(responseProfile, "profileLinks");
-      const nextProfile = {
-        ...responseProfile,
-        profileLinks:
-          responseHasProfileLinks && (responseProfile.profileLinks || !payload.profileLinks)
-            ? responseProfile.profileLinks
-            : payload.profileLinks,
-      };
-      applyProfileData(nextProfile, "Profile updated successfully");
+      applyProfileData(response.data?.data || profile || {}, "Profile updated successfully");
       clearProfileDraft();
       setSearchParams({ section: "account" });
     } catch (err) {
@@ -1212,110 +1008,6 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
               minRows={4}
             />
           </Grid2>
-          <Grid2 size={{ xs: 12 }}>
-            <Box
-              sx={{
-                p: { xs: 1.8, md: 2 },
-                borderRadius: brand.radius.md,
-                border: `1px solid ${fieldErrors.profileLinks ? brand.colors.danger : brand.colors.line}`,
-                bgcolor: "#F8FAFC",
-              }}
-            >
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1.6}
-                justifyContent="space-between"
-                alignItems={{ xs: "flex-start", sm: "flex-start" }}
-                sx={{ mb: editableProfileLinks.length ? 1.8 : 1.2 }}
-              >
-                <Box>
-                  <Typography sx={{ color: brand.colors.text, fontSize: 15, fontWeight: 950, lineHeight: 1.25 }}>
-                    Social links
-                  </Typography>
-                  <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.6, lineHeight: 1.55 }}>
-                    Add public links such as Facebook, GitHub, LinkedIn, or a personal site. You can type facebook.com/name without https.
-                  </Typography>
-                </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<AddRoundedIcon />}
-                  onClick={() => addProfileLink()}
-                  disabled={editableProfileLinks.length >= MAX_PROFILE_LINKS}
-                  sx={{ borderRadius: 999, textTransform: "none", fontWeight: 850 }}
-                >
-                  Add link
-                </Button>
-              </Stack>
-
-              {editableProfileLinks.length ? (
-                <Stack spacing={1.1}>
-                  {editableProfileLinks.map((link, index) => (
-                    <Stack
-                      key={`profile-link-${index}`}
-                      direction={{ xs: "column", md: "row" }}
-                      spacing={1}
-                      alignItems={{ xs: "stretch", md: "flex-start" }}
-                    >
-                      <TextField
-                        label="Label"
-                        value={link.label}
-                        onChange={onProfileLinkChange(index, "label")}
-                        placeholder="Facebook"
-                        sx={{ flex: { xs: "1 1 auto", md: "0 0 220px" } }}
-                      />
-                      <TextField
-                        label="URL"
-                        value={link.url}
-                        onChange={onProfileLinkChange(index, "url")}
-                        placeholder="facebook.com/username"
-                        sx={{ flex: "1 1 auto" }}
-                      />
-                      <Button
-                        variant="text"
-                        color="inherit"
-                        onClick={() => removeProfileLink(index)}
-                        startIcon={<DeleteOutlineRoundedIcon />}
-                        sx={{
-                          minHeight: 54,
-                          alignSelf: { xs: "stretch", md: "center" },
-                          color: brand.colors.muted,
-                          textTransform: "none",
-                          fontWeight: 850,
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </Stack>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography sx={{ color: brand.colors.muted, fontSize: 13, mt: 1.1 }}>
-                  No links yet. Add one so people can find your external profile or portfolio.
-                </Typography>
-              )}
-
-              <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap sx={{ mt: 1.2 }}>
-                {SOCIAL_LINK_PRESETS.map((preset) => (
-                  <Button
-                    key={preset}
-                    variant="text"
-                    size="small"
-                    startIcon={<AddRoundedIcon />}
-                    onClick={() => addProfileLink(preset)}
-                    disabled={editableProfileLinks.length >= MAX_PROFILE_LINKS}
-                    sx={{ borderRadius: 999, textTransform: "none", fontWeight: 850 }}
-                  >
-                    {preset}
-                  </Button>
-                ))}
-              </Stack>
-
-              <Typography sx={{ color: fieldErrors.profileLinks ? brand.colors.danger : brand.colors.muted, fontSize: 12.5, mt: 1 }}>
-                {fieldErrors.profileLinks || `${parseProfileLinks(form.profileLinks).length}/${MAX_PROFILE_LINKS} links. URLs like facebook.com/name are accepted.`}
-              </Typography>
-            </Box>
-          </Grid2>
           {isStudent ? (
             <>
               <Grid2 size={{ xs: 12, md: 4 }}>
@@ -1482,7 +1174,7 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
 
               <Box>
                 <Typography sx={{ color: brand.colors.text, fontSize: 18, fontWeight: 950, mb: 1.2 }}>
-                  Contact & Links
+                  Contact
                 </Typography>
                 <Grid2 container spacing={1.2}>
                   <Grid2 size={{ xs: 12, md: 6 }}>
@@ -1497,74 +1189,6 @@ export default function UserProfilePanel({ onDirtyChange = () => {} }) {
                       label="Joined"
                       value={profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-GB") : "N/A"}
                     />
-                  </Grid2>
-                  <Grid2 size={{ xs: 12 }}>
-                    <Box
-                      sx={{
-                        minHeight: "100%",
-                        p: { xs: 1.7, md: 2 },
-                        borderRadius: brand.radius.md,
-                        bgcolor: "#F8FAFC",
-                        border: `1px solid ${brand.colors.line}`,
-                      }}
-                    >
-                      <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1.6}
-                        alignItems={{ xs: "flex-start", sm: "flex-start" }}
-                        justifyContent="space-between"
-                        sx={{ mb: visibleProfileLinks.length ? 1.7 : 1.25 }}
-                      >
-                        <Box sx={{ minWidth: 0 }}>
-                          <Stack direction="row" spacing={1.1} alignItems="flex-start">
-                            <Box
-                              sx={{
-                                width: 28,
-                                height: 28,
-                                borderRadius: 2,
-                                bgcolor: "#FFFFFF",
-                                color: brand.colors.orange,
-                                display: "grid",
-                                placeItems: "center",
-                                border: `1px solid ${brand.colors.line}`,
-                              }}
-                            >
-                              <LinkRoundedIcon fontSize="small" />
-                            </Box>
-                            <Box>
-                              <Typography sx={{ color: brand.colors.text, fontSize: 14.5, fontWeight: 950, lineHeight: 1.25 }}>
-                                Social links
-                              </Typography>
-                              <Typography sx={{ color: brand.colors.muted, fontSize: 12.5, mt: 0.55, lineHeight: 1.5 }}>
-                                Public profiles and portfolio links
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </Box>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<EditRoundedIcon />}
-                          onClick={openEditProfile}
-                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 850, bgcolor: "#FFFFFF" }}
-                        >
-                          {visibleProfileLinks.length ? "Edit links" : "Add social link"}
-                        </Button>
-                      </Stack>
-                      {visibleProfileLinks.length ? (
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                          {visibleProfileLinks.map((link, index) => (
-                            <ProfileLinkButton key={`${link.url}-${index}`} link={link} />
-                          ))}
-                        </Stack>
-                      ) : (
-                        <Box sx={{ p: { xs: 1.35, md: 1.5 }, borderRadius: brand.radius.md, bgcolor: "#FFFFFF", border: `1px dashed ${brand.colors.lineStrong}` }}>
-                          <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>
-                            Add Facebook, GitHub, LinkedIn, portfolio, or another public profile link.
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
                   </Grid2>
                 </Grid2>
               </Box>

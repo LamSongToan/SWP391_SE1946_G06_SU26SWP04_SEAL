@@ -94,20 +94,17 @@ public class UserDirectoryService {
                 user.getCreatedAt(),
                 user.getUserRoles().stream().map(role -> normalizeRole(role.getRoleType())).toList(),
                 studentProfile == null ? null : studentProfile.getStudentType(),
+                studentProfile == null ? null : studentProfile.getStudentCode(),
                 studentProfile == null ? null : studentProfile.getUniversityName()
         );
     }
 
     private boolean matchesQuery(UserDirectoryProfileDto dto, String normalizedQuery) {
-        return contains(dto.fullName(), normalizedQuery)
-                || contains(dto.username(), normalizedQuery)
-                || contains(dto.email(), normalizedQuery)
-                || contains(dto.universityName(), normalizedQuery)
-                || dto.roles().stream().anyMatch(role -> contains(role, normalizedQuery));
+        return matchesPrefix(dto.username(), normalizedQuery);
     }
 
-    private boolean contains(String value, String normalizedQuery) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(normalizedQuery);
+    private boolean matchesPrefix(String value, String normalizedQuery) {
+        return value != null && value.toLowerCase(Locale.ROOT).trim().startsWith(normalizedQuery);
     }
 
     private String normalizeQuery(String query) {

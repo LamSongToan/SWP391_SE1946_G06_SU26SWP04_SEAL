@@ -36,6 +36,11 @@ All endpoints require a JWT for an approved student account.
 | `POST` | `/api/team-invitations/{invitationId}/accept` | Accept an invitation |
 | `POST` | `/api/team-invitations/{invitationId}/reject` | Reject an invitation |
 
-## Database Migration
+## Local Database Setup
 
-For an existing database, run `database/team_management_migration.sql` before starting the updated backend.
+For local development, recreate the database with:
+
+```text
+database/seal_hackathon.sql
+database/seed_test_data.sql
+```

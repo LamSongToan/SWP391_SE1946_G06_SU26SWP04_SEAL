@@ -6,6 +6,8 @@ public record IndividualRegistrationDto(
         Integer individualRegistrationId,
         Integer eventId,
         String eventName,
+        Integer trackId,
+        String trackName,
         Integer userRoleId,
         String username,
         String email,

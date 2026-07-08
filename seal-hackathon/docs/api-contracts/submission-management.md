@@ -30,85 +30,11 @@ All student endpoints require an approved student JWT. Coordinator endpoints req
 | `GET` | `/api/submissions/{submissionId}/history` | Student member | View submission history |
 | `GET` | `/api/coordinator/events/{eventId}/submissions` | Coordinator | List all submissions in an event |
 
-## Create / Update Request
+## Local Database Setup
 
-```json
-{
-  "repositoryUrl": "https://github.com/seal/team-product",
-  "demoUrl": "https://demo.example.com",
-  "slideUrl": "https://docs.google.com/presentation/d/example"
-}
+For local development, recreate the database with:
+
+```text
+database/seal_hackathon.sql
+database/seed_test_data.sql
 ```
-
-## Submission Response
-
-```json
-{
-  "success": true,
-  "message": "Submission created",
-  "data": {
-    "submissionId": 12,
-    "teamId": 5,
-    "teamName": "Agile Seals",
-    "eventId": 2,
-    "eventName": "SEAL Summer 2026",
-    "trackId": 4,
-    "trackName": "Emerging Technologies",
-    "roundId": 8,
-    "roundName": "Elimination",
-    "roundOrder": 1,
-    "submissionDeadline": "2026-06-30T23:59:00",
-    "repositoryUrl": "https://github.com/seal/team-product",
-    "demoUrl": "https://demo.example.com",
-    "slideUrl": "https://docs.google.com/presentation/d/example",
-    "status": "Submitted",
-    "submittedAt": "2026-06-07T10:15:30",
-    "updatedAt": "2026-06-07T10:15:30",
-    "submittedByUserRoleId": 31,
-    "submittedByName": "Team Leader",
-    "currentUserLeader": true,
-    "editable": true
-  },
-  "errorCode": null,
-  "timestamp": "2026-06-07T03:15:30Z"
-}
-```
-
-## History Response Item
-
-```json
-{
-  "historyId": 20,
-  "submissionId": 12,
-  "actionType": "UPDATED",
-  "changedByUserRoleId": 31,
-  "changedByName": "Team Leader",
-  "oldRepositoryUrl": "https://github.com/seal/old-product",
-  "newRepositoryUrl": "https://github.com/seal/team-product",
-  "oldDemoUrl": null,
-  "newDemoUrl": "https://demo.example.com",
-  "oldSlideUrl": null,
-  "newSlideUrl": "https://docs.google.com/presentation/d/example",
-  "oldStatus": "Submitted",
-  "newStatus": "Submitted",
-  "createdAt": "2026-06-07T10:20:00"
-}
-```
-
-## Common Errors
-
-| HTTP | Error | When |
-| --- | --- | --- |
-| `400` | `Repository URL must be a valid GitHub or GitLab repository URL` | URL format is invalid or the host is not GitHub/GitLab |
-| `400` | `Round does not belong to the team's event` | Client submits to a round from another event |
-| `403` | `Only the team leader can manage submissions` | Non-leader tries to create/update |
-| `403` | `You are not a member of this team` | Student tries to view another team's submission |
-| `409` | `A submission requires a valid team with 3 to 5 members` | Team size is not valid |
-| `409` | `Submissions are open only while the event is Ongoing` | Event is not in submission phase |
-| `409` | `The submission deadline for this round has passed` | Round deadline already passed |
-| `409` | `This team already has a submission for this round` | Duplicate team-round submission |
-| `409` | `Team is not qualified for this round` | Team tries to submit to a later round without advancement |
-
-## Database Migration
-
-Run `database/seal_team_update_all_in_one.sql` on existing team databases before starting the updated backend. This script includes the account status/rejection reason fixes, business-rule constraints, and submission management tables in one import.

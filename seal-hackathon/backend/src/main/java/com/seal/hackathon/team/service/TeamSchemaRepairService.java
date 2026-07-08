@@ -44,14 +44,29 @@ public class TeamSchemaRepairService {
                         individual_registration_id INT IDENTITY(1,1) PRIMARY KEY,
                         event_id INT NOT NULL,
                         user_role_id INT NOT NULL,
+                        preferred_track_id INT NULL,
                         assigned_team_id INT NULL,
                         status VARCHAR(30) NOT NULL CONSTRAINT DF_IndividualRegistration_Status DEFAULT 'Waiting',
                         created_at DATETIME2 NOT NULL CONSTRAINT DF_IndividualRegistration_CreatedAt DEFAULT SYSUTCDATETIME(),
                         matched_at DATETIME2 NULL,
                         CONSTRAINT FK_IndividualRegistration_Event FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id),
                         CONSTRAINT FK_IndividualRegistration_Student FOREIGN KEY (user_role_id) REFERENCES StudentProfile(user_role_id),
+                        CONSTRAINT FK_IndividualRegistration_PreferredTrack FOREIGN KEY (preferred_track_id) REFERENCES Track(track_id),
                         CONSTRAINT FK_IndividualRegistration_Team FOREIGN KEY (assigned_team_id) REFERENCES Team(team_id)
                     );
+                END
+                IF COL_LENGTH('IndividualRegistration', 'preferred_track_id') IS NULL
+                BEGIN
+                    ALTER TABLE IndividualRegistration ADD preferred_track_id INT NULL;
+                END
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.foreign_keys
+                    WHERE name = 'FK_IndividualRegistration_PreferredTrack'
+                )
+                BEGIN
+                    ALTER TABLE IndividualRegistration
+                    ADD CONSTRAINT FK_IndividualRegistration_PreferredTrack
+                    FOREIGN KEY (preferred_track_id) REFERENCES Track(track_id);
                 END
                 IF NOT EXISTS (
                     SELECT 1 FROM sys.indexes

@@ -17,8 +17,6 @@ public record UpdateProfileRequest(
         String avatarUrl,
         @Size(max = 1000)
         String bio,
-        @Size(max = 2000)
-        String profileLinks,
         StudentType studentType,
         @Size(max = 50)
         String studentCode,

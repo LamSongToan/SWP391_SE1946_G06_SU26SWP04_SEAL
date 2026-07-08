@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Autocomplete,
   AppBar,
   Avatar,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Container,
   Divider,
   Drawer,
@@ -104,7 +106,6 @@ const ACCOUNT_NAV = [
 const STUDENT_NAV_SECTIONS = [
   { title: "Workspace", items: HOME_NAV },
   { title: "Team Flow", items: STUDENT_CORE_NAV },
-  { title: "Account", items: ACCOUNT_NAV },
 ];
 
 const COORDINATOR_NAV_SECTIONS = [
@@ -128,19 +129,16 @@ const COORDINATOR_NAV_SECTIONS = [
     ],
   },
   { title: "Review & Logs", items: [COORDINATOR_CORE_NAV[8]] },
-  { title: "Account", items: ACCOUNT_NAV },
 ];
 
 const MENTOR_NAV_SECTIONS = [
   { title: "Workspace", items: HOME_NAV },
   { title: "Mentoring", items: MENTOR_CORE_NAV },
-  { title: "Account", items: ACCOUNT_NAV },
 ];
 
 const JUDGE_NAV_SECTIONS = [
   { title: "Workspace", items: HOME_NAV },
   { title: "Evaluation", items: JUDGE_CORE_NAV },
-  { title: "Account", items: ACCOUNT_NAV },
 ];
 
 const PROFILE_DRAFT_STORAGE_KEY = "seal-profile-draft";
@@ -163,6 +161,18 @@ function withAssetVersion(url, version) {
   if (!url || !version) return url;
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}v=${version}`;
+}
+
+function normalizeLookupValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function matchesUserPrefix(user, query) {
+  const normalizedQuery = normalizeLookupValue(query);
+  if (!normalizedQuery) return false;
+
+  const username = normalizeLookupValue(user?.username);
+  return username.startsWith(normalizedQuery);
 }
 
 function normalizeStatus(status) {
@@ -677,6 +687,8 @@ export default function DashboardPage() {
   const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState(searchParams.get("query") || "");
+  const [globalSearchOptions, setGlobalSearchOptions] = useState([]);
+  const [globalSearchLoading, setGlobalSearchLoading] = useState(false);
   const [hasUnsavedProfileChanges, setHasUnsavedProfileChanges] = useState(false);
   const [eventNotifications, setEventNotifications] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
@@ -713,10 +725,7 @@ export default function DashboardPage() {
     if (currentRole === "MENTOR") return MENTOR_NAV_SECTIONS;
     if (currentRole === "JUDGE") return JUDGE_NAV_SECTIONS;
     if (currentRole === "STUDENT") return STUDENT_NAV_SECTIONS;
-    return [
-      { title: "Workspace", items: HOME_NAV },
-      { title: "Account", items: ACCOUNT_NAV },
-    ];
+    return [{ title: "Workspace", items: HOME_NAV }];
   }, [currentRole]);
   const allowedNavKeys = useMemo(
     () => new Set([...HOME_NAV, ...coreNavItems, ...ACCOUNT_NAV].map((item) => item.key)),
@@ -804,6 +813,43 @@ export default function DashboardPage() {
   useEffect(() => {
     setGlobalSearch(queryParam);
   }, [queryParam]);
+
+  useEffect(() => {
+    const trimmedSearch = globalSearch.trim();
+    if (!trimmedSearch) {
+      setGlobalSearchOptions([]);
+      setGlobalSearchLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      setGlobalSearchLoading(true);
+      try {
+        const response = await http.get("/api/users/directory", {
+          params: { query: trimmedSearch },
+        });
+        if (!active) return;
+        const suggestions = (response.data?.data || [])
+          .filter((user) => matchesUserPrefix(user, trimmedSearch))
+          .slice(0, 6);
+        setGlobalSearchOptions(suggestions);
+      } catch {
+        if (active) {
+          setGlobalSearchOptions([]);
+        }
+      } finally {
+        if (active) {
+          setGlobalSearchLoading(false);
+        }
+      }
+    }, 220);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [globalSearch]);
 
   useEffect(() => {
     const markSkipGuard = () => {
@@ -1015,14 +1061,14 @@ export default function DashboardPage() {
     }
 
     if (currentRole === "MENTOR") {
-      if (["mentor-workspace", "mentor-tracks", "mentor-teams", "mentor-notes"].includes(activeKey)) {
+      if (activeKey === "mentor-workspace") {
         return <EvaluationWorkspacePanel role="MENTOR" type="workspace" />;
       }
       return null;
     }
 
     if (currentRole === "JUDGE") {
-      if (["judging", "judge-rounds", "scoring"].includes(activeKey)) {
+      if (activeKey === "judging") {
         return <EvaluationWorkspacePanel role="JUDGE" type="judging" />;
       }
       return null;
@@ -1043,6 +1089,18 @@ export default function DashboardPage() {
   const openProfileMenu = (event) => setProfileMenuAnchor(event.currentTarget);
   const closeProfileMenu = () => setProfileMenuAnchor(null);
 
+  const openDirectorySearch = (value) => {
+    const trimmedValue = String(value || "").trim();
+    const nextParams = { section: "directory" };
+    if (trimmedValue) {
+      nextParams.query = trimmedValue;
+    }
+    if (!confirmLeaveCurrentView()) return;
+    skipNextSearchGuardRef.current = true;
+    setSearchParams(nextParams);
+    setMobileOpen(false);
+  };
+
   const jumpToSection = (key) => {
     if (!confirmLeaveCurrentView()) return;
     const nextParams = { section: key };
@@ -1051,7 +1109,7 @@ export default function DashboardPage() {
     }
     skipNextSearchGuardRef.current = true;
     setSearchParams(nextParams);
-    if (["judging", "judge-rounds", "scoring", "mentor-workspace", "mentor-tracks", "mentor-teams", "mentor-notes"].includes(key)) {
+    if (["judging", "mentor-workspace"].includes(key)) {
       window.setTimeout(() => {
         window.dispatchEvent(new CustomEvent("seal-scroll-evaluation-section", { detail: { section: key } }));
       }, 120);
@@ -1062,14 +1120,7 @@ export default function DashboardPage() {
 
   const submitGlobalSearch = (event) => {
     event.preventDefault();
-    const nextParams = { section: "directory" };
-    if (globalSearch.trim()) {
-      nextParams.query = globalSearch.trim();
-    }
-    if (!confirmLeaveCurrentView()) return;
-    skipNextSearchGuardRef.current = true;
-    setSearchParams(nextParams);
-    setMobileOpen(false);
+    openDirectorySearch(globalSearch);
   };
 
   const runLogout = () => {
@@ -1381,28 +1432,74 @@ export default function DashboardPage() {
                   onSubmit={submitGlobalSearch}
                   sx={{ display: { xs: "none", md: "block" }, width: { md: 280, lg: 360 } }}
                 >
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={globalSearch}
-                    onChange={(event) => setGlobalSearch(event.target.value)}
-                    placeholder="Search users, teams, events..."
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchRoundedIcon sx={{ color: brand.colors.muted, fontSize: 20 }} />
-                        </InputAdornment>
-                      ),
-                      sx: {
-                        height: 40,
-                        borderRadius: 40,
-                        bgcolor: "#F8FAFF",
-                        color: brand.colors.text,
-                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e6f0" },
-                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#cbd5e1" },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: brand.colors.orange },
-                      },
+                  <Autocomplete
+                    freeSolo
+                    disableClearable
+                    forcePopupIcon={false}
+                    options={globalSearchOptions}
+                    filterOptions={(options) => options}
+                    loading={globalSearchLoading}
+                    inputValue={globalSearch}
+                    onInputChange={(_, newInputValue) => setGlobalSearch(newInputValue)}
+                    onChange={(_, value) => {
+                      if (value && typeof value === "object") {
+                        const nextValue = value.fullName || value.username || "";
+                        setGlobalSearch(nextValue);
+                        openDirectorySearch(nextValue);
+                      }
                     }}
+                    isOptionEqualToValue={(option, value) => option.userId === value.userId}
+                    getOptionLabel={(option) => (typeof option === "string" ? option : option.fullName || option.username || "")}
+                    noOptionsText={globalSearch.trim() ? "No users match this prefix." : "Type a name to search"}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.userId} sx={{ display: "flex", alignItems: "center", gap: 1.1, py: 1 }}>
+                        <Avatar
+                          src={resolveAssetUrl(option.avatarUrl) || undefined}
+                          sx={{ width: 30, height: 30, bgcolor: brand.colors.orange, fontSize: 11, fontWeight: 800 }}
+                        >
+                          {getAvatarInitials(option, option)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography sx={{ color: brand.colors.text, fontSize: 13.5, fontWeight: 800, lineHeight: 1.2 }} noWrap>
+                            {option.fullName}
+                          </Typography>
+                          <Typography sx={{ color: brand.colors.muted, fontSize: 12, lineHeight: 1.2 }} noWrap>
+                            @{option.username}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        size="small"
+                        fullWidth
+                        placeholder="Search users, teams, events..."
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchRoundedIcon sx={{ color: brand.colors.muted, fontSize: 20 }} />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <>
+                              {globalSearchLoading ? <CircularProgress size={16} sx={{ color: brand.colors.orange, mr: 1 }} /> : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                          sx: {
+                            height: 40,
+                            borderRadius: 40,
+                            bgcolor: "#F8FAFF",
+                            color: brand.colors.text,
+                            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e6f0" },
+                            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#cbd5e1" },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: brand.colors.orange },
+                          },
+                        }}
+                      />
+                    )}
                   />
                 </Box>
                 <Button

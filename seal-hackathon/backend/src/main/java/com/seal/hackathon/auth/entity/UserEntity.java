@@ -48,10 +48,6 @@ public class UserEntity {
     private String bio;
 
     @Nationalized
-    @Column(name = "profile_links", length = 2000)
-    private String profileLinks;
-
-    @Nationalized
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 

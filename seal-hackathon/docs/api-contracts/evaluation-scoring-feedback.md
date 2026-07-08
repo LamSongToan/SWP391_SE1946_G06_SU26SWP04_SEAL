@@ -15,21 +15,16 @@ This Sprint 2 continuation covers Judge Dashboard, Mentor Dashboard, Score Input
 - Feedback is append-only. Previous feedback entries remain available for audit and are not deleted.
 - Student team members can view feedback linked to their own submissions.
 
-## Database Migration
+## Local Database Setup
 
-Run this on existing databases:
-
-```text
-database/evaluation_scoring_feedback_migration.sql
-```
-
-For teammates importing one combined update file, run:
+For local development, recreate the database with:
 
 ```text
-database/seal_team_update_all_in_one.sql
+database/seal_hackathon.sql
+database/seed_test_data.sql
 ```
 
-The migration adds:
+The base schema and seed data include:
 
 - `Round.score_locked`
 - `Feedback`
@@ -50,51 +45,3 @@ The migration adds:
 | `GET` | `/api/submissions/{submissionId}/feedback` | Student/Judge/Mentor/Coordinator | View feedback history for an authorized submission |
 | `POST` | `/api/submissions/{submissionId}/feedback` | Judge/Mentor | Append written feedback |
 | `GET` | `/api/coordinator/scoring/rounds/{roundId}/research-dataset.csv?trackId={trackId}&includeCalibration=true` | Coordinator | Download anonymized criterion-level judge scores as CSV for RBL/research analysis |
-
-## Score Submit Request
-
-```json
-{
-  "scores": [
-    {
-      "criteriaId": 1,
-      "scoreValue": 8.5,
-      "comment": "Clear problem framing and feasible scope."
-    }
-  ],
-  "feedbackText": "Strong demo flow. Improve deployment notes.",
-  "finalizeScores": false
-}
-```
-
-Draft requests may contain only the criteria currently entered. Set `finalizeScores` to `true` to complete the evaluation; finalization requires every criterion configured for the target round.
-
-## Round Score Lock Request
-
-```json
-{
-  "scoreLocked": true
-}
-```
-
-Set `scoreLocked` to `false` when the coordinator reopens scoring for the round.
-
-## Feedback Request
-
-```json
-{
-  "feedbackText": "Please document the architecture decisions before finals."
-}
-```
-
-Feedback entries are appended to `Feedback`; the API does not expose delete operations.
-
-## Research Dataset Export
-
-The research CSV export excludes direct personal identifiers such as user names, emails, team names, join codes, repository URLs, judge names, and free-text score comments. It preserves independent criterion-level judge scores with anonymized codes:
-
-```text
-event_code,event_semester,event_year,round_code,round_order,round_name,track_code,track_name,team_code,submission_code,submission_status,is_calibration,judge_code,criteria_code,criteria_name,criteria_type,criteria_weight,score_value,submitted_at,scored_at
-```
-
-Each row represents one score for one submission, one criterion, and one judge assignment. `trackId` is optional; omit it to export the entire round. Set `includeCalibration=false` to export official submissions only.

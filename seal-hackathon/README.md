@@ -30,7 +30,7 @@ To optimize teamwork and protect Azure cloud credits, the project runs on a spli
 
 - **backend/**: Spring Boot application containing API services and Dockerfile configuration.
 - **frontend/**: ReactJS application containing user interface and environment endpoints.
-- **database/**: SQL scripts and test SQL helpers (Cleaned of database creation/switching limits for Azure compatibility).
+- **database/**: SQL Server bootstrap scripts for local setup.
 - **docs/**: Project documentation.
 
 ---
@@ -39,9 +39,9 @@ To optimize teamwork and protect Azure cloud credits, the project runs on a spli
 
 ### 1) Database Setup
 1. Open SQL Server Management Studio (SSMS) on your computer.
-2. Manually create a local database named `SEAL_Hackathon_G06`.
-3. Select the created database and execute `database/seal_hackathon.sql`.
-4. Execute `database/seed_test_data.sql` and `database/sprint1_auth_test_data.sql` for sample data.
+2. Execute `database/seal_hackathon.sql`.
+3. Execute `database/seed_test_data.sql`.
+4. After pulling schema-related changes, rerun the same 2 files instead of applying migrations.
 
 ### 2) Backend Setup
 1. Navigate to the backend directory:
@@ -56,7 +56,7 @@ To optimize teamwork and protect Azure cloud credits, the project runs on a spli
    ```bash
    ./mvnw spring-boot:run
    ```
-   *Note: In `dev` profile, Hibernate is set to `ddl-auto=update` to automatically synchronize entity modifications.*
+   *Note: In `dev` profile, Hibernate is locked to `ddl-auto=none`, so the local database is managed only by `database/seal_hackathon.sql` and `database/seed_test_data.sql`.*
 
 ### 3) Frontend Setup
 1. Navigate to the frontend directory:

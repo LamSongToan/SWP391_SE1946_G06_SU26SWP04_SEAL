@@ -304,11 +304,14 @@ export default function AnnouncementManagementPanel() {
         {success ? <Alert severity="success" onClose={() => setSuccess("")}>{success}</Alert> : null}
         {!apiAvailable ? (
           <Alert severity="warning">
-            Announcement API is not available on the running backend. Restart the backend after pulling this code, then run
+            Announcement API is not available on the running backend. Restart the backend after pulling this code. If the local database is outdated, rerun
             {" "}
-            <strong>announcement_audience_migration.sql</strong>
+            <strong>seal_hackathon.sql</strong>
             {" "}
-            if your database already has notification data.
+            and
+            {" "}
+            <strong>seed_test_data.sql</strong>
+            .
           </Alert>
         ) : null}
 

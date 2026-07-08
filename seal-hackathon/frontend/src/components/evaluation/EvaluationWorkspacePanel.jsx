@@ -702,9 +702,9 @@ export default function EvaluationWorkspacePanel({ role, type }) {
   useEffect(() => {
     const scrollToRequestedSection = (event) => {
       const section = event.detail?.section;
-      const target = ["judging", "judge-rounds", "scoring"].includes(section)
+      const target = section === "judging"
         ? judgeWorkspaceRef.current
-        : ["mentor-workspace", "mentor-tracks", "mentor-teams", "mentor-notes"].includes(section)
+        : section === "mentor-workspace"
           ? submissionQueueRef.current
           : null;
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
