@@ -120,6 +120,9 @@ public class AccountApprovalService {
                     throw new ApiException(HttpStatus.BAD_REQUEST,
                             "Only Active accounts can be suspended. Current status: " + user.getStatus());
                 }
+                if (isBlank(reason)) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "Suspend reason is required");
+                }
                 user.setStatus(UserStatus.SUSPENDED.getDbValue());
                 user.setApproved(false);
                 auditAction = "ACCOUNT_SUSPENDED";
@@ -183,6 +186,10 @@ public class AccountApprovalService {
         if (nextStatus == UserStatus.REJECTED && currentStatus != UserStatus.REJECTED) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Use the reject action to reject an account because a rejection reason is required");
+        }
+        if (nextStatus == UserStatus.SUSPENDED && currentStatus != UserStatus.SUSPENDED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Use the suspend action to suspend an account because a suspend reason is required");
         }
 
         boolean hasStudentProfile = studentProfileRepository.findByUserRoleUserUserId(userId).isPresent();

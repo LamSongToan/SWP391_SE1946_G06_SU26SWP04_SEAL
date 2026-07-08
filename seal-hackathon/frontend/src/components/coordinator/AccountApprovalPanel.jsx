@@ -29,7 +29,9 @@ import {
   Typography,
 } from "@mui/material";
 import { http } from "../../api/http";
+import SuspendReasonDialog from "../common/SuspendReasonDialog";
 import ModulePageHeader from "../layout/ModulePageHeader";
+import { brand } from "../../styles/designTokens";
 
 const STATUS_COLOR = {
   ACTIVE: "success",
@@ -71,6 +73,8 @@ export default function AccountApprovalPanel() {
   const [actionDialog, setActionDialog] = useState(null);
   const [reason, setReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [suspendDialogUser, setSuspendDialogUser] = useState(null);
+  const [suspendError, setSuspendError] = useState("");
   const [reasonViewDialog, setReasonViewDialog] = useState(null);
 
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -130,6 +134,18 @@ export default function AccountApprovalPanel() {
     setReason("");
   };
 
+  const openSuspendDialog = (user) => {
+    setSuspendDialogUser(user);
+    setSuspendError("");
+    setError("");
+  };
+
+  const closeSuspendDialog = () => {
+    if (actionLoading) return;
+    setSuspendDialogUser(null);
+    setSuspendError("");
+  };
+
   const confirmAction = async () => {
     setActionLoading(true);
     setError("");
@@ -159,8 +175,25 @@ export default function AccountApprovalPanel() {
     }
   };
 
-  const actionLabel = { ACTIVE: "Approve", REJECTED: "Reject", SUSPENDED: "Suspend", PENDING_APPROVAL: "Re-review" };
-  const actionColor = { ACTIVE: "success", REJECTED: "error", SUSPENDED: "warning", PENDING_APPROVAL: "warning" };
+  const confirmSuspend = async (suspendReason) => {
+    if (!suspendDialogUser?.userId) return;
+    setActionLoading(true);
+    setError("");
+    setSuspendError("");
+    try {
+      await runAction(suspendDialogUser.userId, "SUSPENDED", suspendReason);
+      closeSuspendDialog();
+      await fetchUsers();
+    } catch (err) {
+      setSuspendError(err?.response?.data?.message || "Suspend failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const actionNeedsReason = (action) => ["REJECTED"].includes(String(action || "").toUpperCase());
+  const actionLabel = { ACTIVE: "Approve", REJECTED: "Reject", PENDING_APPROVAL: "Re-review" };
+  const actionColor = { ACTIVE: "success", REJECTED: "error", PENDING_APPROVAL: "warning" };
 
   const fillEditForm = (user) => {
     setManagedUser(user);
@@ -246,6 +279,11 @@ export default function AccountApprovalPanel() {
     if (nextStatus === "REJECTED" && currentStatus !== "REJECTED") {
       setDetailDialogOpen(false);
       openDialog({ ...managedUser, ...editForm, userId: managedUser.userId }, "REJECTED");
+      return;
+    }
+    if (nextStatus === "SUSPENDED" && currentStatus !== "SUSPENDED") {
+      setDetailDialogOpen(false);
+      openSuspendDialog({ ...managedUser, ...editForm, userId: managedUser.userId });
       return;
     }
 
@@ -415,7 +453,27 @@ export default function AccountApprovalPanel() {
                               </>
                             )}
                             {normalizeStatus(user.status) === "ACTIVE" && (
-                              <Button size="small" color="warning" variant="outlined" onClick={() => openDialog(user, "SUSPENDED")}>Suspend</Button>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => openSuspendDialog(user)}
+                                sx={{
+                                  px: 1.6,
+                                  py: 0.7,
+                                  borderRadius: 999,
+                                  color: "#FFFFFF",
+                                  bgcolor: "#DC2626",
+                                  fontWeight: 900,
+                                  textTransform: "none",
+                                  boxShadow: "0 12px 24px rgba(220, 38, 38, 0.22)",
+                                  "&:hover": {
+                                    bgcolor: "#B91C1C",
+                                    boxShadow: "0 14px 28px rgba(185, 28, 28, 0.28)",
+                                  },
+                                }}
+                              >
+                                Suspend
+                              </Button>
                             )}
                           </Stack>
                         </TableCell>
@@ -453,23 +511,27 @@ export default function AccountApprovalPanel() {
           </Typography>
           <TextField
             label={actionDialog?.action === "REJECTED" ? "Rejection reason" : "Reason (optional)"}
-            placeholder={actionDialog?.action === "REJECTED" ? "Example: Student code does not match the submitted university record." : ""}
+            placeholder={
+              actionDialog?.action === "REJECTED"
+                ? "Example: Student code does not match the submitted university record."
+                : ""
+            }
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             fullWidth
             multiline
-            minRows={actionDialog?.action === "REJECTED" ? 5 : 3}
+            minRows={actionNeedsReason(actionDialog?.action) ? 5 : 3}
             maxRows={8}
-            required={actionDialog?.action === "REJECTED"}
+            required={actionNeedsReason(actionDialog?.action)}
             inputProps={{ maxLength: 1000 }}
-            helperText={actionDialog?.action === "REJECTED" ? `${reason.length}/1000 characters` : " "}
+            helperText={actionNeedsReason(actionDialog?.action) ? `${reason.length}/1000 characters` : " "}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={closeActionDialog} disabled={actionLoading}>Cancel</Button>
           <Button
             onClick={confirmAction}
-            disabled={actionLoading || (actionDialog?.action === "REJECTED" && !reason.trim())}
+            disabled={actionLoading || (actionNeedsReason(actionDialog?.action) && !reason.trim())}
             color={actionDialog ? actionColor[actionDialog.action] : "primary"}
             variant="contained"
           >
@@ -499,6 +561,15 @@ export default function AccountApprovalPanel() {
           <Button onClick={() => setReasonViewDialog(null)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      <SuspendReasonDialog
+        open={Boolean(suspendDialogUser)}
+        user={suspendDialogUser}
+        loading={actionLoading}
+        error={suspendError}
+        onClose={closeSuspendDialog}
+        onConfirm={confirmSuspend}
+      />
 
       <Dialog open={reviewDialogOpen} onClose={closeReview} maxWidth="sm" fullWidth>
         <DialogTitle>Pending Registration Details</DialogTitle>
@@ -600,6 +671,11 @@ export default function AccountApprovalPanel() {
               {normalizeStatus(editForm.status) === "REJECTED" && normalizeStatus(managedUser?.status) !== "REJECTED" ? (
                 <Alert severity="warning">
                   Saving with Rejected status will open a separate rejection reason dialog before the account is updated.
+                </Alert>
+              ) : null}
+              {normalizeStatus(editForm.status) === "SUSPENDED" && normalizeStatus(managedUser?.status) !== "SUSPENDED" ? (
+                <Alert severity="warning">
+                  Saving with Suspended status will open a separate suspend reason dialog before the account is updated.
                 </Alert>
               ) : null}
               {normalizeStatus(managedUser?.status) === "REJECTED" && managedUser?.rejectionReason ? (

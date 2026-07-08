@@ -204,6 +204,22 @@ CREATE TABLE TeamInvitation (
     FOREIGN KEY (invited_by_user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION
 );
 
+CREATE TABLE IndividualRegistration (
+    individual_registration_id INT IDENTITY(1,1) PRIMARY KEY,
+    event_id INT NOT NULL,
+    user_role_id INT NOT NULL,
+    preferred_track_id INT NULL,
+    assigned_team_id INT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'Waiting',
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    matched_at DATETIME2 NULL,
+    FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE NO ACTION,
+    FOREIGN KEY (user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION,
+    FOREIGN KEY (preferred_track_id) REFERENCES Track(track_id) ON DELETE NO ACTION,
+    FOREIGN KEY (assigned_team_id) REFERENCES Team(team_id) ON DELETE NO ACTION,
+    UNIQUE(event_id, user_role_id)
+);
+
 CREATE TABLE TrackMentor (
     track_mentor_id INT IDENTITY(1,1) PRIMARY KEY,
     track_id INT NOT NULL,

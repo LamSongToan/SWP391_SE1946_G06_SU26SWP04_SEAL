@@ -6,6 +6,7 @@ import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.InviteTeamMemberRequest;
 import com.seal.hackathon.team.dto.IndividualRegistrationDto;
 import com.seal.hackathon.team.dto.JoinTeamRequest;
+import com.seal.hackathon.team.dto.RegisterIndividualRequest;
 import com.seal.hackathon.team.dto.RegisterTeamForEventRequest;
 import com.seal.hackathon.team.dto.TeamDto;
 import com.seal.hackathon.team.dto.TeamInvitationDto;
@@ -66,10 +67,11 @@ public class TeamController {
     @PostMapping("/events/{eventId}/individual-registration")
     public ResponseEntity<ApiResponse<IndividualRegistrationDto>> registerIndividual(
             Authentication authentication,
-            @PathVariable Integer eventId) {
+            @PathVariable Integer eventId,
+            @RequestBody(required = false) RegisterIndividualRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(
                 "Individual registration saved",
-                teamFormationService.registerIndividual(authentication, eventId)
+                teamFormationService.registerIndividual(authentication, eventId, request == null ? null : request.trackId())
         ));
     }
 

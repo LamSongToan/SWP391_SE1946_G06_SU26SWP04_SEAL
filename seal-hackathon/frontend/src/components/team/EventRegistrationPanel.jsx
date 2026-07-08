@@ -75,6 +75,11 @@ export default function EventRegistrationPanel() {
     teamId: "",
     trackId: "",
   });
+  const [individualDialog, setIndividualDialog] = useState({
+    open: false,
+    event: null,
+    trackId: "",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [confirmation, setConfirmation] = useState({
@@ -136,6 +141,15 @@ export default function EventRegistrationPanel() {
 
   const getEventTrackOptions = (eventId) => tracksByEvent[eventId] || [];
 
+  const ensureEventTracksLoaded = async (event) => {
+    if (!event?.eventId || normalizeTrackMode(event.trackSelectionMode) !== "TEAM_SELECT" || tracksByEvent[event.eventId]) {
+      return;
+    }
+
+    const response = await http.get(`/api/teams/events/${event.eventId}/tracks`);
+    setTracksByEvent((current) => ({ ...current, [event.eventId]: response.data?.data || [] }));
+  };
+
   const openRegisterDialog = async (event) => {
     setRegisterDialog({
       open: true,
@@ -144,13 +158,8 @@ export default function EventRegistrationPanel() {
       trackId: "",
     });
 
-    if (normalizeTrackMode(event.trackSelectionMode) !== "TEAM_SELECT" || tracksByEvent[event.eventId]) {
-      return;
-    }
-
     try {
-      const response = await http.get(`/api/teams/events/${event.eventId}/tracks`);
-      setTracksByEvent((current) => ({ ...current, [event.eventId]: response.data?.data || [] }));
+      await ensureEventTracksLoaded(event);
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to load event tracks"));
     }
@@ -162,6 +171,14 @@ export default function EventRegistrationPanel() {
       open: false,
       event: null,
       teamId: "",
+      trackId: "",
+    });
+  };
+
+  const closeIndividualDialog = () => {
+    setIndividualDialog({
+      open: false,
+      event: null,
       trackId: "",
     });
   };
@@ -216,25 +233,60 @@ export default function EventRegistrationPanel() {
     }
   };
 
-  const registerIndividually = async (event) => {
+  const submitIndividualRegistration = async (event, trackId = null) => {
     if (!event?.eventId) return;
     setIndividualSaving(true);
     setError("");
     setSuccess("");
     try {
-      const response = await http.post(`/api/teams/events/${event.eventId}/individual-registration`);
+      const response = await http.post(`/api/teams/events/${event.eventId}/individual-registration`, {
+        trackId: trackId ? Number(trackId) : null,
+      });
       const registration = response.data?.data;
       if (registration?.assignedTeamName) {
         setSuccess(`You were automatically matched into ${registration.assignedTeamName}.`);
+      } else if (registration?.trackName) {
+        setSuccess(`Individual registration saved for ${registration.trackName}. The system will wait until enough students are available, then auto-form a 3-5 member team.`);
       } else {
         setSuccess("Individual registration saved. The system will wait until enough students are available, then auto-form a 3-5 member team for this event.");
       }
+      closeIndividualDialog();
       await loadWorkspace();
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to register individually"));
     } finally {
       setIndividualSaving(false);
     }
+  };
+
+  const openIndividualRegisterDialog = async (event) => {
+    if (!event?.eventId) return;
+    if (normalizeTrackMode(event.trackSelectionMode) !== "TEAM_SELECT") {
+      await submitIndividualRegistration(event, null);
+      return;
+    }
+
+    setIndividualDialog({
+      open: true,
+      event,
+      trackId: "",
+    });
+
+    try {
+      await ensureEventTracksLoaded(event);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to load event tracks"));
+    }
+  };
+
+  const confirmIndividualRegistration = async () => {
+    const { event, trackId } = individualDialog;
+    if (!event) return;
+    if (normalizeTrackMode(event.trackSelectionMode) === "TEAM_SELECT" && !trackId) {
+      setError("Choose a track before registering individually.");
+      return;
+    }
+    await submitIndividualRegistration(event, trackId);
   };
 
   const canRegisterEvent = (event) =>
@@ -400,6 +452,9 @@ export default function EventRegistrationPanel() {
                           ? `Assigned to ${registration.assignedTeamName}. Check Team Management for members, track, and submissions.`
                           : "Waiting for automatic matching. The system will form a 3-5 member team when enough individual registrations are available."}
                       </Typography>
+                      <Typography color="text.secondary" variant="body2" sx={{ mt: 0.45 }}>
+                        Track: {registration.trackName || "System assignment pending"}
+                      </Typography>
                     </Box>
                     <Chip
                       label={registration.assignedTeamName ? "Matched" : "Waiting"}
@@ -420,7 +475,7 @@ export default function EventRegistrationPanel() {
         sectionTitle="Choose an event for your team"
         sectionDescription="Use the same event catalog flow as the public site, then register one ready team into the event you want to join, or register individually and wait for automatic team matching."
         onRegister={openRegisterDialog}
-        onIndividualRegister={registerIndividually}
+        onIndividualRegister={openIndividualRegisterDialog}
         canRegisterEvent={canRegisterEvent}
         canRegisterIndividually={canRegisterIndividually}
         registerLabelForEvent={registerLabelForEvent}
@@ -501,6 +556,49 @@ export default function EventRegistrationPanel() {
             disabled={saving || !registerDialog.teamId}
           >
             Register Team
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={individualDialog.open} onClose={closeIndividualDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Register Individually</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.6} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              {individualDialog.event?.name}
+            </Typography>
+
+            <TextField
+              select
+              label="Track"
+              value={individualDialog.trackId}
+              onChange={(event) => setIndividualDialog((current) => ({ ...current, trackId: event.target.value }))}
+              helperText="Choose the track you want to wait in. Tracks that already reached max capacity cannot be selected."
+              fullWidth
+            >
+              {getEventTrackOptions(individualDialog.event?.eventId).map((track) => {
+                const full = track.maxTeams != null && Number(track.teamCount || 0) >= Number(track.maxTeams);
+                return (
+                  <MenuItem key={track.trackId} value={String(track.trackId)} disabled={full}>
+                    {track.name} {track.maxTeams != null ? `(${track.teamCount || 0}/${track.maxTeams})` : ""}{full ? " - Full" : ""}
+                  </MenuItem>
+                );
+              })}
+            </TextField>
+
+            <Typography color="text.secondary" variant="body2">
+              The system will wait until enough students choose this track, then auto-form a 3-5 member team inside the same track.
+            </Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeIndividualDialog}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={confirmIndividualRegistration}
+            disabled={individualSaving || !individualDialog.trackId}
+          >
+            {individualSaving ? "Registering..." : "Register Individually"}
           </Button>
         </DialogActions>
       </Dialog>

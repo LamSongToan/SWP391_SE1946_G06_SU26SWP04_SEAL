@@ -39,7 +39,6 @@ const CREATE_STEPS = [
 const TRACK_ASSIGNMENT_OPTIONS = [
   { value: "TEAM_SELECT", label: "Teams choose their track" },
   { value: "SYSTEM_ASSIGN", label: "System assigns track automatically (balanced)" },
-  { value: "SINGLE_TRACK", label: "All teams compete in one shared track" },
 ];
 
 const FINAL_ROUND_RANKING_METHOD = "FINAL_SCORE";
@@ -113,6 +112,18 @@ const CONFIG_SUBSECTION_SX = {
   border: "1px solid #E2E8F0",
   bgcolor: "#F8FAFC",
   boxShadow: "none",
+};
+
+const ROUND_ITEM_SX = {
+  borderRadius: 2.5,
+  border: "1px solid #E5ECF5",
+  bgcolor: "#FFFFFF",
+  p: { xs: 1.75, md: 2 },
+};
+
+const ROUND_INNER_SECTION_SX = {
+  pt: 1.6,
+  borderTop: "1px solid #E8EEF6",
 };
 
 function buildSemesterOptions() {
@@ -274,6 +285,7 @@ function createEmptyWizard() {
 }
 
 function mapEventToWizard(detail) {
+  const normalizedTrackAssignmentMode = detail.trackSelectionMode === "SYSTEM_ASSIGN" ? "SYSTEM_ASSIGN" : "TEAM_SELECT";
   return {
     eventId: detail.eventId,
     name: detail.name || "",
@@ -283,9 +295,9 @@ function mapEventToWizard(detail) {
     registrationEndAt: detail.registrationEndAt ? toDateTimeInput(detail.registrationEndAt) : "",
     competitionStartAt: detail.competitionStartAt ? toDateTimeInput(detail.competitionStartAt) : "",
     competitionEndAt: detail.competitionEndAt ? toDateTimeInput(detail.competitionEndAt) : "",
-    trackAssignmentMode: detail.trackSelectionMode || "TEAM_SELECT",
-    minTeamSize: detail.minTeamSize ?? 3,
-    maxTeamSize: detail.maxTeamSize ?? 5,
+    trackAssignmentMode: normalizedTrackAssignmentMode,
+    minTeamSize: 3,
+    maxTeamSize: 5,
     tracks: (detail.tracks || []).length ? detail.tracks.map(createTrack) : [],
     qualifyingRounds: (detail.qualifyingRounds || []).length
       ? detail.qualifyingRounds.map((round, index) => createQualifyingRound(round, index + 1))
@@ -430,8 +442,8 @@ function buildPayload(form) {
     competitionStartAt: form.competitionStartAt || null,
     competitionEndAt: form.competitionEndAt || null,
     trackSelectionMode: form.trackAssignmentMode,
-    minTeamSize: Number(form.minTeamSize || 3),
-    maxTeamSize: Number(form.maxTeamSize || 5),
+    minTeamSize: 3,
+    maxTeamSize: 5,
     tracks: form.tracks
       .filter((track) => track.name.trim())
       .map((track) => ({
@@ -511,8 +523,6 @@ function getStepIssues(stepIndex, form) {
   }
 
   if (stepIndex === 2) {
-    if (Number(form.minTeamSize || 0) < 1) issues.push("Minimum team size must be at least 1.");
-    if (Number(form.maxTeamSize || 0) < Number(form.minTeamSize || 0)) issues.push("Maximum team size must be greater than or equal to minimum team size.");
     const validTracks = form.tracks.filter((track) => track.name.trim());
     if (!validTracks.length) issues.push("Create at least one track.");
     const uniqueNames = new Set(validTracks.map((track) => track.name.trim().toLowerCase()));
@@ -593,10 +603,10 @@ function getEventConfigurationError(error, fallback) {
   }
 
   if (error?.response?.status === 400) {
-    return "Some event setup values are invalid. Check date order, team size min/max, track capacity min/max, and criteria weights.";
+    return "Some event setup values are invalid. Check date order, track capacity min/max, and criteria weights.";
   }
 
-  return "Event setup could not be saved. Please check: semester/year uniqueness, unique track names, registration before competition, team/track min-max values, and criteria weights.";
+  return "Event setup could not be saved. Please check: semester/year uniqueness, unique track names, registration before competition, track min-max values, and criteria weights.";
 }
 
 function StepHeader({ title, description }) {
@@ -648,34 +658,6 @@ function ConfigSectionHeader({ index, title, description, action = null }) {
   );
 }
 
-function ConfigMetric({ label, value, tone = "default" }) {
-  const toneMap = {
-    orange: { bg: "#FFF6EE", color: "#E17C32" },
-    green: { bg: "#ECFDF5", color: "#059669" },
-    blue: { bg: "#EFF6FF", color: "#2563EB" },
-    default: { bg: "#F8FAFC", color: "#16213E" },
-  };
-  const selected = toneMap[tone] || toneMap.default;
-  return (
-    <Box
-      sx={{
-        p: 1.45,
-        borderRadius: 2,
-        border: "1px solid #E2E8F0",
-        bgcolor: selected.bg,
-        minWidth: 0,
-      }}
-    >
-      <Typography sx={{ color: "#64748B", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.5 }}>
-        {label}
-      </Typography>
-      <Typography sx={{ color: selected.color, fontSize: 14, fontWeight: 950, mt: 0.45, lineHeight: 1.25 }}>
-        {value}
-      </Typography>
-    </Box>
-  );
-}
-
 function DateTimeField({
   label,
   value,
@@ -684,6 +666,7 @@ function DateTimeField({
   minDateTime = "",
   maxDateTime = "",
   helperText = "",
+  framed = true,
 }) {
   const minDateValue = getBoundDatePart(minDateTime);
   const maxDateValue = getBoundDatePart(maxDateTime);
@@ -752,7 +735,7 @@ function DateTimeField({
   };
 
   return (
-    <Box sx={{ ...CONFIG_SUBSECTION_SX, p: { xs: 1.5, md: 2 } }}>
+    <Box sx={framed ? { ...CONFIG_SUBSECTION_SX, p: { xs: 1.5, md: 2 } } : undefined}>
         <Stack spacing={1.2}>
           <Typography sx={{ fontWeight: 800, color: "#16213E" }}>{label}</Typography>
           <Grid2 container spacing={1.25} alignItems="stretch">
@@ -852,19 +835,25 @@ function DateTimeField({
   );
 }
 
-function EmptyState({ text }) {
+function EmptyState({ text, compact = false }) {
   return (
     <Box
       sx={{
-        border: "1px dashed #CBD5E1",
-        borderRadius: 4,
-        minHeight: 180,
-        display: "flex",
+        border: compact ? "none" : "1px dashed #CBD5E1",
+        borderRadius: compact ? 0 : 4,
+        minHeight: compact ? 0 : 132,
+        display: compact ? "block" : "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#94A3B8",
+        alignSelf: compact ? "center" : "stretch",
+        color: compact ? "#64748B" : "#94A3B8",
         textAlign: "center",
-        px: 3,
+        bgcolor: "transparent",
+        px: compact ? 0 : 3,
+        py: compact ? 0.2 : 0,
+        maxWidth: compact ? "100%" : "100%",
+        fontSize: compact ? 14 : 16,
+        lineHeight: 1.55,
       }}
     >
       {text}
@@ -1715,24 +1704,6 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
           >
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
               <Stack spacing={3.2}>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
-                    gap: 1.2,
-                    p: 1.2,
-                    mb: 0.5,
-                    borderRadius: 2,
-                    bgcolor: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                  }}
-                >
-                  <ConfigMetric label="Registration" value={`${formatDateTime(wizard.registrationStartAt)} - ${formatDateTime(wizard.registrationEndAt)}`} tone="orange" />
-                  <ConfigMetric label="Competition" value={`${formatDateTime(wizard.competitionStartAt)} - ${formatDateTime(wizard.competitionEndAt)}`} tone="blue" />
-                  <ConfigMetric label="Tracks" value={`${wizard.tracks.length} configured`} tone="green" />
-                  <ConfigMetric label="Rounds" value={`${wizard.qualifyingRounds.length + 1} total`} />
-                </Box>
-
                 <Box>
                   <ConfigSectionHeader
                     index="1"
@@ -1754,26 +1725,6 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                       </MenuItem>
                     ))}
                   </TextField>
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 2 }}>
-                    <TextField
-                      label="Min members per team"
-                      type="number"
-                      value={wizard.minTeamSize}
-                      onChange={(event) => updateWizard("minTeamSize", event.target.value)}
-                      disabled={!editable}
-                      inputProps={{ min: 1, max: 20 }}
-                      sx={{ ...CONFIG_FIELD_SX, flex: 1 }}
-                    />
-                    <TextField
-                      label="Max members per team"
-                      type="number"
-                      value={wizard.maxTeamSize}
-                      onChange={(event) => updateWizard("maxTeamSize", event.target.value)}
-                      disabled={!editable}
-                      inputProps={{ min: 1, max: 20 }}
-                      sx={{ ...CONFIG_FIELD_SX, flex: 1 }}
-                    />
-                  </Stack>
                   <Stack spacing={1.5}>
                     {wizard.tracks.map((track, index) => (
                       <Card key={`track-${track.trackId || index}`} variant="outlined" sx={CONFIG_SUBSECTION_SX}>
@@ -1827,17 +1778,9 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                   ) : null}
                 </Box>
 
-                <Box>
-                  <ConfigSectionHeader
-                    index="2"
-                    title="Rounds"
-                    description="Build qualifying rounds first. Top N teams from each track move forward, then finalists join one shared final round for judge Q&A."
-                  />
-
-                  <Card variant="outlined" sx={{ ...CONFIG_SECTION_SX, mb: 2 }}>
-                    <CardContent sx={{ p: 2.4 }}>
+                <Box sx={{ mb: 2 }}>
                       <ConfigSectionHeader
-                        index="2A"
+                        index="2"
                         title="Qualifying Rounds"
                         description="Each qualifying round defines the Top N teams per track that advance to the next stage."
                         action={editable ? (
@@ -1849,11 +1792,10 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
 
                       <Stack spacing={1.5}>
                         {wizard.qualifyingRounds.length === 0 ? (
-                          <EmptyState text="No qualifying rounds yet. Add the first round to start defining the promotion path." />
+                          <EmptyState compact text="No qualifying rounds yet. Add the first round to start defining the promotion path." />
                         ) : wizard.qualifyingRounds.map((round, index) => (
-                          <Card key={`qualifying-round-${round.roundId || index}`} variant="outlined" sx={CONFIG_SUBSECTION_SX}>
-                            <CardContent sx={{ p: 2 }}>
-                              <Stack spacing={1.5}>
+                          <Box key={`qualifying-round-${round.roundId || index}`} sx={ROUND_ITEM_SX}>
+                              <Stack spacing={1.6}>
                                 <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
                                   <TextField
                                     fullWidth
@@ -1891,8 +1833,9 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                   maxDateTime={competitionMaxDateTime}
                                   helperText="This is the submission cut-off for the round and must stay inside the competition window."
                                   disabled={!editable}
+                                  framed={false}
                                 />
-                                <Box sx={{ ...CONFIG_SECTION_SX, p: { xs: 1.5, md: 2 } }}>
+                                <Box sx={ROUND_INNER_SECTION_SX}>
                                     <Stack spacing={1.4}>
                                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                                         <Box>
@@ -1951,154 +1894,150 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                     </Stack>
                                 </Box>
                               </Stack>
-                            </CardContent>
-                          </Card>
+                          </Box>
                         ))}
                       </Stack>
-                    </CardContent>
-                  </Card>
+                </Box>
 
-                  <Card variant="outlined" sx={CONFIG_SECTION_SX}>
-                    <CardContent sx={{ p: 2.4 }}>
-                      <ConfigSectionHeader
-                        index="2B"
-                        title="Final Round"
-                        description="Finalists from every track join one shared final round instead of competing inside track boundaries."
-                      />
-                      <Stack spacing={1.5}>
-                        <TextField
-                          fullWidth
-                          label="Final Round Name"
-                          value={wizard.finalRound.roundName}
-                          onChange={(event) => updateWizard("finalRound", { ...wizard.finalRound, roundName: normalizeFinalRoundName(event.target.value) })}
-                          disabled={!editable}
-                          sx={CONFIG_FIELD_SX}
+                <Box>
+                        <ConfigSectionHeader
+                          index="3"
+                          title="Final Round"
+                          description="Finalists from every track join one shared final round instead of competing inside track boundaries."
                         />
-                        <DateTimeField
-                          label="Submission Deadline"
-                          value={wizard.finalRound.submissionDeadline}
-                          onChange={(nextValue) => updateWizard("finalRound", { ...wizard.finalRound, submissionDeadline: nextValue })}
-                          minDateTime={competitionMinDateTime}
-                          maxDateTime={competitionMaxDateTime}
-                          helperText="This is the final submission cut-off before judges begin the final assessment."
-                          disabled={!editable}
-                        />
-                        <Box sx={{ ...CONFIG_SUBSECTION_SX, p: { xs: 1.5, md: 2 } }}>
-                            <Stack spacing={1.4}>
-                              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Stack spacing={1.5}>
+                          <TextField
+                            fullWidth
+                            label="Final Round Name"
+                            value={wizard.finalRound.roundName}
+                            onChange={(event) => updateWizard("finalRound", { ...wizard.finalRound, roundName: normalizeFinalRoundName(event.target.value) })}
+                            disabled={!editable}
+                            sx={CONFIG_FIELD_SX}
+                          />
+                          <DateTimeField
+                            label="Submission Deadline"
+                            value={wizard.finalRound.submissionDeadline}
+                            onChange={(nextValue) => updateWizard("finalRound", { ...wizard.finalRound, submissionDeadline: nextValue })}
+                            minDateTime={competitionMinDateTime}
+                            maxDateTime={competitionMaxDateTime}
+                            helperText="This is the final submission cut-off before judges begin the final assessment."
+                            disabled={!editable}
+                            framed={false}
+                          />
+                          <Box sx={ROUND_INNER_SECTION_SX}>
+                              <Stack spacing={1.4}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                  <Box>
+                                    <Typography sx={{ fontWeight: 800, color: "#16213E" }}>
+                                      Scoring Criteria
+                                    </Typography>
+                                    <Typography sx={{ color: "#64748B", fontSize: 13 }}>
+                                      Start from the final-round template, then adjust the judging criteria for the live Q&amp;A round.
+                                    </Typography>
+                                  </Box>
+                                  {editable ? (
+                                    <Button
+                                      variant="text"
+                                      startIcon={<AddRoundedIcon />}
+                                      onClick={addFinalCriterion}
+                                      sx={{ textTransform: "none", fontWeight: 800 }}
+                                    >
+                                      Add Criterion
+                                    </Button>
+                                  ) : null}
+                                </Stack>
+                                <Stack spacing={1.2}>
+                                  {(wizard.finalRound.criteria || []).map((criterion, criterionIndex) => (
+                                    <Stack key={`final-criterion-${criterionIndex}`} direction={{ xs: "column", md: "row" }} spacing={1.2}>
+                                      <TextField
+                                        fullWidth
+                                        label={`Criterion ${criterionIndex + 1}`}
+                                        value={criterion.criterionName}
+                                        onChange={(event) => updateFinalCriterion(criterionIndex, { criterionName: event.target.value })}
+                                        disabled={!editable}
+                                        sx={CONFIG_FIELD_SX}
+                                      />
+                                      <TextField
+                                        label="Weight (%)"
+                                        type="number"
+                                        value={criterion.weight ?? ""}
+                                        onChange={(event) => updateFinalCriterion(criterionIndex, { weight: event.target.value })}
+                                        disabled={!editable}
+                                        inputProps={{ min: 1, max: 100 }}
+                                        sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
+                                      />
+                                      {editable ? (
+                                        <Button
+                                          variant="outlined"
+                                          color="error"
+                                          onClick={() => removeFinalCriterion(criterionIndex)}
+                                          disabled={(wizard.finalRound.criteria || []).length <= 1}
+                                          sx={{ minWidth: 132, borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                                        >
+                                          Delete
+                                        </Button>
+                                      ) : null}
+                                    </Stack>
+                                  ))}
+                                </Stack>
+                              </Stack>
+                          </Box>
+                          <Box sx={ROUND_INNER_SECTION_SX}>
+                              <Stack spacing={1.4}>
                                 <Box>
                                   <Typography sx={{ fontWeight: 800, color: "#16213E" }}>
-                                    Scoring Criteria
+                                    Awards
                                   </Typography>
                                   <Typography sx={{ color: "#64748B", fontSize: 13 }}>
-                                    Start from the final-round template, then adjust the judging criteria for the live Q&amp;A round.
+                                    Configure the final awards here. Finalists are ranked automatically by their final-round score.
                                   </Typography>
                                 </Box>
+                                <Chip
+                                  label="Ranking: Final round score"
+                                  sx={{ alignSelf: "flex-start", bgcolor: "#FFF6EE", color: "#E17C32", fontWeight: 800 }}
+                                />
+                                <Stack spacing={1.2}>
+                                  {wizard.awards.map((award, index) => (
+                                    <Stack key={`award-${index}`} direction={{ xs: "column", md: "row" }} spacing={1.2}>
+                                      <TextField
+                                        fullWidth
+                                        label={`Award ${index + 1}`}
+                                        value={award.awardName}
+                                        onChange={(event) => updateAward(index, "awardName", event.target.value)}
+                                        disabled={!editable}
+                                        sx={CONFIG_FIELD_SX}
+                                      />
+                                      <TextField
+                                        label="Quantity"
+                                        type="number"
+                                        value={award.quantity}
+                                        onChange={(event) => updateAward(index, "quantity", event.target.value)}
+                                        inputProps={{ min: 1 }}
+                                        disabled={!editable}
+                                        sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
+                                      />
+                                      {editable ? (
+                                        <Button
+                                          variant="outlined"
+                                          color="error"
+                                          onClick={() => removeAward(index)}
+                                          disabled={wizard.awards.length <= 1}
+                                          sx={{ minWidth: 132, borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                                        >
+                                          Delete
+                                        </Button>
+                                      ) : null}
+                                    </Stack>
+                                  ))}
+                                </Stack>
                                 {editable ? (
-                                  <Button
-                                    variant="text"
-                                    startIcon={<AddRoundedIcon />}
-                                    onClick={addFinalCriterion}
-                                    sx={{ textTransform: "none", fontWeight: 800 }}
-                                  >
-                                    Add Criterion
+                                  <Button variant="text" startIcon={<AddRoundedIcon />} onClick={addAward} sx={{ textTransform: "none", fontWeight: 800, alignSelf: "flex-start" }}>
+                                    Add Award
                                   </Button>
                                 ) : null}
                               </Stack>
-                              <Stack spacing={1.2}>
-                                {(wizard.finalRound.criteria || []).map((criterion, criterionIndex) => (
-                                  <Stack key={`final-criterion-${criterionIndex}`} direction={{ xs: "column", md: "row" }} spacing={1.2}>
-                                    <TextField
-                                      fullWidth
-                                      label={`Criterion ${criterionIndex + 1}`}
-                                      value={criterion.criterionName}
-                                      onChange={(event) => updateFinalCriterion(criterionIndex, { criterionName: event.target.value })}
-                                      disabled={!editable}
-                                      sx={CONFIG_FIELD_SX}
-                                    />
-                                    <TextField
-                                      label="Weight (%)"
-                                      type="number"
-                                      value={criterion.weight ?? ""}
-                                      onChange={(event) => updateFinalCriterion(criterionIndex, { weight: event.target.value })}
-                                      disabled={!editable}
-                                      inputProps={{ min: 1, max: 100 }}
-                                      sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
-                                    />
-                                    {editable ? (
-                                      <Button
-                                        variant="outlined"
-                                        color="error"
-                                        onClick={() => removeFinalCriterion(criterionIndex)}
-                                        disabled={(wizard.finalRound.criteria || []).length <= 1}
-                                        sx={{ minWidth: 132, borderRadius: 999, textTransform: "none", fontWeight: 800 }}
-                                      >
-                                        Delete
-                                      </Button>
-                                    ) : null}
-                                  </Stack>
-                                ))}
-                              </Stack>
-                            </Stack>
-                        </Box>
-                        <Box sx={{ ...CONFIG_SUBSECTION_SX, p: { xs: 1.5, md: 2 } }}>
-                            <Stack spacing={1.4}>
-                              <Box>
-                                <Typography sx={{ fontWeight: 800, color: "#16213E" }}>
-                                  Awards
-                                </Typography>
-                                <Typography sx={{ color: "#64748B", fontSize: 13 }}>
-                                  Configure the final awards here. Finalists are ranked automatically by their final-round score.
-                                </Typography>
-                              </Box>
-                              <Chip
-                                label="Ranking: Final round score"
-                                sx={{ alignSelf: "flex-start", bgcolor: "#FFF6EE", color: "#E17C32", fontWeight: 800 }}
-                              />
-                              <Stack spacing={1.2}>
-                                {wizard.awards.map((award, index) => (
-                                  <Stack key={`award-${index}`} direction={{ xs: "column", md: "row" }} spacing={1.2}>
-                                    <TextField
-                                      fullWidth
-                                      label={`Award ${index + 1}`}
-                                      value={award.awardName}
-                                      onChange={(event) => updateAward(index, "awardName", event.target.value)}
-                                      disabled={!editable}
-                                      sx={CONFIG_FIELD_SX}
-                                    />
-                                    <TextField
-                                      label="Quantity"
-                                      type="number"
-                                      value={award.quantity}
-                                      onChange={(event) => updateAward(index, "quantity", event.target.value)}
-                                      inputProps={{ min: 1 }}
-                                      disabled={!editable}
-                                      sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
-                                    />
-                                    {editable ? (
-                                      <Button
-                                        variant="outlined"
-                                        color="error"
-                                        onClick={() => removeAward(index)}
-                                        disabled={wizard.awards.length <= 1}
-                                        sx={{ minWidth: 132, borderRadius: 999, textTransform: "none", fontWeight: 800 }}
-                                      >
-                                        Delete
-                                      </Button>
-                                    ) : null}
-                                  </Stack>
-                                ))}
-                              </Stack>
-                              {editable ? (
-                                <Button variant="text" startIcon={<AddRoundedIcon />} onClick={addAward} sx={{ textTransform: "none", fontWeight: 800, alignSelf: "flex-start" }}>
-                                  Add Award
-                                </Button>
-                              ) : null}
-                            </Stack>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </Card>
+                          </Box>
+                        </Stack>
                 </Box>
               </Stack>
             </CardContent>

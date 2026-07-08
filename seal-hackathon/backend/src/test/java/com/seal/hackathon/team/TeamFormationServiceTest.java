@@ -37,6 +37,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -110,6 +111,80 @@ class TeamFormationServiceTest {
         verify(notificationService).notifyTeamMatched(waiting.get(0).getStudent().getUserRole().getUser(), event, waiting.get(0).getAssignedTeam());
         verify(notificationService).notifyTeamMatched(waiting.get(1).getStudent().getUserRole().getUser(), event, waiting.get(1).getAssignedTeam());
         verify(notificationService).notifyTeamMatched(waiting.get(2).getStudent().getUserRole().getUser(), event, waiting.get(2).getAssignedTeam());
+    }
+
+    @Test
+    void registerIndividual_shouldRequireTrackWhenEventUsesTeamSelect() {
+        StudentProfileEntity student = student(1, 101, "student@example.com", "Student One");
+        HackathonEventEntity event = event(30);
+        event.setTrackSelectionMode("TEAM_SELECT");
+        TrackEntity track = track(20, 30, "AI Track");
+
+        when(userRepository.findByEmailIgnoreCase("student@example.com")).thenReturn(Optional.of(student.getUserRole().getUser()));
+        when(studentProfileRepository.findByUserRoleUserUserId(1)).thenReturn(Optional.of(student));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(event));
+        when(teamMemberRepository.existsMembershipInEvent(101, 30)).thenReturn(false);
+        when(individualRegistrationRepository.existsByEventEventIdAndStudentUserRoleIdAndStatusIgnoreCase(30, 101, "Waiting"))
+                .thenReturn(false);
+        when(trackRepository.findByEventIdOrderByTrackIdAsc(30)).thenReturn(List.of(track));
+
+        ApiException exception = Assertions.assertThrows(
+                ApiException.class,
+                () -> teamFormationService.registerIndividual(authentication("student@example.com"), 30, null)
+        );
+
+        Assertions.assertTrue(exception.getMessage().contains("Choose a track before registering individually"));
+    }
+
+    @Test
+    void registerIndividual_shouldPersistPreferredTrackWhenEventUsesTeamSelect() {
+        StudentProfileEntity student = student(1, 101, "student@example.com", "Student One");
+        HackathonEventEntity event = event(30);
+        event.setTrackSelectionMode("TEAM_SELECT");
+        TrackEntity track = track(20, 30, "AI Track");
+        AtomicInteger memberCount = new AtomicInteger();
+        AtomicReference<IndividualRegistrationEntity> savedRegistration = new AtomicReference<>();
+
+        when(userRepository.findByEmailIgnoreCase("student@example.com")).thenReturn(Optional.of(student.getUserRole().getUser()));
+        when(studentProfileRepository.findByUserRoleUserUserId(1)).thenReturn(Optional.of(student));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(event));
+        when(teamMemberRepository.existsMembershipInEvent(101, 30)).thenReturn(false);
+        when(individualRegistrationRepository.existsByEventEventIdAndStudentUserRoleIdAndStatusIgnoreCase(30, 101, "Waiting"))
+                .thenReturn(false);
+        when(trackRepository.findByEventIdOrderByTrackIdAsc(30)).thenReturn(List.of(track));
+        when(teamRepository.countByTrackTrackId(20)).thenReturn(0L);
+        when(individualRegistrationRepository.save(any(IndividualRegistrationEntity.class))).thenAnswer(invocation -> {
+            IndividualRegistrationEntity registration = invocation.getArgument(0);
+            if (registration.getIndividualRegistrationId() == null) {
+                registration.setIndividualRegistrationId(1);
+            }
+            savedRegistration.set(registration);
+            return registration;
+        });
+        when(individualRegistrationRepository.findByEventEventIdAndStudentUserRoleId(30, 101))
+                .thenAnswer(invocation -> Optional.ofNullable(savedRegistration.get()));
+        when(individualRegistrationRepository.findByEventEventIdAndStatusIgnoreCaseOrderByCreatedAtAsc(30, "Waiting"))
+                .thenAnswer(invocation -> savedRegistration.get() == null ? List.of() : List.of(savedRegistration.get()))
+                .thenReturn(List.of());
+        when(teamRepository.save(any(TeamEntity.class))).thenAnswer(invocation -> {
+            TeamEntity team = invocation.getArgument(0);
+            if (team.getTeamId() == null) {
+                team.setTeamId(40);
+            }
+            return team;
+        });
+        when(teamMemberRepository.save(any(TeamMemberEntity.class))).thenAnswer(invocation -> {
+            memberCount.incrementAndGet();
+            return invocation.getArgument(0);
+        });
+        when(teamMemberRepository.countByTeamTeamId(40)).thenAnswer(invocation -> (long) memberCount.get());
+        when(teamRepository.findDetailedByEventId(30)).thenReturn(List.of());
+        when(trackMentorRepository.findByTrackEventId(30)).thenReturn(List.of());
+
+        IndividualRegistrationDto result = teamFormationService.registerIndividual(authentication("student@example.com"), 30, 20);
+
+        Assertions.assertEquals(20, result.trackId());
+        Assertions.assertEquals("AI Track", result.trackName());
     }
 
     @Test
@@ -243,6 +318,49 @@ class TeamFormationServiceTest {
         Assertions.assertEquals(webTrack, waiting.get(0).getAssignedTeam().getTrack());
     }
 
+    @Test
+    void autoMatchWaitingIndividuals_shouldKeepTeamSelectStudentsInsideChosenTrack() {
+        HackathonEventEntity event = event(30);
+        event.setTrackSelectionMode("TEAM_SELECT");
+        TrackEntity aiTrack = track(20, 30, "AI Track");
+        TrackEntity webTrack = track(21, 30, "Web Track");
+        List<IndividualRegistrationEntity> waiting = List.of(
+                registration(1, event, student(1, 101, "one@example.com", "One Student"), aiTrack),
+                registration(2, event, student(2, 102, "two@example.com", "Two Student"), aiTrack),
+                registration(3, event, student(3, 103, "three@example.com", "Three Student"), aiTrack),
+                registration(4, event, student(4, 104, "four@example.com", "Four Student"), webTrack),
+                registration(5, event, student(5, 105, "five@example.com", "Five Student"), webTrack)
+        );
+        AtomicInteger memberCount = new AtomicInteger();
+
+        when(eventRepository.findById(30)).thenReturn(Optional.of(event));
+        when(individualRegistrationRepository.findByEventEventIdAndStatusIgnoreCaseOrderByCreatedAtAsc(30, "Waiting"))
+                .thenReturn(waiting)
+                .thenReturn(List.of(waiting.get(3), waiting.get(4)));
+        when(trackRepository.findByEventIdOrderByTrackIdAsc(30)).thenReturn(List.of(aiTrack, webTrack));
+        when(teamRepository.save(any(TeamEntity.class))).thenAnswer(invocation -> {
+            TeamEntity team = invocation.getArgument(0);
+            if (team.getTeamId() == null) {
+                team.setTeamId(40);
+            }
+            return team;
+        });
+        when(teamMemberRepository.save(any(TeamMemberEntity.class))).thenAnswer(invocation -> {
+            memberCount.incrementAndGet();
+            return invocation.getArgument(0);
+        });
+        when(teamMemberRepository.countByTeamTeamId(40)).thenAnswer(invocation -> (long) memberCount.get());
+        when(teamRepository.findDetailedByEventId(30)).thenReturn(List.of());
+        when(trackMentorRepository.findByTrackEventId(30)).thenReturn(List.of());
+        when(teamRepository.countByTrackTrackId(20)).thenReturn(0L);
+
+        TeamFormationDashboardDto dashboard = teamFormationService.autoMatchWaitingIndividuals(30);
+
+        Assertions.assertEquals(2, dashboard.waitingIndividuals().size());
+        Assertions.assertTrue(dashboard.waitingIndividuals().stream().allMatch(item -> item.trackId().equals(21)));
+        Assertions.assertEquals(aiTrack, waiting.get(0).getAssignedTeam().getTrack());
+    }
+
     private Authentication authentication(String email) {
         return new UsernamePasswordAuthenticationToken(email, "ignored");
     }
@@ -269,10 +387,18 @@ class TeamFormationServiceTest {
     }
 
     private IndividualRegistrationEntity registration(Integer id, HackathonEventEntity event, StudentProfileEntity student) {
+        return registration(id, event, student, null);
+    }
+
+    private IndividualRegistrationEntity registration(Integer id,
+                                                      HackathonEventEntity event,
+                                                      StudentProfileEntity student,
+                                                      TrackEntity preferredTrack) {
         IndividualRegistrationEntity registration = new IndividualRegistrationEntity();
         registration.setIndividualRegistrationId(id);
         registration.setEvent(event);
         registration.setStudent(student);
+        registration.setPreferredTrack(preferredTrack);
         registration.setStatus("Waiting");
         registration.setCreatedAt(LocalDateTime.now().minusHours(1));
         return registration;

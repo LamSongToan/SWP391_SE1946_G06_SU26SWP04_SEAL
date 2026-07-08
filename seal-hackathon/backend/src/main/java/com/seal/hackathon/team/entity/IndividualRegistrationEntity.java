@@ -2,6 +2,7 @@ package com.seal.hackathon.team.entity;
 
 import com.seal.hackathon.auth.entity.StudentProfileEntity;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
+import com.seal.hackathon.event.entity.TrackEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -35,6 +36,10 @@ public class IndividualRegistrationEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_role_id", nullable = false)
     private StudentProfileEntity student;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "preferred_track_id")
+    private TrackEntity preferredTrack;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_team_id")

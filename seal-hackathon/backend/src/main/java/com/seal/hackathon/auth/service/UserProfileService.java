@@ -79,7 +79,6 @@ public class UserProfileService {
         user.setFullName(request.fullName().trim());
         user.setAvatarUrl(normalizeAvatarUrl(request.avatarUrl()));
         user.setBio(normalizeBio(request.bio()));
-        user.setProfileLinks(normalizeProfileLinks(request.profileLinks()));
 
         Optional<StudentProfileEntity> studentProfileOptional = studentProfileRepository.findByUserRoleUserUserId(user.getUserId());
         boolean hasStudentRole = user.getUserRoles().stream()
@@ -186,7 +185,6 @@ public class UserProfileService {
                 user.getFullName(),
                 user.getAvatarUrl(),
                 user.getBio(),
-                user.getProfileLinks(),
                 user.getStatus(),
                 user.getApproved(),
                 user.getCreatedAt(),
@@ -235,14 +233,6 @@ public class UserProfileService {
             return null;
         }
         String normalized = bio.trim();
-        return normalized.isEmpty() ? null : normalized;
-    }
-
-    private String normalizeProfileLinks(String profileLinks) {
-        if (profileLinks == null) {
-            return null;
-        }
-        String normalized = profileLinks.trim();
         return normalized.isEmpty() ? null : normalized;
     }
 

@@ -13,13 +13,13 @@ public interface IndividualRegistrationRepository extends JpaRepository<Individu
 
     boolean existsByEventEventIdAndStudentUserRoleIdAndStatusIgnoreCase(Integer eventId, Integer userRoleId, String status);
 
-    @EntityGraph(attributePaths = {"event", "student", "student.userRole", "student.userRole.user", "assignedTeam"})
+    @EntityGraph(attributePaths = {"event", "student", "student.userRole", "student.userRole.user", "preferredTrack", "assignedTeam", "assignedTeam.track"})
     Optional<IndividualRegistrationEntity> findByEventEventIdAndStudentUserRoleId(Integer eventId, Integer userRoleId);
 
-    @EntityGraph(attributePaths = {"event", "student", "student.userRole", "student.userRole.user", "assignedTeam"})
+    @EntityGraph(attributePaths = {"event", "student", "student.userRole", "student.userRole.user", "preferredTrack", "assignedTeam", "assignedTeam.track"})
     List<IndividualRegistrationEntity> findByStudentUserRoleIdOrderByCreatedAtDesc(Integer userRoleId);
 
-    @EntityGraph(attributePaths = {"event", "student", "student.userRole", "student.userRole.user"})
+    @EntityGraph(attributePaths = {"event", "student", "student.userRole", "student.userRole.user", "preferredTrack"})
     List<IndividualRegistrationEntity> findByEventEventIdAndStatusIgnoreCaseOrderByCreatedAtAsc(Integer eventId, String status);
 
     @Query("""

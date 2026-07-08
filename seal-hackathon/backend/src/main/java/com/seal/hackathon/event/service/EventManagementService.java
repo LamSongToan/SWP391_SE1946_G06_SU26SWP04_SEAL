@@ -541,8 +541,9 @@ public class EventManagementService {
         }
     }
 
-    private int normalizeTeamSize(Integer value, int fallback) {
-        return value == null ? fallback : Math.max(1, value);
+    private String normalizeTrackSelectionMode(String value) {
+        String normalized = value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+        return "SYSTEM_ASSIGN".equals(normalized) ? "SYSTEM_ASSIGN" : "TEAM_SELECT";
     }
 
     private Integer normalizeMinTeams(Integer value) {
@@ -930,9 +931,9 @@ public class EventManagementService {
                 request == null ? null : request.registrationEndAt(),
                 request == null ? null : request.competitionStartAt(),
                 request == null ? null : request.competitionEndAt(),
-                request == null || request.trackSelectionMode() == null ? "TEAM_SELECT" : request.trackSelectionMode().trim(),
-                normalizeTeamSize(request == null ? null : request.minTeamSize(), MIN_TEAM_SIZE),
-                normalizeTeamSize(request == null ? null : request.maxTeamSize(), MAX_TEAM_SIZE),
+                normalizeTrackSelectionMode(request == null ? null : request.trackSelectionMode()),
+                MIN_TEAM_SIZE,
+                MAX_TEAM_SIZE,
                 sanitizedTracks,
                 sanitizedQualifyingRounds,
                 sanitizedFinalRound,

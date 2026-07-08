@@ -723,10 +723,10 @@ public class TeamService {
     }
 
     private int minTeamSize(HackathonEventEntity event) {
-        return event.getMinTeamSize() == null ? MIN_TEAM_SIZE : Math.max(1, event.getMinTeamSize());
+        return MIN_TEAM_SIZE;
     }
 
     private int maxTeamSize(HackathonEventEntity event) {
-        return event.getMaxTeamSize() == null ? MAX_TEAM_SIZE : Math.max(minTeamSize(event), event.getMaxTeamSize());
+        return MAX_TEAM_SIZE;
     }
 }

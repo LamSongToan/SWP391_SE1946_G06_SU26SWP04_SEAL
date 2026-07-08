@@ -15,6 +15,7 @@ public record UserDirectoryProfileDto(
         LocalDateTime createdAt,
         List<String> roles,
         String studentType,
+        String studentCode,
         String universityName
 ) {
 }

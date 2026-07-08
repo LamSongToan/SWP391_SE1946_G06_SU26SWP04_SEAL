@@ -16,6 +16,9 @@ VALUES
 ('bao.student', 'bao.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Bao Tran', NULL, N'FPT student testing multi-team creation and collaboration workflows.', 'Active', 1),
 ('quynh.student', 'quynh.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Quynh Le', NULL, N'FPT student focused on frontend polish and team invitation testing.', 'Active', 1),
 ('phuc.student', 'phuc.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Phuc Nguyen', NULL, N'FPT student used for extra team and submission testing.', 'Active', 1),
+('huy.student', 'huy.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Huy Pham', NULL, N'Fresh student account kept unused in seed data for clean registration and team-flow testing.', 'Active', 1),
+('minh.student', 'minh.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Minh Le', NULL, N'Fresh student account kept unused in seed data for clean team-formation testing.', 'Active', 1),
+('dat.student', 'dat.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Dat Nguyen', NULL, N'Fresh student account kept unused in seed data for clean team-formation testing.', 'Active', 1),
 ('nhat.student', 'nhat.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Nhat Hoang', NULL, N'External student for cross-university registration and approval scenarios.', 'Active', 1),
 ('thao.student', 'thao.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Thao Pham', NULL, N'External student for invitation, team size, and event registration flows.', 'Active', 1),
 ('lam.student', 'lam.seal.demo@gmail.com', '$2a$10$YTjZK23.EGEb.vCcgZv.0.qm9EQQmZFis7DpEYSUdTai/6wPaK1Vu', N'Lam Do', NULL, N'External student for search, team management, and profile testing.', 'Active', 1),
@@ -27,7 +30,7 @@ VALUES
 GO
 
 INSERT INTO UserRole (user_id, role_type)
-SELECT user_id, 'Student' FROM [Users] WHERE username IN ('an.student', 'linh.student', 'mai.student', 'bao.student', 'quynh.student', 'phuc.student', 'nhat.student', 'thao.student', 'lam.student');
+SELECT user_id, 'Student' FROM [Users] WHERE username IN ('an.student', 'linh.student', 'mai.student', 'bao.student', 'quynh.student', 'phuc.student', 'huy.student', 'minh.student', 'dat.student', 'nhat.student', 'thao.student', 'lam.student');
 INSERT INTO UserRole (user_id, role_type)
 SELECT user_id, 'Coordinator' FROM [Users] WHERE username IN ('toan.coordinator', 'anh.coordinator');
 INSERT INTO UserRole (user_id, role_type)
@@ -71,6 +74,24 @@ SELECT ur.user_role_id, 'FPT', 'SE181005', N'FPT University HCMC'
 FROM UserRole ur
 JOIN [Users] u ON u.user_id = ur.user_id
 WHERE u.username = 'phuc.student' AND ur.role_type = 'Student';
+
+INSERT INTO StudentProfile (user_role_id, student_type, student_code, university_name)
+SELECT ur.user_role_id, 'FPT', 'SE181006', N'FPT University HCMC'
+FROM UserRole ur
+JOIN [Users] u ON u.user_id = ur.user_id
+WHERE u.username = 'huy.student' AND ur.role_type = 'Student';
+
+INSERT INTO StudentProfile (user_role_id, student_type, student_code, university_name)
+SELECT ur.user_role_id, 'FPT', 'SE181007', N'FPT University HCMC'
+FROM UserRole ur
+JOIN [Users] u ON u.user_id = ur.user_id
+WHERE u.username = 'minh.student' AND ur.role_type = 'Student';
+
+INSERT INTO StudentProfile (user_role_id, student_type, student_code, university_name)
+SELECT ur.user_role_id, 'FPT', 'SE181008', N'FPT University HCMC'
+FROM UserRole ur
+JOIN [Users] u ON u.user_id = ur.user_id
+WHERE u.username = 'dat.student' AND ur.role_type = 'Student';
 
 INSERT INTO StudentProfile (user_role_id, student_type, student_code, university_name)
 SELECT ur.user_role_id, 'EXTERNAL', 'UIT2026-01', N'University of Information Technology'
@@ -912,4 +933,286 @@ ORDER BY user_id;
 
 SELECT event_id, name, status FROM HackathonEvent ORDER BY event_id DESC;
 SELECT team_id, team_name, status FROM Team ORDER BY team_id DESC;
+GO
+
+-- =======================================================
+-- Sample Audit Logs for UI/demo verification
+-- =======================================================
+DECLARE @AuditActorUserId INT;
+DECLARE @AuditEventId INT;
+DECLARE @AuditEventName NVARCHAR(150);
+DECLARE @AuditTrackId INT;
+DECLARE @AuditTrackName NVARCHAR(100);
+DECLARE @AuditRoundId INT;
+DECLARE @AuditRoundName NVARCHAR(100);
+DECLARE @AuditTeamId INT;
+DECLARE @AuditTeamName NVARCHAR(100);
+DECLARE @AuditSubmissionId INT;
+
+SELECT TOP 1 @AuditActorUserId = u.user_id
+FROM [Users] u
+JOIN UserRole ur ON ur.user_id = u.user_id
+WHERE ur.role_type = 'Coordinator'
+ORDER BY CASE WHEN u.username = 'toan.coordinator' THEN 0 ELSE 1 END, u.user_id;
+
+IF @AuditActorUserId IS NULL
+BEGIN
+    SELECT TOP 1 @AuditActorUserId = user_id
+    FROM [Users]
+    ORDER BY user_id;
+END
+
+SELECT TOP 1
+    @AuditEventId = event_id,
+    @AuditEventName = name
+FROM HackathonEvent
+ORDER BY event_id;
+
+SELECT TOP 1
+    @AuditTrackId = track_id,
+    @AuditTrackName = name
+FROM Track
+WHERE @AuditEventId IS NULL OR event_id = @AuditEventId
+ORDER BY track_id;
+
+SELECT TOP 1
+    @AuditRoundId = round_id,
+    @AuditRoundName = round_name
+FROM [Round]
+WHERE @AuditEventId IS NULL OR event_id = @AuditEventId
+ORDER BY round_order, round_id;
+
+SELECT TOP 1
+    @AuditTeamId = team_id,
+    @AuditTeamName = team_name
+FROM Team
+WHERE @AuditTrackId IS NULL OR track_id = @AuditTrackId
+ORDER BY team_id;
+
+SELECT TOP 1
+    @AuditSubmissionId = submission_id
+FROM Submission
+WHERE (@AuditTeamId IS NULL OR team_id = @AuditTeamId)
+   OR (@AuditRoundId IS NULL OR round_id = @AuditRoundId)
+ORDER BY submission_id;
+
+IF @AuditActorUserId IS NULL
+BEGIN
+    THROW 51001, 'Cannot seed AuditLog samples because there is no user in [Users].', 1;
+END
+
+IF NOT EXISTS (SELECT 1 FROM AuditLog WHERE reason = N'Sample audit log seed: event update')
+BEGIN
+    INSERT INTO AuditLog (
+        user_id,
+        action_type,
+        target_entity,
+        target_id,
+        target_name,
+        old_value,
+        new_value,
+        reason,
+        ip_address,
+        device_info,
+        timestamp
+    )
+    VALUES (
+        @AuditActorUserId,
+        'EVENT_UPDATED',
+        'EVENT',
+        @AuditEventId,
+        COALESCE(@AuditEventName, N'Sample Event'),
+        N'{"status":"Draft","trackSelectionMode":"Teams choose their track"}',
+        N'{"status":"Ongoing","trackSelectionMode":"System assigns track automatically (balanced)"}',
+        N'Sample audit log seed: event update',
+        '127.0.0.1',
+        N'SEAL sample seed',
+        DATEADD(MINUTE, -55, GETDATE())
+    );
+END
+
+IF @AuditTrackId IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM AuditLog WHERE reason = N'Sample audit log seed: track update')
+BEGIN
+    INSERT INTO AuditLog (
+        user_id,
+        action_type,
+        target_entity,
+        target_id,
+        target_name,
+        old_value,
+        new_value,
+        reason,
+        ip_address,
+        device_info,
+        timestamp
+    )
+    VALUES (
+        @AuditActorUserId,
+        'TRACK_UPDATED',
+        'TRACK',
+        @AuditTrackId,
+        @AuditTrackName,
+        N'{"name":"Web Platform","minTeams":2,"maxTeams":8}',
+        N'{"name":"Web Platform","minTeams":3,"maxTeams":10}',
+        N'Sample audit log seed: track update',
+        '127.0.0.1',
+        N'SEAL sample seed',
+        DATEADD(MINUTE, -42, GETDATE())
+    );
+END
+
+IF @AuditRoundId IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM AuditLog WHERE reason = N'Sample audit log seed: round update')
+BEGIN
+    INSERT INTO AuditLog (
+        user_id,
+        action_type,
+        target_entity,
+        target_id,
+        target_name,
+        old_value,
+        new_value,
+        reason,
+        ip_address,
+        device_info,
+        timestamp
+    )
+    VALUES (
+        @AuditActorUserId,
+        'ROUND_UPDATED',
+        'ROUND',
+        @AuditRoundId,
+        @AuditRoundName,
+        N'{"roundName":"Elimination","promotionRuleTopN":2,"scoreLocked":false}',
+        N'{"roundName":"Elimination","promotionRuleTopN":3,"scoreLocked":false}',
+        N'Sample audit log seed: round update',
+        '127.0.0.1',
+        N'SEAL sample seed',
+        DATEADD(MINUTE, -31, GETDATE())
+    );
+END
+
+IF @AuditTeamId IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM AuditLog WHERE reason = N'Sample audit log seed: team registration')
+BEGIN
+    INSERT INTO AuditLog (
+        user_id,
+        action_type,
+        target_entity,
+        target_id,
+        target_name,
+        old_value,
+        new_value,
+        reason,
+        ip_address,
+        device_info,
+        timestamp
+    )
+    VALUES (
+        @AuditActorUserId,
+        'TEAM_REGISTERED_FOR_EVENT',
+        'TEAM',
+        @AuditTeamId,
+        @AuditTeamName,
+        NULL,
+        N'{"status":"Forming","membershipValid":true,"trackAssigned":true}',
+        N'Sample audit log seed: team registration',
+        '127.0.0.1',
+        N'SEAL sample seed',
+        DATEADD(MINUTE, -24, GETDATE())
+    );
+END
+
+IF @AuditSubmissionId IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM AuditLog WHERE reason = N'Sample audit log seed: submission update')
+BEGIN
+    INSERT INTO AuditLog (
+        user_id,
+        action_type,
+        target_entity,
+        target_id,
+        target_name,
+        old_value,
+        new_value,
+        reason,
+        ip_address,
+        device_info,
+        timestamp
+    )
+    VALUES (
+        @AuditActorUserId,
+        'SUBMISSION_UPDATED',
+        'SUBMISSION',
+        @AuditSubmissionId,
+        COALESCE(@AuditTeamName, N'Sample Submission'),
+        N'{"repositoryUrl":"https://github.com/demo/old-repo","status":"Submitted"}',
+        N'{"repositoryUrl":"https://github.com/demo/new-repo","status":"Evaluating"}',
+        N'Sample audit log seed: submission update',
+        '127.0.0.1',
+        N'SEAL sample seed',
+        DATEADD(MINUTE, -12, GETDATE())
+    );
+END
+
+IF NOT EXISTS (SELECT 1 FROM AuditLog WHERE reason = N'Sample audit log seed: account approval')
+BEGIN
+    INSERT INTO AuditLog (
+        user_id,
+        action_type,
+        target_entity,
+        target_id,
+        target_name,
+        old_value,
+        new_value,
+        reason,
+        ip_address,
+        device_info,
+        timestamp
+    )
+    VALUES (
+        @AuditActorUserId,
+        'ACCOUNT_APPROVED',
+        'USER',
+        @AuditActorUserId,
+        N'Toan Tran',
+        N'{"status":"PendingApproval","approved":false}',
+        N'{"status":"Active","approved":true}',
+        N'Sample audit log seed: account approval',
+        '127.0.0.1',
+        N'SEAL sample seed',
+        DATEADD(MINUTE, -5, GETDATE())
+    );
+END
+
+IF @AuditEventId IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM AuditLog WHERE reason = N'Sample audit log seed: announcement sent')
+BEGIN
+    INSERT INTO AuditLog (
+        user_id,
+        action_type,
+        target_entity,
+        target_id,
+        target_name,
+        old_value,
+        new_value,
+        reason,
+        ip_address,
+        device_info,
+        timestamp
+    )
+    VALUES (
+        @AuditActorUserId,
+        'ANNOUNCEMENT_SENT',
+        'EVENT',
+        @AuditEventId,
+        @AuditEventName,
+        NULL,
+        N'{"title":"Registration reminder","message":"Please complete team registration before the deadline.","audience":"ALL","recipientCount":12}',
+        N'Sample audit log seed: announcement sent',
+        '127.0.0.1',
+        N'SEAL sample seed',
+        DATEADD(MINUTE, -2, GETDATE())
+    );
+END
 GO
