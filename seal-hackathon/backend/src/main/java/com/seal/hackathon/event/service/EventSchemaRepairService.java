@@ -26,6 +26,27 @@ public class EventSchemaRepairService {
                     );
                 END;
 
+                IF OBJECT_ID('dbo.EventUpdateNotification', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.EventUpdateNotification (
+                        notification_id INT IDENTITY(1,1) PRIMARY KEY,
+                        announcement_id INT NULL,
+                        user_id INT NOT NULL,
+                        event_id INT NOT NULL,
+                        event_name NVARCHAR(150) NOT NULL,
+                        title NVARCHAR(180) NOT NULL,
+                        message NVARCHAR(1000) NOT NULL,
+                        announcement_audience VARCHAR(30) NULL,
+                        is_read BIT NOT NULL CONSTRAINT DF_EventUpdateNotification_IsRead DEFAULT 0,
+                        read_at DATETIME2 NULL,
+                        created_at DATETIME2 NOT NULL CONSTRAINT DF_EventUpdateNotification_CreatedAt DEFAULT SYSUTCDATETIME(),
+                        CONSTRAINT FK_EventUpdateNotification_User
+                            FOREIGN KEY (user_id) REFERENCES dbo.[Users](user_id),
+                        CONSTRAINT FK_EventUpdateNotification_Announcement
+                            FOREIGN KEY (announcement_id) REFERENCES dbo.Announcement(announcement_id)
+                    );
+                END;
+
                 IF OBJECT_ID('dbo.EventUpdateNotification', 'U') IS NOT NULL
                 BEGIN
                     IF COL_LENGTH('dbo.EventUpdateNotification', 'announcement_id') IS NULL
