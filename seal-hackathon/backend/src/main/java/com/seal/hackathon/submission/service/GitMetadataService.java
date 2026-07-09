@@ -15,10 +15,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.Locale;
 
 @Service
 public class GitMetadataService {
+
+    private static final String GITHUB_USER_AGENT = "SEAL-Hackathon-Management-System";
 
     private final SubmissionRepository submissionRepository;
     private final ObjectMapper objectMapper;
@@ -48,12 +51,12 @@ public class GitMetadataService {
     public GitMetadataDto getStored(Integer submissionId) {
         SubmissionEntity submission = getOrThrow(submissionId);
         if (submission.getGithubMetadata() == null) {
-            return fetchAndStore(submissionId);
+            return null;
         }
         try {
             return objectMapper.readValue(submission.getGithubMetadata(), GitMetadataDto.class);
         } catch (Exception e) {
-            return fetchAndStore(submissionId);
+            return null;
         }
     }
 
@@ -77,28 +80,19 @@ public class GitMetadataService {
     }
 
     private GitMetadataDto fetchGitHub(String owner, String repo, String url) throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.github.com/repos/" + owner + "/" + repo))
-                .header("Accept", "application/vnd.github+json")
-                .header("X-GitHub-Api-Version", "2022-11-28")
+        HttpRequest.Builder builder = githubRequest("https://api.github.com/repos/" + owner + "/" + repo)
                 .GET();
-        if (githubToken != null && !githubToken.isBlank()) {
-            builder.header("Authorization", "Bearer " + githubToken);
-        }
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() == 404) throw new ApiException(HttpStatus.NOT_FOUND, "Repository not found or is private");
-        if (response.statusCode() != 200) throw new ApiException(HttpStatus.BAD_GATEWAY, "GitHub API returned " + response.statusCode());
+        if (response.statusCode() != 200) {
+            throw new ApiException(HttpStatus.BAD_GATEWAY, githubErrorMessage(response));
+        }
 
         JsonNode node = objectMapper.readTree(response.body());
 
         int commitCount = 0;
         try {
-            HttpRequest.Builder cBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.github.com/repos/" + owner + "/" + repo + "/commits?per_page=1"))
-                    .header("Accept", "application/vnd.github+json").GET();
-            if (githubToken != null && !githubToken.isBlank()) {
-                cBuilder.header("Authorization", "Bearer " + githubToken);
-            }
+            HttpRequest.Builder cBuilder = githubRequest("https://api.github.com/repos/" + owner + "/" + repo + "/commits?per_page=1").GET();
             HttpResponse<String> cResponse = httpClient.send(cBuilder.build(), HttpResponse.BodyHandlers.ofString());
             String link = cResponse.headers().firstValue("Link").orElse("");
             if (link.contains("rel=\"last\"")) {
@@ -119,6 +113,46 @@ public class GitMetadataService {
                 node.path("pushed_at").asText(null),
                 commitCount,
                 node.path("license").path("spdx_id").asText(null));
+    }
+
+    private HttpRequest.Builder githubRequest(String apiUrl) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl))
+                .header("Accept", "application/vnd.github+json")
+                .header("X-GitHub-Api-Version", "2022-11-28")
+                .header("User-Agent", GITHUB_USER_AGENT);
+        String token = resolveGithubToken();
+        if (token != null && !token.isBlank()) {
+            builder.header("Authorization", "Bearer " + token.trim());
+        }
+        return builder;
+    }
+
+    private String resolveGithubToken() {
+        if (githubToken != null && !githubToken.isBlank()) {
+            return githubToken;
+        }
+        return System.getenv("GITHUB_TOKEN");
+    }
+
+    private String githubErrorMessage(HttpResponse<String> response) {
+        if (response.statusCode() == 403) {
+            String resetAt = response.headers()
+                    .firstValue("X-RateLimit-Reset")
+                    .map(this::formatRateLimitReset)
+                    .orElse("the rate limit reset time");
+            return "GitHub API rate limit exceeded. Try again after " + resetAt
+                    + " or configure app.github.token, APP_GITHUB_TOKEN, or GITHUB_TOKEN.";
+        }
+        return "GitHub API returned " + response.statusCode();
+    }
+
+    private String formatRateLimitReset(String epochSeconds) {
+        try {
+            return Instant.ofEpochSecond(Long.parseLong(epochSeconds)).toString();
+        } catch (Exception e) {
+            return "the rate limit reset time";
+        }
     }
 
     private GitMetadataDto fetchGitLab(String owner, String repo, String url) throws Exception {

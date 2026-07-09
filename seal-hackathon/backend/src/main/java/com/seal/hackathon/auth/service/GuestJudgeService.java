@@ -90,7 +90,7 @@ public class GuestJudgeService {
                 saved.getUserId(),
                 saved.getFullName(),
                 null,
-                dto,
+                toDto(saved, savedRole, profile, null),
                 "Coordinator created a guest judge account"
         );
         return dto;
@@ -134,7 +134,7 @@ public class GuestJudgeService {
                 user.getUserId(),
                 user.getFullName(),
                 null,
-                dto,
+                toDto(user, role, profile, null),
                 "Coordinator reset the guest judge temporary password"
         );
         return dto;

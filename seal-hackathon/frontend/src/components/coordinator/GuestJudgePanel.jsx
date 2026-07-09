@@ -25,7 +25,7 @@ import PersonOffRoundedIcon from "@mui/icons-material/PersonOffRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import { http } from "../../api/http";
+import { getApiErrorMessage, http } from "../../api/http";
 import ModulePageHeader from "../layout/ModulePageHeader";
 import HighlightPill from "../layout/HighlightPill";
 import { brand } from "../../styles/designTokens";
@@ -118,10 +118,14 @@ function CreateJudgeDialog({ open, onClose, onCreated }) {
         organization: form.organization.trim() || undefined,
         department: form.department.trim() || undefined,
       });
-      onCreated(response.data?.data);
+      const createdJudge = response.data?.data;
+      if (!createdJudge?.userId) {
+        throw new Error("Guest judge was created, but the server did not return the account details.");
+      }
+      onCreated(createdJudge);
       handleClose();
     } catch (err) {
-      setApiError(err?.response?.data?.message || "Failed to create judge account");
+      setApiError(getApiErrorMessage(err, "Failed to create judge account"));
     } finally {
       setLoading(false);
     }
@@ -199,10 +203,14 @@ function ResetPasswordDialog({ judge, open, onClose, onReset }) {
     setError("");
     try {
       const response = await http.post(`/api/coordinator/judges/${judge.userId}/reset-password`);
-      onReset(response.data?.data);
+      const updatedJudge = response.data?.data;
+      if (!updatedJudge?.temporaryPassword) {
+        throw new Error("Password was reset, but the server did not return the new temporary password.");
+      }
+      onReset(updatedJudge);
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.message || "Reset failed");
+      setError(getApiErrorMessage(err, "Reset failed"));
     } finally {
       setLoading(false);
     }
@@ -240,7 +248,7 @@ function DeactivateDialog({ judge, open, onClose, onDeactivated }) {
       onDeactivated(judge.userId);
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.message || "Deactivation failed");
+      setError(getApiErrorMessage(err, "Deactivation failed"));
     } finally {
       setLoading(false);
     }
@@ -282,10 +290,9 @@ export default function GuestJudgePanel() {
     try {
       const response = await http.get("/api/coordinator/judges");
       const data = response.data?.data || [];
-      console.log("judge statuses:", data.map(j => ({ name: j.fullName, status: j.status })));
       setJudges(data);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to load judges");
+      setError(getApiErrorMessage(err, "Failed to load judges"));
     } finally {
       setLoading(false);
     }
@@ -294,12 +301,21 @@ export default function GuestJudgePanel() {
   useEffect(() => { load(); }, []);
 
   const handleCreated = (judge) => {
+    if (!judge?.userId) {
+      load();
+      return;
+    }
     setJudges((prev) => [judge, ...prev]);
-    if (judge.temporaryPassword) setPasswordReveal(judge);
+    if (judge?.temporaryPassword) setPasswordReveal(judge);
   };
 
   const handleReset = (judge) => {
-    if (judge.temporaryPassword) setPasswordReveal(judge);
+    if (!judge?.userId) {
+      load();
+      return;
+    }
+    setJudges((prev) => prev.map((item) => (item.userId === judge.userId ? { ...item, ...judge, temporaryPassword: null } : item)));
+    if (judge?.temporaryPassword) setPasswordReveal(judge);
   };
 
   const handleDeactivated = (userId) => {
