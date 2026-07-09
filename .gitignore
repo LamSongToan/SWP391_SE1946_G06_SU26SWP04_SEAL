@@ -66,7 +66,8 @@ replay_pid*
 **/playwright-report/
 **/.nyc_output/
 **/uploads/
-
+**/docs/testing
+**/database/seed_data_test
 # ===== Docker =====
 **/.docker/
 

@@ -196,6 +196,15 @@ export function getApiErrorMessage(error, fallback = "Request failed") {
   return error?.response?.data?.message || error?.message || fallback;
 }
 
+function redirectToLogin(reason = "sessionExpired") {
+  authStorage.clear();
+  const target = reason === "accountInactive" ? "/login?accountInactive=1" : "/login?sessionExpired=1";
+  const targetUrl = new URL(target, window.location.origin);
+  if (window.location.pathname !== targetUrl.pathname || window.location.search !== targetUrl.search) {
+    window.location.href = target;
+  }
+}
+
 http.interceptors.request.use((config) => {
   if (typeof FormData !== "undefined" && config.data instanceof FormData) {
     if (typeof config.headers?.delete === "function") {
@@ -209,8 +218,7 @@ http.interceptors.request.use((config) => {
   const auth = authStorage.get();
   if (auth?.accessToken) {
     if (isAuthExpired(auth)) {
-      authStorage.clear();
-      window.location.href = "/login?sessionExpired=1";
+      redirectToLogin();
       return Promise.reject(new Error("Session expired"));
     }
     config.headers.Authorization = `Bearer ${auth.accessToken}`;
@@ -227,9 +235,14 @@ http.interceptors.response.use(
       requestUrl.includes("/api/auth/register") ||
       requestUrl.includes("/api/auth/google");
 
-    if (error?.response?.status === 401 && !isAuthRequest) {
-      authStorage.clear();
-      window.location.href = "/login?sessionExpired=1";
+    const status = error?.response?.status;
+    const errorCode = error?.response?.data?.errorCode;
+    const hasApiMessage = Boolean(error?.response?.data?.message);
+
+    if (status === 401 && !isAuthRequest) {
+      redirectToLogin(errorCode === "ACCOUNT_INACTIVE" ? "accountInactive" : "sessionExpired");
+    } else if (status === 403 && !isAuthRequest && authStorage.get()?.accessToken && !hasApiMessage) {
+      redirectToLogin("accountInactive");
     }
     return Promise.reject(error);
   }

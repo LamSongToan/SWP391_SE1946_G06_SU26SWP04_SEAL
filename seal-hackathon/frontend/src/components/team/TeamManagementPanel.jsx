@@ -42,6 +42,7 @@ import { getApiErrorMessage, http, resolveAssetUrl } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
 import ConfirmActionDialog from "../layout/ConfirmActionDialog";
 import ModulePageHeader from "../layout/ModulePageHeader";
+import SubmissionHistoryDialog from "./SubmissionHistoryDialog";
 import "./team-management.css";
 
 const INITIAL_CREATE_FORM = { teamName: "" };
@@ -1233,55 +1234,12 @@ export default function TeamManagementPanel() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={historyDialogOpen} onClose={closeHistoryDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Submission History</DialogTitle>
-        <DialogContent>
-          {historyLoading ? (
-            <Box className="team-loading"><CircularProgress /></Box>
-          ) : (
-            <Box className="team-table-scroll">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Action</TableCell>
-                    <TableCell>Changed by</TableCell>
-                    <TableCell>Repository</TableCell>
-                    <TableCell>Changed at</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {submissionHistory.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4}>No history recorded.</TableCell>
-                    </TableRow>
-                  ) : submissionHistory.map((item) => (
-                    <TableRow key={item.historyId}>
-                      <TableCell><Chip label={item.actionType} size="small" /></TableCell>
-                      <TableCell>{item.changedByName || "System"}</TableCell>
-                      <TableCell>
-                        <Stack spacing={0.5}>
-                          {item.oldRepositoryUrl ? (
-                            <Typography variant="body2" color="text.secondary" noWrap>
-                              Old: {item.oldRepositoryUrl}
-                            </Typography>
-                          ) : null}
-                          <Typography variant="body2" noWrap>
-                            New: {item.newRepositoryUrl || "N/A"}
-                          </Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>{formatDateTime(item.createdAt)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeHistoryDialog}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      <SubmissionHistoryDialog
+        open={historyDialogOpen}
+        onClose={closeHistoryDialog}
+        loading={historyLoading}
+        history={submissionHistory}
+      />
 
       <Dialog open={feedbackDialogOpen} onClose={closeFeedbackDialog} maxWidth="md" fullWidth>
         <DialogTitle>Submission Feedback</DialogTitle>

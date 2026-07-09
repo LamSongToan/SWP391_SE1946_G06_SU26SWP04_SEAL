@@ -80,7 +80,9 @@ export default function LoginPage() {
   const [rememberDevice, setRememberDevice] = useState(true);
 
   const successMessage = location.state?.message || "";
-  const sessionExpired = new URLSearchParams(location.search).get("sessionExpired") === "1";
+  const loginSearchParams = new URLSearchParams(location.search);
+  const sessionExpired = loginSearchParams.get("sessionExpired") === "1";
+  const accountInactive = loginSearchParams.get("accountInactive") === "1";
   const hasClientErrors = Object.values(validateLoginForm(form)).some(Boolean);
 
   const setFormField = (key, value) => {
@@ -263,6 +265,7 @@ export default function LoginPage() {
               </Stack>
 
               {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+              {accountInactive ? <Alert severity="warning">Your account has been deactivated. Please contact the Event Coordinator.</Alert> : null}
               {sessionExpired ? <Alert severity="warning">Your session expired. Please sign in again.</Alert> : null}
               {error ? (
                 <Alert

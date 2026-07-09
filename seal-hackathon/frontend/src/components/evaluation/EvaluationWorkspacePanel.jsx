@@ -9,11 +9,14 @@ import {
   CircularProgress,
   Divider,
   FormControl,
+  InputAdornment,
   InputLabel,
   LinearProgress,
   MenuItem,
   Select,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Tooltip,
   Typography,
@@ -29,12 +32,13 @@ import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import StarBorderRoundedIcon from "@mui/icons-material/StarBorderRounded";
+import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import { getApiErrorMessage, http } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
 import ConfirmActionDialog from "../layout/ConfirmActionDialog";
 import ModulePageHeader from "../layout/ModulePageHeader";
-import { brand } from "../../styles/designTokens";
 import "./evaluation-workspace.css";
 
 function formatDateTime(value) {
@@ -55,6 +59,14 @@ function formatMetric(value, fallback = "--") {
   const number = Number(value);
   if (Number.isNaN(number)) return value;
   return number.toFixed(2);
+}
+
+function formatStatusLabel(value) {
+  if (!value) return "Unknown";
+  if (value === "NotStarted") return "Not started";
+  return String(value)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (char) => char.toUpperCase());
 }
 
 function buildScoreState(criteria = []) {
@@ -78,14 +90,28 @@ function sanitizeScoreInput(value) {
   return numeric;
 }
 
-function StatTile({ label, value, icon }) {
+const STATUS_GUIDE = [
+  ["Not started", "#cbd5e1", "No score has been saved for this submission."],
+  ["In progress", "#1677ff", "Scoring work has started."],
+  ["Draft", "#f59e0b", "Draft scores are saved but not finalized."],
+  ["Ready", "#18b984", "Submission is available for judging."],
+  ["Finalized", "#64748b", "Scores are locked after finalization."],
+  ["Disqualified", "#ef4444", "Submission is not eligible for scoring."],
+];
+
+function StatTile({ label, value, icon, helper, tone = "default" }) {
   return (
     <Box className="eval-stat">
-      <Box>
+      <Box className="eval-stat-icon">{icon}</Box>
+      <Box className="eval-stat-body">
         <Typography className="eval-stat-label">{label}</Typography>
         <Typography className="eval-stat-value">{value}</Typography>
+        {helper ? (
+          <Typography className={`eval-stat-helper ${tone === "success" ? "is-success" : tone === "warning" ? "is-warning" : ""}`}>
+            {helper}
+          </Typography>
+        ) : null}
       </Box>
-      <Box className="eval-stat-icon">{icon}</Box>
     </Box>
   );
 }
@@ -116,6 +142,7 @@ function GitMetadataCard({ submissionId, repositoryUrl }) {
     if (!submissionId) return;
     let mounted = true;
     setLoading(true);
+    setError("");
     http.get(`/api/submissions/${submissionId}/git-metadata`)
       .then((response) => {
         if (mounted) {
@@ -167,34 +194,52 @@ function GitMetadataCard({ submissionId, repositoryUrl }) {
       ]
     : [];
 
+  const extraDetails = meta
+    ? [
+        meta.language ? ["Language", meta.language] : null,
+        meta.lastPushedAt ? ["Last push", formatDateTime(meta.lastPushedAt)] : null,
+        meta.license ? ["License", meta.license] : null,
+      ].filter(Boolean)
+    : [];
+
   return (
-    <Box
-      sx={{
-        mt: 1.5,
-        p: 1.6,
-        borderRadius: brand.radius.md,
-        bgcolor: "#F8FAFF",
-        border: `1px solid ${brand.colors.line}`,
-      }}
-    >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Stack direction="row" spacing={0.8} alignItems="center">
-          <GitHubIcon sx={{ fontSize: 16, color: brand.colors.text }} />
-          <Typography sx={{ color: brand.colors.text, fontSize: 13, fontWeight: 800 }}>
-            {meta?.repoName || "Repository"}
-            {meta?.platform ? (
-              <Chip size="small" label={meta.platform} sx={{ ml: 0.8, height: 18, fontSize: 11 }} />
-            ) : null}
-          </Typography>
+    <Box className="eval-git-card">
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "flex-start" }}
+        gap={1.4}
+        className="eval-git-header"
+      >
+        <Stack direction="row" spacing={1.1} alignItems="flex-start" minWidth={0}>
+          <Box className="eval-git-icon">
+            <GitHubIcon fontSize="small" />
+          </Box>
+          <Box minWidth={0}>
+            <Stack direction="row" spacing={0.8} alignItems="center" minWidth={0}>
+              <Typography className="eval-git-repo-name" noWrap>
+                {meta?.repoName || "Repository"}
+              </Typography>
+              {meta?.platform ? (
+                <Chip size="small" label={meta.platform} className="eval-git-platform" />
+              ) : null}
+            </Stack>
+            {meta?.description ? (
+              <Typography className="eval-git-description">{meta.description}</Typography>
+            ) : (
+              <Typography className="eval-git-description">Repository metadata snapshot for this submission.</Typography>
+            )}
+          </Box>
         </Stack>
-        <Stack direction="row" spacing={0.5}>
+
+        <Stack direction="row" spacing={0.75} className="eval-git-actions">
           <Tooltip title="Refresh metadata">
             <Button
               size="small"
               onClick={handleRefresh}
               disabled={refreshing}
               startIcon={refreshing ? <CircularProgress size={12} /> : <RefreshRoundedIcon sx={{ fontSize: 14 }} />}
-              sx={{ minWidth: 0, px: 1, fontSize: 12, color: brand.colors.muted }}
+              className="eval-git-action"
             >
               Refresh
             </Button>
@@ -207,7 +252,7 @@ function GitMetadataCard({ submissionId, repositoryUrl }) {
               target="_blank"
               rel="noopener noreferrer"
               endIcon={<OpenInNewRoundedIcon sx={{ fontSize: 13 }} />}
-              sx={{ minWidth: 0, px: 1, fontSize: 12, color: brand.colors.orange }}
+              className="eval-git-action is-primary"
             >
               View
             </Button>
@@ -219,51 +264,50 @@ function GitMetadataCard({ submissionId, repositoryUrl }) {
 
       {meta ? (
         <>
-          {meta.description ? (
-            <Typography sx={{ color: brand.colors.muted, fontSize: 12, mb: 1 }}>{meta.description}</Typography>
-          ) : null}
-          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+          <Box className="eval-git-metric-grid">
             {stats.map(([Icon, value, label]) => (
-              <Stack key={label} direction="row" spacing={0.5} alignItems="center">
-                <Icon sx={{ fontSize: 14, color: brand.colors.muted }} />
-                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>{value}</Typography>
-                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>{label}</Typography>
-              </Stack>
+              <Box key={label} className="eval-git-metric">
+                <Icon className="eval-git-metric-icon" />
+                <Box minWidth={0}>
+                  <Typography className="eval-git-metric-value" noWrap>{value}</Typography>
+                  <Typography className="eval-git-metric-label" noWrap>{label}</Typography>
+                </Box>
+              </Box>
             ))}
-            {meta.language ? (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>Lang:</Typography>
-                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>{meta.language}</Typography>
-              </Stack>
-            ) : null}
-            {meta.lastPushedAt ? (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>Last push:</Typography>
-                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>
-                  {meta.lastPushedAt}
-                </Typography>
-              </Stack>
-            ) : null}
-            {meta.license ? (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>License:</Typography>
-                <Typography sx={{ color: brand.colors.text, fontSize: 12, fontWeight: 800 }}>{meta.license}</Typography>
-              </Stack>
-            ) : null}
-          </Stack>
+          </Box>
+
+          {extraDetails.length ? (
+            <Box className="eval-git-detail-grid">
+              {extraDetails.map(([label, value]) => (
+                <Box key={label} className="eval-git-detail">
+                  <Typography className="eval-git-detail-label">{label}</Typography>
+                  <Typography className="eval-git-detail-value">{value}</Typography>
+                </Box>
+              ))}
+            </Box>
+          ) : null}
         </>
       ) : (
-        <Typography sx={{ color: brand.colors.muted, fontSize: 12 }}>
-          No metadata cached yet. Click Refresh to fetch from{" "}
-          {repositoryUrl ? (
-            <a href={repositoryUrl} target="_blank" rel="noopener noreferrer" style={{ color: brand.colors.orange }}>
-              {repositoryUrl}
-            </a>
+        <Box className="eval-git-empty">
+          {refreshing ? (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <CircularProgress size={14} />
+              <Typography>Fetching repository metadata...</Typography>
+            </Stack>
           ) : (
-            "the repository"
+            <Typography>
+              No metadata cached yet. Click Refresh to fetch from{" "}
+              {repositoryUrl ? (
+                <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">
+                  {repositoryUrl}
+                </a>
+              ) : (
+                "the repository"
+              )}
+              .
+            </Typography>
           )}
-          .
-        </Typography>
+        </Box>
       )}
     </Box>
   );
@@ -299,14 +343,17 @@ function ScoreInputForm({
   form,
   scoreState,
   setScoreState,
-  feedbackText,
-  setFeedbackText,
   onSaveDraft,
   onFinalize,
   saving,
 }) {
   const criteria = form?.criteria || [];
   const editable = Boolean(form?.editable);
+  const completedCriteria = criteria.filter((item) => {
+    const raw = scoreState[item.criteriaId]?.scoreValue;
+    const value = Number(raw);
+    return raw !== "" && !Number.isNaN(value) && value >= 0 && value <= 10;
+  });
   const complete = criteria.every((item) => {
     const raw = scoreState[item.criteriaId]?.scoreValue;
     const value = Number(raw);
@@ -318,22 +365,19 @@ function ScoreInputForm({
     return total + (Number.isNaN(value) ? 0 : value * Number(item.weight || 0) / 100);
   }, 0);
   const weightTotal = criteria.reduce((total, item) => total + Number(item.weight || 0), 0);
+  const completionPercent = criteria.length ? Math.round((completedCriteria.length / criteria.length) * 100) : 0;
+  const maxWeightedTotal = weightTotal / 10;
 
   return (
-    <Card className="eval-card">
-      <CardContent>
-        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5} sx={{ mb: 2 }}>
+    <Box className="eval-score-card">
+      <Box className="eval-score-content">
+        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "stretch", md: "center" }} gap={1.5} className="eval-score-form-header">
           <Box>
             <Typography variant="h6" fontWeight={850}>Score Input Form</Typography>
             <Typography color="text.secondary">
               Round-specific rubric for {form?.submission?.roundName || "selected round"}.
             </Typography>
           </Box>
-          <Chip
-            color={form?.evaluationStatus === "Finalized" ? "success" : editable ? "warning" : "default"}
-            label={form?.evaluationStatus || (editable ? "Draft" : "Locked")}
-            variant={editable ? "filled" : "outlined"}
-          />
         </Stack>
 
         {!editable && form?.lockedReason ? (
@@ -343,104 +387,100 @@ function ScoreInputForm({
           </Box>
         ) : null}
 
-        <Stack spacing={1.4}>
+        <Stack spacing={1.5} className="eval-criteria-list">
           {criteria.map((criterion) => {
             const current = scoreState[criterion.criteriaId] || { scoreValue: "", comment: "" };
+            const numericScore = Number(current.scoreValue);
+            const criterionComplete = current.scoreValue !== "" && !Number.isNaN(numericScore) && numericScore >= 0 && numericScore <= 10;
+            const weightedValue = Number.isNaN(numericScore) ? 0 : numericScore * Number(criterion.weight || 0) / 100;
+            const weightedMax = Number(criterion.weight || 0) / 10;
             return (
-              <Box key={criterion.criteriaId} className="eval-criterion-row">
-                <Box>
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                    <Typography fontWeight={850}>{criterion.criteriaName}</Typography>
-                    <Chip size="small" label={`${criterion.weight}%`} />
-                    <Chip size="small" variant="outlined" label={criterion.criteriaType} />
+              <Box key={criterion.criteriaId} className={`eval-criterion-card ${criterionComplete ? "is-complete" : ""}`}>
+                <Box className="eval-criterion-info">
+                  <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Typography className="eval-criterion-title">
+                      <span>Criterion:</span>
+                      {criterion.criteriaName}
+                    </Typography>
+                    <Chip size="small" label={`${criterion.weight}%`} className="eval-weight-chip" />
                   </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    Score is stored separately for this criterion and current judge.
+                  <Typography className="eval-criterion-helper">
+                    <span>Description:</span>
+                    {criterion.description || criterion.criteriaDescription || "Evaluate this criterion based on the submitted repository, demo, and materials."}
                   </Typography>
                 </Box>
-                <TextField
-                  className="eval-score-field"
-                  label="Score"
-                  type="number"
-                  size="small"
-                  value={current.scoreValue}
-                  disabled={!editable}
-                  inputProps={{ min: 0, max: 10, step: 0.25 }}
-                  helperText="0 to 10"
-                  onChange={(event) => setScoreState((state) => ({
-                    ...state,
-                    [criterion.criteriaId]: {
-                      ...state[criterion.criteriaId],
-                      scoreValue: sanitizeScoreInput(event.target.value),
-                    },
-                  }))}
-                />
-                <TextField
-                  className="eval-comment-field"
-                  label="Criterion comment"
-                  size="small"
-                  value={current.comment}
-                  disabled={!editable}
-                  helperText=" "
-                  onChange={(event) => setScoreState((state) => ({
-                    ...state,
-                    [criterion.criteriaId]: {
-                      ...state[criterion.criteriaId],
-                      comment: event.target.value,
-                    },
-                  }))}
-                />
+
+                <Box className="eval-criterion-controls">
+                  <TextField
+                    className="eval-score-field"
+                    label="Score"
+                    type="number"
+                    size="small"
+                    value={current.scoreValue}
+                    disabled={!editable}
+                    inputProps={{ min: 0, max: 10, step: 0.25 }}
+                    helperText="0-10"
+                    onChange={(event) => setScoreState((state) => ({
+                      ...state,
+                      [criterion.criteriaId]: {
+                        ...state[criterion.criteriaId],
+                        scoreValue: sanitizeScoreInput(event.target.value),
+                      },
+                    }))}
+                  />
+                  <TextField
+                    className="eval-comment-field"
+                    label="Criterion comment"
+                    size="small"
+                    value={current.comment}
+                    disabled={!editable}
+                    placeholder="Explain your score..."
+                    helperText={`${current.comment?.length || 0}/1000`}
+                    multiline
+                    minRows={2}
+                    onChange={(event) => setScoreState((state) => ({
+                      ...state,
+                      [criterion.criteriaId]: {
+                        ...state[criterion.criteriaId],
+                        comment: event.target.value,
+                      },
+                    }))}
+                  />
+                  <Box className="eval-weighted-box">
+                    <Typography className="eval-field-caption">Weighted</Typography>
+                    <Typography className="eval-weighted-value">{weightedValue.toFixed(2)} / {weightedMax.toFixed(2)}</Typography>
+                  </Box>
+                </Box>
               </Box>
             );
           })}
         </Stack>
 
         <Box className="eval-score-summary">
-          <Box>
-            <Typography variant="caption" color="text.secondary">Weighted score</Typography>
-            <Typography variant="h5" fontWeight={900}>{weightedTotal.toFixed(2)} / 10</Typography>
+          <Box className="eval-summary-main">
+            <Typography className="eval-summary-label">Weighted score</Typography>
+            <Typography className="eval-summary-score">{weightedTotal.toFixed(2)} / {maxWeightedTotal.toFixed(2)}</Typography>
           </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary">Rubric weight</Typography>
-            <Typography fontWeight={850} color={weightTotal === 100 ? "success.main" : "warning.main"}>
-              {weightTotal}% {weightTotal === 100 ? "Ready" : "Needs coordinator review"}
+          <Box className="eval-summary-item">
+            <Typography className="eval-summary-label">Criteria completed</Typography>
+            <Typography fontWeight={850}>{completedCriteria.length}/{criteria.length}</Typography>
+            <LinearProgress
+              variant="determinate"
+              value={completionPercent}
+              color={complete ? "success" : "warning"}
+              className="eval-completion-progress"
+            />
+          </Box>
+          <Box className="eval-summary-item">
+            <Typography className="eval-summary-label">Rubric weight</Typography>
+            <Typography className={weightTotal === 100 ? "eval-summary-ready" : "eval-summary-warning"}>
+              {weightTotal}%
             </Typography>
           </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary">Criteria completed</Typography>
-            <Typography fontWeight={850}>{entered.length}/{criteria.length}</Typography>
+          <Box className="eval-summary-note">
+            {complete ? "Ready to finalize scores." : "Complete all criteria to finalize scores."}
           </Box>
         </Box>
-
-        <Divider sx={{ my: 2 }} />
-        <TextField
-          label="Written feedback for the team"
-          minRows={3}
-          multiline
-          fullWidth
-          value={feedbackText}
-          disabled={!editable}
-          onChange={(event) => setFeedbackText(event.target.value)}
-          helperText="Optional. Saved as a separate feedback history entry."
-        />
-        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 1.6 }}>
-          <Button
-            variant="outlined"
-            startIcon={<SaveRoundedIcon />}
-            disabled={!editable || entered.length === 0 || saving}
-            onClick={onSaveDraft}
-          >
-            {saving ? "Saving..." : "Save Draft"}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<SaveRoundedIcon />}
-            disabled={!editable || !complete || saving}
-            onClick={onFinalize}
-          >
-            Finalize Scores
-          </Button>
-        </Stack>
 
         {(form?.scoreHistory || []).length > 0 ? (
           <>
@@ -469,8 +509,36 @@ function ScoreInputForm({
             </Box>
           </>
         ) : null}
-      </CardContent>
-    </Card>
+
+        <Box className="eval-score-action-spacer" />
+        <Box className="eval-score-action-bar">
+          <Box className="eval-action-summary">
+            <Typography className="eval-action-score"><TaskAltRoundedIcon fontSize="small" /> Draft autosaved</Typography>
+            <Typography className="eval-action-meta">
+              Score: {weightedTotal.toFixed(2)} / {maxWeightedTotal.toFixed(2)} - Completed: {completedCriteria.length}/{criteria.length}
+            </Typography>
+          </Box>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} className="eval-action-buttons">
+            <Button
+              variant="outlined"
+              startIcon={<SaveRoundedIcon />}
+              disabled={!editable || entered.length === 0 || saving}
+              onClick={onSaveDraft}
+            >
+              {saving ? "Saving..." : "Save Draft"}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<TaskAltRoundedIcon />}
+              disabled={!editable || !complete || saving}
+              onClick={onFinalize}
+            >
+              Finalize Scores
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
@@ -500,6 +568,8 @@ export default function EvaluationWorkspacePanel({ role, type }) {
   const [trackFilter, setTrackFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [confirmFinalize, setConfirmFinalize] = useState(false);
+  const [judgeTab, setJudgeTab] = useState("scoring");
+  const [queueSearch, setQueueSearch] = useState("");
 
   const submissions = useMemo(() => {
     if (isJudge) return dashboard?.submissions || [];
@@ -518,8 +588,20 @@ export default function EvaluationWorkspacePanel({ role, type }) {
       const itemStatus = isJudge ? item.evaluationStatus : item.submissionStatus;
       if (itemStatus !== statusFilter) return false;
     }
+    const search = queueSearch.trim().toLowerCase();
+    if (search) {
+      const haystack = [
+        item.teamName,
+        item.roundName,
+        item.trackName,
+        item.eventName,
+        item.submissionStatus,
+        item.evaluationStatus,
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
     return true;
-  }), [isJudge, roundFilter, statusFilter, submissions, trackFilter]);
+  }), [isJudge, queueSearch, roundFilter, statusFilter, submissions, trackFilter]);
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -657,6 +739,12 @@ export default function EvaluationWorkspacePanel({ role, type }) {
   }, [selectedSubmission?.submissionId, isJudge]);
 
   useEffect(() => {
+    if (isJudge) {
+      setJudgeTab("scoring");
+    }
+  }, [isJudge, selectedSubmission?.submissionId]);
+
+  useEffect(() => {
     if (!isJudge) {
       setCalibrationSessions([]);
       setSelectedCalibrationSessionId(null);
@@ -764,6 +852,25 @@ export default function EvaluationWorkspacePanel({ role, type }) {
     }
   };
 
+  const submitJudgeFeedback = async () => {
+    if (!selectedSubmission?.submissionId || !feedbackText.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      await http.post(`/api/submissions/${selectedSubmission.submissionId}/feedback`, {
+        feedbackText: feedbackText.trim(),
+      });
+      setFeedbackText("");
+      setSuccess("Feedback added.");
+      await loadFeedback(selectedSubmission);
+      await loadDashboard();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to add feedback"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return <Box className="eval-loading"><CircularProgress /></Box>;
   }
@@ -807,10 +914,32 @@ export default function EvaluationWorkspacePanel({ role, type }) {
         <Box className="eval-stat-grid">
           {isJudge ? (
             <>
-              <StatTile label="Assigned Rounds" value={dashboard?.assignedRoundCount || 0} icon={<GavelRoundedIcon />} />
-              <StatTile label="Assigned Submissions" value={dashboard?.assignedSubmissionCount || 0} icon={<AssignmentTurnedInRoundedIcon />} />
-              <StatTile label="Pending Scores" value={dashboard?.pendingSubmissionCount || 0} icon={<HistoryRoundedIcon />} />
-              <StatTile label="Score Records" value={dashboard?.submittedScoreCount || 0} icon={<SaveRoundedIcon />} />
+              <StatTile
+                label="Assigned Rounds"
+                value={dashboard?.assignedRoundCount || 0}
+                helper={(dashboard?.assignedRounds || [])[0]?.roundName || "No assigned round"}
+                tone="success"
+                icon={<GavelRoundedIcon />}
+              />
+              <StatTile
+                label="Assigned Submissions"
+                value={dashboard?.assignedSubmissionCount || 0}
+                helper="All tracks"
+                icon={<AssignmentTurnedInRoundedIcon />}
+              />
+              <StatTile
+                label="Pending Scores"
+                value={dashboard?.pendingSubmissionCount || 0}
+                helper="Ready to score"
+                tone="warning"
+                icon={<HistoryRoundedIcon />}
+              />
+              <StatTile
+                label="Score Records"
+                value={dashboard?.submittedScoreCount || 0}
+                helper="Finalized"
+                icon={<SaveRoundedIcon />}
+              />
             </>
           ) : (
             <>
@@ -827,38 +956,17 @@ export default function EvaluationWorkspacePanel({ role, type }) {
             <CardContent>
               <Box className="eval-judge-layout">
                 <Box className="eval-judge-sidebar">
-                  <Box className="eval-subpanel">
-                    <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>Assigned Rounds</Typography>
-                    <Box className="eval-list">
-                      {(dashboard?.assignedRounds || []).length === 0 ? (
-                        <Box className="eval-empty-inline">No assigned rounds yet.</Box>
-                      ) : dashboard.assignedRounds.map((round) => (
-                        <Box key={round.judgeAssignmentId} className="eval-list-row">
-                          <Box>
-                            <Typography fontWeight={850}>{round.roundName} - {round.trackName}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {round.eventName} - Deadline {formatDateTime(round.submissionDeadline)}
-                            </Typography>
-                          </Box>
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Chip size="small" label={`${round.scoredSubmissionCount}/${round.submissionCount} scored`} />
-                            <Chip size="small" color={round.scoreLocked ? "default" : "success"} label={round.scoreLocked ? "Locked" : "Open"} />
-                          </Stack>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
-
-                  <Box className="eval-subpanel eval-scroll-target" ref={submissionQueueRef}>
-                    <Typography variant="h6" fontWeight={850} sx={{ mb: 1.4 }}>Submission Queue</Typography>
+                  <Box className="eval-subpanel eval-nav-panel eval-scroll-target" ref={submissionQueueRef}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.4 }}>
+                      <Typography
+                        component="h2"
+                        className="eval-panel-title"
+                        sx={{ fontWeight: 900, fontSize: 20, color: "#071a2f" }}
+                      >
+                        Submission Queue
+                      </Typography>
+                    </Stack>
                     <Box className="eval-filter-bar">
-                      <FormControl size="small">
-                        <InputLabel>Round</InputLabel>
-                        <Select label="Round" value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
-                          <MenuItem value="all">All rounds</MenuItem>
-                          {filterOptions.rounds.map(([id, name]) => <MenuItem key={id} value={String(id)}>{name}</MenuItem>)}
-                        </Select>
-                      </FormControl>
                       <FormControl size="small">
                         <InputLabel>Track</InputLabel>
                         <Select label="Track" value={trackFilter} onChange={(event) => setTrackFilter(event.target.value)}>
@@ -869,14 +977,29 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                       <FormControl size="small">
                         <InputLabel>Status</InputLabel>
                         <Select label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                          <MenuItem value="all">All statuses</MenuItem>
-                          {["NotStarted", "Draft", "Finalized"].map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+                          <MenuItem value="all">All status</MenuItem>
+                          {["NotStarted", "Draft", "Finalized"].map((status) => <MenuItem key={status} value={status}>{formatStatusLabel(status)}</MenuItem>)}
                         </Select>
                       </FormControl>
-                      <Typography variant="body2" color="text.secondary" className="eval-filter-count">
-                        Showing {filteredSubmissions.length} of {submissions.length}
-                      </Typography>
+                      <TextField
+                        size="small"
+                        value={queueSearch}
+                        onChange={(event) => setQueueSearch(event.target.value)}
+                        placeholder="Search team or track..."
+                        className="eval-queue-search"
+                        inputProps={{ "aria-label": "Search team or track" }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchRoundedIcon fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
                     </Box>
+                    <Typography className="eval-filter-count" sx={{ mb: 1.3 }}>
+                      Showing {filteredSubmissions.length} of {submissions.length}
+                    </Typography>
                     {filteredSubmissions.length === 0 ? (
                       <Box className="eval-empty-inline">No submissions available.</Box>
                     ) : (
@@ -889,151 +1012,215 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                               className={`eval-list-row eval-clickable ${selected ? "is-selected" : ""}`}
                               onClick={() => setSelectedSubmission(submission)}
                             >
-                              <Box>
-                                <Typography fontWeight={850}>{submission.teamName}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {submission.roundName} - {submission.trackName}
+                              <Box className="eval-submission-main">
+                                <Typography className="eval-row-title">
+                                  <span>Team:</span>
+                                  {submission.teamName}
                                 </Typography>
+                                <Box className="eval-row-meta-list">
+                                  <Typography className="eval-row-meta">
+                                    <span>Track:</span>
+                                    {submission.trackName}
+                                  </Typography>
+                                  <Typography className="eval-row-meta">
+                                    <span>Round:</span>
+                                    {submission.roundName}
+                                  </Typography>
+                                </Box>
                               </Box>
-                              <Stack direction="row" spacing={1} alignItems="center">
+                              <Box className="eval-submission-status">
                                 <Chip
                                   size="small"
                                   color={submission.evaluationStatus === "Finalized" ? "success" : submission.evaluationStatus === "Draft" ? "warning" : "default"}
-                                  label={submission.evaluationStatus === "NotStarted"
-                                    ? `${submission.scoredCriteriaCount}/${submission.totalCriteriaCount}`
-                                    : submission.evaluationStatus}
+                                  label={formatStatusLabel(submission.evaluationStatus)}
                                 />
-                                <Chip size="small" variant="outlined" label={submission.submissionStatus} />
-                              </Stack>
+                                <Box className="eval-criteria-count">
+                                  <strong>{submission.scoredCriteriaCount}/{submission.totalCriteriaCount}</strong>
+                                  <span>criteria</span>
+                                </Box>
+                              </Box>
+                              <Typography className="eval-row-chevron">{">"}</Typography>
                             </Box>
                           );
                         })}
                       </Box>
                     )}
+                    <Box className="eval-status-legend" aria-label="Submission status legend">
+                      {STATUS_GUIDE.map(([label, color]) => (
+                        <Box key={label} component="span">
+                          <i style={{ background: color }} />
+                          {label}
+                        </Box>
+                      ))}
+                    </Box>
                   </Box>
                 </Box>
 
                 <Box className="eval-detail-stack">
                   {selectedSubmission ? (
                     <>
-                      <Box className="eval-subpanel eval-selected-card">
-                        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
+                      <Box className="eval-subpanel eval-selected-card eval-team-overview">
+                        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "stretch", md: "flex-start" }} gap={1.5}>
                           <Box>
-                            <Typography variant="h6" fontWeight={850}>{selectedSubmission.teamName}</Typography>
-                            <Typography color="text.secondary">
-                              {selectedSubmission.eventName} - {selectedSubmission.roundName}
-                            </Typography>
+                            <Typography className="eval-team-title">{selectedSubmission.teamName}</Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap className="eval-team-meta-line">
+                              <Typography>{selectedSubmission.trackName}</Typography>
+                              <span>-</span>
+                              <Typography>{selectedSubmission.roundName}</Typography>
+                              <Chip size="small" label={`Deadline: ${formatDateTime(selectedSubmission.submissionDeadline)}`} className="eval-deadline-chip" />
+                              <Chip
+                                size="small"
+                                color={selectedSubmission.editable ? "success" : "default"}
+                                label={selectedSubmission.editable ? "Submission status: Ready to score" : (scoreForm?.lockedReason || "Locked")}
+                              />
+                            </Stack>
                           </Box>
-                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                            <Chip label={selectedSubmission.trackName} />
-                            <Chip
-                              color={selectedSubmission.editable ? "success" : "default"}
-                              label={selectedSubmission.editable ? "Ready to score" : (scoreForm?.lockedReason || "Locked")}
-                            />
+                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap className="eval-submission-links">
+                            <LinkButton href={selectedSubmission.repositoryUrl}>Repository</LinkButton>
+                            <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
+                            <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
                           </Stack>
-                        </Stack>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
-                          <LinkButton href={selectedSubmission.repositoryUrl}>Repository</LinkButton>
-                          <LinkButton href={selectedSubmission.demoUrl}>Demo</LinkButton>
-                          <LinkButton href={selectedSubmission.slideUrl}>Slides</LinkButton>
                         </Stack>
                         <GitMetadataCard
                           submissionId={selectedSubmission.submissionId}
                           repositoryUrl={selectedSubmission.repositoryUrl}
                         />
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>
-                          Submission deadline: {formatDateTime(selectedSubmission.submissionDeadline)}
-                        </Typography>
                       </Box>
 
-                      {scoreForm ? (
-                        <ScoreInputForm
-                          form={scoreForm}
-                          scoreState={scoreState}
-                          setScoreState={setScoreState}
-                          feedbackText={feedbackText}
-                          setFeedbackText={setFeedbackText}
-                          onSaveDraft={() => submitScores(false)}
-                          onFinalize={() => setConfirmFinalize(true)}
-                          saving={saving}
-                        />
-                      ) : null}
+                      <Box className="eval-subpanel eval-workflow-panel eval-scroll-target" ref={feedbackSectionRef}>
+                        <Tabs
+                          value={judgeTab}
+                          onChange={(_, nextTab) => setJudgeTab(nextTab)}
+                          className="eval-tabs"
+                          variant="scrollable"
+                          allowScrollButtonsMobile
+                        >
+                          <Tab value="scoring" label="Scoring" />
+                          <Tab value="overview" label="Submission Details" />
+                          <Tab value="calibration" label="Calibration" />
+                          <Tab value="feedback" label="Feedback History" />
+                        </Tabs>
 
-                      {isJudge ? (
-                        <Box className="eval-subpanel">
-                          <Typography variant="h6" fontWeight={850} sx={{ mb: 1.2 }}>Calibration Session</Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.4 }}>
-                            Use a shared session to align your mindset before final scoring.
-                          </Typography>
-                          {calibrationSessions.length === 0 ? (
-                            <Box className="eval-empty-inline">No calibration sessions are available for this round yet.</Box>
+                        {judgeTab === "scoring" ? (
+                          scoreForm ? (
+                            <ScoreInputForm
+                              form={scoreForm}
+                              scoreState={scoreState}
+                              setScoreState={setScoreState}
+                              onSaveDraft={() => submitScores(false)}
+                              onFinalize={() => setConfirmFinalize(true)}
+                              saving={saving}
+                            />
                           ) : (
-                            <>
-                              <FormControl size="small" fullWidth sx={{ mb: 1.4 }}>
-                                <InputLabel>Session</InputLabel>
-                                <Select
-                                  label="Session"
-                                  value={selectedCalibrationSessionId || ""}
-                                  onChange={(event) => setSelectedCalibrationSessionId(event.target.value)}
-                                >
-                                  {calibrationSessions.map((session) => (
-                                    <MenuItem key={session.sessionId} value={session.sessionId}>
-                                      {session.title || `Session ${session.sessionId}`}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              </FormControl>
-                              <Stack direction={{ xs: "column", md: "row" }} spacing={1.4} sx={{ mb: 1.4 }}>
-                                <FormControl size="small" sx={{ minWidth: 220 }}>
-                                  <InputLabel>Criterion</InputLabel>
+                            <Box className="eval-empty-inline">Score form is loading for this submission.</Box>
+                          )
+                        ) : null}
+
+                        {judgeTab === "overview" ? (
+                          <Box className="eval-tab-content">
+                            <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Submission Overview</Typography>
+                            <TextField
+                              label="Written feedback for the team"
+                              minRows={4}
+                              multiline
+                              fullWidth
+                              className="eval-general-feedback"
+                              value={feedbackText}
+                              onChange={(event) => setFeedbackText(event.target.value)}
+                              helperText={`${feedbackText.length}/4000`}
+                            />
+                            <Stack direction="row" justifyContent="flex-end" sx={{ mt: 1.5 }}>
+                              <Button
+                                variant="contained"
+                                startIcon={<SaveRoundedIcon />}
+                                onClick={submitJudgeFeedback}
+                                disabled={saving || !feedbackText.trim()}
+                              >
+                                {saving ? "Saving..." : "Save Feedback"}
+                              </Button>
+                            </Stack>
+                          </Box>
+                        ) : null}
+
+                        {judgeTab === "calibration" ? (
+                          <Box className="eval-tab-content">
+                            <Typography variant="h6" fontWeight={850} sx={{ mb: 1.2 }}>Calibration Session</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.4 }}>
+                              Use a shared session to align your mindset before final scoring.
+                            </Typography>
+                            {calibrationSessions.length === 0 ? (
+                              <Box className="eval-empty-inline">No calibration sessions are available for this round yet.</Box>
+                            ) : (
+                              <>
+                                <FormControl size="small" fullWidth sx={{ mb: 1.4 }}>
+                                  <InputLabel>Session</InputLabel>
                                   <Select
-                                    label="Criterion"
-                                    value={calibrationScoreDraft.criteriaId}
-                                    onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, criteriaId: event.target.value }))}
+                                    label="Session"
+                                    value={selectedCalibrationSessionId || ""}
+                                    onChange={(event) => setSelectedCalibrationSessionId(event.target.value)}
                                   >
-                                    {(scoreForm?.criteria || []).map((criterion) => (
-                                      <MenuItem key={criterion.criteriaId} value={String(criterion.criteriaId)}>
-                                        {criterion.criteriaName}
+                                    {calibrationSessions.map((session) => (
+                                      <MenuItem key={session.sessionId} value={session.sessionId}>
+                                        {session.title || `Session ${session.sessionId}`}
                                       </MenuItem>
                                     ))}
                                   </Select>
                                 </FormControl>
+                                <Stack direction={{ xs: "column", md: "row" }} spacing={1.4} sx={{ mb: 1.4 }}>
+                                  <FormControl size="small" sx={{ minWidth: 220 }}>
+                                    <InputLabel>Criterion</InputLabel>
+                                    <Select
+                                      label="Criterion"
+                                      value={calibrationScoreDraft.criteriaId}
+                                      onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, criteriaId: event.target.value }))}
+                                    >
+                                      {(scoreForm?.criteria || []).map((criterion) => (
+                                        <MenuItem key={criterion.criteriaId} value={String(criterion.criteriaId)}>
+                                          {criterion.criteriaName}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
+                                  <TextField
+                                    size="small"
+                                    label="Score"
+                                    type="number"
+                                    inputProps={{ min: 0, max: 10, step: 0.25 }}
+                                    value={calibrationScoreDraft.scoreValue}
+                                    onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, scoreValue: event.target.value }))}
+                                  />
+                                </Stack>
                                 <TextField
                                   size="small"
-                                  label="Score"
-                                  type="number"
-                                  inputProps={{ min: 0, max: 10, step: 0.25 }}
-                                  value={calibrationScoreDraft.scoreValue}
-                                  onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, scoreValue: event.target.value }))}
+                                  label="Calibration note"
+                                  fullWidth
+                                  multiline
+                                  minRows={2}
+                                  value={calibrationScoreDraft.comment}
+                                  onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, comment: event.target.value }))}
+                                  sx={{ mb: 1.4 }}
                                 />
-                              </Stack>
-                              <TextField
-                                size="small"
-                                label="Calibration note"
-                                fullWidth
-                                multiline
-                                minRows={2}
-                                value={calibrationScoreDraft.comment}
-                                onChange={(event) => setCalibrationScoreDraft((current) => ({ ...current, comment: event.target.value }))}
-                                sx={{ mb: 1.4 }}
-                              />
-                              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
-                                <Typography variant="body2" color="text.secondary">
-                                  {calibrationAnalytics ? `${calibrationAnalytics.scoreCount} score(s) • avg ${formatMetric(calibrationAnalytics.averageScore)} • range ${formatMetric(calibrationAnalytics.minScore)}-${formatMetric(calibrationAnalytics.maxScore)}` : "No analytics yet."}
-                                </Typography>
-                                <Button variant="outlined" size="small" onClick={() => saveCalibrationScore()} disabled={calibrationSaving || !calibrationScoreDraft.criteriaId || calibrationScoreDraft.scoreValue === ""}>
-                                  {calibrationSaving ? "Saving..." : "Save calibration score"}
-                                </Button>
-                              </Stack>
-                            </>
-                          )}
-                        </Box>
-                      ) : null}
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {calibrationAnalytics ? `${calibrationAnalytics.scoreCount} score(s) - avg ${formatMetric(calibrationAnalytics.averageScore)} - range ${formatMetric(calibrationAnalytics.minScore)}-${formatMetric(calibrationAnalytics.maxScore)}` : "No analytics yet."}
+                                  </Typography>
+                                  <Button variant="outlined" size="small" onClick={() => saveCalibrationScore()} disabled={calibrationSaving || !calibrationScoreDraft.criteriaId || calibrationScoreDraft.scoreValue === ""}>
+                                    {calibrationSaving ? "Saving..." : "Save calibration score"}
+                                  </Button>
+                                </Stack>
+                              </>
+                            )}
+                          </Box>
+                        ) : null}
 
-                      <Box className="eval-subpanel eval-scroll-target" ref={feedbackSectionRef}>
-                        <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Your Feedback History</Typography>
-                        <FeedbackHistory items={feedbackHistory} />
+                        {judgeTab === "feedback" ? (
+                          <Box className="eval-tab-content">
+                            <Typography variant="h6" fontWeight={850} sx={{ mb: 1 }}>Your Feedback History</Typography>
+                            <FeedbackHistory items={feedbackHistory} />
+                          </Box>
+                        ) : null}
                       </Box>
+
                     </>
                   ) : (
                     <Box className="eval-empty-inline">
@@ -1122,11 +1309,21 @@ export default function EvaluationWorkspacePanel({ role, type }) {
                               className={`eval-list-row eval-clickable ${selected ? "is-selected" : ""}`}
                               onClick={() => setSelectedSubmission(submission)}
                             >
-                              <Box>
-                                <Typography fontWeight={850}>{submission.teamName}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {submission.roundName} - {submission.trackName}
+                              <Box className="eval-submission-main">
+                                <Typography className="eval-row-title">
+                                  <span>Team:</span>
+                                  {submission.teamName}
                                 </Typography>
+                                <Box className="eval-row-meta-list">
+                                  <Typography className="eval-row-meta">
+                                    <span>Track:</span>
+                                    {submission.trackName}
+                                  </Typography>
+                                  <Typography className="eval-row-meta">
+                                    <span>Round:</span>
+                                    {submission.roundName}
+                                  </Typography>
+                                </Box>
                               </Box>
                               <Chip size="small" variant="outlined" label={submission.submissionStatus} />
                             </Box>

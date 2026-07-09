@@ -25,6 +25,7 @@ import { useSearchParams } from "react-router-dom";
 import { getApiErrorMessage, http } from "../../api/http";
 import CenteredNotification from "../layout/CenteredNotification";
 import ModulePageHeader from "../layout/ModulePageHeader";
+import SubmissionHistoryDialog from "./SubmissionHistoryDialog";
 import "./team-management.css";
 
 const INITIAL_SUBMISSION_FORM = { roundId: "", repositoryUrl: "", demoUrl: "", slideUrl: "" };
@@ -554,47 +555,12 @@ export default function StudentSubmissionPanel() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={historyDialogOpen} onClose={closeHistoryDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Submission History</DialogTitle>
-        <DialogContent>
-          {historyLoading ? (
-            <Box className="team-loading"><CircularProgress /></Box>
-          ) : (
-            <Box className="team-table-scroll">
-              <table className="MuiTable-root">
-                <thead>
-                  <tr>
-                    <th>Action</th>
-                    <th>Changed by</th>
-                    <th>Repository</th>
-                    <th>Changed at</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {submissionHistory.length === 0 ? (
-                    <tr>
-                      <td colSpan={4}>No history recorded.</td>
-                    </tr>
-                  ) : submissionHistory.map((item) => (
-                    <tr key={item.historyId}>
-                      <td>{item.actionType}</td>
-                      <td>{item.changedByName || "System"}</td>
-                      <td>
-                        {item.oldRepositoryUrl ? `Old: ${item.oldRepositoryUrl} | ` : ""}
-                        New: {item.newRepositoryUrl || "N/A"}
-                      </td>
-                      <td>{formatDateTime(item.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeHistoryDialog}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      <SubmissionHistoryDialog
+        open={historyDialogOpen}
+        onClose={closeHistoryDialog}
+        loading={historyLoading}
+        history={submissionHistory}
+      />
 
       <Dialog open={feedbackDialogOpen} onClose={closeFeedbackDialog} maxWidth="md" fullWidth>
         <DialogTitle>Submission Feedback</DialogTitle>

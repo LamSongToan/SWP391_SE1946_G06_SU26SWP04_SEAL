@@ -5,9 +5,14 @@
 }
 
 .eval-card.MuiCard-root {
-  border: 1px solid var(--se-line);
-  border-radius: var(--se-radius);
-  box-shadow: var(--se-shadow);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.eval-card .MuiCardContent-root {
+  padding: 0;
 }
 
 .eval-stat-grid {
@@ -17,40 +22,80 @@
 }
 
 .eval-stat {
-  min-height: 116px;
+  min-height: 108px;
   display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 18px;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  overflow: hidden;
   border: 1px solid var(--se-line);
-  border-radius: var(--se-radius);
+  border-radius: 14px;
   background: #ffffff;
-  box-shadow: var(--se-shadow);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
-.eval-stat-label {
-  color: var(--se-muted);
-  font-size: 12px;
-  font-weight: 800;
+.eval-stat > * {
+  min-width: 0;
 }
 
-.eval-stat-value {
+.eval-stat-body {
+  display: grid;
+  gap: 9px;
+}
+
+.eval-stat .eval-stat-label.MuiTypography-root {
+  color: var(--se-primary);
+  font-size: 15px;
+  font-weight: 950;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.eval-stat .eval-stat-value.MuiTypography-root {
   color: var(--se-text);
-  font-size: 28px;
-  font-weight: 900;
-  line-height: 1.1;
-  margin-top: 8px;
+  font-size: 36px;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .eval-stat-icon {
-  width: 42px;
-  height: 42px;
+  width: 54px;
+  height: 54px;
   display: grid;
   place-items: center;
-  flex: 0 0 42px;
-  border-radius: 10px;
+  flex: 0 0 54px;
+  border-radius: 999px;
   color: var(--se-secondary);
-  background: var(--se-secondary-soft);
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #fff0e6 68%);
+  box-shadow: inset 0 0 0 1px rgba(243, 112, 33, 0.12);
+}
+
+.eval-stat-icon .MuiSvgIcon-root {
+  font-size: 25px;
+}
+
+.eval-stat .eval-stat-helper.MuiTypography-root {
+  color: var(--se-muted);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.eval-stat-helper.is-success::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  margin-right: 7px;
+  border-radius: 999px;
+  background: var(--se-success);
+}
+
+.eval-stat .eval-stat-helper.is-warning.MuiTypography-root {
+  color: var(--se-secondary);
+  font-weight: 900;
 }
 
 .eval-scroll-target {
@@ -58,15 +103,10 @@
   scroll-margin-top: 92px;
 }
 
-.eval-list {
-  display: grid;
-  gap: 10px;
-}
-
 .eval-judge-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.3fr);
-  gap: 18px;
+  grid-template-columns: minmax(430px, 500px) minmax(0, 1fr);
+  gap: 16px;
   align-items: start;
 }
 
@@ -77,6 +117,12 @@
   min-width: 0;
 }
 
+.eval-nav-panel {
+  position: sticky;
+  top: 92px;
+  align-self: start;
+}
+
 .eval-subpanel {
   min-width: 0;
   overflow: hidden;
@@ -84,30 +130,86 @@
   border: 1px solid var(--se-line);
   border-radius: 14px;
   background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
 .eval-selected-card {
-  background: linear-gradient(180deg, #ffffff 0%, #fffaf6 100%);
+  background: #ffffff;
 }
 
-.eval-filter-bar {
+.eval-team-overview {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+  border-bottom: 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.eval-team-title {
+  color: var(--se-text);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.eval-team-meta-line {
+  margin-top: 7px;
+  color: var(--se-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.eval-team-meta-line .MuiTypography-root,
+.eval-team-meta-line span {
+  color: var(--se-muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.eval-deadline-chip.MuiChip-root {
+  height: 22px;
+  color: #1f5f9f;
+  background: #eaf4ff;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.eval-submission-links {
+  justify-content: flex-end;
+}
+
+.eval-nav-section + .eval-nav-section {
+  margin-top: 14px;
+}
+
+.eval-nav-divider {
+  margin: 16px 0;
+}
+
+.eval-panel-title.MuiTypography-root {
+  display: block;
+  margin: 0;
+  color: #071a2f;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.eval-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 10px;
-  align-items: center;
-  margin-bottom: 14px;
 }
 
-.eval-filter-count {
-  justify-self: start;
+.eval-round-list {
+  margin-top: 10px;
 }
 
 .eval-list-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(118px, auto) 16px;
   gap: 14px;
   align-items: center;
-  padding: 13px 14px;
+  padding: 17px 16px;
   border: 1px solid var(--se-line);
   border-radius: 10px;
   background: #ffffff;
@@ -115,6 +217,57 @@
 
 .eval-list-row > * {
   min-width: 0;
+}
+
+.eval-submission-main {
+  min-width: 0;
+}
+
+.eval-row-label {
+  color: #071a2f;
+  font-weight: 950;
+}
+
+.eval-row-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: baseline;
+  color: #071a2f;
+  font-size: 16.5px;
+  font-weight: 950;
+  line-height: 1.24;
+}
+
+.eval-row-title span {
+  color: #071a2f;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.eval-row-meta-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.eval-row-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 0;
+  color: #455873;
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.32;
+}
+
+.eval-row-meta span {
+  min-width: 46px;
+  color: #071a2f;
+  font-size: 12.5px;
+  font-weight: 950;
+  line-height: 1.2;
 }
 
 .eval-list-row .MuiStack-root {
@@ -131,49 +284,295 @@
 }
 
 .eval-clickable:hover,
-.eval-clickable.is-selected {
-  border-color: rgba(243, 112, 33, 0.45);
-  background: #fffaf5;
+.eval-clickable.is-selected,
+.eval-round-row.is-selected {
+  border-color: rgba(243, 112, 33, 0.48);
+  background: #fff8f2;
+  box-shadow: inset 3px 0 0 var(--se-secondary);
 }
 
 .eval-clickable:hover {
   transform: translateY(-1px);
 }
 
-.eval-criterion-row {
+.eval-filter-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(104px, 120px) minmax(180px, 0.95fr);
-  gap: 14px;
-  align-items: start;
-  padding: 14px;
-  border: 1px solid var(--se-line);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.eval-queue-search {
+  grid-column: 1 / -1;
+}
+
+.eval-filter-bar .MuiOutlinedInput-root {
   border-radius: 10px;
+  background: #fbfdff;
+}
+
+.eval-filter-count {
+  color: #4d5f79;
+  font-size: 13.5px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.eval-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 14px 0 0;
+  padding: 10px 11px;
+  border: 1px solid #e5edf6;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.eval-status-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #4a5d76;
+  font-size: 12.5px;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.eval-status-legend i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 999px;
+}
+
+.eval-submission-status {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  min-width: 118px;
+}
+
+.eval-submission-status .MuiChip-root {
+  max-width: 100%;
+  height: 26px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.eval-criteria-count {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  color: var(--se-text);
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+.eval-criteria-count strong {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.eval-criteria-count span {
+  color: #52647d;
+  font-weight: 800;
+}
+
+.eval-row-chevron {
+  color: var(--se-primary);
+  font-size: 22px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.eval-nav-panel .eval-list {
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.eval-workflow-panel {
+  padding: 0;
+  overflow: visible;
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+}
+
+.eval-tabs {
+  min-height: 48px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--se-line);
+}
+
+.eval-tabs .MuiTab-root {
+  min-height: 48px;
+  color: var(--se-muted);
+  font-size: 13px;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.eval-tabs .Mui-selected {
+  color: var(--se-secondary);
+}
+
+.eval-tabs .MuiTabs-indicator {
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: var(--se-secondary);
+}
+
+.eval-tab-content {
+  padding: 18px;
+}
+
+.eval-score-card {
   background: #ffffff;
 }
 
-.eval-criterion-row > * {
+.eval-score-content {
+  padding: 18px 20px;
+}
+
+.eval-score-form-header {
+  margin-bottom: 18px;
+}
+
+.eval-criteria-list {
+  padding-bottom: 2px;
+}
+
+.eval-criterion-card {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.42fr);
+  gap: 20px;
+  align-items: start;
+  padding: 18px;
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  background: #ffffff;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.eval-criterion-card:focus-within {
+  border-color: rgba(22, 119, 255, 0.48);
+  background: #fbfdff;
+}
+
+.eval-criterion-card.is-complete {
+  border-color: rgba(24, 185, 132, 0.38);
+  background: #fbfffd;
+}
+
+.eval-criterion-info,
+.eval-criterion-controls {
   min-width: 0;
+}
+
+.eval-criterion-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: baseline;
+  color: #071a2f;
+  font-size: 16px;
+  font-weight: 950;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.eval-criterion-title span {
+  color: #071a2f;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.eval-weight-chip.MuiChip-root {
+  color: var(--se-secondary);
+  background: var(--se-secondary-soft);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.eval-criterion-helper {
+  max-width: 520px;
+  margin-top: 9px;
+  color: #4f6078;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.48;
+}
+
+.eval-criterion-helper span {
+  margin-right: 5px;
+  color: #071a2f;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.eval-criterion-controls {
+  display: grid;
+  grid-template-columns: minmax(120px, 136px) minmax(360px, 1fr) minmax(118px, 126px);
+  gap: 14px;
+  align-items: start;
+}
+
+.eval-field-caption {
+  color: #52647d;
+  font-size: 12.5px;
+  font-weight: 850;
+  line-height: 1.25;
 }
 
 .eval-score-field,
 .eval-comment-field {
-  align-self: start;
   width: 100%;
 }
 
-.eval-score-field .MuiFormHelperText-root,
-.eval-comment-field .MuiFormHelperText-root {
-  min-height: 18px;
-  margin-top: 4px;
+.eval-score-field .MuiInputBase-input {
+  font-weight: 850;
+  text-align: center;
 }
 
-.eval-comment-field .MuiFormHelperText-root {
-  visibility: hidden;
+.eval-comment-field .MuiInputBase-root {
+  min-height: 56px;
+}
+
+.eval-weighted-box {
+  min-height: 56px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--se-line);
+  border-radius: 10px;
+  background: #f7f9fc;
+}
+
+.eval-weighted-value {
+  color: var(--se-text);
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .eval-score-field .MuiOutlinedInput-root,
-.eval-comment-field .MuiOutlinedInput-root {
+.eval-comment-field .MuiOutlinedInput-root,
+.eval-general-feedback .MuiOutlinedInput-root {
   border-radius: 10px;
+}
+
+.eval-score-field .MuiFormHelperText-root,
+.eval-comment-field .MuiFormHelperText-root,
+.eval-general-feedback .MuiFormHelperText-root {
+  min-height: 18px;
+  margin-top: 4px;
+  color: #607089;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .eval-warning {
@@ -187,13 +586,123 @@
 
 .eval-score-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  padding: 14px;
-  margin-top: 14px;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 1fr) minmax(140px, 0.8fr) minmax(240px, 1.1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 16px 20px;
+  margin-top: 16px;
   border: 1px solid var(--se-line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f7f9fc;
+}
+
+.eval-summary-main,
+.eval-summary-item {
+  min-width: 0;
+}
+
+.eval-summary-label {
+  color: var(--se-muted);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.eval-summary-score {
+  margin-top: 4px;
+  color: var(--se-text);
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.eval-summary-note {
+  justify-self: end;
+  color: var(--se-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.eval-summary-ready {
+  margin-top: 6px;
+  color: var(--se-success);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.eval-summary-warning {
+  margin-top: 6px;
+  color: #9a6200;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.eval-completion-progress.MuiLinearProgress-root {
+  height: 7px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: #e7edf5;
+}
+
+.eval-score-action-spacer { display: none; }
+
+.eval-score-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 0 0 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.eval-action-summary {
+  min-width: 0;
+}
+
+.eval-action-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--se-text);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.eval-action-score .MuiSvgIcon-root {
+  color: var(--se-success);
+}
+
+.eval-action-meta {
+  margin-top: 2px;
+  color: var(--se-muted);
+  font-size: 12.5px;
+  font-weight: 750;
+}
+
+.eval-action-buttons {
+  flex: 0 0 auto;
+}
+
+.eval-action-buttons .MuiButton-contained {
+  background: var(--se-secondary);
+}
+
+.eval-action-buttons .MuiButton-root {
+  min-width: 150px;
+  min-height: 46px;
+  border-radius: 10px;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.eval-action-buttons .MuiButton-contained:hover {
+  background: #d95e13;
 }
 
 .eval-history-list {
@@ -220,22 +729,270 @@
   background: #fbfcff;
 }
 
-@media (max-width: 900px) {
-  .eval-judge-layout,
-  .eval-stat-grid,
-  .eval-criterion-row,
-  .eval-filter-bar,
-  .eval-score-summary,
-  .eval-history-row {
+.eval-git-card {
+  margin-top: 14px;
+  padding: 0;
+  border: 1px solid #d8e3f2;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.eval-git-header {
+  padding: 12px 14px 0;
+  margin-bottom: 8px;
+}
+
+.eval-git-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  border: 1px solid rgba(7, 26, 47, 0.08);
+  border-radius: 10px;
+  color: var(--se-primary);
+  background: #ffffff;
+}
+
+.eval-git-repo-name {
+  max-width: 360px;
+  color: var(--se-text);
+  font-size: 15px;
+  font-weight: 950;
+  line-height: 1.25;
+}
+
+.eval-git-platform.MuiChip-root {
+  height: 21px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  color: var(--se-primary);
+  background: #eaf1fb;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.eval-git-description {
+  max-width: 760px;
+  margin-top: 5px;
+  color: #52647d;
+  font-size: 13.2px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.eval-git-actions {
+  flex: 0 0 auto;
+}
+
+.eval-git-action.MuiButton-root {
+  min-width: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: var(--se-muted);
+  font-size: 12.5px;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.eval-git-action.is-primary.MuiButton-root {
+  color: var(--se-secondary);
+}
+
+.eval-git-action.MuiButton-root:hover {
+  background: rgba(7, 26, 47, 0.05);
+}
+
+.eval-git-action.is-primary.MuiButton-root:hover {
+  background: rgba(243, 112, 33, 0.09);
+}
+
+.eval-git-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(104px, 1fr));
+  gap: 0;
+  border-top: 0;
+}
+
+.eval-git-metric {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  border: 0;
+  border-left: 1px solid var(--se-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.eval-git-metric:first-child {
+  border-left: 0;
+}
+
+.eval-git-metric-icon {
+  flex: 0 0 auto;
+  color: var(--se-secondary);
+  font-size: 17px;
+}
+
+.eval-git-metric-value {
+  color: var(--se-text);
+  font-size: 14.5px;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.eval-git-metric-label {
+  margin-top: 2px;
+  color: #52647d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.eval-git-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 0;
+  border-top: 1px solid var(--se-line);
+}
+
+.eval-git-detail {
+  min-width: 0;
+  padding: 9px 14px;
+  border: 0;
+  border-left: 1px solid var(--se-line);
+  border-radius: 0;
+  background: #fbfdff;
+}
+
+.eval-git-detail:first-child {
+  border-left: 0;
+}
+
+.eval-git-detail-label {
+  color: #52647d;
+  font-size: 11.5px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.eval-git-detail-value {
+  margin-top: 4px;
+  color: var(--se-text);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.eval-git-empty {
+  color: #52647d;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.eval-git-empty a {
+  color: var(--se-secondary);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.eval-git-empty a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1100px) {
+  .eval-judge-layout {
     grid-template-columns: 1fr;
   }
 
-  .eval-filter-count {
-    justify-self: start;
+  .eval-nav-panel {
+    position: static;
+  }
+
+  .eval-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .eval-criterion-card,
+  .eval-criterion-controls,
+  .eval-score-summary,
+  .eval-history-row,
+  .eval-git-detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .eval-list-row {
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .eval-submission-status {
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .eval-git-card,
+  .eval-score-content,
+  .eval-tab-content {
+    padding: 14px;
+  }
+
+  .eval-git-actions {
+    justify-content: flex-start;
+  }
+
+  .eval-git-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .eval-score-action-spacer {
+    display: none;
+  }
+
+  .eval-score-action-bar {
+    position: static;
+    align-items: stretch;
     flex-direction: column;
+    margin-top: 16px;
+  }
+
+  .eval-action-buttons {
+    width: 100%;
+  }
+
+  .eval-action-buttons .MuiButton-root {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .eval-card .MuiCardContent-root,
+  .eval-subpanel {
+    padding: 14px;
+  }
+
+  .eval-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eval-stat {
+    min-height: 76px;
+  }
+
+  .eval-filter-bar,
+  .eval-git-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eval-tabs {
+    padding: 0 8px;
   }
 }

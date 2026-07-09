@@ -181,6 +181,290 @@
   font-size: 13px;
 }
 
+.submission-history-dialog.MuiPaper-root {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.submission-history-title.MuiDialogTitle-root {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid #edf1f7;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.submission-history-title h2 {
+  color: var(--se-text);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.submission-history-title p {
+  margin-top: 3px;
+  color: var(--se-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.submission-history-title-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 10px;
+  background: #fff4e8;
+  color: var(--se-primary);
+}
+
+.submission-history-count.MuiChip-root {
+  flex: 0 0 auto;
+  border: 1px solid #dbe5f3;
+  background: #ffffff;
+  color: var(--se-muted);
+  font-weight: 800;
+}
+
+.submission-history-content.MuiDialogContent-root {
+  padding: 26px 24px 8px;
+  background: #ffffff;
+}
+
+.submission-history-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.submission-history-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.submission-history-marker {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.submission-history-marker::after {
+  position: absolute;
+  top: 34px;
+  bottom: -12px;
+  width: 2px;
+  border-radius: 999px;
+  background: #e8edf7;
+  content: "";
+}
+
+.submission-history-item:last-child .submission-history-marker::after {
+  display: none;
+}
+
+.submission-history-marker span {
+  z-index: 1;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid #dbe5f3;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--se-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.submission-history-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e5ebf5;
+  border-radius: 14px;
+  background: #fbfdff;
+}
+
+.submission-history-card-head {
+  margin-bottom: 10px;
+}
+
+.submission-history-action-chip.MuiChip-root {
+  height: 30px;
+  border-radius: 999px;
+  font-weight: 900;
+}
+
+.submission-history-action-chip.is-created {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.submission-history-action-chip.is-updated {
+  background: #eff6ff;
+  color: #175cd3;
+}
+
+.submission-history-action-chip.is-default {
+  background: #f8fafc;
+  color: var(--se-muted);
+}
+
+.submission-history-action-chip .MuiChip-icon {
+  width: 17px;
+  color: currentColor;
+}
+
+.submission-history-status-chip.MuiChip-root {
+  height: 24px;
+  border: 1px solid #dbe5f3;
+  background: #ffffff;
+  color: var(--se-muted);
+  font-weight: 800;
+}
+
+.submission-history-time,
+.submission-history-author {
+  color: var(--se-muted);
+  font-size: 13px;
+}
+
+.submission-history-time .MuiSvgIcon-root,
+.submission-history-author .MuiSvgIcon-root {
+  width: 17px;
+  color: #8aa0bc;
+}
+
+.submission-history-time p,
+.submission-history-author p {
+  font-size: 13px;
+}
+
+.submission-history-author {
+  margin-bottom: 12px;
+}
+
+.submission-history-author strong {
+  color: var(--se-text);
+}
+
+.submission-history-changes {
+  min-width: 0;
+}
+
+.submission-history-change-row {
+  padding: 11px 12px;
+  border: 1px solid #edf1f7;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.submission-history-change-title {
+  margin-bottom: 8px;
+  color: var(--se-text);
+}
+
+.submission-history-change-title .MuiSvgIcon-root {
+  width: 17px;
+  color: var(--se-primary);
+}
+
+.submission-history-change-title p {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.submission-history-change-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.submission-history-change-body .submission-history-link-value:only-child {
+  grid-column: 1 / -1;
+}
+
+.submission-history-link-value {
+  min-width: 0;
+}
+
+.submission-history-link-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--se-muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.submission-history-link.MuiButton-root {
+  justify-content: flex-start;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0;
+  color: var(--se-primary-dark);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: none;
+}
+
+.submission-history-link.MuiButton-root .MuiButton-endIcon {
+  margin-left: 5px;
+}
+
+.submission-history-link.MuiButton-root .MuiSvgIcon-root {
+  width: 15px;
+}
+
+.submission-history-link.MuiButton-root .MuiButton-label,
+.submission-history-link.MuiButton-root {
+  overflow-wrap: anywhere;
+}
+
+.submission-history-link-value.is-muted .submission-history-link.MuiButton-root {
+  color: #667085;
+}
+
+.submission-history-empty-value {
+  color: #98a2b3;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.submission-history-arrow {
+  width: 18px;
+  color: #98a2b3;
+}
+
+.submission-history-empty {
+  display: grid;
+  min-height: 190px;
+  place-items: center;
+  text-align: center;
+}
+
+.submission-history-empty > .MuiSvgIcon-root {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 10px;
+  color: #98a2b3;
+}
+
+.submission-history-actions.MuiDialogActions-root {
+  padding: 14px 24px 22px;
+  background: #ffffff;
+}
+
+.submission-history-actions .MuiButton-root {
+  min-width: 96px;
+  border-radius: 999px;
+  background: var(--se-text);
+  font-weight: 900;
+  text-transform: none;
+}
+
 @media (max-width: 699px) {
   .team-summary-strip {
     grid-template-columns: 1fr;
@@ -189,5 +473,48 @@
   .team-invitation-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .submission-history-title.MuiDialogTitle-root {
+    padding: 18px 18px 14px;
+  }
+
+  .submission-history-title .MuiStack-root:first-of-type {
+    align-items: flex-start;
+  }
+
+  .submission-history-count.MuiChip-root {
+    display: none;
+  }
+
+  .submission-history-content.MuiDialogContent-root {
+    padding: 22px 18px 6px;
+  }
+
+  .submission-history-item {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .submission-history-marker span {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .submission-history-marker::after {
+    top: 28px;
+  }
+
+  .submission-history-card {
+    padding: 12px;
+  }
+
+  .submission-history-change-body {
+    grid-template-columns: 1fr;
+  }
+
+  .submission-history-arrow {
+    display: none;
   }
 }
