@@ -27,6 +27,7 @@ import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.RoundEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
+import com.seal.hackathon.event.repository.RoundRepository;
 import com.seal.hackathon.submission.entity.SubmissionEntity;
 import com.seal.hackathon.submission.entity.SubmissionStatus;
 import com.seal.hackathon.submission.repository.SubmissionRepository;
@@ -62,6 +63,8 @@ class EvaluationServiceTest {
     private UserRoleRepository userRoleRepository;
     @Mock
     private HackathonEventRepository eventRepository;
+    @Mock
+    private RoundRepository roundRepository;
     @Mock
     private SubmissionRepository submissionRepository;
     @Mock
@@ -210,7 +213,7 @@ class EvaluationServiceTest {
     }
 
     @Test
-    void submitScores_shouldRejectFinalizedEvaluationUntilCoordinatorReopens() {
+    void getScoreForm_shouldAllowEditingSubmittedEvaluationUntilRoundIsLocked() {
         UserEntity judge = user("judge@seal.test", 1);
         UserRoleEntity judgeRole = role(11, judge, RoleType.JUDGE);
         SubmissionEntity submission = submission(false);
@@ -226,8 +229,52 @@ class EvaluationServiceTest {
         when(evaluationRepository.findBySubmissionSubmissionIdAndJudgeAssignmentJudgeAssignmentId(99, 55))
                 .thenReturn(Optional.of(evaluation));
         when(eventRepository.findById(10)).thenReturn(Optional.of(event(EventStatus.ONGOING)));
+        when(criteriaRepository.findByRoundRoundIdOrderByCriteriaIdAsc(40)).thenReturn(List.of());
+        when(scoreRepository.findBySubmissionSubmissionIdAndJudgeAssignmentJudgeAssignmentIdOrderByCriteriaCriteriaIdAsc(99, 55))
+                .thenReturn(List.of());
+        when(scoreHistoryRepository.findByEvaluationEvaluationIdOrderByCreatedAtDesc(77)).thenReturn(List.of());
+        when(feedbackRepository.findBySubmissionSubmissionIdOrderByCreatedAtDesc(99)).thenReturn(List.of());
 
-        ApiException ex = Assertions.assertThrows(ApiException.class, () -> evaluationService.submitScores(
+        var form = evaluationService.getScoreForm(auth("judge@seal.test"), 99);
+
+        Assertions.assertTrue(form.editable());
+        Assertions.assertNull(form.lockedReason());
+        Assertions.assertEquals("Finalized", form.evaluationStatus());
+    }
+
+    @Test
+    void submitScores_shouldMoveSubmittedEvaluationBackToDraftWhenSavingChanges() {
+        UserEntity judge = user("judge@seal.test", 1);
+        UserRoleEntity judgeRole = role(11, judge, RoleType.JUDGE);
+        SubmissionEntity submission = submission(false);
+        JudgeAssignmentEntity assignment = assignment(55, submission, judgeRole);
+        JudgeEvaluationEntity evaluation = finalizedEvaluation(77, submission, assignment);
+        ScoringCriteriaEntity criterion = criteria(1, submission.getRound(), "Impact");
+        ScoreEntity score = new ScoreEntity();
+        score.setSubmission(submission);
+        score.setJudgeAssignment(assignment);
+        score.setCriteria(criterion);
+        score.setScoreValue(BigDecimal.valueOf(8));
+
+        when(userRepository.findByEmailIgnoreCase("judge@seal.test")).thenReturn(Optional.of(judge));
+        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(1, RoleType.JUDGE.getDbValue()))
+                .thenReturn(Optional.of(judgeRole));
+        when(submissionRepository.findDetailedById(99)).thenReturn(Optional.of(submission));
+        when(judgeAssignmentRepository.findByRoundRoundIdAndTrackTrackIdAndJudgeRoleUserRoleId(40, 20, 11))
+                .thenReturn(Optional.of(assignment));
+        when(evaluationRepository.findBySubmissionSubmissionIdAndJudgeAssignmentJudgeAssignmentId(99, 55))
+                .thenReturn(Optional.of(evaluation));
+        when(eventRepository.findById(10)).thenReturn(Optional.of(event(EventStatus.ONGOING)));
+        when(criteriaRepository.findByRoundRoundIdOrderByCriteriaIdAsc(40)).thenReturn(List.of(criterion));
+        when(scoreRepository.findBySubmissionSubmissionIdAndCriteriaCriteriaIdAndJudgeAssignmentJudgeAssignmentId(99, 1, 55))
+                .thenReturn(Optional.of(score));
+        when(scoreRepository.findBySubmissionSubmissionIdAndJudgeAssignmentJudgeAssignmentIdOrderByCriteriaCriteriaIdAsc(99, 55))
+                .thenReturn(List.of(score));
+        when(evaluationRepository.save(evaluation)).thenReturn(evaluation);
+        when(scoreHistoryRepository.findByEvaluationEvaluationIdOrderByCreatedAtDesc(77)).thenReturn(List.of());
+        when(feedbackRepository.findBySubmissionSubmissionIdOrderByCreatedAtDesc(99)).thenReturn(List.of());
+
+        evaluationService.submitScores(
                 auth("judge@seal.test"),
                 99,
                 new ScoreSubmissionRequest(
@@ -235,9 +282,11 @@ class EvaluationServiceTest {
                         null,
                         false
                 )
-        ));
+        );
 
-        Assertions.assertTrue(ex.getMessage().contains("Finalized scores cannot be changed"));
+        Assertions.assertEquals("Draft", evaluation.getStatus());
+        Assertions.assertNull(evaluation.getFinalizedAt());
+        Assertions.assertEquals(BigDecimal.valueOf(9).setScale(2), score.getScoreValue());
     }
 
     @Test

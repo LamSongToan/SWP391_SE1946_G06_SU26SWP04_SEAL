@@ -55,6 +55,15 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
     })
     List<SubmissionEntity> findByRoundRoundIdOrderByTeamTeamNameAsc(Integer roundId);
 
+    @Query("""
+            SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END
+            FROM SubmissionEntity s
+            WHERE s.team.track.eventId = :eventId
+            """)
+    boolean existsByEventId(@Param("eventId") Integer eventId);
+
+    boolean existsByRoundRoundId(Integer roundId);
+
     @EntityGraph(attributePaths = {
             "team", "team.track", "team.leader", "team.leader.userRole", "team.leader.userRole.user",
             "round", "submittedBy", "submittedBy.userRole", "submittedBy.userRole.user"
@@ -66,8 +75,11 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, In
                 SELECT 1
                 FROM JudgeAssignmentEntity ja
                 WHERE ja.round.roundId = s.round.roundId
-                  AND ja.track.trackId = s.team.track.trackId
                   AND ja.judge.userRoleId = :judgeRoleId
+                  AND (
+                      ja.round.finalRound = true
+                      OR ja.track.trackId = s.team.track.trackId
+                  )
             )
             ORDER BY s.round.roundOrder ASC, s.submittedAt DESC
             """)

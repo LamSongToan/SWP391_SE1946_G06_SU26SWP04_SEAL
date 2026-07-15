@@ -39,6 +39,9 @@ public class TeamInvitationEntity {
     @JoinColumn(name = "invited_by_user_role_id", nullable = false)
     private StudentProfileEntity invitedBy;
 
+    @Column(name = "invitation_type", nullable = false, length = 50)
+    private String invitationType;
+
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 
@@ -50,6 +53,7 @@ public class TeamInvitationEntity {
 
     @PrePersist
     public void prePersist() {
+        if (invitationType == null) invitationType = "MEMBER_INVITE";
         if (status == null) status = "Pending";
         if (createdAt == null) createdAt = LocalDateTime.now();
     }

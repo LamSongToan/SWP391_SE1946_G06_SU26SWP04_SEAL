@@ -29,6 +29,7 @@ import {
   rejectedRegistrationStorage,
   registrationVerificationStorage,
 } from "../api/http";
+import AppLogo from "../components/branding/AppLogo";
 import { brand } from "../styles/designTokens";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
@@ -503,6 +504,7 @@ export default function RegisterPage() {
         }}
       >
         <Box sx={{ width: "100%", maxWidth: 460 }}>
+          <AppLogo variant="full" height={116} sx={{ mb: 2.25 }} />
           <Typography sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}>
             REQUEST ACCOUNT
           </Typography>

@@ -11,6 +11,7 @@ public record TeamInvitationDto(
         String invitedByName,
         String inviteeName,
         String inviteeIdentifier,
+        String invitationType,
         String status,
         LocalDateTime createdAt,
         LocalDateTime respondedAt

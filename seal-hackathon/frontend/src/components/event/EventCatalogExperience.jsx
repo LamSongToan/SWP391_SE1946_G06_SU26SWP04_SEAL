@@ -20,6 +20,7 @@ import MilitaryTechRoundedIcon from "@mui/icons-material/MilitaryTechRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import { isAuthSessionValid } from "../../api/http";
 import { brand } from "../../styles/designTokens";
+import EventAwardsSection from "./EventAwardsSection";
 
 function formatDateTime(value) {
   if (!value) return "Not scheduled";
@@ -55,9 +56,31 @@ function formatSemesterLabel(event) {
   return "Schedule pending";
 }
 
+function normalizeSemesterName(semester) {
+  const raw = String(semester || "").trim().toLowerCase();
+  if (raw === "spring") return "Spring";
+  if (raw === "summer") return "Summer";
+  if (raw === "fall") return "Fall";
+  return "";
+}
+
+function semesterOrder(semester) {
+  if (semester === "Spring") return 1;
+  if (semester === "Summer") return 2;
+  if (semester === "Fall") return 3;
+  return 0;
+}
+
+function currentSemesterName() {
+  const month = new Date().getMonth() + 1;
+  if (month >= 1 && month <= 4) return "Spring";
+  if (month >= 5 && month <= 8) return "Summer";
+  return "Fall";
+}
+
 function getEventBucket(event) {
   const now = Date.now();
-  const status = String(event.status || "").toLowerCase();
+  const status = String(resolveDisplayStatus(event) || "").toLowerCase();
   if (status === "ended") {
     return "past";
   }
@@ -77,6 +100,60 @@ function getStatusTone(status) {
     return { bg: "#f3f4f6", color: "#475467" };
   }
   return { bg: "#fff7ed", color: "#ea580c" };
+}
+
+function resolveDisplayStatus(event) {
+  const persistedStatus = String(event?.status || "").trim();
+  if (persistedStatus.toLowerCase() === "ended") {
+    return "Ended";
+  }
+
+  const eventSemester = normalizeSemesterName(event?.semester);
+  const eventYear = Number.parseInt(String(event?.year ?? "").trim(), 10);
+  const currentYear = new Date().getFullYear();
+  const currentSemester = currentSemesterName();
+
+  if (eventSemester && Number.isFinite(eventYear)) {
+    if (eventYear > currentYear) {
+      return "Upcoming";
+    }
+    if (eventYear < currentYear) {
+      return "Ended";
+    }
+
+    const eventSemesterRank = semesterOrder(eventSemester);
+    const currentSemesterRank = semesterOrder(currentSemester);
+    if (eventSemesterRank > currentSemesterRank) {
+      return "Upcoming";
+    }
+    if (eventSemesterRank < currentSemesterRank) {
+      return "Ended";
+    }
+    return "Ongoing";
+  }
+
+  const now = Date.now();
+  const competitionStartAt = event?.competitionStartAt ? new Date(event.competitionStartAt).getTime() : null;
+  const competitionEndAt = event?.competitionEndAt ? new Date(event.competitionEndAt).getTime() : null;
+
+  if (competitionEndAt && competitionEndAt < now) {
+    return "Ended";
+  }
+
+  if (competitionStartAt && competitionStartAt > now) {
+    return "Upcoming";
+  }
+
+  const registrationStatus = String(event?.registrationStatus || "").toUpperCase();
+  if (!competitionStartAt && registrationStatus === "NOT_OPEN_YET") {
+    return "Upcoming";
+  }
+
+  if (persistedStatus) {
+    return persistedStatus;
+  }
+
+  return "Upcoming";
 }
 
 function getRegistrationState(event) {
@@ -281,7 +358,8 @@ export default function EventCatalogExperience({
       <Stack spacing={1.25}>
         {visibleEvents.map((event) => {
           const active = String(event.eventId) === String(selectedEvent?.eventId);
-          const tone = getStatusTone(event.status);
+          const displayStatus = resolveDisplayStatus(event);
+          const tone = getStatusTone(displayStatus);
           return (
             <Box
               key={event.eventId}
@@ -308,7 +386,7 @@ export default function EventCatalogExperience({
                 <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="flex-start">
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     <Chip
-                      label={event.status}
+                      label={displayStatus}
                       size="small"
                       sx={{ bgcolor: tone.bg, color: tone.color, fontWeight: 800 }}
                     />
@@ -475,7 +553,7 @@ export default function EventCatalogExperience({
                   <Box sx={{ minWidth: 0 }}>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.3 }}>
                       <Chip
-                        label={selectedEvent.status}
+                        label={resolveDisplayStatus(selectedEvent)}
                         sx={{
                           bgcolor: "rgba(255,255,255,0.16)",
                           color: "#fff",
@@ -606,8 +684,10 @@ export default function EventCatalogExperience({
                 }}
               >
                 <Tab value="about" label="About" />
+                <Tab value="tracks" label={`Tracks (${selectedEvent.tracks?.length || 0})`} />
                 <Tab value="rounds" label={`Rounds (${selectedEvent.rounds?.length || 0})`} />
                 <Tab value="criteria" label={`Criteria (${criteriaSummary.length})`} />
+                <Tab value="awards" label={`Awards (${selectedEvent.awards?.length || 0})`} />
               </Tabs>
 
               {detailTab === "about" ? (
@@ -623,8 +703,61 @@ export default function EventCatalogExperience({
                       label={getRegistrationState(selectedEvent).label}
                     />
                     <Chip variant="outlined" label={formatSemesterLabel(selectedEvent)} />
+                    <Chip variant="outlined" label={`${selectedEvent.tracks?.length || 0} track${(selectedEvent.tracks?.length || 0) === 1 ? "" : "s"}`} />
                     <Chip variant="outlined" label={`${selectedEvent.rounds?.length || 0} published rounds`} />
+                    <Chip variant="outlined" label={`${selectedEvent.awards?.length || 0} award type${(selectedEvent.awards?.length || 0) === 1 ? "" : "s"}`} />
                   </Stack>
+                </Stack>
+              ) : null}
+
+              {detailTab === "tracks" ? (
+                <Stack spacing={1.5}>
+                  {(selectedEvent.tracks || []).length === 0 ? (
+                    <Box className="ms-empty">
+                      <Typography fontWeight={900}>No tracks published yet</Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        Track structure will appear here once the coordinator finishes event setup.
+                      </Typography>
+                    </Box>
+                  ) : (
+                    (selectedEvent.tracks || []).map((track) => (
+                      <Box
+                        key={track.trackId || track.name}
+                        sx={{
+                          p: 2,
+                          borderRadius: 3.5,
+                          border: "1px solid #e7ebf3",
+                          bgcolor: "#fff",
+                        }}
+                      >
+                        <Stack
+                          direction={{ xs: "column", md: "row" }}
+                          justifyContent="space-between"
+                          spacing={1.5}
+                          alignItems={{ xs: "flex-start", md: "center" }}
+                        >
+                          <Box>
+                            <Typography sx={{ fontSize: 18, fontWeight: 900 }}>
+                              {track.name}
+                            </Typography>
+                            <Typography sx={{ mt: 0.55, color: "text.secondary", fontSize: 14 }}>
+                              Teams in this track must satisfy the configured capacity before the event can proceed cleanly.
+                            </Typography>
+                          </Box>
+                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Chip
+                              variant="outlined"
+                              label={`Min ${track.minTeams ?? 0} team${track.minTeams === 1 ? "" : "s"}`}
+                            />
+                            <Chip
+                              variant="outlined"
+                              label={`Max ${track.maxTeams ?? 0} team${track.maxTeams === 1 ? "" : "s"}`}
+                            />
+                          </Stack>
+                        </Stack>
+                      </Box>
+                    ))
+                  )}
                 </Stack>
               ) : null}
 
@@ -697,41 +830,105 @@ export default function EventCatalogExperience({
                       </Typography>
                     </Box>
                   ) : (
-                    criteriaSummary.map((criterion) => (
+                    (selectedEvent.rounds || []).map((round) => (
                       <Box
-                        key={criterion.criteriaId || `${criterion.criteriaName}-${criterion.criteriaType}`}
+                        key={round.roundId}
                         sx={{
-                          p: 2,
+                          p: 2.2,
                           borderRadius: 3.5,
                           border: "1px solid #e7ebf3",
                           bgcolor: "#fff",
                         }}
                       >
-                        <Stack
-                          direction={{ xs: "column", sm: "row" }}
-                          justifyContent="space-between"
-                          spacing={1}
-                          alignItems={{ xs: "flex-start", sm: "center" }}
-                        >
-                          <Box>
-                            <Typography sx={{ fontWeight: 900 }}>{criterion.criteriaName}</Typography>
-                            <Typography sx={{ color: "text.secondary", mt: 0.4 }}>
-                              Type: {criterion.criteriaType || "General"}
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={criterion.weight ? `${criterion.weight}%` : "Weight pending"}
-                            sx={{
-                              bgcolor: "#fff5ed",
-                              color: brand.colors.orange,
-                              fontWeight: 900,
-                            }}
-                          />
+                        <Stack spacing={1.5}>
+                          <Stack
+                            direction={{ xs: "column", md: "row" }}
+                            justifyContent="space-between"
+                            spacing={1}
+                            alignItems={{ xs: "flex-start", md: "center" }}
+                          >
+                            <Box>
+                              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                <Typography sx={{ fontSize: 18, fontWeight: 900 }}>
+                                  Round {round.roundOrder}: {round.roundName}
+                                </Typography>
+                                {round.finalRound ? <Chip size="small" color="warning" label="Final round" /> : null}
+                              </Stack>
+                              <Typography sx={{ mt: 0.45, color: "text.secondary", fontSize: 13.5 }}>
+                                {round.criteria?.length || 0} criteria in this round
+                              </Typography>
+                            </Box>
+                            <Chip
+                              label={`Deadline ${formatDateTime(round.submissionDeadline)}`}
+                              variant="outlined"
+                              size="small"
+                            />
+                          </Stack>
+
+                          {(round.criteria || []).length === 0 ? (
+                            <Box
+                              sx={{
+                                borderRadius: 3,
+                                border: "1px dashed #d7deea",
+                                px: 2,
+                                py: 1.6,
+                                color: "text.secondary",
+                                fontSize: 14,
+                              }}
+                            >
+                              No criteria published for this round yet.
+                            </Box>
+                          ) : (
+                            <Stack spacing={1.1}>
+                              {(round.criteria || []).map((criterion) => (
+                                <Box
+                                  key={criterion.criteriaId || `${round.roundId}-${criterion.criteriaName}-${criterion.criteriaType}`}
+                                  sx={{
+                                    px: 1.6,
+                                    py: 1.3,
+                                    borderRadius: 3,
+                                    border: "1px solid #edf1f7",
+                                    bgcolor: "#fbfcfe",
+                                  }}
+                                >
+                                  <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    justifyContent="space-between"
+                                    spacing={1}
+                                    alignItems={{ xs: "flex-start", sm: "center" }}
+                                  >
+                                    <Box>
+                                      <Typography sx={{ fontWeight: 900 }}>{criterion.criteriaName}</Typography>
+                                      <Typography sx={{ color: "text.secondary", mt: 0.35, fontSize: 13.5 }}>
+                                        Type: {criterion.criteriaType || "General"}
+                                      </Typography>
+                                    </Box>
+                                    <Chip
+                                      label={criterion.weight ? `${criterion.weight}%` : "Weight pending"}
+                                      sx={{
+                                        bgcolor: "#fff5ed",
+                                        color: brand.colors.orange,
+                                        fontWeight: 900,
+                                      }}
+                                    />
+                                  </Stack>
+                                </Box>
+                              ))}
+                            </Stack>
+                          )}
                         </Stack>
                       </Box>
                     ))
                   )}
                 </Stack>
+              ) : null}
+
+              {detailTab === "awards" ? (
+                <EventAwardsSection
+                  event={selectedEvent}
+                  title={selectedEvent.awardResultsPublished ? "Award results" : "Award structure"}
+                  emptyDescription="Prize quantity, prize amount, and winners will appear here once the event award setup is available."
+                />
               ) : null}
             </Stack>
           )}

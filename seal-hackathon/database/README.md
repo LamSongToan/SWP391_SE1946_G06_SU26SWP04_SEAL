@@ -35,16 +35,22 @@ Use `email` for login. `username` remains profile data only.
 
 ## Demo Time Controls
 
-The optional `database/demo/` folder contains quick data-reset scripts for
-workflow testing such as:
+The optional `database/demo/` folder contains flow-based SQL snapshots for the
+main test journeys:
 
-- registration window open
-- submission window open before deadline
-- submission closed so judge scoring becomes available
-- restore the original seed schedule
+- event configuration
+- team formation and round-1 submission
+- judging, finalize, promote, and publish
+- final publish and awards
 
-Use those scripts only when you want to keep the current database and quickly
-switch test scenarios. For a full clean reset, rerun:
+For the full Summer 2026 timeline, use `database/demo/lifecycle/`.
+
+For the simplified scenario folders and current-date refresh scripts, start
+with:
+
+- `database/demo/README.md`
+
+For a full clean reset, rerun:
 
 1. `seal_hackathon.sql`
 2. `seed_test_data.sql`

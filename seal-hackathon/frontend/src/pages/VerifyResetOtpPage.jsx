@@ -10,8 +10,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
 import AuthVisualPanel from "../components/auth/AuthVisualPanel";
+import AppLogo from "../components/branding/AppLogo";
 import { http, passwordResetStorage } from "../api/http";
 import { brand } from "../styles/designTokens";
 
@@ -249,15 +249,10 @@ export default function VerifyResetOtpPage() {
         }}
       >
         <Box sx={{ width: "100%", maxWidth: 430 }}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1}
-            sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}
-          >
-            <KeyRoundedIcon sx={{ fontSize: 18 }} />
-            <span>SEAL HACKATHON</span>
-          </Stack>
+          <AppLogo variant="full" height={116} sx={{ mb: 2.25 }} />
+          <Typography sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}>
+            OTP VERIFICATION
+          </Typography>
           <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
             Verify your OTP
           </Typography>

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
 import { Box, Chip, Stack, Typography } from "@mui/material";
 import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
+import AppLogo from "../branding/AppLogo";
 import { brand } from "../../styles/designTokens";
 
 const metrics = [
@@ -115,19 +115,13 @@ export default function AuthVisualPanel({ mode = "login" }) {
         }}
       >
         <Stack spacing={1.4}>
-          <Typography
-            component={RouterLink}
+          <AppLogo
+            variant="full"
             to="/"
-            sx={{
-              color: brand.colors.inverse,
-              fontSize: 34,
-              fontWeight: 900,
-              lineHeight: 1,
-              textDecoration: "none",
-            }}
-          >
-            {brand.appName}
-          </Typography>
+            height={132}
+            surface="soft"
+            sx={{ alignSelf: "flex-start" }}
+          />
           <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: 16, maxWidth: 420 }}>
             Academic technology competition across Spring, Summer, and Fall.
           </Typography>

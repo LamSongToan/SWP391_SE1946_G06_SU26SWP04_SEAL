@@ -7,8 +7,13 @@ public record RoundManagementDto(
         Integer eventId,
         String roundName,
         Integer roundOrder,
+        LocalDateTime startAt,
         LocalDateTime submissionDeadline,
+        LocalDateTime endAt,
         Integer promotionRuleTopN,
-        Boolean scoreLocked
+        Boolean scoreLocked,
+        Boolean finalRound,
+        Boolean judgeAssignmentLocked,
+        String judgeAssignmentLockReason
 ) {
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Alert,
   Autocomplete,
@@ -33,11 +33,12 @@ function getInitials(name = "") {
   return (name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2) || "JG").toUpperCase();
 }
 
-function AssignJudgeDialog({ open, onClose, roundId, trackOptions, judgeOptions, onAssigned }) {
+function AssignJudgeDialog({ open, onClose, round, trackOptions, judgeOptions, onAssigned }) {
   const [judgeUserRoleId, setJudgeUserRoleId] = useState(null);
   const [trackId, setTrackId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const isFinalRound = Boolean(round?.finalRound);
 
   const handleClose = () => {
     setJudgeUserRoleId(null);
@@ -47,16 +48,16 @@ function AssignJudgeDialog({ open, onClose, roundId, trackOptions, judgeOptions,
   };
 
   const onSubmit = async () => {
-    if (!judgeUserRoleId || !trackId) {
-      setError("Please select both a judge and a track.");
+    if (!judgeUserRoleId || (!isFinalRound && !trackId)) {
+      setError(isFinalRound ? "Please select a judge." : "Please select both a judge and a track.");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const response = await http.post(`/api/coordinator/rounds/${roundId}/judges`, {
+      const response = await http.post(`/api/coordinator/rounds/${round?.roundId}/judges`, {
         judgeUserRoleId,
-        trackId,
+        trackId: isFinalRound ? null : trackId,
       });
       onAssigned(response.data?.data);
       handleClose();
@@ -92,18 +93,24 @@ function AssignJudgeDialog({ open, onClose, roundId, trackOptions, judgeOptions,
             onChange={(_, v) => setJudgeUserRoleId(v?.judgeUserRoleId || null)}
             renderInput={(params) => <TextField {...params} label="Select Judge" required />}
           />
-          <Autocomplete
-            options={trackOptions}
-            getOptionLabel={(o) => o.name}
-            onChange={(_, v) => setTrackId(v?.trackId || null)}
-            renderInput={(params) => <TextField {...params} label="Select Track" required />}
-          />
+          {isFinalRound ? (
+            <Alert severity="info">
+              Final round judging is event-wide. This assignment will cover all finalist submissions across every track.
+            </Alert>
+          ) : (
+            <Autocomplete
+              options={trackOptions}
+              getOptionLabel={(o) => o.name}
+              onChange={(_, v) => setTrackId(v?.trackId || null)}
+              renderInput={(params) => <TextField {...params} label="Select Track" required />}
+            />
+          )}
         </Stack>
         {error ? <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert> : null}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
         <Button onClick={handleClose} disabled={loading}>Cancel</Button>
-        <Button variant="contained" onClick={onSubmit} disabled={loading || !judgeUserRoleId || !trackId}
+        <Button variant="contained" onClick={onSubmit} disabled={loading || !judgeUserRoleId || (!isFinalRound && !trackId)}
           sx={{ bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark } }}>
           {loading ? <CircularProgress size={18} color="inherit" /> : "Assign"}
         </Button>
@@ -152,6 +159,14 @@ function RoundJudgeCard({ round, eventTracks, allJudges }) {
     return new Date(value).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
   };
 
+  const assignLocked = Boolean(round.judgeAssignmentLocked);
+  const assignmentHint = round.judgeAssignmentLockReason || "";
+  const limitToUncoveredTracks = !assignLocked && Boolean(assignmentHint) && !round.finalRound;
+  const availableTrackOptions = limitToUncoveredTracks
+    ? eventTracks.filter((track) => !assignments.some((assignment) => assignment.trackId === track.trackId))
+    : eventTracks;
+  const canAssign = !assignLocked && allJudges.length > 0 && (round.finalRound || availableTrackOptions.length > 0);
+
   return (
     <Box sx={{ borderRadius: brand.radius.lg, border: `1px solid ${brand.colors.line}`, bgcolor: brand.colors.surface, overflow: "hidden" }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center"
@@ -164,7 +179,7 @@ function RoundJudgeCard({ round, eventTracks, allJudges }) {
           <Box>
             <Typography sx={{ color: brand.colors.text, fontWeight: 900 }}>{round.roundName}</Typography>
             <Typography sx={{ color: brand.colors.muted, fontSize: 13 }}>
-              Order {round.roundOrder} · Deadline {formatDeadline(round.submissionDeadline)}
+              Order {round.roundOrder} · {round.finalRound ? "All finalists" : "Track-based judging"} · Deadline {formatDeadline(round.submissionDeadline)}
             </Typography>
           </Box>
         </Stack>
@@ -173,6 +188,7 @@ function RoundJudgeCard({ round, eventTracks, allJudges }) {
             sx={{ bgcolor: brand.colors.surfaceWarm, color: brand.colors.orange, fontWeight: 900 }} />
           <Button size="small" variant="outlined" startIcon={<AddRoundedIcon />}
             onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}
+            disabled={!canAssign}
             sx={{ borderRadius: 999, borderColor: brand.colors.line, color: brand.colors.text, "&:hover": { borderColor: brand.colors.orange, color: brand.colors.orange } }}>
             Assign
           </Button>
@@ -187,6 +203,11 @@ function RoundJudgeCard({ round, eventTracks, allJudges }) {
           <Divider />
           <Box sx={{ p: 2 }}>
             {error ? <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert> : null}
+            {assignmentHint ? (
+              <Alert severity={assignLocked ? "warning" : "info"} sx={{ mb: 1.5 }}>
+                {assignmentHint}
+              </Alert>
+            ) : null}
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
                 <CircularProgress size={24} sx={{ color: brand.colors.orange }} />
@@ -244,8 +265,8 @@ function RoundJudgeCard({ round, eventTracks, allJudges }) {
       <AssignJudgeDialog
         open={assignOpen}
         onClose={() => setAssignOpen(false)}
-        roundId={round.roundId}
-        trackOptions={eventTracks}
+        round={round}
+        trackOptions={availableTrackOptions}
         judgeOptions={allJudges}
         onAssigned={handleAssigned}
       />
@@ -377,3 +398,5 @@ export default function JudgeAssignmentPanel() {
     </Box>
   );
 }
+
+

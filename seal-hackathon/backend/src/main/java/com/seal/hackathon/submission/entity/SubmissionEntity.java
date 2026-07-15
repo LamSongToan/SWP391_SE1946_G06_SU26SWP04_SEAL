@@ -50,9 +50,6 @@ public class SubmissionEntity {
     @Column(name = "github_metadata", columnDefinition = "NVARCHAR(MAX)")
     private String githubMetadata;
 
-    @Column(name = "is_calibration", nullable = false)
-    private Boolean calibration;
-
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 
@@ -68,9 +65,6 @@ public class SubmissionEntity {
 
     @PrePersist
     public void prePersist() {
-        if (calibration == null) {
-            calibration = Boolean.FALSE;
-        }
         if (status == null) {
             status = SubmissionStatus.SUBMITTED.getDbValue();
         }

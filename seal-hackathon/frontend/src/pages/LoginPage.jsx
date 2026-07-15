@@ -22,6 +22,7 @@ import {
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import AuthVisualPanel from "../components/auth/AuthVisualPanel";
+import AppLogo from "../components/branding/AppLogo";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton";
 import { authStorage, googleRegistrationStorage, http, rejectedRegistrationStorage } from "../api/http";
 import { brand } from "../styles/designTokens";
@@ -196,8 +197,9 @@ export default function LoginPage() {
         }}
       >
         <Box sx={{ width: "100%", maxWidth: 430 }}>
+          <AppLogo variant="full" height={116} sx={{ mb: 2.25 }} />
           <Typography sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}>
-            SEAL HACKATHON
+            SIGN IN
           </Typography>
           <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
             Sign in to SEAL

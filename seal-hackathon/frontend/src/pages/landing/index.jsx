@@ -29,6 +29,7 @@ import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import { getApiErrorMessage, http } from "../../api/http";
+import AppLogo from "../../components/branding/AppLogo";
 import { brand } from "../../styles/designTokens";
 import EventCatalogExperience from "../../components/event/EventCatalogExperience";
 
@@ -103,31 +104,12 @@ const activityImages = [
 
 function Logo({ dark = false }) {
   return (
-    <Stack component={RouterLink} to="/" direction="row" alignItems="center" spacing={1.2} sx={{ textDecoration: "none" }}>
-      <Box
-        className="seal-logo-mark"
-        sx={{
-          width: 38,
-          height: 38,
-          borderRadius: 2,
-          display: "grid",
-          placeItems: "center",
-          color: brand.colors.inverse,
-          background: brand.gradients.orange,
-          boxShadow: dark ? "none" : brand.shadow.sm,
-        }}
-      >
-        <VerifiedRoundedIcon sx={{ fontSize: 22 }} />
-      </Box>
-      <Box>
-        <Typography sx={{ color: dark ? brand.colors.inverse : brand.colors.text, fontSize: 19, fontWeight: 950, lineHeight: 1.05 }}>
-          SEAL Hackathon
-        </Typography>
-        <Typography sx={{ color: dark ? "rgba(255,255,255,0.72)" : brand.colors.muted, fontSize: 11, fontWeight: 800, letterSpacing: 0.4 }}>
-          Software Engineering Agile League
-        </Typography>
-      </Box>
-    </Stack>
+    <AppLogo
+      variant="full"
+      to="/"
+      height={dark ? 92 : 84}
+      surface={dark ? "soft" : "none"}
+    />
   );
 }
 

@@ -23,6 +23,12 @@ public interface JudgeAssignmentRepository extends JpaRepository<JudgeAssignment
     );
 
     @EntityGraph(attributePaths = {"round", "track", "judgeRole", "judgeRole.user"})
+    Optional<JudgeAssignmentEntity> findByRoundRoundIdAndJudgeRoleUserRoleId(
+            Integer roundId,
+            Integer judgeRoleId
+    );
+
+    @EntityGraph(attributePaths = {"round", "track", "judgeRole", "judgeRole.user"})
     @Query("""
             SELECT ja
             FROM EvaluationJudgeAssignmentEntity ja

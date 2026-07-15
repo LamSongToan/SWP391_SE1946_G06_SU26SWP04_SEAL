@@ -24,5 +24,11 @@ public interface TeamInvitationRepository extends JpaRepository<TeamInvitationEn
     Optional<TeamInvitationEntity> findByTeamTeamIdAndInviteeUserRoleIdAndStatusIgnoreCase(
             Integer teamId, Integer inviteeUserRoleId, String status);
 
+    Optional<TeamInvitationEntity> findByTeamTeamIdAndInviteeUserRoleIdAndStatusIgnoreCaseAndInvitationTypeIgnoreCase(
+            Integer teamId, Integer inviteeUserRoleId, String status, String invitationType);
+
+    List<TeamInvitationEntity> findByTeamTeamIdAndStatusIgnoreCaseAndInvitationTypeIgnoreCase(
+            Integer teamId, String status, String invitationType);
+
     long countByTeamTeamIdAndStatusIgnoreCase(Integer teamId, String status);
 }

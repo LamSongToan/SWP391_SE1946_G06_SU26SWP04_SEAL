@@ -1,5 +1,7 @@
 package com.seal.hackathon.event.dto;
 
+import com.seal.hackathon.evaluation.dto.AwardResultDto;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,6 +19,9 @@ public record PublicEventCatalogDto(
         String trackSelectionMode,
         String registrationStatus,
         boolean registrationAvailable,
-        List<PublicEventRoundDto> rounds
+        java.util.List<PublicEventTrackDto> tracks,
+        List<PublicEventRoundDto> rounds,
+        boolean awardResultsPublished,
+        List<AwardResultDto> awards
 ) {
 }

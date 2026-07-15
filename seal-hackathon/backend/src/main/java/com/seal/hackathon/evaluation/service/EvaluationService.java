@@ -33,6 +33,7 @@ import com.seal.hackathon.evaluation.repository.ScoringCriteriaRepository;
 import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
+import com.seal.hackathon.event.repository.RoundRepository;
 import com.seal.hackathon.submission.entity.SubmissionEntity;
 import com.seal.hackathon.submission.entity.SubmissionStatus;
 import com.seal.hackathon.submission.repository.SubmissionRepository;
@@ -62,6 +63,7 @@ public class EvaluationService {
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final HackathonEventRepository eventRepository;
+    private final RoundRepository roundRepository;
     private final SubmissionRepository submissionRepository;
     private final ScoringCriteriaRepository criteriaRepository;
     private final JudgeAssignmentRepository judgeAssignmentRepository;
@@ -76,6 +78,7 @@ public class EvaluationService {
     public EvaluationService(UserRepository userRepository,
                              UserRoleRepository userRoleRepository,
                              HackathonEventRepository eventRepository,
+                             RoundRepository roundRepository,
                              SubmissionRepository submissionRepository,
                              ScoringCriteriaRepository criteriaRepository,
                              JudgeAssignmentRepository judgeAssignmentRepository,
@@ -89,6 +92,7 @@ public class EvaluationService {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.eventRepository = eventRepository;
+        this.roundRepository = roundRepository;
         this.submissionRepository = submissionRepository;
         this.criteriaRepository = criteriaRepository;
         this.judgeAssignmentRepository = judgeAssignmentRepository;
@@ -143,11 +147,18 @@ public class EvaluationService {
                 .toList();
 
         int pending = (int) submissionDtos.stream().filter(item -> !"Finalized".equals(item.evaluationStatus())).count();
+        int activeRoundCount = (int) submissionDtos.stream()
+                .map(EvaluationSubmissionDto::roundId)
+                .distinct()
+                .count();
+        int finalizedSubmissionCount = (int) evaluationsBySubmission.values().stream()
+                .filter(evaluation -> "Finalized".equalsIgnoreCase(evaluation.getStatus()))
+                .count();
         return new JudgeDashboardDto(
-                roundDtos.size(),
+                activeRoundCount,
                 submissionDtos.size(),
                 pending,
-                (int) scoreRepository.countByJudgeAssignmentJudgeRoleUserRoleId(judgeRole.getUserRoleId()),
+                finalizedSubmissionCount,
                 roundDtos,
                 submissionDtos
         );
@@ -273,8 +284,13 @@ public class EvaluationService {
         if (finalize) {
             evaluation.setStatus("Finalized");
             evaluation.setFinalizedAt(LocalDateTime.now());
-            evaluationRepository.save(evaluation);
+        } else {
+            // Saving an edited submitted evaluation withdraws it from coordinator readiness
+            // until the judge explicitly submits the completed scores again.
+            evaluation.setStatus("Draft");
+            evaluation.setFinalizedAt(null);
         }
+        evaluationRepository.save(evaluation);
 
         if (SubmissionStatus.from(submission.getStatus()) == SubmissionStatus.SUBMITTED) {
             submission.setStatus(SubmissionStatus.EVALUATING.getDbValue());
@@ -285,7 +301,7 @@ public class EvaluationService {
         }
         auditLogService.record(
                 actor,
-                finalize ? "JUDGE_SCORES_FINALIZED" : "JUDGE_SCORES_SAVED_DRAFT",
+                finalize ? "JUDGE_SCORES_SUBMITTED" : "JUDGE_SCORES_SAVED_DRAFT",
                 "SUBMISSION",
                 submission.getSubmissionId(),
                 null,
@@ -296,7 +312,7 @@ public class EvaluationService {
                         "evaluationStatus", finalize ? "Finalized" : "Draft"
                 ),
                 finalize
-                        ? "Judge finalized criterion scores for submission " + submission.getTeam().getTeamName()
+                        ? "Judge submitted criterion scores to the coordinator for submission " + submission.getTeam().getTeamName()
                         : "Judge saved draft criterion scores for submission " + submission.getTeam().getTeamName()
         );
         return getScoreForm(authentication, submissionId);
@@ -335,6 +351,11 @@ public class EvaluationService {
     @Transactional
     public FeedbackDto addFeedback(Authentication authentication, Integer submissionId, FeedbackRequest request) {
         SubmissionEntity submission = getSubmissionOrThrow(submissionId);
+        HackathonEventEntity event = eventFor(submission);
+        if (isEventEnded(event)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Feedback can no longer be added after the event has ended");
+        }
         UserEntity actor = currentUser(authentication);
         UserRoleEntity authorRole = requireFeedbackAccess(authentication, submission, true);
         FeedbackEntity saved = appendFeedback(submission, authorRole, authorRole.getRoleType(), request.feedbackText());
@@ -482,6 +503,14 @@ public class EvaluationService {
     }
 
     private JudgeAssignmentEntity requireJudgeAssignment(SubmissionEntity submission, Integer judgeRoleId) {
+        if (Boolean.TRUE.equals(submission.getRound().getFinalRound())) {
+            return judgeAssignmentRepository
+                    .findByRoundRoundIdAndJudgeRoleUserRoleId(
+                            submission.getRound().getRoundId(),
+                            judgeRoleId
+                    )
+                    .orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN, "This submission is not assigned to the current judge"));
+        }
         return judgeAssignmentRepository
                 .findByRoundRoundIdAndTrackTrackIdAndJudgeRoleUserRoleId(
                         submission.getRound().getRoundId(),
@@ -492,6 +521,14 @@ public class EvaluationService {
     }
 
     private boolean isJudgeAssigned(SubmissionEntity submission, Integer judgeRoleId) {
+        if (Boolean.TRUE.equals(submission.getRound().getFinalRound())) {
+            return judgeAssignmentRepository
+                    .findByRoundRoundIdAndJudgeRoleUserRoleId(
+                            submission.getRound().getRoundId(),
+                            judgeRoleId
+                    )
+                    .isPresent();
+        }
         return judgeAssignmentRepository
                 .findByRoundRoundIdAndTrackTrackIdAndJudgeRoleUserRoleId(
                         submission.getRound().getRoundId(),
@@ -530,9 +567,6 @@ public class EvaluationService {
         }
         if (submissionStatus == SubmissionStatus.DISQUALIFIED) {
             return "Disqualified submissions cannot be scored";
-        }
-        if (evaluation != null && "Finalized".equalsIgnoreCase(evaluation.getStatus())) {
-            return "Finalized scores cannot be changed unless the coordinator reopens the evaluation";
         }
         return null;
     }
@@ -576,9 +610,11 @@ public class EvaluationService {
                                                 List<SubmissionEntity> submissions,
                                                 Map<Integer, JudgeEvaluationEntity> evaluationsBySubmission,
                                                 HackathonEventEntity event) {
+        boolean finalRound = Boolean.TRUE.equals(assignment.getRound().getFinalRound());
         List<SubmissionEntity> matchingSubmissions = submissions.stream()
                 .filter(submission -> submission.getRound().getRoundId().equals(assignment.getRound().getRoundId()))
-                .filter(submission -> submission.getTeam().getTrack().getTrackId().equals(assignment.getTrack().getTrackId()))
+                .filter(submission -> finalRound
+                        || submission.getTeam().getTrack().getTrackId().equals(assignment.getTrack().getTrackId()))
                 .toList();
         int scoredSubmissions = (int) matchingSubmissions.stream()
                 .filter(submission -> {
@@ -594,9 +630,10 @@ public class EvaluationService {
                 assignment.getRound().getRoundName(),
                 assignment.getRound().getRoundOrder(),
                 assignment.getRound().getSubmissionDeadline(),
+                resolveScoringDeadline(assignment.getRound(), event),
                 isRoundScoringLocked(assignment, event),
-                assignment.getTrack().getTrackId(),
-                assignment.getTrack().getName(),
+                finalRound ? null : assignment.getTrack().getTrackId(),
+                finalRound ? "All finalists" : assignment.getTrack().getName(),
                 matchingSubmissions.size(),
                 scoredSubmissions
         );
@@ -639,8 +676,10 @@ public class EvaluationService {
                 submission.getTeam().getTrack().getName(),
                 submission.getRound().getRoundId(),
                 submission.getRound().getRoundName(),
+                Boolean.TRUE.equals(submission.getRound().getFinalRound()),
                 submission.getRound().getRoundOrder(),
                 submission.getRound().getSubmissionDeadline(),
+                resolveScoringDeadline(submission.getRound(), event),
                 Boolean.TRUE.equals(submission.getRound().getScoreLocked()),
                 submission.getRepositoryUrl(),
                 submission.getDemoUrl(),
@@ -705,8 +744,22 @@ public class EvaluationService {
         return deadline == null || LocalDateTime.now().isBefore(deadline);
     }
 
+    private LocalDateTime resolveScoringDeadline(com.seal.hackathon.event.entity.RoundEntity round,
+                                                 HackathonEventEntity event) {
+        if (round == null) {
+            return null;
+        }
+        if (Boolean.TRUE.equals(round.getFinalRound())) {
+            return round.getEndAt() != null ? round.getEndAt() : event == null ? null : event.getCompetitionEndAt();
+        }
+        return roundRepository.findByEventIdAndRoundOrder(round.getEventId(), round.getRoundOrder() + 1)
+                .map(nextRound -> nextRound.getStartAt() != null ? nextRound.getStartAt() : nextRound.getSubmissionDeadline())
+                .orElseGet(() -> round.getEndAt() != null ? round.getEndAt() : event == null ? null : event.getCompetitionEndAt());
+    }
+
     private MentorTeamDto toMentorTeamDto(TeamEntity team, List<SubmissionEntity> submissions) {
         HackathonEventEntity event = eventRepository.findById(team.getTrack().getEventId()).orElse(null);
+        boolean feedbackEnabled = event != null && !isEventEnded(event);
         List<EvaluationSubmissionDto> submissionDtos = submissions.stream()
                 .sorted(Comparator.comparing(submission -> submission.getRound().getRoundOrder()))
                 .map(submission -> toEvaluationSubmissionDto(submission, null, List.of(), 0, null))
@@ -718,6 +771,8 @@ public class EvaluationService {
                 team.getTrack().getName(),
                 team.getTrack().getEventId(),
                 event == null ? null : event.getName(),
+                event == null ? null : effectiveEventStatus(event).getDbValue(),
+                feedbackEnabled,
                 (int) teamMemberRepository.countByTeamTeamId(team.getTeamId()),
                 team.getStatus(),
                 submissionDtos
@@ -800,6 +855,18 @@ public class EvaluationService {
     private HackathonEventEntity eventFor(SubmissionEntity submission) {
         return eventRepository.findById(submission.getTeam().getTrack().getEventId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Event not found"));
+    }
+
+    private boolean isEventEnded(HackathonEventEntity event) {
+        return effectiveEventStatus(event).isTerminal();
+    }
+
+    private EventStatus effectiveEventStatus(HackathonEventEntity event) {
+        if (event.getCompetitionEndAt() != null
+                && !event.getCompetitionEndAt().isAfter(LocalDateTime.now())) {
+            return EventStatus.ENDED;
+        }
+        return EventStatus.from(event.getStatus());
     }
 
     private String normalizeRequired(String value, String fieldName) {

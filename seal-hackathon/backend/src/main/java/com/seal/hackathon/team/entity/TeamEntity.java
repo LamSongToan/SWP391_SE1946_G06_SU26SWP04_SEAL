@@ -44,6 +44,9 @@ public class TeamEntity {
     @Column(name = "join_code", nullable = false, unique = true, length = 12)
     private String joinCode;
 
+    @Column(name = "accept_auto_assigned_members")
+    private Boolean acceptAutoAssignedMembers;
+
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 
@@ -56,6 +59,7 @@ public class TeamEntity {
             joinCode = UUID.randomUUID().toString().replace("-", "")
                     .substring(0, 8).toUpperCase(Locale.ROOT);
         }
+        if (acceptAutoAssignedMembers == null) acceptAutoAssignedMembers = false;
         if (status == null) status = "Forming";
         if (createdAt == null) createdAt = LocalDateTime.now();
     }

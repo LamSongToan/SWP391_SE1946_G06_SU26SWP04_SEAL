@@ -7,6 +7,7 @@ import com.seal.hackathon.event.dto.EventSetupCreateRequest;
 import com.seal.hackathon.event.dto.EventUpsertRequest;
 import com.seal.hackathon.event.dto.EventWizardDetailDto;
 import com.seal.hackathon.event.dto.EventWizardRequest;
+import com.seal.hackathon.event.dto.CancelEventRequest;
 import com.seal.hackathon.event.dto.RoundManagementDto;
 import com.seal.hackathon.event.dto.RoundScoreLockRequest;
 import com.seal.hackathon.event.dto.RoundUpsertRequest;
@@ -105,6 +106,16 @@ public class CoordinatorEventController {
     public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable Integer eventId) {
         eventManagementService.deleteEvent(eventId);
         return ResponseEntity.ok(ApiResponse.ok("Event deleted", null));
+    }
+
+    @PostMapping("/events/{eventId}/cancel")
+    public ResponseEntity<ApiResponse<EventManagementDto>> cancelEvent(
+            @PathVariable Integer eventId,
+            @Valid @RequestBody CancelEventRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Event cancelled",
+                eventManagementService.cancelEvent(eventId, request.reason())
+        ));
     }
 
     @GetMapping("/events/{eventId}/tracks")

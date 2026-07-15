@@ -6,15 +6,9 @@ import com.seal.hackathon.auth.entity.UserRoleEntity;
 import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.repository.UserRoleRepository;
 import com.seal.hackathon.common.ApiException;
-import com.seal.hackathon.evaluation.dto.CalibrationAnalyticsDto;
-import com.seal.hackathon.evaluation.dto.CalibrationScoreRequest;
-import com.seal.hackathon.evaluation.dto.CalibrationSessionDto;
-import com.seal.hackathon.evaluation.dto.CalibrationSessionRequest;
 import com.seal.hackathon.evaluation.dto.FinalizationSubmissionDto;
 import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
-import com.seal.hackathon.evaluation.entity.CalibrationScoreEntity;
-import com.seal.hackathon.evaluation.entity.CalibrationSessionEntity;
 import com.seal.hackathon.evaluation.entity.JudgeAssignmentEntity;
 import com.seal.hackathon.evaluation.entity.JudgeEvaluationEntity;
 import com.seal.hackathon.evaluation.entity.PrizeEntity;
@@ -24,8 +18,6 @@ import com.seal.hackathon.evaluation.entity.ScoreEntity;
 import com.seal.hackathon.evaluation.entity.ScoringCriteriaEntity;
 import com.seal.hackathon.evaluation.entity.TeamPrizeEntity;
 import com.seal.hackathon.evaluation.repository.AuditLogRepository;
-import com.seal.hackathon.evaluation.repository.CalibrationScoreRepository;
-import com.seal.hackathon.evaluation.repository.CalibrationSessionRepository;
 import com.seal.hackathon.evaluation.repository.CriteriaTemplateRepository;
 import com.seal.hackathon.evaluation.repository.JudgeAssignmentRepository;
 import com.seal.hackathon.evaluation.repository.JudgeEvaluationRepository;
@@ -38,9 +30,11 @@ import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.evaluation.service.CoordinatorScoringService;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.RoundEntity;
+import com.seal.hackathon.event.entity.RoundTrackPromotionRuleEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
+import com.seal.hackathon.event.repository.RoundTrackPromotionRuleRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
 import com.seal.hackathon.event.service.EventUpdateNotificationService;
 import com.seal.hackathon.submission.entity.SubmissionEntity;
@@ -86,6 +80,8 @@ class CoordinatorScoringServiceTest {
     @Mock
     private RoundRepository roundRepository;
     @Mock
+    private RoundTrackPromotionRuleRepository promotionRuleRepository;
+    @Mock
     private TrackRepository trackRepository;
     @Mock
     private TeamRepository teamRepository;
@@ -113,10 +109,6 @@ class CoordinatorScoringServiceTest {
     private AuditLogService auditLogService;
     @Mock
     private EventUpdateNotificationService notificationService;
-    @Mock
-    private CalibrationSessionRepository calibrationSessionRepository;
-    @Mock
-    private CalibrationScoreRepository calibrationScoreRepository;
 
     @InjectMocks
     private CoordinatorScoringService coordinatorScoringService;
@@ -159,165 +151,6 @@ class CoordinatorScoringServiceTest {
     }
 
     @Test
-    void getRoundFinalization_shouldIgnoreCalibrationSubmissionsForCompetitionReadiness() {
-        RankingFixture fixture = seedRankingFixture(false);
-        SubmissionEntity calibration = submission(
-                804,
-                team(904, "Calibration Sample", fixture.alpha.getTeam().getTrack()),
-                fixture.round,
-                LocalDateTime.of(2026, 6, 20, 12, 0)
-        );
-        calibration.setCalibration(true);
-        mockCommonLookups(fixture, List.of(fixture.alpha, fixture.beta, fixture.gamma, calibration));
-        when(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(fixture.round.getRoundId())).thenReturn(List.of());
-
-        RoundFinalizationDto dto = coordinatorScoringService.getRoundFinalization(
-                auth(fixture.coordinator.getEmail()),
-                fixture.round.getRoundId()
-        );
-
-        Assertions.assertEquals(3, dto.totalSubmissions());
-        Assertions.assertTrue(dto.canFinalize());
-        Assertions.assertTrue(dto.submissions().stream()
-                .noneMatch(item -> "Calibration Sample".equals(item.teamName())));
-    }
-
-    @Test
-    void createCalibrationSessionAndAnalytics_shouldStoreScoresAndSummaries() {
-        RankingFixture fixture = seedRankingFixture(false);
-        when(userRepository.findByEmailIgnoreCase(fixture.coordinator.getEmail())).thenReturn(Optional.of(fixture.coordinator));
-        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
-                fixture.coordinator.getUserId(),
-                RoleType.COORDINATOR.getDbValue()
-        )).thenReturn(Optional.of(fixture.coordinatorRole));
-        when(roundRepository.findById(fixture.round.getRoundId())).thenReturn(Optional.of(fixture.round));
-        ScoringCriteriaEntity criterion = new ScoringCriteriaEntity();
-        criterion.setCriteriaId(11);
-        criterion.setCriteriaName("Creativity");
-        criterion.setWeight(BigDecimal.TEN);
-        criterion.setCriteriaType("Core");
-        criterion.setRound(fixture.round);
-
-        JudgeAssignmentEntity assignment = new JudgeAssignmentEntity();
-        assignment.setJudgeAssignmentId(21);
-        assignment.setRound(fixture.round);
-        assignment.setTrack(fixture.alpha.getTeam().getTrack());
-        assignment.setJudgeRole(fixture.coordinatorRole);
-
-        CalibrationSessionEntity persistedSession = new CalibrationSessionEntity();
-        persistedSession.setSessionId(100);
-        List<CalibrationScoreEntity> persistedScores = new ArrayList<>();
-
-        when(criteriaRepository.findById(11)).thenReturn(Optional.of(criterion));
-        when(judgeAssignmentRepository.findById(21)).thenReturn(Optional.of(assignment));
-        when(submissionRepository.findDetailedById(fixture.alpha.getSubmissionId())).thenReturn(Optional.of(fixture.alpha));
-        when(calibrationSessionRepository.save(any(CalibrationSessionEntity.class))).thenAnswer(invocation -> {
-            CalibrationSessionEntity session = invocation.getArgument(0);
-            session.setSessionId(100);
-            persistedSession.setSessionId(session.getSessionId());
-            return session;
-        });
-        when(calibrationScoreRepository.save(any(CalibrationScoreEntity.class))).thenAnswer(invocation -> {
-            CalibrationScoreEntity score = invocation.getArgument(0);
-            score.setCalibrationScoreId(1000);
-            persistedScores.add(score);
-            return score;
-        });
-        when(calibrationSessionRepository.findById(100)).thenReturn(Optional.of(persistedSession));
-        when(calibrationScoreRepository.findBySessionSessionIdOrderByScoredAtDesc(100)).thenAnswer(invocation -> new ArrayList<>(persistedScores));
-
-        CalibrationSessionDto session = coordinatorScoringService.createCalibrationSession(
-                auth(fixture.coordinator.getEmail()),
-                fixture.round.getRoundId(),
-                new CalibrationSessionRequest("Mindset calibration", "Active")
-        );
-        Assertions.assertEquals("Mindset calibration", session.title());
-
-        coordinatorScoringService.upsertCalibrationScore(
-                auth(fixture.coordinator.getEmail()),
-                session.sessionId(),
-                new CalibrationScoreRequest(
-                        fixture.alpha.getSubmissionId(),
-                        11,
-                        21,
-                        new BigDecimal("8.50"),
-                        "Good baseline"
-                )
-        );
-
-        CalibrationAnalyticsDto analytics = coordinatorScoringService.getCalibrationAnalytics(
-                auth(fixture.coordinator.getEmail()),
-                session.sessionId()
-        );
-        Assertions.assertEquals(1, analytics.scoreCount());
-        Assertions.assertEquals(new BigDecimal("8.50"), analytics.averageScore());
-    }
-
-    @Test
-    void judgeCanSaveCalibrationScoreAndViewAnalytics() {
-        RankingFixture fixture = seedRankingFixture(false);
-        UserEntity judge = user("judge@seal.test", 30);
-        UserRoleEntity judgeRole = role(300, judge, RoleType.JUDGE);
-        ScoringCriteriaEntity criterion = new ScoringCriteriaEntity();
-        criterion.setCriteriaId(12);
-        criterion.setCriteriaName("Creativity");
-        criterion.setWeight(BigDecimal.TEN);
-        criterion.setCriteriaType("Core");
-        criterion.setRound(fixture.round);
-
-        JudgeAssignmentEntity assignment = new JudgeAssignmentEntity();
-        assignment.setJudgeAssignmentId(22);
-        assignment.setRound(fixture.round);
-        assignment.setTrack(fixture.alpha.getTeam().getTrack());
-        assignment.setJudgeRole(judgeRole);
-
-        CalibrationSessionEntity session = new CalibrationSessionEntity();
-        session.setSessionId(101);
-        List<CalibrationScoreEntity> persistedScores = new ArrayList<>();
-
-        when(userRepository.findByEmailIgnoreCase(judge.getEmail())).thenReturn(Optional.of(judge));
-        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
-                judge.getUserId(),
-                RoleType.COORDINATOR.getDbValue()
-        )).thenReturn(Optional.empty());
-        when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
-                judge.getUserId(),
-                RoleType.JUDGE.getDbValue()
-        )).thenReturn(Optional.of(judgeRole));
-        when(criteriaRepository.findById(12)).thenReturn(Optional.of(criterion));
-        when(judgeAssignmentRepository.findById(22)).thenReturn(Optional.of(assignment));
-        when(submissionRepository.findDetailedById(fixture.alpha.getSubmissionId())).thenReturn(Optional.of(fixture.alpha));
-        when(calibrationSessionRepository.findById(101)).thenReturn(Optional.of(session));
-        when(calibrationScoreRepository.save(any(CalibrationScoreEntity.class))).thenAnswer(invocation -> {
-            CalibrationScoreEntity score = invocation.getArgument(0);
-            score.setCalibrationScoreId(2000);
-            persistedScores.add(score);
-            return score;
-        });
-        when(calibrationScoreRepository.findBySessionSessionIdOrderByScoredAtDesc(101)).thenAnswer(invocation -> new ArrayList<>(persistedScores));
-
-        coordinatorScoringService.upsertCalibrationScore(
-                auth(judge.getEmail()),
-                101,
-                new CalibrationScoreRequest(
-                        fixture.alpha.getSubmissionId(),
-                        12,
-                        22,
-                        new BigDecimal("8.25"),
-                        "Aligned"
-                )
-        );
-
-        CalibrationAnalyticsDto analytics = coordinatorScoringService.getCalibrationAnalytics(
-                auth(judge.getEmail()),
-                101
-        );
-
-        Assertions.assertEquals(1, analytics.scoreCount());
-        Assertions.assertEquals(new BigDecimal("8.25"), analytics.averageScore());
-    }
-
-    @Test
     void finalizeRoundScores_shouldPersistRankingsWithoutPromotingOrEliminatingTeams() {
         RankingFixture fixture = seedRankingFixture(false);
         mockCommonLookups(fixture);
@@ -335,7 +168,8 @@ class CoordinatorScoringServiceTest {
 
         RoundFinalizationDto dto = coordinatorScoringService.finalizeRoundScores(
                 auth(fixture.coordinator.getEmail()),
-                fixture.round.getRoundId()
+                fixture.round.getRoundId(),
+                false
         );
 
         Assertions.assertTrue(dto.scoreLocked());
@@ -410,6 +244,37 @@ class CoordinatorScoringServiceTest {
     }
 
     @Test
+    void calculateRoundQualification_shouldApplyDifferentTopNForEachTrack() {
+        RankingFixture fixture = seedRankingFixture(false);
+        fixture.round.setScoreLocked(true);
+        mockCommonLookups(fixture);
+
+        RoundTrackPromotionRuleEntity webRule = promotionRule(fixture.round.getRoundId(), 701, 2);
+        RoundTrackPromotionRuleEntity aiRule = promotionRule(fixture.round.getRoundId(), 702, 1);
+        when(promotionRuleRepository.findByRoundIdOrderByTrackIdAsc(fixture.round.getRoundId()))
+                .thenReturn(List.of(webRule, aiRule));
+
+        RankingEntity alphaRanking = ranking(fixture.round, fixture.alpha.getTeam(), 1, "90.00");
+        RankingEntity betaRanking = ranking(fixture.round, fixture.beta.getTeam(), 2, "82.00");
+        RankingEntity gammaRanking = ranking(fixture.round, fixture.gamma.getTeam(), 1, "76.00");
+        List<RankingEntity> persistedRankings = new ArrayList<>(List.of(alphaRanking, betaRanking, gammaRanking));
+        when(rankingRepository.findByRoundRoundIdOrderByRankPositionAsc(fixture.round.getRoundId()))
+                .thenReturn(persistedRankings);
+        when(rankingRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        coordinatorScoringService.calculateRoundQualification(
+                auth(fixture.coordinator.getEmail()),
+                fixture.round.getRoundId()
+        );
+
+        Assertions.assertEquals(RankingQualificationStatus.QUALIFIED.getDbValue(), alphaRanking.getQualificationStatus());
+        Assertions.assertEquals(RankingQualificationStatus.QUALIFIED.getDbValue(), betaRanking.getQualificationStatus());
+        Assertions.assertTrue(betaRanking.getQualificationNote().contains("Top 2"));
+        Assertions.assertEquals(RankingQualificationStatus.QUALIFIED.getDbValue(), gammaRanking.getQualificationStatus());
+        Assertions.assertTrue(gammaRanking.getQualificationNote().contains("Top 1"));
+    }
+
+    @Test
     void applyRoundAdvancement_shouldPromoteQualifiedTeamsAndEliminateTheRest() {
         RankingFixture fixture = seedRankingFixture(false);
         fixture.round.setScoreLocked(true);
@@ -462,7 +327,7 @@ class CoordinatorScoringServiceTest {
     void publishEventResults_shouldGenerateAwardsFromFinalRankingAndSaveHistory() {
         RankingFixture fixture = seedRankingFixture(true);
         fixture.round.setScoreLocked(true);
-        fixture.event.setAwardsJson("[{\"awardName\":\"Champion\",\"quantity\":1},{\"awardName\":\"Best Innovation\",\"quantity\":1}]");
+        fixture.event.setAwardsJson("[{\"awardName\":\"Champion\",\"quantity\":1,\"prizeAmountVnd\":20000000},{\"awardName\":\"Best Innovation\",\"quantity\":1,\"prizeAmountVnd\":5000000}]");
         when(userRepository.findByEmailIgnoreCase(fixture.coordinator.getEmail())).thenReturn(Optional.of(fixture.coordinator));
         when(userRoleRepository.findByUserUserIdAndRoleTypeIgnoreCase(
                 fixture.coordinator.getUserId(),
@@ -532,13 +397,17 @@ class CoordinatorScoringServiceTest {
         Assertions.assertEquals(2, published.awardedTeamCount());
         Assertions.assertEquals(2, published.awards().size());
         Assertions.assertEquals("Champion", published.awards().get(0).awardName());
+        Assertions.assertEquals(20000000L, published.awards().get(0).prizeAmountVnd());
         Assertions.assertEquals("Alpha", published.awards().get(0).winners().get(0).teamName());
         Assertions.assertEquals("Best Innovation", published.awards().get(1).awardName());
+        Assertions.assertEquals(5000000L, published.awards().get(1).prizeAmountVnd());
         Assertions.assertEquals("Gamma", published.awards().get(1).winners().get(0).teamName());
         Assertions.assertEquals(2, published.teamAwardHistory().size());
         Assertions.assertEquals("Champion", published.teamAwardHistory().get(0).awardName());
+        Assertions.assertEquals(20000000L, published.teamAwardHistory().get(0).prizeAmountVnd());
         Assertions.assertEquals("Alpha", published.teamAwardHistory().get(0).teamName());
         Assertions.assertEquals("Best Innovation", published.teamAwardHistory().get(1).awardName());
+        Assertions.assertEquals(5000000L, published.teamAwardHistory().get(1).prizeAmountVnd());
         Assertions.assertEquals("Gamma", published.teamAwardHistory().get(1).teamName());
         Assertions.assertEquals(Integer.valueOf(1), alphaRanking.getPrizeId());
         Assertions.assertNull(betaRanking.getPrizeId());
@@ -580,10 +449,12 @@ class CoordinatorScoringServiceTest {
         champion.setPrizeId(1);
         champion.setEvent(fixture.event);
         champion.setPrizeName("Champion");
+        champion.setAmountVnd(20000000L);
         PrizeEntity innovation = new PrizeEntity();
         innovation.setPrizeId(2);
         innovation.setEvent(fixture.event);
         innovation.setPrizeName("Best Innovation");
+        innovation.setAmountVnd(5000000L);
 
         TeamPrizeEntity alphaPrize = new TeamPrizeEntity();
         alphaPrize.setTeamPrizeId(11);
@@ -611,10 +482,12 @@ class CoordinatorScoringServiceTest {
         Assertions.assertEquals(2, status.awardedTeamCount());
         Assertions.assertEquals(2, status.awards().size());
         Assertions.assertEquals("Champion", status.awards().get(0).awardName());
+        Assertions.assertEquals(20000000L, status.awards().get(0).prizeAmountVnd());
         Assertions.assertEquals("Alpha", status.awards().get(0).winners().get(0).teamName());
         Assertions.assertEquals("Web", status.awards().get(0).winners().get(0).trackName());
         Assertions.assertEquals(2, status.teamAwardHistory().size());
         Assertions.assertEquals("Best Innovation", status.teamAwardHistory().get(1).awardName());
+        Assertions.assertEquals(5000000L, status.teamAwardHistory().get(1).prizeAmountVnd());
         Assertions.assertEquals("AI", status.teamAwardHistory().get(1).trackName());
     }
 
@@ -1067,6 +940,14 @@ class CoordinatorScoringServiceTest {
         track.setEventId(eventId);
         track.setName(name);
         return track;
+    }
+
+    private RoundTrackPromotionRuleEntity promotionRule(Integer roundId, Integer trackId, Integer topN) {
+        RoundTrackPromotionRuleEntity rule = new RoundTrackPromotionRuleEntity();
+        rule.setRoundId(roundId);
+        rule.setTrackId(trackId);
+        rule.setTopN(topN);
+        return rule;
     }
 
     private TeamEntity team(Integer teamId, String teamName, TrackEntity track) {

@@ -12,8 +12,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import MarkEmailUnreadRoundedIcon from "@mui/icons-material/MarkEmailUnreadRounded";
 import AuthVisualPanel from "../components/auth/AuthVisualPanel";
+import AppLogo from "../components/branding/AppLogo";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton";
 import {
   authStorage,
@@ -213,15 +213,10 @@ export default function RegisterEmailVerificationPage() {
         }}
       >
         <Box sx={{ width: "100%", maxWidth: 460 }}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1}
-            sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}
-          >
-            <MarkEmailUnreadRoundedIcon sx={{ fontSize: 18 }} />
-            <span>REQUEST ACCOUNT</span>
-          </Stack>
+          <AppLogo variant="full" height={116} sx={{ mb: 2.25 }} />
+          <Typography sx={{ color: brand.colors.orange, fontSize: 13, fontWeight: 900, letterSpacing: 1.2, mb: 1 }}>
+            REQUEST ACCOUNT
+          </Typography>
           <Typography component="h1" sx={{ color: brand.colors.text, fontSize: { xs: 30, md: 36 }, fontWeight: 900, lineHeight: 1.12 }}>
             Verify your email
           </Typography>

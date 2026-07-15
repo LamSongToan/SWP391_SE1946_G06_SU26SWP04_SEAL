@@ -40,6 +40,7 @@ public class SubmissionService {
 
     private static final int MIN_TEAM_SIZE = 3;
     private static final int MAX_TEAM_SIZE = 5;
+    private static final String TEAM_STATUS_DISQUALIFIED = "Disqualified";
     private static final String ACTION_CREATED = "CREATED";
     private static final String ACTION_UPDATED = "UPDATED";
     private static final String GITHUB_HOST = "github.com";
@@ -104,7 +105,15 @@ public class SubmissionService {
                             .filter(submission -> submission.getRound().getRoundId().equals(round.getRoundId()))
                             .findFirst()
                             .orElse(null);
-                    String blockedReason = resolveRoundBlockReason(team, event, round, existing, memberCount, currentUserLeader);
+                    String blockedReason = resolveRoundBlockReason(
+                            team,
+                            event,
+                            round,
+                            existing,
+                            submissions,
+                            memberCount,
+                            currentUserLeader
+                    );
                     return new SubmissionRoundDto(
                             round.getRoundId(),
                             round.getRoundName(),
@@ -229,6 +238,12 @@ public class SubmissionService {
         if (EventStatus.from(event.getStatus()) != EventStatus.ONGOING) {
             throw new ApiException(HttpStatus.CONFLICT, "Submissions are open only while the event is Ongoing");
         }
+        if (TEAM_STATUS_DISQUALIFIED.equalsIgnoreCase(String.valueOf(team.getStatus()))) {
+            throw new ApiException(HttpStatus.CONFLICT, "This team has been disqualified from the event and cannot submit");
+        }
+        if (isBeforeSubmissionOpen(event, round)) {
+            throw new ApiException(HttpStatus.CONFLICT, submissionNotOpenMessage(event, round));
+        }
 
         if (LocalDateTime.now().isAfter(round.getSubmissionDeadline())) {
             throw new ApiException(HttpStatus.CONFLICT, "The submission deadline for this round has passed");
@@ -243,10 +258,19 @@ public class SubmissionService {
         }
 
         if (round.getRoundOrder() != null && round.getRoundOrder() > 1) {
+            List<SubmissionEntity> existingSubmissions = submissionRepository
+                    .findByTeamTeamIdOrderByRoundRoundOrderAscSubmittedAtDesc(team.getTeamId());
+            boolean qualifiedFromPreviousSubmission = existingSubmissions.stream()
+                    .filter(submission -> submission.getRound().getRoundOrder() != null
+                            && submission.getRound().getRoundOrder().equals(round.getRoundOrder() - 1))
+                    .anyMatch(submission -> SubmissionStatus.from(submission.getStatus()) == SubmissionStatus.QUALIFIED);
+            if (qualifiedFromPreviousSubmission) {
+                return;
+            }
             RoundEntity previousRound = roundRepository
                     .findByEventIdAndRoundOrder(eventId, round.getRoundOrder() - 1)
                     .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "Previous round is not configured"));
-            if (!submissionRepository.existsQualifiedRanking(team.getTeamId(), previousRound.getRoundId())) {
+            if (!isTeamQualifiedForRound(team, previousRound, null)) {
                 throw new ApiException(HttpStatus.CONFLICT, "Team is not qualified for this round");
             }
         }
@@ -256,6 +280,7 @@ public class SubmissionService {
                                            HackathonEventEntity event,
                                            RoundEntity round,
                                            SubmissionEntity existing,
+                                           List<SubmissionEntity> existingSubmissions,
                                            long memberCount,
                                            boolean currentUserLeader) {
         if (!currentUserLeader) {
@@ -267,6 +292,12 @@ public class SubmissionService {
         if (EventStatus.from(event.getStatus()) != EventStatus.ONGOING) {
             return "Submissions are open only while the event is Ongoing";
         }
+        if (TEAM_STATUS_DISQUALIFIED.equalsIgnoreCase(String.valueOf(team.getStatus()))) {
+            return "This team has been disqualified from the event";
+        }
+        if (isBeforeSubmissionOpen(event, round)) {
+            return submissionNotOpenMessage(event, round);
+        }
         if (LocalDateTime.now().isAfter(round.getSubmissionDeadline())) {
             return "The submission deadline for this round has passed";
         }
@@ -276,12 +307,62 @@ public class SubmissionService {
             return "A submission requires a valid team with " + minSize + " to " + maxSize + " members";
         }
         if (existing == null && round.getRoundOrder() != null && round.getRoundOrder() > 1) {
+            boolean qualifiedFromPreviousSubmission = existingSubmissions.stream()
+                    .filter(submission -> submission.getRound().getRoundOrder() != null
+                            && submission.getRound().getRoundOrder().equals(round.getRoundOrder() - 1))
+                    .anyMatch(submission -> SubmissionStatus.from(submission.getStatus()) == SubmissionStatus.QUALIFIED);
+            if (qualifiedFromPreviousSubmission) {
+                return null;
+            }
             return roundRepository.findByEventIdAndRoundOrder(event.getEventId(), round.getRoundOrder() - 1)
-                    .filter(previousRound -> submissionRepository.existsQualifiedRanking(team.getTeamId(), previousRound.getRoundId()))
+                    .filter(previousRound -> isTeamQualifiedForRound(team, previousRound, existingSubmissions))
                     .map(previousRound -> (String) null)
                     .orElse("Team is not qualified for this round");
         }
         return null;
+    }
+
+    private boolean isTeamQualifiedForRound(TeamEntity team,
+                                            RoundEntity previousRound,
+                                            List<SubmissionEntity> existingSubmissions) {
+        if (existingSubmissions != null) {
+            boolean qualifiedBySubmissionStatus = existingSubmissions.stream()
+                    .filter(submission -> submission.getRound().getRoundId().equals(previousRound.getRoundId()))
+                    .anyMatch(submission -> SubmissionStatus.from(submission.getStatus()) == SubmissionStatus.QUALIFIED);
+            if (qualifiedBySubmissionStatus) {
+                return true;
+            }
+        }
+
+        return submissionRepository.existsQualifiedRanking(team.getTeamId(), previousRound.getRoundId())
+                || submissionRepository.findByTeamTeamIdAndRoundRoundId(team.getTeamId(), previousRound.getRoundId())
+                .map(submission -> SubmissionStatus.from(submission.getStatus()) == SubmissionStatus.QUALIFIED)
+                .orElse(false);
+    }
+
+    private boolean isBeforeSubmissionOpen(HackathonEventEntity event, RoundEntity round) {
+        LocalDateTime openAt = submissionOpenAt(event, round);
+        return openAt != null && LocalDateTime.now().isBefore(openAt);
+    }
+
+    private LocalDateTime submissionOpenAt(HackathonEventEntity event, RoundEntity round) {
+        LocalDateTime roundStart = round == null ? null : round.getStartAt();
+        LocalDateTime registrationEnd = event == null ? null : event.getRegistrationEndAt();
+        if (roundStart == null) {
+            return registrationEnd;
+        }
+        if (registrationEnd == null) {
+            return roundStart;
+        }
+        return roundStart.isAfter(registrationEnd) ? roundStart : registrationEnd;
+    }
+
+    private String submissionNotOpenMessage(HackathonEventEntity event, RoundEntity round) {
+        LocalDateTime openAt = submissionOpenAt(event, round);
+        if (openAt == null) {
+            return "Submission is not open for this round yet";
+        }
+        return "Submission opens at " + openAt;
     }
 
     private void validateUrls(SubmissionRequest request) {
@@ -473,6 +554,7 @@ public class SubmissionService {
         boolean editable = currentUserLeader
                 && SubmissionStatus.from(submission.getStatus()) == SubmissionStatus.SUBMITTED
                 && EventStatus.from(event.getStatus()) == EventStatus.ONGOING
+                && !isBeforeSubmissionOpen(event, round)
                 && !LocalDateTime.now().isAfter(round.getSubmissionDeadline());
 
         StudentProfileEntity submittedBy = submission.getSubmittedBy();

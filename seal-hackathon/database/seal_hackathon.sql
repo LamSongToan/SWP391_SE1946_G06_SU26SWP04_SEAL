@@ -1,13 +1,14 @@
-IF EXISTS (
-    SELECT name 
-    FROM sys.databases 
-    WHERE name = 'SEAL_Hackathon_G06'
-)
-BEGIN
-    ALTER DATABASE SEAL_Hackathon_G06 
-    SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+USE master;
+GO
 
-    DROP DATABASE SEAL_Hackathon_G06;
+IF DB_ID(N'SEAL_Hackathon_G06') IS NOT NULL
+BEGIN
+    EXEC(N'
+        ALTER DATABASE [SEAL_Hackathon_G06]
+        SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    ');
+
+    EXEC(N'DROP DATABASE [SEAL_Hackathon_G06];');
 END
 GO
 
@@ -122,6 +123,8 @@ CREATE TABLE HackathonEvent (
     competition_start_at DATETIME NULL,
     competition_end_at DATETIME NULL,
     track_selection_mode VARCHAR(30) NULL,
+    min_team_size INT NULL,
+    max_team_size INT NULL,
     ranking_method VARCHAR(50) NULL,
     awards_json NVARCHAR(MAX) NULL,
     scoring_criteria_json NVARCHAR(MAX) NULL,
@@ -136,7 +139,9 @@ CREATE TABLE HackathonEvent (
 CREATE TABLE Track (
     track_id INT IDENTITY(1,1) PRIMARY KEY,
     event_id INT NOT NULL,
-    name NVARCHAR(100) NOT NULL, 
+    name NVARCHAR(100) NOT NULL,
+    min_teams INT NULL,
+    max_teams INT NULL,
     FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE,
     CONSTRAINT UQ_Track_Event_Name UNIQUE (event_id, name)
 );
@@ -154,6 +159,19 @@ CREATE TABLE Round (
     score_locked BIT NOT NULL DEFAULT 0,
     FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE,
     CONSTRAINT UQ_Round_Event_Order UNIQUE (event_id, round_order)
+);
+
+CREATE TABLE RoundTrackPromotionRule (
+    promotion_rule_id INT IDENTITY(1,1) PRIMARY KEY,
+    round_id INT NOT NULL,
+    track_id INT NOT NULL,
+    top_n INT NOT NULL,
+    CONSTRAINT CK_RoundTrackPromotionRule_TopN CHECK (top_n >= 1),
+    CONSTRAINT UQ_RoundTrackPromotionRule_Round_Track UNIQUE (round_id, track_id),
+    CONSTRAINT FK_RoundTrackPromotionRule_Round
+        FOREIGN KEY (round_id) REFERENCES Round(round_id) ON DELETE CASCADE,
+    CONSTRAINT FK_RoundTrackPromotionRule_Track
+        FOREIGN KEY (track_id) REFERENCES Track(track_id)
 );
 
 CREATE TABLE ScoringCriteria (
@@ -175,6 +193,7 @@ CREATE TABLE Team (
     team_name NVARCHAR(100) NOT NULL,
     join_code VARCHAR(12) NOT NULL UNIQUE
         DEFAULT UPPER(LEFT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 8)),
+    accept_auto_assigned_members BIT NOT NULL DEFAULT 0,
     status VARCHAR(50) DEFAULT 'Forming',
     created_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (track_id) REFERENCES Track(track_id) ON DELETE CASCADE,
@@ -195,10 +214,12 @@ CREATE TABLE TeamInvitation (
     team_id INT NOT NULL,
     invitee_user_role_id INT NOT NULL,
     invited_by_user_role_id INT NOT NULL,
+    invitation_type VARCHAR(50) NOT NULL DEFAULT 'MEMBER_INVITE',
     status VARCHAR(50) NOT NULL DEFAULT 'Pending',
     created_at DATETIME DEFAULT GETDATE(),
     responded_at DATETIME NULL,
     CHECK (status IN ('Pending', 'Accepted', 'Rejected', 'Cancelled')),
+    CHECK (invitation_type IN ('MEMBER_INVITE', 'LEADERSHIP_TRANSFER')),
     FOREIGN KEY (team_id) REFERENCES Team(team_id) ON DELETE CASCADE,
     FOREIGN KEY (invitee_user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION,
     FOREIGN KEY (invited_by_user_role_id) REFERENCES StudentProfile(user_role_id) ON DELETE NO ACTION
@@ -254,7 +275,7 @@ CREATE TABLE EventCoordinatorAssignment (
 GO
 
 -- =======================================================
--- 5. SUBMISSIONS, SCORING & RESEARCH (RBL)
+-- 5. SUBMISSIONS & SCORING
 -- =======================================================
 CREATE TABLE Submission (
     submission_id INT IDENTITY(1,1) PRIMARY KEY,
@@ -264,7 +285,6 @@ CREATE TABLE Submission (
     demo_url VARCHAR(1000),
     slide_url VARCHAR(1000),
     github_metadata NVARCHAR(MAX), 
-    is_calibration BIT DEFAULT 0,
     status VARCHAR(50) DEFAULT 'Submitted',
     CHECK (status IN ('Submitted', 'Evaluating', 'Qualified', 'Eliminated', 'Disqualified', 'Finalized')),
     submitted_at DATETIME DEFAULT GETDATE(),
@@ -349,30 +369,6 @@ CREATE TABLE Feedback (
     FOREIGN KEY (author_user_role_id) REFERENCES UserRole(user_role_id) ON DELETE NO ACTION
 );
 
-CREATE TABLE CalibrationSession (
-    session_id INT IDENTITY(1,1) PRIMARY KEY,
-    round_id INT NOT NULL,
-    title NVARCHAR(150) NOT NULL,
-    status VARCHAR(50) DEFAULT 'Active',
-    created_at DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (round_id) REFERENCES Round(round_id) ON DELETE CASCADE
-);
-
-CREATE TABLE CalibrationScore (
-    calibration_score_id INT IDENTITY(1,1) PRIMARY KEY,
-    session_id INT NOT NULL,
-    submission_id INT NOT NULL,
-    criteria_id INT NOT NULL,
-    judge_assignment_id INT NOT NULL,
-    score_value DECIMAL(5,2) NOT NULL,
-    comment NVARCHAR(MAX),
-    scored_at DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (session_id) REFERENCES CalibrationSession(session_id) ON DELETE CASCADE,
-    FOREIGN KEY (submission_id) REFERENCES Submission(submission_id) ON DELETE NO ACTION,
-    FOREIGN KEY (criteria_id) REFERENCES ScoringCriteria(criteria_id) ON DELETE NO ACTION,
-    FOREIGN KEY (judge_assignment_id) REFERENCES JudgeAssignment(judge_assignment_id) ON DELETE NO ACTION
-);
-
 -- =======================================================
 -- 6. PRIZES, RANKINGS & AUDITS
 -- =======================================================
@@ -399,7 +395,8 @@ CREATE TABLE CriteriaTemplateItem (
 CREATE TABLE Prize (
     prize_id INT IDENTITY(1,1) PRIMARY KEY,
     event_id INT NOT NULL,
-    prize_name NVARCHAR(100) NOT NULL, 
+    prize_name NVARCHAR(100) NOT NULL,
+    amount_vnd BIGINT NOT NULL DEFAULT 0,
     FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id) ON DELETE CASCADE
 );
 

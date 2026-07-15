@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -13,12 +14,10 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  FormControl,
+  FormControlLabel,
+  FormGroup,
   Grid2,
-  InputLabel,
   MenuItem,
-  OutlinedInput,
-  Select,
   Stack,
   Table,
   TableBody,
@@ -41,7 +40,6 @@ const STATUS_COLOR = {
 };
 
 const STATUS_OPTIONS = ["PendingApproval", "Active", "Rejected", "Suspended"];
-const ROLE_OPTIONS = ["STUDENT", "MENTOR", "JUDGE", "COORDINATOR"];
 
 function normalizeStatus(status) {
   const value = String(status || "").trim().toUpperCase();
@@ -63,6 +61,10 @@ function RegistrationInfoRow({ label, value }) {
       </Typography>
     </Box>
   );
+}
+
+function hasRole(roles, role) {
+  return Array.isArray(roles) && roles.includes(role);
 }
 
 export default function AccountApprovalPanel() {
@@ -268,6 +270,27 @@ export default function AccountApprovalPanel() {
     setEditForm((prev) => ({ ...prev, [key]: event.target.value }));
   };
 
+  const toggleRole = (role) => (_, checked) => {
+    setEditForm((prev) => {
+      const next = new Set(prev.roles || []);
+      if (role === "STUDENT") {
+        if (checked) {
+          return { ...prev, roles: ["STUDENT"] };
+        }
+        next.delete("STUDENT");
+        return { ...prev, roles: Array.from(next) };
+      }
+
+      if (checked) {
+        next.delete("STUDENT");
+        next.add(role);
+      } else {
+        next.delete(role);
+      }
+      return { ...prev, roles: Array.from(next) };
+    });
+  };
+
   const saveDetails = async () => {
     if (!managedUser?.userId) {
       setDetailError("Cannot save because the selected user does not include userId.");
@@ -299,6 +322,12 @@ export default function AccountApprovalPanel() {
       setDetailSaving(false);
     }
   };
+
+  const roleSelectionInvalid = !editForm.roles.length;
+  const studentRoleSelected = hasRole(editForm.roles, "STUDENT");
+  const mentorRoleSelected = hasRole(editForm.roles, "MENTOR");
+  const judgeRoleSelected = hasRole(editForm.roles, "JUDGE");
+  const coordinatorRoleSelected = hasRole(editForm.roles, "COORDINATOR");
 
   return (
     <Box>
@@ -684,30 +713,105 @@ export default function AccountApprovalPanel() {
                 </Alert>
               ) : null}
 
-              <FormControl fullWidth>
-                <InputLabel id="role-select-label">Roles</InputLabel>
-                <Select
-                  labelId="role-select-label"
-                  multiple
-                  value={editForm.roles}
-                  onChange={updateField("roles")}
-                  input={<OutlinedInput label="Roles" />}
-                  renderValue={(selected) => selected.join(", ")}
-                >
-                  {ROLE_OPTIONS.map((role) => (
-                    <MenuItem key={role} value={role}>{role}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Alert severity="info">
-                For accounts that already have a student profile, do not remove STUDENT role to avoid profile data conflicts.
+              <Box
+                sx={{
+                  border: `1px solid ${brand.colors.line}`,
+                  borderRadius: 3,
+                  p: 1.6,
+                  bgcolor: brand.colors.surfaceSoft,
+                }}
+              >
+                <Typography sx={{ fontWeight: 850, mb: 1 }}>Roles</Typography>
+                <Stack spacing={1.3}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.6 }}>
+                      Student access
+                    </Typography>
+                    <FormGroup>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={studentRoleSelected}
+                            onChange={toggleRole("STUDENT")}
+                            disabled={mentorRoleSelected || judgeRoleSelected || coordinatorRoleSelected}
+                          />
+                        }
+                        label="Student"
+                      />
+                    </FormGroup>
+                    <Typography variant="caption" color="text.secondary">
+                      Student role stays separate from mentor, judge, and coordinator access.
+                    </Typography>
+                  </Box>
+
+                  <Divider />
+
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.6 }}>
+                      Academic staff capabilities
+                    </Typography>
+                    <FormGroup row>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={mentorRoleSelected}
+                            onChange={toggleRole("MENTOR")}
+                            disabled={studentRoleSelected}
+                          />
+                        }
+                        label="Mentor"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={judgeRoleSelected}
+                            onChange={toggleRole("JUDGE")}
+                            disabled={studentRoleSelected}
+                          />
+                        }
+                        label="Judge"
+                      />
+                    </FormGroup>
+                    <Typography variant="caption" color="text.secondary">
+                      A lecturer can hold Mentor and Judge together, but only across different tracks in the same event.
+                    </Typography>
+                  </Box>
+
+                  <Divider />
+
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.6 }}>
+                      Coordinator access
+                    </Typography>
+                    <FormGroup>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={coordinatorRoleSelected}
+                            onChange={toggleRole("COORDINATOR")}
+                            disabled={studentRoleSelected}
+                          />
+                        }
+                        label="Coordinator"
+                      />
+                    </FormGroup>
+                    <Typography variant="caption" color="text.secondary">
+                      Coordinator can coexist with mentor/judge access, but cannot coexist with student access.
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+              <Alert severity={roleSelectionInvalid ? "warning" : "info"}>
+                {roleSelectionInvalid
+                  ? "Choose at least one role before saving."
+                  : "If a user mentors a track, they can only judge other tracks in that event. Mentors cannot judge that event's final round."}
               </Alert>
             </Stack>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDetails} disabled={detailSaving}>Cancel</Button>
-          <Button variant="contained" onClick={saveDetails} disabled={detailLoading || detailSaving || !managedUser?.userId}>
+          <Button variant="contained" onClick={saveDetails} disabled={detailLoading || detailSaving || !managedUser?.userId || roleSelectionInvalid}>
             {detailSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogActions>

@@ -7,6 +7,8 @@ import com.seal.hackathon.auth.repository.StudentProfileRepository;
 import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.common.ApiException;
 import com.seal.hackathon.evaluation.service.AuditLogService;
+import com.seal.hackathon.evaluation.dto.TeamLeaderboardDto;
+import com.seal.hackathon.evaluation.service.LeaderboardService;
 import com.seal.hackathon.event.dto.TrackDto;
 import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
@@ -21,10 +23,12 @@ import com.seal.hackathon.team.dto.RegisterTeamForEventRequest;
 import com.seal.hackathon.team.dto.TeamDto;
 import com.seal.hackathon.team.dto.TeamInvitationDto;
 import com.seal.hackathon.team.dto.TeamMemberDto;
+import com.seal.hackathon.team.entity.IndividualRegistrationEntity;
 import com.seal.hackathon.team.entity.TeamEntity;
 import com.seal.hackathon.team.entity.TeamInvitationEntity;
 import com.seal.hackathon.team.entity.TeamMemberEntity;
 import com.seal.hackathon.team.entity.TeamMemberId;
+import com.seal.hackathon.team.repository.IndividualRegistrationRepository;
 import com.seal.hackathon.team.repository.TeamInvitationRepository;
 import com.seal.hackathon.team.repository.TeamMemberRepository;
 import com.seal.hackathon.team.repository.TeamRepository;
@@ -35,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -48,10 +53,14 @@ public class TeamService {
     private static final int MAX_TEAM_SIZE = 5;
     private static final String TEAM_STATUS_FORMING = "Forming";
     private static final String TEAM_STATUS_READY = "Ready";
+    private static final String TEAM_STATUS_DISQUALIFIED = "Disqualified";
+    private static final String INVITATION_TYPE_MEMBER = "MEMBER_INVITE";
+    private static final String INVITATION_TYPE_LEADERSHIP = "LEADERSHIP_TRANSFER";
 
     private final TeamRepository teamRepository;
     private final TeamMemberRepository memberRepository;
     private final TeamInvitationRepository invitationRepository;
+    private final IndividualRegistrationRepository individualRegistrationRepository;
     private final StudentProfileRepository studentProfileRepository;
     private final UserRepository userRepository;
     private final TrackRepository trackRepository;
@@ -59,20 +68,24 @@ public class TeamService {
     private final SubmissionRepository submissionRepository;
     private final AuditLogService auditLogService;
     private final EventUpdateNotificationService notificationService;
+    private final LeaderboardService leaderboardService;
 
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository memberRepository,
                        TeamInvitationRepository invitationRepository,
+                       IndividualRegistrationRepository individualRegistrationRepository,
                        StudentProfileRepository studentProfileRepository,
                        UserRepository userRepository,
                        TrackRepository trackRepository,
                        HackathonEventRepository eventRepository,
                        SubmissionRepository submissionRepository,
                        AuditLogService auditLogService,
-                       EventUpdateNotificationService notificationService) {
+                       EventUpdateNotificationService notificationService,
+                       LeaderboardService leaderboardService) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.invitationRepository = invitationRepository;
+        this.individualRegistrationRepository = individualRegistrationRepository;
         this.studentProfileRepository = studentProfileRepository;
         this.userRepository = userRepository;
         this.trackRepository = trackRepository;
@@ -80,6 +93,7 @@ public class TeamService {
         this.submissionRepository = submissionRepository;
         this.auditLogService = auditLogService;
         this.notificationService = notificationService;
+        this.leaderboardService = leaderboardService;
     }
 
     @Transactional(readOnly = true)
@@ -100,6 +114,18 @@ public class TeamService {
     }
 
     @Transactional(readOnly = true)
+    public TeamLeaderboardDto getTeamLeaderboard(Authentication authentication, Integer teamId) {
+        StudentProfileEntity student = currentStudent(authentication);
+        TeamEntity team = getTeamOrThrow(teamId);
+        requireMember(teamId, student.getUserRoleId());
+        HackathonEventEntity event = getRegisteredEvent(team);
+        if (event == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "This team is not registered in an event");
+        }
+        return leaderboardService.buildTeamLeaderboard(event, team);
+    }
+
+    @Transactional(readOnly = true)
     public List<TrackDto> listRegistrationTracks(Integer eventId) {
         HackathonEventEntity event = getEventOrThrow(eventId);
         return trackRepository.findByEventIdOrderByTrackIdAsc(eventId)
@@ -110,7 +136,9 @@ public class TeamService {
                         track.getName(),
                         track.getMinTeams(),
                         track.getMaxTeams(),
-                        teamRepository.countByTrackTrackId(track.getTrackId())
+                        teamRepository.countByTrackTrackId(track.getTrackId()),
+                        false,
+                        null
                 ))
                 .toList();
     }
@@ -123,9 +151,35 @@ public class TeamService {
         TeamEntity team = new TeamEntity();
         team.setLeader(leader);
         team.setTeamName(teamName);
+        team.setAcceptAutoAssignedMembers(Boolean.TRUE.equals(request.acceptAutoAssignedMembers()));
         team = teamRepository.save(team);
         addMember(team, leader);
         updateTeamMembershipStatus(team);
+        return toTeamDto(team, leader.getUserRoleId());
+    }
+
+    @Transactional
+    public TeamDto updateAutoAssignmentPreference(Authentication authentication,
+                                                  Integer teamId,
+                                                  boolean acceptAutoAssignedMembers) {
+        StudentProfileEntity leader = currentStudent(authentication);
+        TeamEntity team = getTeamOrThrow(teamId);
+        requireLeader(team, leader);
+        requireAutoAssignmentPreferenceEditable(team);
+
+        team.setAcceptAutoAssignedMembers(acceptAutoAssignedMembers);
+        teamRepository.save(team);
+
+        auditLogService.record(
+                "TEAM_AUTO_ASSIGNMENT_PREFERENCE_UPDATED",
+                "TEAM",
+                team.getTeamId(),
+                team.getTeamName(),
+                Map.of("acceptAutoAssignedMembers", !acceptAutoAssignedMembers),
+                Map.of("acceptAutoAssignedMembers", acceptAutoAssignedMembers),
+                "Leader updated the team preference for coordinator/system-added members"
+        );
+
         return toTeamDto(team, leader.getUserRoleId());
     }
 
@@ -154,6 +208,20 @@ public class TeamService {
                 throw new ApiException(HttpStatus.CONFLICT,
                         "A member of this team is already participating in another team for this event");
             }
+            IndividualRegistrationEntity existingIndividualRegistration = individualRegistrationRepository
+                    .findByEventEventIdAndStudentUserRoleId(event.getEventId(), member.getStudent().getUserRoleId())
+                    .orElse(null);
+            if (existingIndividualRegistration != null) {
+                String memberName = existingIndividualRegistration.getStudent() != null
+                        && existingIndividualRegistration.getStudent().getUserRole() != null
+                        && existingIndividualRegistration.getStudent().getUserRole().getUser() != null
+                        ? existingIndividualRegistration.getStudent().getUserRole().getUser().getFullName()
+                        : "A team member";
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        memberName + " already has an individual registration in this event"
+                );
+            }
         }
 
         String teamName = team.getTeamName() == null ? "" : team.getTeamName().trim();
@@ -180,7 +248,7 @@ public class TeamService {
         StudentProfileEntity leader = currentStudent(authentication);
         TeamEntity team = getTeamOrThrow(teamId);
         requireLeader(team, leader);
-        requireTeamRegistrationOpen(team);
+        requireTeamRosterEditable(team);
         requireAvailableInvitationSlot(team);
 
         UserEntity invitedUser = findUserByIdentifier(identifier);
@@ -203,6 +271,7 @@ public class TeamService {
         invitation.setTeam(team);
         invitation.setInvitee(invitee);
         invitation.setInvitedBy(leader);
+        invitation.setInvitationType(INVITATION_TYPE_MEMBER);
         return toInvitationDto(invitationRepository.save(invitation));
     }
 
@@ -233,12 +302,19 @@ public class TeamService {
         TeamInvitationEntity invitation = getInvitationOrThrow(invitationId);
         requireInvitee(invitation, student);
         requirePending(invitation);
-        requireTeamRegistrationOpen(invitation.getTeam());
-        requireAvailableSlot(invitation.getTeam());
-        validateCanJoin(invitation.getTeam(), student);
-
-        addMember(invitation.getTeam(), student);
-        updateTeamMembershipStatus(invitation.getTeam());
+        if (INVITATION_TYPE_LEADERSHIP.equalsIgnoreCase(normalizeInvitationType(invitation))) {
+            requireLeadershipTransferEligible(invitation, student);
+            TeamEntity team = invitation.getTeam();
+            team.setLeader(student);
+            teamRepository.save(team);
+            cancelOtherPendingLeadershipTransfers(team.getTeamId(), invitation.getInvitationId());
+        } else {
+            requireTeamRosterEditable(invitation.getTeam());
+            requireAvailableSlot(invitation.getTeam());
+            validateCanJoin(invitation.getTeam(), student);
+            addMember(invitation.getTeam(), student);
+            updateTeamMembershipStatus(invitation.getTeam());
+        }
         invitation.setStatus("Accepted");
         invitation.setRespondedAt(LocalDateTime.now());
         invitationRepository.save(invitation);
@@ -262,7 +338,7 @@ public class TeamService {
         StudentProfileEntity leader = currentStudent(authentication);
         TeamEntity team = getTeamOrThrow(teamId);
         requireLeader(team, leader);
-        requireTeamRegistrationOpen(team);
+        requireTeamRosterEditable(team);
 
         TeamInvitationEntity invitation = getInvitationOrThrow(invitationId);
         if (!invitation.getTeam().getTeamId().equals(teamId)) {
@@ -280,7 +356,7 @@ public class TeamService {
         String joinCode = rawJoinCode.trim().toUpperCase(Locale.ROOT);
         TeamEntity team = teamRepository.findByJoinCodeIgnoreCase(joinCode)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Invalid team join code"));
-        requireTeamRegistrationOpen(team);
+        requireTeamRosterEditable(team);
         requireAvailableSlot(team);
         validateCanJoin(team, student);
         addMember(team, student);
@@ -293,7 +369,7 @@ public class TeamService {
         StudentProfileEntity leader = currentStudent(authentication);
         TeamEntity team = getTeamOrThrow(teamId);
         requireLeader(team, leader);
-        requireTeamRegistrationOpen(team);
+        requireTeamRosterEditable(team);
 
         if (team.getLeader().getUserRoleId().equals(userRoleId)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Team leader cannot be removed from the team");
@@ -309,11 +385,11 @@ public class TeamService {
     }
 
     @Transactional
-    public TeamDto transferLeadership(Authentication authentication, Integer teamId, Integer newLeaderUserRoleId) {
+    public TeamInvitationDto transferLeadership(Authentication authentication, Integer teamId, Integer newLeaderUserRoleId) {
         StudentProfileEntity leader = currentStudent(authentication);
         TeamEntity team = getTeamOrThrow(teamId);
         requireLeader(team, leader);
-        requireTeamRegistrationOpen(team);
+        requireTeamRosterEditable(team);
 
         if (team.getLeader().getUserRoleId().equals(newLeaderUserRoleId)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Selected member is already the team leader");
@@ -322,17 +398,30 @@ public class TeamService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "New team leader must be an existing team member");
         }
 
-        StudentProfileEntity newLeader = studentProfileRepository.findById(newLeaderUserRoleId)
+        StudentProfileEntity invitee = studentProfileRepository.findById(newLeaderUserRoleId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Student profile not found"));
-        team.setLeader(newLeader);
-        return toTeamDto(teamRepository.save(team), leader.getUserRoleId());
+        invitationRepository.findByTeamTeamIdAndInviteeUserRoleIdAndStatusIgnoreCaseAndInvitationTypeIgnoreCase(
+                teamId,
+                newLeaderUserRoleId,
+                "Pending",
+                INVITATION_TYPE_LEADERSHIP
+        ).ifPresent(existing -> {
+            throw new ApiException(HttpStatus.CONFLICT, "A pending leadership transfer request already exists for this member");
+        });
+
+        TeamInvitationEntity invitation = new TeamInvitationEntity();
+        invitation.setTeam(team);
+        invitation.setInvitee(invitee);
+        invitation.setInvitedBy(leader);
+        invitation.setInvitationType(INVITATION_TYPE_LEADERSHIP);
+        return toInvitationDto(invitationRepository.save(invitation));
     }
 
     @Transactional
     public void leaveTeam(Authentication authentication, Integer teamId) {
         StudentProfileEntity student = currentStudent(authentication);
         TeamEntity team = getTeamOrThrow(teamId);
-        requireTeamRegistrationOpen(team);
+        requireTeamRosterEditable(team);
         requireMember(teamId, student.getUserRoleId());
 
         if (team.getLeader().getUserRoleId().equals(student.getUserRoleId())) {
@@ -347,7 +436,7 @@ public class TeamService {
         StudentProfileEntity leader = currentStudent(authentication);
         TeamEntity team = getTeamOrThrow(teamId);
         requireLeader(team, leader);
-        requireTeamRegistrationOpen(team);
+        requireTeamRosterEditable(team);
 
         if (teamRepository.countSubmissionsByTeamId(teamId) > 0) {
             throw new ApiException(HttpStatus.CONFLICT, "Team cannot be disbanded after a submission has been created");
@@ -395,6 +484,9 @@ public class TeamService {
 
     private void updateTeamMembershipStatus(TeamEntity team) {
         String previousStatus = team.getStatus();
+        if (TEAM_STATUS_DISQUALIFIED.equalsIgnoreCase(String.valueOf(previousStatus))) {
+            return;
+        }
         long memberCount = memberRepository.countByTeamTeamId(team.getTeamId());
         HackathonEventEntity activeEvent = getActiveEvent(team);
         int minSize = activeEvent == null ? MIN_TEAM_SIZE : minTeamSize(activeEvent);
@@ -479,6 +571,21 @@ public class TeamService {
         requireRegistrationOpen(activeEvent);
     }
 
+    private void requireTeamRosterEditable(TeamEntity team) {
+        HackathonEventEntity registeredEvent = getRegisteredEvent(team);
+        if (registeredEvent == null || isEventFinished(registeredEvent)) {
+            return;
+        }
+        requireRegistrationOpen(registeredEvent);
+        LocalDateTime registrationEndAt = registeredEvent.getRegistrationEndAt();
+        if (registrationEndAt != null && LocalDateTime.now().isAfter(registrationEndAt)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Team roster is locked after the registration deadline and stays locked until the event ends"
+            );
+        }
+    }
+
     private void requireActiveAccount(UserEntity user) {
         if (!Boolean.TRUE.equals(user.getApproved()) || !UserStatus.ACTIVE.isActiveValue(user.getStatus())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Student account must be approved and active before joining a team");
@@ -525,6 +632,55 @@ public class TeamService {
         if (!"Pending".equalsIgnoreCase(invitation.getStatus())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Invitation has already been processed");
         }
+    }
+
+    private void requireLeadershipTransferEligible(TeamInvitationEntity invitation, StudentProfileEntity student) {
+        TeamEntity team = invitation.getTeam();
+        requireTeamRosterEditable(team);
+        if (!INVITATION_TYPE_LEADERSHIP.equalsIgnoreCase(normalizeInvitationType(invitation))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "This invitation is not a leadership transfer request");
+        }
+        if (!memberRepository.existsByTeamTeamIdAndStudentUserRoleId(team.getTeamId(), student.getUserRoleId())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Leadership can only be transferred to an existing team member");
+        }
+        if (team.getLeader().getUserRoleId().equals(student.getUserRoleId())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "You are already the team leader");
+        }
+    }
+
+    private void cancelOtherPendingLeadershipTransfers(Integer teamId, Integer acceptedInvitationId) {
+        invitationRepository.findByTeamTeamIdAndStatusIgnoreCaseAndInvitationTypeIgnoreCase(
+                        teamId,
+                        "Pending",
+                        INVITATION_TYPE_LEADERSHIP
+                ).stream()
+                .filter(invitation -> !invitation.getInvitationId().equals(acceptedInvitationId))
+                .forEach(invitation -> {
+                    invitation.setStatus("Cancelled");
+                    invitation.setRespondedAt(LocalDateTime.now());
+                    invitationRepository.save(invitation);
+                });
+    }
+
+    private String normalizeInvitationType(TeamInvitationEntity invitation) {
+        return invitation.getInvitationType() == null
+                ? INVITATION_TYPE_MEMBER
+                : invitation.getInvitationType().trim().toUpperCase(Locale.ROOT);
+    }
+
+    private void requireAutoAssignmentPreferenceEditable(TeamEntity team) {
+        HackathonEventEntity registeredEvent = getRegisteredEvent(team);
+        if (registeredEvent == null) {
+            return;
+        }
+        LocalDateTime registrationEndAt = registeredEvent.getRegistrationEndAt();
+        if (registrationEndAt != null && LocalDateTime.now().isAfter(registrationEndAt)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "This preference can only be changed before the event registration deadline"
+            );
+        }
+        requireRegistrationOpen(registeredEvent);
     }
 
     private TrackEntity resolveRegistrationTrack(HackathonEventEntity event, Integer requestedTrackId) {
@@ -614,43 +770,60 @@ public class TeamService {
                 .map(member -> toMemberDto(member, team.getLeader().getUserRoleId()))
                 .toList();
         int memberCount = members.size();
-        HackathonEventEntity event = getActiveEvent(team);
+        HackathonEventEntity event = getRegisteredEvent(team);
         TrackEntity activeTrack = event == null ? null : team.getTrack();
         boolean deletable = teamRepository.countSubmissionsByTeamId(team.getTeamId()) == 0;
         int minSize = event == null ? MIN_TEAM_SIZE : minTeamSize(event);
         int maxSize = event == null ? MAX_TEAM_SIZE : maxTeamSize(event);
         boolean valid = memberCount >= minSize && memberCount <= maxSize;
+        boolean disqualified = TEAM_STATUS_DISQUALIFIED.equalsIgnoreCase(String.valueOf(team.getStatus()));
         String validationMessage;
-        if (!valid) {
+        if (disqualified) {
+            validationMessage = "Team has been disqualified from this event.";
+        } else if (!valid) {
             validationMessage = "Invite " + Math.max(0, minSize - memberCount) + " more member(s) to reach the required minimum";
         } else if (event == null) {
             validationMessage = "Team is ready. Register it into an event next.";
+        } else if (isEventFinished(event)) {
+            validationMessage = "Event has ended. Leaderboard and submission history are available in read-only mode.";
         } else {
             validationMessage = "Team is ready with " + memberCount + " members";
         }
-        SubmissionEntity latestSubmission = submissionRepository
-                .findTopByTeamTeamIdOrderBySubmittedAtDesc(team.getTeamId())
+        SubmissionEntity latestSubmission = event == null
+                ? null
+                : submissionRepository.findByTeamTeamIdOrderByRoundRoundOrderAscSubmittedAtDesc(team.getTeamId())
+                .stream()
+                .max(Comparator
+                        .comparing((SubmissionEntity item) -> item.getRound().getRoundOrder(), Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(SubmissionEntity::getSubmittedAt, Comparator.nullsLast(LocalDateTime::compareTo))
+                        .thenComparing(SubmissionEntity::getSubmissionId, Comparator.nullsLast(Integer::compareTo)))
                 .orElse(null);
 
         return new TeamDto(
                 team.getTeamId(),
                 team.getTeamName(),
                 team.getJoinCode(),
-                resolveTeamStatus(memberCount),
+                disqualified ? TEAM_STATUS_DISQUALIFIED : resolveTeamStatus(memberCount),
                 activeTrack == null ? null : activeTrack.getTrackId(),
                 activeTrack == null ? null : activeTrack.getName(),
                 event == null ? null : event.getEventId(),
                 event == null ? null : event.getName(),
+                event == null ? null : event.getStatus(),
+                "No mentor assigned",
                 team.getLeader().getUserRoleId(),
                 team.getLeader().getUserRole().getUser().getFullName(),
                 memberCount,
                 valid,
                 validationMessage,
                 team.getLeader().getUserRoleId().equals(currentUserRoleId),
+                Boolean.TRUE.equals(team.getAcceptAutoAssignedMembers()),
+                canEditAutoAssignedPreference(team),
                 deletable,
                 team.getCreatedAt(),
                 members,
-                latestSubmission == null ? null : latestSubmission.getStatus(),
+                latestSubmission == null ? null : latestSubmission.getSubmissionId(),
+                latestSubmission == null ? null : latestSubmission.getRound().getRoundId(),
+                latestSubmission == null ? (disqualified ? TEAM_STATUS_DISQUALIFIED : null) : latestSubmission.getStatus(),
                 latestSubmission == null ? null : latestSubmission.getRound().getRoundName(),
                 latestSubmission == null ? null : latestSubmission.getRound().getSubmissionDeadline()
         );
@@ -670,7 +843,7 @@ public class TeamService {
 
     private TeamInvitationDto toInvitationDto(TeamInvitationEntity invitation) {
         TeamEntity team = invitation.getTeam();
-        HackathonEventEntity event = getActiveEvent(team);
+        HackathonEventEntity event = getRegisteredEvent(team);
         TrackEntity activeTrack = event == null ? null : team.getTrack();
         return new TeamInvitationDto(
                 invitation.getInvitationId(),
@@ -681,6 +854,7 @@ public class TeamService {
                 invitation.getInvitedBy().getUserRole().getUser().getFullName(),
                 invitation.getInvitee().getUserRole().getUser().getFullName(),
                 invitation.getInvitee().getUserRole().getUser().getUsername(),
+                normalizeInvitationType(invitation),
                 invitation.getStatus(),
                 invitation.getCreatedAt(),
                 invitation.getRespondedAt()
@@ -693,6 +867,25 @@ public class TeamService {
         }
         HackathonEventEntity event = getEventOrThrow(team.getTrack().getEventId());
         return isEventFinished(event) ? null : event;
+    }
+
+    private HackathonEventEntity getRegisteredEvent(TeamEntity team) {
+        if (team.getTrack() == null) {
+            return null;
+        }
+        return getEventOrThrow(team.getTrack().getEventId());
+    }
+
+    private boolean canEditAutoAssignedPreference(TeamEntity team) {
+        HackathonEventEntity registeredEvent = getRegisteredEvent(team);
+        if (registeredEvent == null) {
+            return true;
+        }
+        if (isEventFinished(registeredEvent)) {
+            return false;
+        }
+        LocalDateTime registrationEndAt = registeredEvent.getRegistrationEndAt();
+        return registrationEndAt == null || !LocalDateTime.now().isAfter(registrationEndAt);
     }
 
     private boolean isEventFinished(HackathonEventEntity event) {

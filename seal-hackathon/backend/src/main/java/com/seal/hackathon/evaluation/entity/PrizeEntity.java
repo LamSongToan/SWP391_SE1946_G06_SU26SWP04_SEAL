@@ -30,4 +30,7 @@ public class PrizeEntity {
 
     @Column(name = "prize_name", nullable = false)
     private String prizeName;
+
+    @Column(name = "amount_vnd", nullable = false)
+    private Long amountVnd;
 }

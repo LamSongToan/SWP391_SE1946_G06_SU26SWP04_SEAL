@@ -1,6 +1,8 @@
 package com.seal.hackathon.auth;
 
 import com.seal.hackathon.auth.entity.UserEntity;
+import com.seal.hackathon.auth.repository.JudgeProfileRepository;
+import com.seal.hackathon.auth.repository.MentorProfileRepository;
 import com.seal.hackathon.auth.dto.UpdateManagedUserRequest;
 import com.seal.hackathon.auth.entity.UserStatus;
 import com.seal.hackathon.auth.repository.StudentProfileRepository;
@@ -8,7 +10,12 @@ import com.seal.hackathon.auth.repository.UserRepository;
 import com.seal.hackathon.auth.service.AccountApprovalNotificationService;
 import com.seal.hackathon.auth.service.AccountApprovalService;
 import com.seal.hackathon.common.ApiException;
+import com.seal.hackathon.evaluation.repository.JudgeEvaluationRepository;
+import com.seal.hackathon.evaluation.repository.ScoreRepository;
 import com.seal.hackathon.evaluation.service.AuditLogService;
+import com.seal.hackathon.event.repository.HackathonEventRepository;
+import com.seal.hackathon.event.repository.JudgeAssignmentRepository;
+import com.seal.hackathon.event.repository.TrackMentorRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,6 +38,20 @@ class AccountApprovalServiceTest {
     private UserRepository userRepository;
     @Mock
     private StudentProfileRepository studentProfileRepository;
+    @Mock
+    private MentorProfileRepository mentorProfileRepository;
+    @Mock
+    private JudgeProfileRepository judgeProfileRepository;
+    @Mock
+    private TrackMentorRepository trackMentorRepository;
+    @Mock
+    private JudgeAssignmentRepository judgeAssignmentRepository;
+    @Mock
+    private HackathonEventRepository eventRepository;
+    @Mock
+    private ScoreRepository scoreRepository;
+    @Mock
+    private JudgeEvaluationRepository judgeEvaluationRepository;
     @Mock
     private AccountApprovalNotificationService accountApprovalNotificationService;
     @Mock
@@ -135,6 +157,7 @@ class AccountApprovalServiceTest {
 
         when(userRepository.findById(15)).thenReturn(Optional.of(user));
         when(studentProfileRepository.findByUserRoleUserUserId(15)).thenReturn(Optional.empty());
+        when(mentorProfileRepository.findById(any())).thenReturn(Optional.empty());
 
         accountApprovalService.updateManagedUser(
                 15,

@@ -7,9 +7,12 @@ public record EventWizardRoundRequest(
         Integer roundId,
         String roundName,
         Integer roundOrder,
+        LocalDateTime startAt,
         LocalDateTime submissionDeadline,
+        LocalDateTime endAt,
         Integer promotionRuleTopN,
         Boolean finalRound,
-        List<EventWizardCriterionRequest> criteria
+        List<EventWizardCriterionRequest> criteria,
+        List<TrackPromotionRuleRequest> trackPromotionRules
 ) {
 }

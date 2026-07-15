@@ -1,5 +1,6 @@
 package com.seal.hackathon.event;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seal.hackathon.common.ApiException;
 import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.event.dto.EventSetupCreateRequest;
@@ -15,13 +16,18 @@ import com.seal.hackathon.event.entity.RoundEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
+import com.seal.hackathon.event.repository.RoundTrackPromotionRuleRepository;
+import com.seal.hackathon.event.repository.ScoringCriteriaRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
+import com.seal.hackathon.event.service.AssignmentLockPolicyService;
 import com.seal.hackathon.event.service.EventManagementService;
 import com.seal.hackathon.event.service.EventUpdateNotificationService;
 import com.seal.hackathon.team.repository.TeamRepository;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +40,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,14 +54,30 @@ class EventManagementServiceTest {
     @Mock
     private RoundRepository roundRepository;
     @Mock
+    private RoundTrackPromotionRuleRepository promotionRuleRepository;
+    @Mock
+    private ScoringCriteriaRepository scoringCriteriaRepository;
+    @Mock
     private TeamRepository teamRepository;
     @Mock
     private AuditLogService auditLogService;
     @Mock
     private EventUpdateNotificationService notificationService;
+    @Mock
+    private AssignmentLockPolicyService assignmentLockPolicyService;
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private EventManagementService eventManagementService;
+
+    @BeforeEach
+    void setUpAssignmentPolicy() {
+        lenient().when(assignmentLockPolicyService.mentorAssignmentDecision(any(), any()))
+                .thenReturn(AssignmentLockPolicyService.AssignmentLockDecision.unlocked(null));
+        lenient().when(assignmentLockPolicyService.judgeAssignmentDecision(any(), any()))
+                .thenReturn(AssignmentLockPolicyService.AssignmentLockDecision.unlocked(null));
+    }
 
     @Test
     void createEvent_shouldRejectDuplicateSemesterYear() {
@@ -305,6 +328,8 @@ class EventManagementServiceTest {
 
     @Test
     void updateRoundScoreLock_shouldPersistLockStateAndExposeItInDto() {
+        HackathonEventEntity event = new HackathonEventEntity();
+        event.setEventId(10);
         RoundEntity round = new RoundEntity();
         round.setRoundId(30);
         round.setEventId(10);
@@ -316,6 +341,7 @@ class EventManagementServiceTest {
 
         when(roundRepository.findById(30)).thenReturn(Optional.of(round));
         when(roundRepository.save(round)).thenReturn(round);
+        when(eventRepository.findById(10)).thenReturn(Optional.of(event));
 
         var dto = eventManagementService.updateRoundScoreLock(30, true);
 
@@ -418,6 +444,8 @@ class EventManagementServiceTest {
 
     @Test
     void deleteRound_shouldCloseOrderGapAfterRemoval() {
+        HackathonEventEntity event = new HackathonEventEntity();
+        event.setEventId(7);
         RoundEntity deletingRound = new RoundEntity();
         deletingRound.setRoundId(2);
         deletingRound.setEventId(7);
@@ -429,6 +457,7 @@ class EventManagementServiceTest {
         remainingRound.setRoundOrder(3);
 
         when(roundRepository.findById(2)).thenReturn(Optional.of(deletingRound));
+        when(eventRepository.findById(7)).thenReturn(Optional.of(event));
         when(roundRepository.countByEventId(7)).thenReturn(3L);
         when(roundRepository.findByEventIdOrderByRoundOrderAsc(7)).thenReturn(List.of(remainingRound));
 
@@ -509,6 +538,48 @@ class EventManagementServiceTest {
         Assertions.assertEquals(1, roundOne.getRoundOrder());
         verify(trackRepository, atLeastOnce()).save(any(TrackEntity.class));
         verify(roundRepository, atLeastOnce()).save(any(RoundEntity.class));
+        InOrder promotionRuleWriteOrder = org.mockito.Mockito.inOrder(promotionRuleRepository);
+        promotionRuleWriteOrder.verify(promotionRuleRepository).deleteByRoundId(11);
+        promotionRuleWriteOrder.verify(promotionRuleRepository).flush();
+        promotionRuleWriteOrder.verify(promotionRuleRepository).saveAll(any());
+    }
+
+    @Test
+    void getEventWizard_shouldExposeIndependentRoundTimeline() {
+        HackathonEventEntity event = new HackathonEventEntity();
+        event.setEventId(10);
+        event.setStatus(EventStatus.DRAFT.getDbValue());
+
+        TrackEntity track = new TrackEntity();
+        track.setTrackId(20);
+        track.setEventId(10);
+        track.setName("Web Platform");
+
+        LocalDateTime startAt = LocalDateTime.of(2026, 10, 12, 8, 0);
+        LocalDateTime submissionDeadline = LocalDateTime.of(2026, 10, 18, 18, 0);
+        LocalDateTime endAt = LocalDateTime.of(2026, 10, 20, 18, 0);
+        RoundEntity round = new RoundEntity();
+        round.setRoundId(30);
+        round.setEventId(10);
+        round.setRoundName("Elimination");
+        round.setRoundOrder(1);
+        round.setStartAt(startAt);
+        round.setSubmissionDeadline(submissionDeadline);
+        round.setEndAt(endAt);
+        round.setFinalRound(false);
+
+        when(eventRepository.findById(10)).thenReturn(Optional.of(event));
+        when(trackRepository.findByEventIdOrderByTrackIdAsc(10)).thenReturn(List.of(track));
+        when(roundRepository.findByEventIdOrderByRoundOrderAsc(10)).thenReturn(List.of(round));
+        when(scoringCriteriaRepository.findByRoundIdOrderByCriteriaId(30)).thenReturn(List.of());
+        when(promotionRuleRepository.findByRoundIdOrderByTrackIdAsc(30)).thenReturn(List.of());
+
+        var detail = eventManagementService.getEventWizard(10);
+        var roundDetail = detail.qualifyingRounds().get(0);
+
+        Assertions.assertEquals(startAt, roundDetail.startAt());
+        Assertions.assertEquals(submissionDeadline, roundDetail.submissionDeadline());
+        Assertions.assertEquals(endAt, roundDetail.endAt());
     }
 
     private EventUpsertRequest newRequest(String semester, Integer year, String status) {

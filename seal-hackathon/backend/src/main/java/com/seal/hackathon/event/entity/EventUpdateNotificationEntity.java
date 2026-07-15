@@ -51,7 +51,7 @@ public class EventUpdateNotificationEntity {
     @Column(name = "message", nullable = false, length = 1000)
     private String message;
 
-    @Column(name = "announcement_audience", length = 30)
+    @Column(name = "announcement_audience", length = 64)
     private String announcementAudience;
 
     @Column(name = "is_read", nullable = false)

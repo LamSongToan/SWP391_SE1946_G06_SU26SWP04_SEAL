@@ -6,6 +6,8 @@ public record TrackDto(
         String name,
         Integer minTeams,
         Integer maxTeams,
-        Long teamCount
+        Long teamCount,
+        Boolean mentorAssignmentLocked,
+        String mentorAssignmentLockReason
 ) {
 }

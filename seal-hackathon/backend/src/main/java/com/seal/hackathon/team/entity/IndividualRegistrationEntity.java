@@ -45,14 +45,27 @@ public class IndividualRegistrationEntity {
     @JoinColumn(name = "assigned_team_id")
     private TeamEntity assignedTeam;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "suggested_track_id")
+    private TrackEntity suggestedTrack;
+
     @Column(name = "status", nullable = false, length = 30)
     private String status;
+
+    @Column(name = "status_reason", length = 1000)
+    private String statusReason;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "matched_at")
     private LocalDateTime matchedAt;
+
+    @Column(name = "response_due_at")
+    private LocalDateTime responseDueAt;
+
+    @Column(name = "responded_at")
+    private LocalDateTime respondedAt;
 
     @PrePersist
     public void prePersist() {

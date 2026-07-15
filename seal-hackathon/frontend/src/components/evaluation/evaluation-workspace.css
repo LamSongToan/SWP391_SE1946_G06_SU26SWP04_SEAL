@@ -1,3 +1,8 @@
+.eval-shell {
+  width: min(100%, 1600px);
+  margin: 0 auto;
+}
+
 .eval-loading {
   min-height: 320px;
   display: grid;
@@ -18,15 +23,15 @@
 .eval-stat-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: clamp(10px, 1vw, 14px);
 }
 
 .eval-stat {
-  min-height: 108px;
+  min-height: clamp(92px, 8vw, 104px);
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 20px 24px;
+  gap: clamp(14px, 1.2vw, 18px);
+  padding: clamp(16px, 1.25vw, 20px);
   overflow: hidden;
   border: 1px solid var(--se-line);
   border-radius: 14px;
@@ -45,7 +50,7 @@
 
 .eval-stat .eval-stat-label.MuiTypography-root {
   color: var(--se-primary);
-  font-size: 15px;
+  font-size: clamp(13px, 0.85vw, 15px);
   font-weight: 950;
   line-height: 1.25;
   text-transform: uppercase;
@@ -54,18 +59,18 @@
 
 .eval-stat .eval-stat-value.MuiTypography-root {
   color: var(--se-text);
-  font-size: 36px;
+  font-size: clamp(30px, 2vw, 34px);
   font-weight: 950;
   line-height: 1;
   letter-spacing: 0;
 }
 
 .eval-stat-icon {
-  width: 54px;
-  height: 54px;
+  width: clamp(46px, 3vw, 52px);
+  height: clamp(46px, 3vw, 52px);
   display: grid;
   place-items: center;
-  flex: 0 0 54px;
+  flex: 0 0 clamp(46px, 3vw, 52px);
   border-radius: 999px;
   color: var(--se-secondary);
   background: radial-gradient(circle at 35% 30%, #ffffff 0%, #fff0e6 68%);
@@ -73,12 +78,12 @@
 }
 
 .eval-stat-icon .MuiSvgIcon-root {
-  font-size: 25px;
+  font-size: clamp(21px, 1.4vw, 24px);
 }
 
 .eval-stat .eval-stat-helper.MuiTypography-root {
   color: var(--se-muted);
-  font-size: 14px;
+  font-size: clamp(12.5px, 0.82vw, 13.5px);
   font-weight: 900;
   line-height: 1.3;
 }
@@ -105,8 +110,8 @@
 
 .eval-judge-layout {
   display: grid;
-  grid-template-columns: minmax(430px, 500px) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(320px, 28%) minmax(0, 72%);
+  gap: clamp(14px, 1.15vw, 18px);
   align-items: start;
 }
 
@@ -126,7 +131,7 @@
 .eval-subpanel {
   min-width: 0;
   overflow: hidden;
-  padding: 16px;
+  padding: clamp(14px, 1.1vw, 18px);
   border: 1px solid var(--se-line);
   border-radius: 14px;
   background: #ffffff;
@@ -173,8 +178,107 @@
   font-weight: 800;
 }
 
-.eval-submission-links {
-  justify-content: flex-end;
+.eval-scoring-deadline-chip.MuiChip-root {
+  height: 22px;
+  color: #0f766e;
+  background: #ecfdf5;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.eval-deadline-alert.MuiAlert-root {
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.eval-deadline-alert strong {
+  font-weight: 900;
+}
+
+.eval-judge-event-select-card.MuiCardContent-root {
+  padding: 16px 18px !important;
+}
+
+.eval-judge-event-select {
+  min-width: min(420px, 100%);
+}
+
+.eval-resource-panel {
+  margin-top: 14px;
+}
+
+.eval-resource-tabs {
+  min-height: 48px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--se-line);
+}
+
+.eval-resource-tabs .MuiTab-root {
+  min-height: 48px;
+  min-width: 0;
+  padding: 0 18px;
+  color: var(--se-muted);
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.eval-resource-tabs .Mui-selected {
+  color: var(--se-secondary);
+}
+
+.eval-resource-tabs .MuiTabs-indicator {
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: var(--se-secondary);
+}
+
+.eval-resource-body {
+  padding-top: 14px;
+}
+
+.eval-resource-link-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid #d7e0ed;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.eval-resource-link-title {
+  color: var(--se-text);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.eval-resource-link-copy {
+  color: #52647d;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.eval-resource-link-button.MuiButton-root {
+  justify-self: start;
+  min-width: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.eval-resource-link-url {
+  color: var(--se-secondary);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .eval-nav-section + .eval-nav-section {
@@ -195,6 +299,14 @@
   letter-spacing: 0;
 }
 
+.eval-panel-caption.MuiTypography-root {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .eval-list {
   display: grid;
   gap: 10px;
@@ -206,10 +318,10 @@
 
 .eval-list-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(118px, auto) 16px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, auto) 16px;
+  gap: clamp(10px, 0.8vw, 14px);
   align-items: center;
-  padding: 17px 16px;
+  padding: clamp(14px, 1vw, 17px) clamp(14px, 1vw, 16px);
   border: 1px solid var(--se-line);
   border-radius: 10px;
   background: #ffffff;
@@ -298,7 +410,7 @@
 .eval-filter-bar {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: clamp(8px, 0.8vw, 10px);
   align-items: center;
   margin-bottom: 12px;
 }
@@ -317,6 +429,32 @@
   font-size: 13.5px;
   font-weight: 850;
   line-height: 1.3;
+}
+
+.eval-track-tabs {
+  min-height: 44px;
+  margin: 2px 0 12px;
+  border-bottom: 1px solid #e5edf6;
+}
+
+.eval-track-tabs .MuiTab-root {
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 16px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.eval-track-tabs .Mui-selected {
+  color: var(--se-secondary);
+}
+
+.eval-track-tabs .MuiTabs-indicator {
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: var(--se-secondary);
 }
 
 .eval-status-legend {
@@ -352,7 +490,7 @@
   display: grid;
   justify-items: end;
   gap: 8px;
-  min-width: 118px;
+  min-width: 100px;
 }
 
 .eval-submission-status .MuiChip-root {
@@ -448,10 +586,10 @@
 
 .eval-criterion-card {
   display: grid;
-  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.42fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 42%) minmax(0, 58%);
+  gap: clamp(14px, 1vw, 18px);
   align-items: start;
-  padding: 18px;
+  padding: clamp(14px, 1vw, 18px);
   border: 1px solid var(--se-line);
   border-radius: 12px;
   background: #ffffff;
@@ -499,7 +637,7 @@
 }
 
 .eval-criterion-helper {
-  max-width: 520px;
+  max-width: 100%;
   margin-top: 9px;
   color: #4f6078;
   font-size: 14px;
@@ -516,47 +654,43 @@
 
 .eval-criterion-controls {
   display: grid;
-  grid-template-columns: minmax(120px, 136px) minmax(360px, 1fr) minmax(118px, 126px);
-  gap: 14px;
-  align-items: start;
-}
-
-.eval-field-caption {
-  color: #52647d;
-  font-size: 12.5px;
-  font-weight: 850;
-  line-height: 1.25;
+  grid-template-columns: minmax(120px, 148px) minmax(0, 1fr);
+  gap: clamp(10px, 0.9vw, 14px);
+  align-items: center;
+  align-self: center;
 }
 
 .eval-score-field,
 .eval-comment-field {
   width: 100%;
+  align-self: center;
+}
+
+.eval-score-field {
+  justify-self: center;
+}
+
+.eval-score-field .MuiOutlinedInput-root,
+.eval-comment-field .MuiOutlinedInput-root {
+  min-height: 66px;
+  align-items: flex-start;
+}
+
+.eval-score-field .MuiOutlinedInput-root {
+  min-width: 0;
+  min-height: 52px;
+  align-items: center;
 }
 
 .eval-score-field .MuiInputBase-input {
   font-weight: 850;
   text-align: center;
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .eval-comment-field .MuiInputBase-root {
   min-height: 56px;
-}
-
-.eval-weighted-box {
-  min-height: 56px;
-  display: grid;
-  align-content: center;
-  gap: 6px;
-  padding: 10px 12px;
-  border: 1px solid var(--se-line);
-  border-radius: 10px;
-  background: #f7f9fc;
-}
-
-.eval-weighted-value {
-  color: var(--se-text);
-  font-size: 14px;
-  font-weight: 900;
 }
 
 .eval-score-field .MuiOutlinedInput-root,
@@ -586,10 +720,10 @@
 
 .eval-score-summary {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(160px, 1fr) minmax(140px, 0.8fr) minmax(240px, 1.1fr);
-  gap: 16px;
-  align-items: center;
-  padding: 16px 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 1vw, 16px);
+  align-items: stretch;
+  padding: 12px 14px;
   margin-top: 16px;
   border: 1px solid var(--se-line);
   border-radius: 12px;
@@ -599,48 +733,56 @@
 .eval-summary-main,
 .eval-summary-item {
   min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
 .eval-summary-label {
   color: var(--se-muted);
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.3;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .eval-summary-score {
-  margin-top: 4px;
   color: var(--se-text);
-  font-size: 22px;
-  font-weight: 950;
-  line-height: 1.1;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
-.eval-summary-note {
-  justify-self: end;
-  color: var(--se-muted);
-  font-size: 13px;
-  font-weight: 800;
+.eval-summary-score-strong {
+  font-weight: 950;
+  color: #071a2f;
+  font-size: 22px;
+  line-height: 1;
 }
 
 .eval-summary-ready {
-  margin-top: 6px;
   color: var(--se-success);
-  font-size: 14px;
-  font-weight: 900;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 .eval-summary-warning {
-  margin-top: 6px;
   color: #9a6200;
-  font-size: 14px;
-  font-weight: 900;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 .eval-completion-progress.MuiLinearProgress-root {
   height: 7px;
-  margin-top: 8px;
+  margin-top: 4px;
   border-radius: 999px;
   background: #e7edf5;
 }
@@ -707,18 +849,65 @@
 
 .eval-history-list {
   display: grid;
-  gap: 8px;
+  gap: 12px;
 }
 
-.eval-history-row {
+.eval-history-block {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto;
   gap: 12px;
-  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  background: #fbfcff;
+}
+
+.eval-history-title {
+  color: var(--se-text);
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.eval-history-score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.eval-history-score-card {
+  display: grid;
+  gap: 4px;
   padding: 11px 12px;
   border: 1px solid var(--se-line);
-  border-radius: 8px;
-  background: #fbfcff;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.eval-history-score-label {
+  color: var(--se-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.eval-history-score-value {
+  color: var(--se-text);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.eval-history-score-value strong {
+  font-weight: 950;
+}
+
+.eval-history-chip-label {
+  font-weight: 700;
+}
+
+.eval-history-chip-label strong {
+  font-weight: 950;
 }
 
 .eval-feedback-item,
@@ -731,52 +920,95 @@
 
 .eval-git-card {
   margin-top: 14px;
-  padding: 0;
-  border: 1px solid #d8e3f2;
-  border-radius: 10px;
+  padding: 18px 18px 20px;
+  border: 1px solid #d7e0ed;
+  border-radius: 18px;
   background: #ffffff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 
-.eval-git-header {
-  padding: 12px 14px 0;
-  margin-bottom: 8px;
+.eval-git-headline {
+  margin-bottom: 14px;
+}
+
+.eval-git-eyebrow {
+  color: #7d8da5;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eval-git-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 62%) minmax(260px, 38%);
+  gap: clamp(14px, 1vw, 18px);
+  align-items: stretch;
+}
+
+.eval-git-main {
+  min-width: 0;
+}
+
+.eval-git-main-copy {
+  min-width: 0;
 }
 
 .eval-git-icon {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  flex: 0 0 32px;
-  border: 1px solid rgba(7, 26, 47, 0.08);
-  border-radius: 10px;
-  color: var(--se-primary);
-  background: #ffffff;
+  flex: 0 0 48px;
+  border: 1px solid #d7e0ed;
+  border-radius: 14px;
+  color: #111827;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.eval-git-icon .MuiSvgIcon-root {
+  font-size: 23px;
 }
 
 .eval-git-repo-name {
-  max-width: 360px;
+  max-width: 100%;
   color: var(--se-text);
-  font-size: 15px;
+  font-size: 30px;
   font-weight: 950;
-  line-height: 1.25;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .eval-git-platform.MuiChip-root {
-  height: 21px;
+  height: 28px;
   flex: 0 0 auto;
   border-radius: 999px;
-  color: var(--se-primary);
-  background: #eaf1fb;
-  font-size: 11px;
+  color: #0f172a;
+  background: #eef2f7;
+  border: 1px solid #d7e0ed;
+  font-size: 12px;
   font-weight: 800;
 }
 
+.eval-git-tag.MuiChip-root {
+  height: 28px;
+  border-radius: 999px;
+  color: #4b5563;
+  background: #ffffff;
+  border: 1px solid #d7e0ed;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.eval-git-tag .MuiChip-icon {
+  color: currentColor;
+}
+
 .eval-git-description {
-  max-width: 760px;
-  margin-top: 5px;
+  max-width: 100%;
+  margin-top: 14px;
   color: #52647d;
-  font-size: 13.2px;
+  font-size: 14px;
   font-weight: 650;
   line-height: 1.45;
 }
@@ -787,7 +1019,7 @@
 
 .eval-git-action.MuiButton-root {
   min-width: 0;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
   color: var(--se-muted);
   font-size: 12.5px;
@@ -803,90 +1035,112 @@
   background: rgba(7, 26, 47, 0.05);
 }
 
-.eval-git-action.is-primary.MuiButton-root:hover {
-  background: rgba(243, 112, 33, 0.09);
-}
-
-.eval-git-metric-grid {
+.eval-git-secondary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(104px, 1fr));
-  gap: 0;
-  border-top: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
 }
 
-.eval-git-metric {
-  min-width: 0;
+.eval-git-secondary-item {
+  padding: 14px 15px;
+  border: 1px solid #e5eaf2;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.eval-git-secondary-label {
+  color: #7d8da5;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eval-git-secondary-icon {
+  color: var(--se-secondary);
+  font-size: 18px;
+}
+
+.eval-git-secondary-value {
+  color: var(--se-text);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.eval-git-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #d7e0ed;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f9fbff 0%, #f4f7fb 100%);
+}
+
+.eval-git-stats-list {
+  display: grid;
+  gap: 10px;
+}
+
+.eval-git-stat-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px 12px;
-  border: 0;
-  border-left: 1px solid var(--se-line);
-  border-radius: 0;
-  background: transparent;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 13px;
+  border: 1px solid #dde4ef;
+  border-radius: 14px;
+  background: #ffffff;
 }
 
-.eval-git-metric:first-child {
-  border-left: 0;
+.eval-git-stat-copy {
+  min-width: 0;
 }
 
-.eval-git-metric-icon {
-  flex: 0 0 auto;
-  color: var(--se-secondary);
-  font-size: 17px;
-}
-
-.eval-git-metric-value {
-  color: var(--se-text);
-  font-size: 14.5px;
-  font-weight: 950;
-  line-height: 1.15;
-}
-
-.eval-git-metric-label {
-  margin-top: 2px;
-  color: #52647d;
+.eval-git-stat-label {
+  color: #6b7280;
   font-size: 12px;
   font-weight: 800;
   line-height: 1.2;
 }
 
-.eval-git-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  margin-top: 0;
-  border-top: 1px solid var(--se-line);
-}
-
-.eval-git-detail {
-  min-width: 0;
-  padding: 9px 14px;
-  border: 0;
-  border-left: 1px solid var(--se-line);
-  border-radius: 0;
-  background: #fbfdff;
-}
-
-.eval-git-detail:first-child {
-  border-left: 0;
-}
-
-.eval-git-detail-label {
-  color: #52647d;
-  font-size: 11.5px;
-  font-weight: 850;
+.eval-git-stat-value {
+  margin-top: 5px;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 950;
   line-height: 1.2;
-  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
-.eval-git-detail-value {
-  margin-top: 4px;
-  color: var(--se-text);
-  font-size: 13px;
+.eval-git-stat-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--se-secondary);
+  background: #fff4eb;
+  font-size: 18px;
+}
+
+.eval-git-open-button.MuiButton-root {
+  min-height: 46px;
+  border-radius: 14px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 14px;
   font-weight: 900;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
+  text-transform: none;
+}
+
+.eval-git-open-button.MuiButton-root:hover {
+  background: #1f2937;
 }
 
 .eval-git-empty {
@@ -894,6 +1148,7 @@
   font-size: 13px;
   font-weight: 700;
   line-height: 1.5;
+  padding: 6px 2px 0;
 }
 
 .eval-git-empty a {
@@ -924,8 +1179,9 @@
   .eval-criterion-card,
   .eval-criterion-controls,
   .eval-score-summary,
-  .eval-history-row,
-  .eval-git-detail-grid {
+  .eval-history-score-grid,
+  .eval-git-layout,
+  .eval-git-secondary-grid {
     grid-template-columns: 1fr;
   }
 
@@ -939,7 +1195,6 @@
     min-width: 0;
   }
 
-  .eval-git-card,
   .eval-score-content,
   .eval-tab-content {
     padding: 14px;
@@ -947,10 +1202,6 @@
 
   .eval-git-actions {
     justify-content: flex-start;
-  }
-
-  .eval-git-metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .eval-score-action-spacer {
@@ -988,11 +1239,23 @@
   }
 
   .eval-filter-bar,
-  .eval-git-metric-grid {
+  .eval-git-secondary-grid {
     grid-template-columns: 1fr;
   }
 
   .eval-tabs {
     padding: 0 8px;
+  }
+
+  .eval-git-card {
+    padding: 14px;
+  }
+
+  .eval-git-repo-name {
+    font-size: 22px;
+  }
+
+  .eval-git-stat-row {
+    padding: 12px;
   }
 }

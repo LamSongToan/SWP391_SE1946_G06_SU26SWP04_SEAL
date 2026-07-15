@@ -12,9 +12,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Divider,
   MenuItem,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -45,7 +47,7 @@ import ModulePageHeader from "../layout/ModulePageHeader";
 import SubmissionHistoryDialog from "./SubmissionHistoryDialog";
 import "./team-management.css";
 
-const INITIAL_CREATE_FORM = { teamName: "" };
+const INITIAL_CREATE_FORM = { teamName: "", acceptAutoAssignedMembers: false };
 const INITIAL_SUBMISSION_FORM = { roundId: "", repositoryUrl: "", demoUrl: "", slideUrl: "" };
 
 function getTeamHealth(team = {}) {
@@ -92,6 +94,12 @@ function isGitRepositoryUrl(value) {
   } catch {
     return false;
   }
+}
+
+function formatInvitationTypeLabel(value) {
+  return String(value || "").toUpperCase() === "LEADERSHIP_TRANSFER"
+    ? "Leadership transfer"
+    : "Team invitation";
 }
 
 export default function TeamManagementPanel() {
@@ -348,6 +356,7 @@ export default function TeamManagementPanel() {
     try {
       const response = await http.post("/api/teams", {
         teamName: createForm.teamName,
+        acceptAutoAssignedMembers: createForm.acceptAutoAssignedMembers,
       });
       closeCreateDialog();
       setSuccess("Team created. Invite 3 to 5 students first, then register this team in Event Registration.");
@@ -358,6 +367,33 @@ export default function TeamManagementPanel() {
       }
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to create team"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateAutoAssignmentPreference = async (team, acceptAutoAssignedMembers) => {
+    if (!team?.teamId) return;
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await http.patch(
+        `/api/teams/${team.teamId}/auto-assignment-preference`,
+        { acceptAutoAssignedMembers }
+      );
+      const updatedTeam = response.data?.data || null;
+      if (updatedTeam) {
+        setSelectedTeam(updatedTeam);
+      }
+      setSuccess(
+        acceptAutoAssignedMembers
+          ? "This team will accept additional members assigned after registration closes."
+          : "This team will no longer accept additional members assigned after registration closes."
+      );
+      await loadWorkspace();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to update team preference"));
     } finally {
       setSaving(false);
     }
@@ -390,7 +426,7 @@ export default function TeamManagementPanel() {
     setSuccess("");
     try {
       await http.post(`/api/team-invitations/${invitationId}/${action}`);
-      setSuccess(action === "accept" ? "Invitation accepted." : "Invitation rejected.");
+      setSuccess(action === "accept" ? "Request accepted." : "Request rejected.");
       await loadWorkspace();
     } catch (err) {
       setError(getApiErrorMessage(err, "Failed to process invitation"));
@@ -469,25 +505,25 @@ export default function TeamManagementPanel() {
 
   const transferLeadership = async (team, member) => {
     const firstConfirmation = await requestConfirmation({
-      title: "Transfer team leadership?",
-      message: `${member.fullName} will receive the Team Leader role.`,
+      title: "Send leadership transfer request?",
+      message: `${member.fullName} will receive a request to become the new Team Leader.`,
       confirmLabel: "Continue",
     });
     if (!firstConfirmation) return;
     const finalConfirmation = await requestConfirmation({
-      title: "Confirm leadership transfer",
-      message: `${member.fullName} will become Team Leader and you will become a regular member.`,
-      confirmLabel: "Transfer",
+      title: "Confirm leadership request",
+      message: `Leadership only changes after ${member.fullName} accepts the request.`,
+      confirmLabel: "Send request",
     });
     if (!finalConfirmation) return;
     setError("");
     try {
       await http.patch(`/api/teams/${team.teamId}/leader/${member.userRoleId}`);
-      setSuccess("Team leadership transferred.");
+      setSuccess("Leadership transfer request sent.");
       await loadWorkspace();
       await refreshOnlySelectedTeam(team.teamId);
     } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to transfer team leadership"));
+      setError(getApiErrorMessage(err, "Failed to send leadership transfer request"));
     }
   };
 
@@ -748,40 +784,42 @@ export default function TeamManagementPanel() {
 
       <Card className="ms-data-card" sx={{ mb: 2.5 }}>
         <Box className="team-table-scroll">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Team</TableCell>
-                <TableCell>Event / Track</TableCell>
-                <TableCell>Invited by</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {invitations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5}>No invitations.</TableCell>
-                </TableRow>
-              ) : invitations.map((invitation) => (
-                <TableRow key={invitation.invitationId}>
-                  <TableCell>{invitation.teamName}</TableCell>
-                  <TableCell>{invitation.eventName} / {invitation.trackName}</TableCell>
-                  <TableCell>{invitation.invitedByName}</TableCell>
-                  <TableCell><Chip label={invitation.status} size="small" variant="outlined" /></TableCell>
-                  <TableCell align="right">
-                    {invitation.status === "Pending" ? (
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Button size="small" onClick={() => processInvitation(invitation.invitationId, "reject")}>
-                          Reject
-                        </Button>
-                        <Button size="small" variant="contained" onClick={() => processInvitation(invitation.invitationId, "accept")}>
-                          Accept
-                        </Button>
-                      </Stack>
-                    ) : null}
-                  </TableCell>
-                </TableRow>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Team</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Event / Track</TableCell>
+                    <TableCell>Invited by</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {invitations.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6}>No invitations.</TableCell>
+                    </TableRow>
+                  ) : invitations.map((invitation) => (
+                    <TableRow key={invitation.invitationId}>
+                      <TableCell>{invitation.teamName}</TableCell>
+                      <TableCell>{formatInvitationTypeLabel(invitation.invitationType)}</TableCell>
+                      <TableCell>{invitation.eventName} / {invitation.trackName}</TableCell>
+                      <TableCell>{invitation.invitedByName}</TableCell>
+                      <TableCell><Chip label={invitation.status} size="small" variant="outlined" /></TableCell>
+                      <TableCell align="right">
+                        {invitation.status === "Pending" ? (
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Button size="small" onClick={() => processInvitation(invitation.invitationId, "reject")}>
+                              Reject
+                            </Button>
+                            <Button size="small" variant="contained" onClick={() => processInvitation(invitation.invitationId, "accept")}>
+                              {String(invitation.invitationType || "").toUpperCase() === "LEADERSHIP_TRANSFER" ? "Accept role" : "Accept"}
+                            </Button>
+                          </Stack>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
               ))}
             </TableBody>
           </Table>
@@ -919,6 +957,11 @@ export default function TeamManagementPanel() {
                 <Chip label={`Track: ${selectedTeam.trackName || "Pending registration"}`} variant="outlined" />
                 <Chip label={`Members: ${teamHealth.members}`} variant="outlined" />
                 <Chip label={`Leader: ${selectedTeam.leaderName}`} variant="outlined" />
+                <Chip
+                  color={selectedTeam.acceptAutoAssignedMembers ? "success" : "default"}
+                  label={selectedTeam.acceptAutoAssignedMembers ? "Accepts extra members" : "Closed to extra members"}
+                  variant={selectedTeam.acceptAutoAssignedMembers ? "filled" : "outlined"}
+                />
               </Stack>
             </Stack>
           </CardContent>
@@ -936,6 +979,47 @@ export default function TeamManagementPanel() {
                   : "This team is ready for member management here. Register it from the Event Registration module when you want to join an event."}
               </Typography>
             </Box>
+          </CardContent>
+        </Card>
+
+        <Card className="ms-data-card">
+          <CardContent>
+            <Stack spacing={1.3}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Additional member setting
+                </Typography>
+                <Typography color="text.secondary" variant="body2">
+                  The team leader can decide whether coordinators may place leftover individual registrations into this team after the deadline-based batch matching finishes.
+                </Typography>
+              </Box>
+              {selectedTeam.currentUserLeader ? (
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={Boolean(selectedTeam.acceptAutoAssignedMembers)}
+                      disabled={saving || !selectedTeam.autoAssignedMembersEditable}
+                      onChange={(event) => updateAutoAssignmentPreference(selectedTeam, event.target.checked)}
+                    />
+                  )}
+                  label={selectedTeam.acceptAutoAssignedMembers
+                    ? "This team is accepting coordinator-assigned members"
+                    : "This team is not accepting coordinator-assigned members"}
+                  sx={{ alignItems: "flex-start", m: 0 }}
+                />
+              ) : (
+                <Typography sx={{ fontWeight: 600 }}>
+                  {selectedTeam.acceptAutoAssignedMembers
+                    ? "This team is accepting coordinator-assigned members."
+                    : "This team is not accepting coordinator-assigned members."}
+                </Typography>
+              )}
+              <Typography color="text.secondary" variant="body2">
+                {selectedTeam.autoAssignedMembersEditable
+                  ? "You can change this any time before the event registration deadline."
+                  : "This setting is locked because the event registration deadline has passed or the team is not inside an editable registration window."}
+              </Typography>
+            </Stack>
           </CardContent>
         </Card>
 
@@ -1092,8 +1176,9 @@ export default function TeamManagementPanel() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Student</TableCell>
+                      <TableCell>Recipient</TableCell>
                       <TableCell>Identifier</TableCell>
+                      <TableCell>Type</TableCell>
                       <TableCell>Status</TableCell>
                       <TableCell align="right">Action</TableCell>
                     </TableRow>
@@ -1101,12 +1186,13 @@ export default function TeamManagementPanel() {
                   <TableBody>
                     {teamInvitations.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4}>No sent invitations.</TableCell>
+                        <TableCell colSpan={5}>No sent invitations.</TableCell>
                       </TableRow>
                     ) : teamInvitations.map((invitation) => (
                       <TableRow key={invitation.invitationId}>
                         <TableCell>{invitation.inviteeName}</TableCell>
                         <TableCell>{invitation.inviteeIdentifier}</TableCell>
+                        <TableCell>{formatInvitationTypeLabel(invitation.invitationType)}</TableCell>
                         <TableCell><Chip label={invitation.status} size="small" variant="outlined" /></TableCell>
                         <TableCell align="right">
                           {invitation.status === "Pending" ? (
@@ -1160,6 +1246,22 @@ export default function TeamManagementPanel() {
               helperText="Create the team first. Event and track registration happen later in Event Registration."
               fullWidth
             />
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={createForm.acceptAutoAssignedMembers}
+                  onChange={(event) => setCreateForm((current) => ({
+                    ...current,
+                    acceptAutoAssignedMembers: event.target.checked,
+                  }))}
+                />
+              )}
+              label="Allow coordinators to add leftover individual registrations into this team after batch matching finishes"
+              sx={{ alignItems: "flex-start", m: 0 }}
+            />
+            <Typography color="text.secondary" variant="body2">
+              You can still turn this on or off later until the event registration deadline.
+            </Typography>
           </Stack>
         </DialogContent>
         <DialogActions>

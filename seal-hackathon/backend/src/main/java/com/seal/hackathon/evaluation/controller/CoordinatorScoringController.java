@@ -2,18 +2,15 @@ package com.seal.hackathon.evaluation.controller;
 
 import com.seal.hackathon.common.ApiResponse;
 import com.seal.hackathon.evaluation.dto.AuditLogDto;
-import com.seal.hackathon.evaluation.dto.CalibrationAnalyticsDto;
-import com.seal.hackathon.evaluation.dto.CalibrationScoreRequest;
-import com.seal.hackathon.evaluation.dto.CalibrationSessionDto;
-import com.seal.hackathon.evaluation.dto.CalibrationSessionRequest;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateDto;
 import com.seal.hackathon.evaluation.dto.CriteriaTemplateRequest;
+import com.seal.hackathon.evaluation.dto.ExtendScoringWindowRequest;
 import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaManagementDto;
 import com.seal.hackathon.evaluation.dto.RoundCriteriaUpdateRequest;
 import com.seal.hackathon.evaluation.dto.RoundFinalizationDto;
 import com.seal.hackathon.evaluation.dto.ResultPublicationDto;
-import com.seal.hackathon.evaluation.dto.ScoreVarianceDashboardDto;
+import com.seal.hackathon.evaluation.dto.SubmissionScoreBreakdownDto;
 import com.seal.hackathon.evaluation.service.CoordinatorScoringService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -44,48 +41,6 @@ public class CoordinatorScoringController {
 
     public CoordinatorScoringController(CoordinatorScoringService coordinatorScoringService) {
         this.coordinatorScoringService = coordinatorScoringService;
-    }
-
-    @GetMapping("/rounds/{roundId}/calibration-sessions")
-    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE')")
-    public ResponseEntity<ApiResponse<List<CalibrationSessionDto>>> listCalibrationSessions(Authentication authentication,
-                                                                                             @PathVariable Integer roundId) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                "Calibration sessions fetched",
-                coordinatorScoringService.listCalibrationSessions(authentication, roundId)
-        ));
-    }
-
-    @PostMapping("/rounds/{roundId}/calibration-sessions")
-    @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<ApiResponse<CalibrationSessionDto>> createCalibrationSession(Authentication authentication,
-                                                                                      @PathVariable Integer roundId,
-                                                                                      @Valid @RequestBody CalibrationSessionRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
-                "Calibration session created",
-                coordinatorScoringService.createCalibrationSession(authentication, roundId, request)
-        ));
-    }
-
-    @PostMapping("/calibration-sessions/{sessionId}/scores")
-    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE')")
-    public ResponseEntity<ApiResponse<CalibrationSessionDto>> upsertCalibrationScore(Authentication authentication,
-                                                                                     @PathVariable Integer sessionId,
-                                                                                     @Valid @RequestBody CalibrationScoreRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                "Calibration score saved",
-                coordinatorScoringService.upsertCalibrationScore(authentication, sessionId, request)
-        ));
-    }
-
-    @GetMapping("/calibration-sessions/{sessionId}/analytics")
-    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE')")
-    public ResponseEntity<ApiResponse<CalibrationAnalyticsDto>> getCalibrationAnalytics(Authentication authentication,
-                                                                                         @PathVariable Integer sessionId) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                "Calibration analytics fetched",
-                coordinatorScoringService.getCalibrationAnalytics(authentication, sessionId)
-        ));
     }
 
     @GetMapping("/rounds/{roundId}/criteria")
@@ -160,6 +115,15 @@ public class CoordinatorScoringController {
         ));
     }
 
+    @GetMapping("/submissions/{submissionId}/breakdown")
+    public ResponseEntity<ApiResponse<SubmissionScoreBreakdownDto>> getSubmissionBreakdown(Authentication authentication,
+                                                                                           @PathVariable Integer submissionId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Submission score breakdown fetched",
+                coordinatorScoringService.getSubmissionBreakdown(authentication, submissionId)
+        ));
+    }
+
     @GetMapping("/events/{eventId}/result-publication")
     public ResponseEntity<ApiResponse<ResultPublicationDto>> getResultPublication(Authentication authentication,
                                                                                   @PathVariable Integer eventId) {
@@ -169,12 +133,30 @@ public class CoordinatorScoringController {
         ));
     }
 
+    @GetMapping("/rounds/{roundId}/result-publication")
+    public ResponseEntity<ApiResponse<ResultPublicationDto>> getRoundResultPublication(Authentication authentication,
+                                                                                       @PathVariable Integer roundId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Round result publication status fetched",
+                coordinatorScoringService.getRoundResultPublicationStatus(authentication, roundId)
+        ));
+    }
+
     @PostMapping("/events/{eventId}/publish-results")
     public ResponseEntity<ApiResponse<ResultPublicationDto>> publishResults(Authentication authentication,
                                                                             @PathVariable Integer eventId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 "Results published",
                 coordinatorScoringService.publishEventResults(authentication, eventId)
+        ));
+    }
+
+    @PostMapping("/rounds/{roundId}/publish-results")
+    public ResponseEntity<ApiResponse<ResultPublicationDto>> publishRoundResults(Authentication authentication,
+                                                                                 @PathVariable Integer roundId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Round results published",
+                coordinatorScoringService.publishRoundResults(authentication, roundId)
         ));
     }
 
@@ -202,41 +184,23 @@ public class CoordinatorScoringController {
                 .body(payload);
     }
 
-    @GetMapping("/rounds/{roundId}/variance-dashboard")
-    public ResponseEntity<ApiResponse<ScoreVarianceDashboardDto>> getVarianceDashboard(Authentication authentication,
-                                                                                       @PathVariable Integer roundId,
-                                                                                       @RequestParam(required = false) Integer trackId,
-                                                                                       @RequestParam(defaultValue = "true") boolean includeCalibration) {
+    @PostMapping("/rounds/{roundId}/finalize")
+    public ResponseEntity<ApiResponse<RoundFinalizationDto>> finalizeRound(Authentication authentication,
+                                                                           @PathVariable Integer roundId,
+                                                                           @RequestParam(defaultValue = "false") boolean force) {
         return ResponseEntity.ok(ApiResponse.ok(
-                "Judge score variance dashboard fetched",
-                coordinatorScoringService.getScoreVarianceDashboard(authentication, roundId, trackId, includeCalibration)
+                "Round scoring finalized",
+                coordinatorScoringService.finalizeRoundScores(authentication, roundId, force)
         ));
     }
 
-    @GetMapping("/rounds/{roundId}/research-dataset.csv")
-    public ResponseEntity<byte[]> exportAnonymizedResearchDataset(Authentication authentication,
-                                                                  @PathVariable Integer roundId,
-                                                                  @RequestParam(required = false) Integer trackId,
-                                                                  @RequestParam(defaultValue = "true") boolean includeCalibration) {
-        String csv = coordinatorScoringService.exportAnonymizedScoringDatasetCsv(
-                authentication,
-                roundId,
-                trackId,
-                includeCalibration
-        );
-        byte[] payload = csv.getBytes(StandardCharsets.UTF_8);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"seal-round-" + roundId + "-anonymized-scoring.csv\"")
-                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
-                .body(payload);
-    }
-
-    @PostMapping("/rounds/{roundId}/finalize")
-    public ResponseEntity<ApiResponse<RoundFinalizationDto>> finalizeRound(Authentication authentication,
-                                                                           @PathVariable Integer roundId) {
+    @PostMapping("/rounds/{roundId}/extend-scoring")
+    public ResponseEntity<ApiResponse<RoundFinalizationDto>> extendScoringWindow(Authentication authentication,
+                                                                                 @PathVariable Integer roundId,
+                                                                                 @Valid @RequestBody ExtendScoringWindowRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(
-                "Round scoring finalized",
-                coordinatorScoringService.finalizeRoundScores(authentication, roundId)
+                "Scoring window extended",
+                coordinatorScoringService.extendScoringWindow(authentication, roundId, request.days())
         ));
     }
 
