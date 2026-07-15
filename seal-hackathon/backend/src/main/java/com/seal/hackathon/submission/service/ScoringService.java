@@ -82,13 +82,20 @@ public class ScoringService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Criteria does not belong to this submission's round");
         }
 
-        JudgeAssignmentEntity judgeAssignment = judgeAssignmentRepository
-                .findByRoundRoundIdAndTrackTrackIdAndJudgeUserRoleId(
-                        submission.getRound().getRoundId(),
-                        submission.getTeam().getTrack().getTrackId(),
-                        judgeProfile.getUserRoleId())
-                .orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN,
-                        "Judge is not assigned to this round and track"));
+        JudgeAssignmentEntity judgeAssignment = Boolean.TRUE.equals(submission.getRound().getFinalRound())
+                ? judgeAssignmentRepository
+                        .findByRoundRoundIdAndJudgeUserRoleId(
+                                submission.getRound().getRoundId(),
+                                judgeProfile.getUserRoleId())
+                        .orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN,
+                                "Judge is not assigned to this final round"))
+                : judgeAssignmentRepository
+                        .findByRoundRoundIdAndTrackTrackIdAndJudgeUserRoleId(
+                                submission.getRound().getRoundId(),
+                                submission.getTeam().getTrack().getTrackId(),
+                                judgeProfile.getUserRoleId())
+                        .orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN,
+                                "Judge is not assigned to this round and track"));
 
         ScoreEntity entity = scoreRepository
                 .findBySubmissionSubmissionIdAndCriteriaCriteriaIdAndJudgeAssignmentJudgeAssignmentId(

@@ -20,14 +20,17 @@ import com.seal.hackathon.event.dto.RoundManagementDto;
 import com.seal.hackathon.event.dto.RoundUpsertRequest;
 import com.seal.hackathon.event.dto.TrackDto;
 import com.seal.hackathon.event.dto.TrackConfigurationRequest;
+import com.seal.hackathon.event.dto.TrackPromotionRuleRequest;
 import com.seal.hackathon.event.dto.TrackUpsertRequest;
 import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.RoundEntity;
+import com.seal.hackathon.event.entity.RoundTrackPromotionRuleEntity;
 import com.seal.hackathon.event.entity.ScoringCriteriaEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.RoundRepository;
+import com.seal.hackathon.event.repository.RoundTrackPromotionRuleRepository;
 import com.seal.hackathon.event.repository.ScoringCriteriaRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
 import com.seal.hackathon.team.repository.TeamRepository;
@@ -63,28 +66,34 @@ public class EventManagementService {
     private final HackathonEventRepository eventRepository;
     private final TrackRepository trackRepository;
     private final RoundRepository roundRepository;
+    private final RoundTrackPromotionRuleRepository promotionRuleRepository;
     private final ScoringCriteriaRepository scoringCriteriaRepository;
     private final TeamRepository teamRepository;
     private final ObjectMapper objectMapper;
     private final AuditLogService auditLogService;
     private final EventUpdateNotificationService notificationService;
+    private final AssignmentLockPolicyService assignmentLockPolicyService;
 
     public EventManagementService(HackathonEventRepository eventRepository,
                                    TrackRepository trackRepository,
                                    RoundRepository roundRepository,
+                                   RoundTrackPromotionRuleRepository promotionRuleRepository,
                                    ScoringCriteriaRepository scoringCriteriaRepository,
                                    TeamRepository teamRepository,
                                    ObjectMapper objectMapper,
                                    AuditLogService auditLogService,
-                                   EventUpdateNotificationService notificationService) {
+                                   EventUpdateNotificationService notificationService,
+                                   AssignmentLockPolicyService assignmentLockPolicyService) {
         this.eventRepository = eventRepository;
         this.trackRepository = trackRepository;
         this.roundRepository = roundRepository;
+        this.promotionRuleRepository = promotionRuleRepository;
         this.scoringCriteriaRepository = scoringCriteriaRepository;
         this.teamRepository = teamRepository;
         this.objectMapper = objectMapper;
         this.auditLogService = auditLogService;
         this.notificationService = notificationService;
+        this.assignmentLockPolicyService = assignmentLockPolicyService;
     }
 
     @Transactional
@@ -294,6 +303,54 @@ public class EventManagementService {
         );
     }
 
+    @Transactional
+    public EventManagementDto cancelEvent(Integer eventId, String reason) {
+        return cancelEventInternal(eventId, reason, false);
+    }
+
+    @Transactional
+    public EventManagementDto cancelEventAutomatically(Integer eventId, String reason) {
+        return cancelEventInternal(eventId, reason, true);
+    }
+
+    private EventManagementDto cancelEventInternal(Integer eventId, String reason, boolean automatic) {
+        HackathonEventEntity event = getEventOrThrow(eventId);
+        EventStatus status = safeStatus(event.getStatus());
+        if (status == EventStatus.DRAFT) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Draft events should be deleted instead of cancelled");
+        }
+        if (status == EventStatus.ENDED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "This event is already ended");
+        }
+
+        String normalizedReason = normalizeRequired(reason, "Cancellation reason");
+        Map<String, Object> previous = toEventAuditPayload(event);
+        LocalDateTime now = LocalDateTime.now();
+        event.setStatus(EventStatus.ENDED.getDbValue());
+        if (event.getRegistrationEndAt() == null || event.getRegistrationEndAt().isAfter(now)) {
+            event.setRegistrationEndAt(now);
+        }
+        if (event.getCompetitionEndAt() == null || event.getCompetitionEndAt().isAfter(now)) {
+            event.setCompetitionEndAt(now);
+        }
+        HackathonEventEntity saved = eventRepository.save(event);
+        if (automatic) {
+            notificationService.notifyEventAutoCancelled(saved, normalizedReason);
+        } else {
+            notificationService.notifyEventCancelled(saved, normalizedReason);
+        }
+        auditLogService.record(
+                automatic ? "EVENT_AUTO_CANCELLED" : "EVENT_CANCELLED",
+                "EVENT",
+                saved.getEventId(),
+                saved.getName(),
+                previous,
+                toEventAuditPayload(saved),
+                normalizedReason
+        );
+        return toEventDto(saved);
+    }
+
     @Transactional(readOnly = true)
     public java.util.List<TrackDto> listTracks(Integer eventId) {
         ensureEventExists(eventId);
@@ -316,7 +373,9 @@ public class EventManagementService {
         track.setName(trackName);
         track.setMinTeams(normalizeMinTeams(request.minTeams()));
         track.setMaxTeams(normalizeMaxTeams(request.minTeams(), request.maxTeams()));
-        TrackDto dto = toTrackDto(trackRepository.save(track));
+        TrackEntity savedTrack = trackRepository.save(track);
+        initializeLegacyPromotionRulesForTrack(savedTrack);
+        TrackDto dto = toTrackDto(savedTrack);
         auditLogService.record(
                 "TRACK_CREATED",
                 "TRACK",
@@ -365,6 +424,7 @@ public class EventManagementService {
         }
         requireTrackHasNoTeams(track.getTrackId());
         TrackDto previous = toTrackDto(track);
+        promotionRuleRepository.deleteByTrackId(trackId);
         trackRepository.deleteById(trackId);
         auditLogService.record(
                 "TRACK_DELETED",
@@ -398,7 +458,9 @@ public class EventManagementService {
         RoundEntity round = new RoundEntity();
         round.setEventId(eventId);
         applyRoundRequest(round, request);
-        RoundManagementDto dto = toRoundDto(roundRepository.save(round));
+        RoundEntity savedRound = roundRepository.save(round);
+        replaceUniformPromotionRules(savedRound, request.promotionRuleTopN());
+        RoundManagementDto dto = toRoundDto(savedRound);
         notificationService.notifyRoundUpdated(event, round);
         auditLogService.record(
                 "ROUND_CREATED",
@@ -424,7 +486,9 @@ public class EventManagementService {
         validateRoundInsertPosition(request.roundOrder(), roundsInEvent.size());
         reorderRoundsForMove(roundsInEvent, roundId, request.roundOrder());
         applyRoundRequest(round, request);
-        RoundManagementDto updated = toRoundDto(roundRepository.save(round));
+        RoundEntity savedRound = roundRepository.save(round);
+        replaceUniformPromotionRules(savedRound, request.promotionRuleTopN());
+        RoundManagementDto updated = toRoundDto(savedRound);
         notificationService.notifyRoundUpdated(event, round);
         auditLogService.record(
                 "ROUND_UPDATED",
@@ -471,6 +535,7 @@ public class EventManagementService {
         }
         Integer removedOrder = round.getRoundOrder();
         RoundManagementDto previous = toRoundDto(round);
+        promotionRuleRepository.deleteByRoundId(roundId);
         roundRepository.deleteById(roundId);
         List<RoundEntity> remainingRounds = roundRepository.findByEventIdOrderByRoundOrderAsc(round.getEventId());
         for (RoundEntity remaining : remainingRounds) {
@@ -689,6 +754,7 @@ public class EventManagementService {
                 .toList();
         for (TrackEntity track : tracksToDelete) {
             requireTrackHasNoTeams(track.getTrackId());
+            promotionRuleRepository.deleteByTrackId(track.getTrackId());
             trackRepository.delete(track);
         }
     }
@@ -729,7 +795,8 @@ public class EventManagementService {
             if (round.getScoreLocked() == null) {
                 round.setScoreLocked(false);
             }
-            roundRepository.save(round);
+            RoundEntity savedRound = roundRepository.save(round);
+            replaceUniformPromotionRules(savedRound, request.promotionRuleTopN());
         }
         roundRepository.flush();
 
@@ -737,8 +804,53 @@ public class EventManagementService {
                 .filter(round -> !requestedIds.contains(round.getRoundId()))
                 .toList();
         for (RoundEntity round : roundsToDelete) {
+            promotionRuleRepository.deleteByRoundId(round.getRoundId());
             roundRepository.delete(round);
         }
+    }
+
+    private void replaceUniformPromotionRules(RoundEntity round, Integer topN) {
+        promotionRuleRepository.deleteByRoundId(round.getRoundId());
+        // Flush removals before inserting replacements that use the same round/track unique key.
+        promotionRuleRepository.flush();
+        if (Boolean.TRUE.equals(round.getFinalRound()) || topN == null || topN < 1) {
+            return;
+        }
+        List<RoundTrackPromotionRuleEntity> rules = trackRepository
+                .findByEventIdOrderByTrackIdAsc(round.getEventId())
+                .stream()
+                .map(track -> {
+                    if (track.getMaxTeams() != null && topN > track.getMaxTeams()) {
+                        throw new ApiException(
+                                HttpStatus.BAD_REQUEST,
+                                "Top N for track " + track.getName() + " cannot exceed its maximum team capacity"
+                        );
+                    }
+                    RoundTrackPromotionRuleEntity rule = new RoundTrackPromotionRuleEntity();
+                    rule.setRoundId(round.getRoundId());
+                    rule.setTrackId(track.getTrackId());
+                    rule.setTopN(topN);
+                    return rule;
+                })
+                .toList();
+        promotionRuleRepository.saveAll(rules);
+    }
+
+    private void initializeLegacyPromotionRulesForTrack(TrackEntity track) {
+        List<RoundTrackPromotionRuleEntity> rules = roundRepository
+                .findByEventIdOrderByRoundOrderAsc(track.getEventId())
+                .stream()
+                .filter(round -> !Boolean.TRUE.equals(round.getFinalRound()))
+                .filter(round -> round.getPromotionRuleTopN() != null && round.getPromotionRuleTopN() > 0)
+                .map(round -> {
+                    RoundTrackPromotionRuleEntity rule = new RoundTrackPromotionRuleEntity();
+                    rule.setRoundId(round.getRoundId());
+                    rule.setTrackId(track.getTrackId());
+                    rule.setTopN(round.getPromotionRuleTopN());
+                    return rule;
+                })
+                .toList();
+        promotionRuleRepository.saveAll(rules);
     }
 
     private void applyEventRequest(HackathonEventEntity event,
@@ -783,6 +895,14 @@ public class EventManagementService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "semester must be one of: Spring, Summer, Fall");
         }
         return ALLOWED_SEMESTERS.get(normalizedSemesterKey);
+    }
+
+    private String normalizeRequired(String value, String fieldName) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, fieldName + " is required");
+        }
+        return normalized;
     }
 
     private void ensureSemesterYearUnique(Integer year, String semester, Integer currentEventId) {
@@ -894,10 +1014,13 @@ public class EventManagementService {
                         round.roundId(),
                         round.roundName().trim(),
                         round.roundOrder(),
+                        round.startAt(),
                         round.submissionDeadline(),
+                        round.endAt(),
                         round.promotionRuleTopN(),
                         false,
-                        sanitizeRoundCriteria(round.criteria())
+                        sanitizeRoundCriteria(round.criteria()),
+                        sanitizeTrackPromotionRules(round.trackPromotionRules())
                 ))
                 .toList();
 
@@ -909,17 +1032,24 @@ public class EventManagementService {
                         request.finalRound().roundId(),
                         normalizeFinalRoundName(request.finalRound().roundName()),
                         request.finalRound().roundOrder(),
+                        request.finalRound().startAt(),
                         request.finalRound().submissionDeadline(),
+                        request.finalRound().endAt(),
                         null,
                         true,
-                        sanitizeRoundCriteria(request.finalRound().criteria())
+                        sanitizeRoundCriteria(request.finalRound().criteria()),
+                        Collections.emptyList()
                 );
 
         List<EventWizardAwardRequest> sanitizedAwards = request == null || request.awards() == null
                 ? Collections.emptyList()
                 : request.awards().stream()
                 .filter(award -> award != null && award.awardName() != null && !award.awardName().trim().isBlank())
-                .map(award -> new EventWizardAwardRequest(award.awardName().trim(), award.quantity()))
+                .map(award -> new EventWizardAwardRequest(
+                        award.awardName().trim(),
+                        award.quantity(),
+                        award.prizeAmountVnd() == null ? 0L : award.prizeAmountVnd()
+                ))
                 .toList();
 
         return new EventDraftSnapshot(
@@ -1013,6 +1143,7 @@ public class EventManagementService {
         for (TrackEntity existing : existingTracks) {
             if (!requestedIds.contains(existing.getTrackId())) {
                 requireTrackHasNoTeams(existing.getTrackId());
+                promotionRuleRepository.deleteByTrackId(existing.getTrackId());
                 trackRepository.delete(existing);
             }
         }
@@ -1029,10 +1160,13 @@ public class EventManagementService {
                     qualifyingRound.roundId(),
                     qualifyingRound.roundName(),
                     order++,
+                    qualifyingRound.startAt(),
                     qualifyingRound.submissionDeadline(),
+                    qualifyingRound.endAt(),
                     qualifyingRound.promotionRuleTopN(),
                     false,
-                    qualifyingRound.criteria()
+                    qualifyingRound.criteria(),
+                    qualifyingRound.trackPromotionRules()
             ));
         }
         if (finalRound != null) {
@@ -1040,10 +1174,13 @@ public class EventManagementService {
                     finalRound.roundId(),
                     normalizeFinalRoundName(finalRound.roundName()),
                     order,
+                    finalRound.startAt(),
                     finalRound.submissionDeadline(),
+                    finalRound.endAt(),
                     null,
                     true,
-                    finalRound.criteria()
+                    finalRound.criteria(),
+                    Collections.emptyList()
             ));
         }
 
@@ -1073,8 +1210,8 @@ public class EventManagementService {
 
             round.setRoundName(request.roundName());
             round.setRoundOrder(request.roundOrder());
-            round.setStartAt(request.submissionDeadline());
-            round.setEndAt(request.submissionDeadline());
+            round.setStartAt(request.startAt());
+            round.setEndAt(request.endAt());
             round.setSubmissionDeadline(request.submissionDeadline());
             round.setPromotionRuleTopN(Boolean.TRUE.equals(request.finalRound()) ? null : request.promotionRuleTopN());
             round.setFinalRound(Boolean.TRUE.equals(request.finalRound()));
@@ -1083,16 +1220,123 @@ public class EventManagementService {
             }
             roundRepository.save(round);
             syncRoundCriteria(round, request.criteria());
+            syncRoundPromotionRules(eventId, round, request);
         }
         roundRepository.flush();
 
         for (RoundEntity existing : existingRounds) {
             if (!requestedIds.contains(existing.getRoundId())) {
+                promotionRuleRepository.deleteByRoundId(existing.getRoundId());
                 scoringCriteriaRepository.deleteByRoundId(existing.getRoundId());
                 roundRepository.delete(existing);
             }
         }
         roundRepository.flush();
+    }
+
+    private List<TrackPromotionRuleRequest> sanitizeTrackPromotionRules(List<TrackPromotionRuleRequest> rules) {
+        if (rules == null) {
+            return Collections.emptyList();
+        }
+        return rules.stream()
+                .filter(rule -> rule != null && (rule.trackId() != null
+                        || (rule.trackName() != null && !rule.trackName().trim().isBlank())))
+                .map(rule -> new TrackPromotionRuleRequest(
+                        rule.trackId(),
+                        rule.trackName() == null ? null : rule.trackName().trim(),
+                        rule.topN()
+                ))
+                .toList();
+    }
+
+    private void syncRoundPromotionRules(Integer eventId,
+                                         RoundEntity round,
+                                         EventWizardRoundRequest request) {
+        promotionRuleRepository.deleteByRoundId(round.getRoundId());
+        // SQL Server checks the unique key on insert, so pending deletes must execute first.
+        promotionRuleRepository.flush();
+        if (Boolean.TRUE.equals(request.finalRound())) {
+            round.setPromotionRuleTopN(null);
+            roundRepository.save(round);
+            return;
+        }
+
+        List<TrackEntity> tracks = trackRepository.findByEventIdOrderByTrackIdAsc(eventId);
+        Map<Integer, TrackEntity> tracksById = tracks.stream()
+                .collect(java.util.stream.Collectors.toMap(TrackEntity::getTrackId, track -> track));
+        Map<String, TrackEntity> tracksByName = tracks.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        track -> track.getName().trim().toLowerCase(Locale.ROOT),
+                        track -> track,
+                        (left, right) -> left
+                ));
+
+        List<TrackPromotionRuleRequest> requestedRules = sanitizeTrackPromotionRules(request.trackPromotionRules());
+        if (requestedRules.isEmpty() && request.promotionRuleTopN() != null) {
+            requestedRules = tracks.stream()
+                    .map(track -> new TrackPromotionRuleRequest(
+                            track.getTrackId(),
+                            track.getName(),
+                            request.promotionRuleTopN()
+                    ))
+                    .toList();
+        }
+
+        Set<Integer> configuredTrackIds = new HashSet<>();
+        List<RoundTrackPromotionRuleEntity> entities = new ArrayList<>();
+        for (TrackPromotionRuleRequest rule : requestedRules) {
+            TrackEntity track = rule.trackId() == null
+                    ? tracksByName.get(String.valueOf(rule.trackName()).trim().toLowerCase(Locale.ROOT))
+                    : tracksById.get(rule.trackId());
+            if (track == null || !configuredTrackIds.add(track.getTrackId())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Each promotion rule must reference one unique track in this event");
+            }
+            if (rule.topN() == null || rule.topN() < 1) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Top N must be at least 1 for track " + track.getName());
+            }
+            if (track.getMaxTeams() != null && rule.topN() > track.getMaxTeams()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Top N for track " + track.getName() + " cannot exceed its maximum team capacity");
+            }
+            RoundTrackPromotionRuleEntity entity = new RoundTrackPromotionRuleEntity();
+            entity.setRoundId(round.getRoundId());
+            entity.setTrackId(track.getTrackId());
+            entity.setTopN(rule.topN());
+            entities.add(entity);
+        }
+        promotionRuleRepository.saveAll(entities);
+
+        Integer commonTopN = entities.isEmpty() ? null : entities.get(0).getTopN();
+        boolean allEqual = commonTopN != null && entities.stream().allMatch(entity -> commonTopN.equals(entity.getTopN()));
+        round.setPromotionRuleTopN(allEqual ? commonTopN : null);
+        roundRepository.save(round);
+    }
+
+    private List<TrackPromotionRuleRequest> readTrackPromotionRules(RoundEntity round,
+                                                                    List<TrackEntity> tracks) {
+        List<RoundTrackPromotionRuleEntity> stored = promotionRuleRepository.findByRoundIdOrderByTrackIdAsc(round.getRoundId());
+        Map<Integer, TrackEntity> tracksById = tracks.stream()
+                .collect(java.util.stream.Collectors.toMap(TrackEntity::getTrackId, track -> track));
+        if (!stored.isEmpty()) {
+            return stored.stream()
+                    .filter(rule -> tracksById.containsKey(rule.getTrackId()))
+                    .map(rule -> new TrackPromotionRuleRequest(
+                            rule.getTrackId(),
+                            tracksById.get(rule.getTrackId()).getName(),
+                            rule.getTopN()
+                    ))
+                    .toList();
+        }
+        if (round.getPromotionRuleTopN() == null || round.getPromotionRuleTopN() < 1) {
+            return Collections.emptyList();
+        }
+        return tracks.stream()
+                .map(track -> new TrackPromotionRuleRequest(
+                        track.getTrackId(),
+                        track.getName(),
+                        round.getPromotionRuleTopN()
+                ))
+                .toList();
     }
 
     private void validatePublishableEvent(HackathonEventEntity event,
@@ -1148,7 +1392,7 @@ public class EventManagementService {
         }
 
         int expectedOrder = 1;
-        LocalDateTime previousSubmissionDeadline = null;
+        LocalDateTime previousRoundEnd = null;
         for (RoundEntity round : orderedRounds) {
             if (round.getRoundOrder() == null || round.getRoundOrder() != expectedOrder) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Round order must stay consecutive from 1");
@@ -1156,24 +1400,40 @@ public class EventManagementService {
             if (round.getRoundName() == null || round.getRoundName().isBlank()) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Every round must have a name");
             }
-            if (round.getSubmissionDeadline() == null) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Every round needs a submission deadline");
+            if (round.getStartAt() == null || round.getSubmissionDeadline() == null || round.getEndAt() == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Every round needs a start time, submission deadline, and end time");
             }
-            if (round.getSubmissionDeadline().isBefore(event.getCompetitionStartAt())
-                    || round.getSubmissionDeadline().isAfter(event.getCompetitionEndAt())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Round submission deadlines must stay inside the competition window");
+            if (round.getStartAt().isBefore(event.getCompetitionStartAt())
+                    || round.getEndAt().isAfter(event.getCompetitionEndAt())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Round timelines must stay inside the competition window");
             }
-            if (previousSubmissionDeadline != null && !round.getSubmissionDeadline().isAfter(previousSubmissionDeadline)) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Each next round must have a submission deadline after the previous round");
+            if (!round.getSubmissionDeadline().isAfter(round.getStartAt())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Submission deadline must be after the round start time");
             }
-            if (!Boolean.TRUE.equals(round.getFinalRound())
-                    && (round.getPromotionRuleTopN() == null || round.getPromotionRuleTopN() < 1)) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Each qualifying round needs a Top N value");
+            if (round.getEndAt().isBefore(round.getSubmissionDeadline())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Round end time cannot be before its submission deadline");
+            }
+            if (previousRoundEnd != null && round.getStartAt().isBefore(previousRoundEnd)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Rounds cannot overlap each other");
+            }
+            if (!Boolean.TRUE.equals(round.getFinalRound())) {
+                Map<Integer, Integer> topNByTrack = promotionTopNByTrack(round, tracks);
+                for (TrackEntity track : tracks) {
+                    Integer topN = topNByTrack.get(track.getTrackId());
+                    if (topN == null || topN < 1) {
+                        throw new ApiException(HttpStatus.BAD_REQUEST,
+                                "Configure Top N for track " + track.getName() + " in round " + round.getRoundName());
+                    }
+                    if (track.getMaxTeams() != null && topN > track.getMaxTeams()) {
+                        throw new ApiException(HttpStatus.BAD_REQUEST,
+                                "Top N for track " + track.getName() + " cannot exceed its maximum team capacity");
+                    }
+                }
             }
             if (scoringCriteriaRepository.findByRoundIdOrderByCriteriaId(round.getRoundId()).isEmpty()) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Each round needs at least one scoring criterion");
             }
-            previousSubmissionDeadline = round.getSubmissionDeadline();
+            previousRoundEnd = round.getEndAt();
             expectedOrder += 1;
         }
 
@@ -1182,11 +1442,33 @@ public class EventManagementService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "At least one award is required");
         }
         for (EventWizardAwardRequest award : awards) {
-            if (award.awardName() == null || award.awardName().isBlank() || award.quantity() == null || award.quantity() < 1) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Each award needs a name and quantity greater than 0");
+            if (award.awardName() == null
+                    || award.awardName().isBlank()
+                    || award.quantity() == null
+                    || award.quantity() < 1
+                    || award.prizeAmountVnd() == null
+                    || award.prizeAmountVnd() < 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Each award needs a name, quantity greater than 0, and prize amount of 0 VND or more");
             }
         }
 
+    }
+
+    private Map<Integer, Integer> promotionTopNByTrack(RoundEntity round, List<TrackEntity> tracks) {
+        Map<Integer, Integer> configured = promotionRuleRepository.findByRoundIdOrderByTrackIdAsc(round.getRoundId())
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        RoundTrackPromotionRuleEntity::getTrackId,
+                        RoundTrackPromotionRuleEntity::getTopN,
+                        (left, right) -> left
+                ));
+        if (!configured.isEmpty() || round.getPromotionRuleTopN() == null) {
+            return configured;
+        }
+        return tracks.stream().collect(java.util.stream.Collectors.toMap(
+                TrackEntity::getTrackId,
+                ignored -> round.getPromotionRuleTopN()
+        ));
     }
 
     private void validateEventDateInSemester(String semester, Integer year, LocalDateTime value, String label) {
@@ -1357,10 +1639,13 @@ public class EventManagementService {
                         round.getRoundId(),
                         round.getRoundName(),
                         round.getRoundOrder(),
+                        round.getStartAt(),
                         round.getSubmissionDeadline(),
+                        round.getEndAt(),
                         round.getPromotionRuleTopN(),
                         false,
-                        readCriteriaForRound(round.getRoundId())
+                        readCriteriaForRound(round.getRoundId()),
+                        readTrackPromotionRules(round, tracks)
                 ))
                 .toList();
         EventWizardRoundRequest finalRound = rounds.stream()
@@ -1370,10 +1655,13 @@ public class EventManagementService {
                         round.getRoundId(),
                         normalizeFinalRoundName(round.getRoundName()),
                         round.getRoundOrder(),
+                        round.getStartAt(),
                         round.getSubmissionDeadline(),
+                        round.getEndAt(),
                         null,
                         true,
-                        readCriteriaForRound(round.getRoundId())
+                        readCriteriaForRound(round.getRoundId()),
+                        Collections.emptyList()
                 ))
                 .orElse(null);
 
@@ -1422,25 +1710,38 @@ public class EventManagementService {
     }
 
     private TrackDto toTrackDto(TrackEntity track) {
+        HackathonEventEntity event = getEventOrThrow(track.getEventId());
+        AssignmentLockPolicyService.AssignmentLockDecision assignmentDecision =
+                assignmentLockPolicyService.mentorAssignmentDecision(event, track);
         return new TrackDto(
                 track.getTrackId(),
                 track.getEventId(),
                 track.getName(),
                 track.getMinTeams(),
                 track.getMaxTeams(),
-                teamRepository.countByTrackTrackId(track.getTrackId())
+                teamRepository.countByTrackTrackId(track.getTrackId()),
+                assignmentDecision.locked(),
+                assignmentDecision.reason()
         );
     }
 
     private RoundManagementDto toRoundDto(RoundEntity round) {
+        HackathonEventEntity event = getEventOrThrow(round.getEventId());
+        AssignmentLockPolicyService.AssignmentLockDecision assignmentDecision =
+                assignmentLockPolicyService.judgeAssignmentDecision(event, round);
         return new RoundManagementDto(
                 round.getRoundId(),
                 round.getEventId(),
                 round.getRoundName(),
                 round.getRoundOrder(),
+                round.getStartAt(),
                 round.getSubmissionDeadline(),
+                round.getEndAt(),
                 round.getPromotionRuleTopN(),
-                Boolean.TRUE.equals(round.getScoreLocked())
+                Boolean.TRUE.equals(round.getScoreLocked()),
+                Boolean.TRUE.equals(round.getFinalRound()),
+                assignmentDecision.locked(),
+                assignmentDecision.reason()
         );
     }
 

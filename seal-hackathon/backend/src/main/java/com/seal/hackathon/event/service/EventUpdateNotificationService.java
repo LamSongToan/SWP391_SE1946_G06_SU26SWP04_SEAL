@@ -16,6 +16,7 @@ import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.EventUpdateNotificationEntity;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
 import com.seal.hackathon.event.entity.RoundEntity;
+import com.seal.hackathon.event.entity.RoundEntity;
 import com.seal.hackathon.event.repository.AnnouncementRepository;
 import com.seal.hackathon.event.repository.EventUpdateNotificationRepository;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
@@ -24,6 +25,7 @@ import com.seal.hackathon.event.repository.TrackMentorRepository;
 import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.team.entity.TeamEntity;
 import com.seal.hackathon.team.entity.TeamMemberEntity;
+import com.seal.hackathon.team.repository.IndividualRegistrationRepository;
 import com.seal.hackathon.team.repository.TeamMemberRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -59,6 +61,7 @@ public class EventUpdateNotificationService {
     private final UserRoleRepository userRoleRepository;
     private final HackathonEventRepository eventRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final IndividualRegistrationRepository individualRegistrationRepository;
     private final TrackMentorRepository trackMentorRepository;
     private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final AuditLogService auditLogService;
@@ -76,6 +79,7 @@ public class EventUpdateNotificationService {
                                           UserRoleRepository userRoleRepository,
                                           HackathonEventRepository eventRepository,
                                           TeamMemberRepository teamMemberRepository,
+                                          IndividualRegistrationRepository individualRegistrationRepository,
                                           TrackMentorRepository trackMentorRepository,
                                           JudgeAssignmentRepository judgeAssignmentRepository,
                                           AuditLogService auditLogService,
@@ -86,6 +90,7 @@ public class EventUpdateNotificationService {
         this.userRoleRepository = userRoleRepository;
         this.eventRepository = eventRepository;
         this.teamMemberRepository = teamMemberRepository;
+        this.individualRegistrationRepository = individualRegistrationRepository;
         this.trackMentorRepository = trackMentorRepository;
         this.judgeAssignmentRepository = judgeAssignmentRepository;
         this.auditLogService = auditLogService;
@@ -177,6 +182,33 @@ public class EventUpdateNotificationService {
     }
 
     @Transactional
+    public int notifyRoundResultsPublished(HackathonEventEntity event, RoundEntity round) {
+        if (event == null || round == null) {
+            return 0;
+        }
+        Set<Integer> recipientIds = resolveRecipients(event.getEventId(), "ALL");
+        if (recipientIds.isEmpty()) {
+            return 0;
+        }
+
+        LocalDateTime createdAt = LocalDateTime.now();
+        String title = "Round leaderboard published";
+        String message = "Results for " + round.getRoundName()
+                + " in " + event.getName()
+                + " are now available. Please review rankings, qualification status, and feedback on your dashboard.";
+
+        return notifyRecipients(
+                recipientIds,
+                event,
+                title,
+                message,
+                "RESULTS",
+                createdAt,
+                "SEAL Hackathon round leaderboard published"
+        );
+    }
+
+    @Transactional
     public int notifyAwardsGranted(HackathonEventEntity event, List<TeamAwardHistoryDto> awards) {
         if (event == null || awards == null || awards.isEmpty()) {
             return 0;
@@ -191,6 +223,7 @@ public class EventUpdateNotificationService {
             String message = "Your team " + award.teamName()
                     + " received " + award.awardName()
                     + " in " + event.getName()
+                    + " (" + formatPrizeAmount(award.prizeAmountVnd()) + ")"
                     + ". Check the published results for ranking and score details.";
             String subject = "SEAL Hackathon award received";
             for (TeamMemberEntity member : teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(award.teamId())) {
@@ -241,6 +274,365 @@ public class EventUpdateNotificationService {
             notificationCount += 1;
         }
         return notificationCount;
+    }
+
+    @Transactional
+    public void notifyCoordinatorRemovedTeamMember(UserEntity coordinator,
+                                                   UserEntity removedUser,
+                                                   TeamEntity team,
+                                                   HackathonEventEntity event,
+                                                   String reason) {
+        if (coordinator == null || removedUser == null || team == null || event == null) {
+            return;
+        }
+
+        LocalDateTime createdAt = LocalDateTime.now();
+        String coordinatorName = resolveRecipientName(coordinator);
+        String removedUserTitle = "Removed from team";
+        String removedUserMessage = "Coordinator " + coordinatorName
+                + " removed you from " + team.getTeamName()
+                + " in " + event.getName()
+                + ". Reason: " + normalizeOptionalText(reason, "No reason provided.");
+        saveNotification(removedUser, event, null, removedUserTitle, removedUserMessage, "TEAM_MEMBER_REMOVED", createdAt);
+        sendBestEffortEmail(
+                removedUser,
+                "SEAL Hackathon team membership updated",
+                buildEmailBody(removedUser, removedUserTitle, removedUserMessage)
+        );
+
+        String rosterUpdateTitle = "Team roster updated";
+        String rosterUpdateMessage = coordinatorName
+                + " removed " + resolveRecipientName(removedUser)
+                + " from " + team.getTeamName()
+                + ". Reason: " + normalizeOptionalText(reason, "No reason provided.");
+        teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(team.getTeamId()).forEach((member) -> {
+            UserEntity user = member.getStudent().getUserRole().getUser();
+            if (user == null) {
+                return;
+            }
+            saveNotification(user, event, null, rosterUpdateTitle, rosterUpdateMessage, "TEAM_MEMBERSHIP_UPDATE", createdAt);
+            sendBestEffortEmail(
+                    user,
+                    "SEAL Hackathon team roster updated",
+                    buildEmailBody(user, rosterUpdateTitle, rosterUpdateMessage)
+            );
+        });
+    }
+
+    @Transactional
+    public void notifyCoordinatorAddedTeamMember(UserEntity addedUser,
+                                                 TeamEntity team,
+                                                 HackathonEventEntity event,
+                                                 String reason) {
+        if (addedUser == null || team == null || event == null) {
+            return;
+        }
+
+        LocalDateTime createdAt = LocalDateTime.now();
+        String addedUserTitle = "Added to team";
+        String addedUserMessage = "Coordinator assigned you to " + team.getTeamName()
+                + " in " + event.getName()
+                + ". Reason: " + normalizeOptionalText(reason, "Automatic coordinator placement after registration.");
+        saveNotification(addedUser, event, null, addedUserTitle, addedUserMessage, "TEAM_MATCHING", createdAt);
+        sendBestEffortEmail(
+                addedUser,
+                "SEAL Hackathon team assignment",
+                buildEmailBody(addedUser, addedUserTitle, addedUserMessage)
+        );
+
+        String rosterUpdateTitle = "New teammate assigned";
+        String rosterUpdateMessage = resolveRecipientName(addedUser)
+                + " was added to " + team.getTeamName()
+                + " by the coordinator. Reason: "
+                + normalizeOptionalText(reason, "Automatic coordinator placement after registration.");
+        teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(team.getTeamId()).forEach((member) -> {
+            UserEntity user = member.getStudent().getUserRole().getUser();
+            if (user == null || user.getUserId() == null || user.getUserId().equals(addedUser.getUserId())) {
+                return;
+            }
+            saveNotification(user, event, null, rosterUpdateTitle, rosterUpdateMessage, "TEAM_MEMBERSHIP_UPDATE", createdAt);
+            sendBestEffortEmail(
+                    user,
+                    "SEAL Hackathon team roster updated",
+                    buildEmailBody(user, rosterUpdateTitle, rosterUpdateMessage)
+            );
+        });
+    }
+
+    @Transactional
+    public void notifyTeamFormationUnsuccessful(UserEntity user,
+                                                HackathonEventEntity event,
+                                                String reason) {
+        if (user == null || event == null) {
+            return;
+        }
+        String title = "Individual registration could not form a team";
+        String message = normalizeOptionalText(
+                reason,
+                "We could not assign you to a team because there were not enough available members or open teams."
+        ) + " You are not eligible to continue in " + event.getName() + ".";
+        saveNotification(user, event, null, title, message, "TEAM_MATCHING", LocalDateTime.now());
+        sendBestEffortEmail(
+                user,
+                "SEAL Hackathon individual registration update",
+                buildEmailBody(user, title, message)
+        );
+    }
+
+    @Transactional
+    public int notifyTeamTrackChanged(TeamEntity team,
+                                      HackathonEventEntity event,
+                                      String previousTrackName,
+                                      String nextTrackName,
+                                      String reason) {
+        if (team == null || event == null) {
+            return 0;
+        }
+        String title = "Team track updated";
+        String message = team.getTeamName() + " was moved from "
+                + normalizeOptionalText(previousTrackName, "an unassigned track")
+                + " to " + normalizeOptionalText(nextTrackName, "a new track")
+                + " in " + event.getName()
+                + ". Reason: " + normalizeOptionalText(reason, "Coordinator track balancing after registration.");
+        int notificationCount = 0;
+        LocalDateTime createdAt = LocalDateTime.now();
+        for (TeamMemberEntity member : teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(team.getTeamId())) {
+            UserEntity user = member.getStudent().getUserRole().getUser();
+            if (user == null) {
+                continue;
+            }
+            saveNotification(user, event, null, title, message, "EVENT_ROUND_UPDATE", createdAt);
+            sendBestEffortEmail(user, "SEAL Hackathon track update", buildEmailBody(user, title, message));
+            notificationCount += 1;
+        }
+        return notificationCount;
+    }
+
+    @Transactional
+    public int notifyTeamRemovedFromEvent(TeamEntity team,
+                                          HackathonEventEntity event,
+                                          String previousTrackName,
+                                          String reason,
+                                          List<UserEntity> mentorRecipients) {
+        if (team == null || event == null) {
+            return 0;
+        }
+        int notificationCount = 0;
+        LocalDateTime createdAt = LocalDateTime.now();
+        String memberTitle = "Your team was disqualified";
+        String memberMessage = "Your team " + team.getTeamName()
+                + " was disqualified from " + event.getName()
+                + " by the coordinator. Reason: " + normalizeOptionalText(reason, "No reason provided.")
+                + " Previous track: " + normalizeOptionalText(previousTrackName, "Not assigned")
+                + ". Your team is no longer participating in this event, and the team workspace has been reset back to a standalone team.";
+        for (TeamMemberEntity member : teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(team.getTeamId())) {
+            UserEntity user = member.getStudent().getUserRole().getUser();
+            if (user == null) {
+                continue;
+            }
+            saveNotification(user, event, null, memberTitle, memberMessage, "TEAM_DISQUALIFIED", createdAt);
+            sendBestEffortEmail(user, "SEAL Hackathon team disqualified", buildEmailBody(user, memberTitle, memberMessage));
+            notificationCount += 1;
+        }
+
+        String mentorTitle = "Mentored team disqualified";
+        String mentorMessage = team.getTeamName()
+                + " was disqualified from " + event.getName()
+                + ". Track: " + normalizeOptionalText(previousTrackName, "Not assigned")
+                + ". Reason: " + normalizeOptionalText(reason, "No reason provided.") + ".";
+        for (UserEntity mentor : mentorRecipients == null ? List.<UserEntity>of() : mentorRecipients) {
+            if (mentor == null) {
+                continue;
+            }
+            saveNotification(mentor, event, null, mentorTitle, mentorMessage, "TEAM_DISQUALIFIED", createdAt);
+            sendBestEffortEmail(mentor, "SEAL Hackathon mentored team disqualified", buildEmailBody(mentor, mentorTitle, mentorMessage));
+            notificationCount += 1;
+        }
+        return notificationCount;
+    }
+
+    @Transactional
+    public void notifyIndividualTrackUpdated(UserEntity user,
+                                             HackathonEventEntity event,
+                                             String previousTrackName,
+                                             String nextTrackName,
+                                             String reason) {
+        if (user == null || event == null) {
+            return;
+        }
+        String title = "Preferred track updated";
+        String message = "Your registration for " + event.getName()
+                + " was moved from " + normalizeOptionalText(previousTrackName, "an unassigned track")
+                + " to " + normalizeOptionalText(nextTrackName, "a new track")
+                + ". Reason: " + normalizeOptionalText(reason, "Coordinator track balancing after registration.");
+        saveNotification(user, event, null, title, message, "EVENT_ROUND_UPDATE", LocalDateTime.now());
+        sendBestEffortEmail(user, "SEAL Hackathon registration track update", buildEmailBody(user, title, message));
+    }
+
+    @Transactional
+    public void notifyIndividualTrackChangeRequest(UserEntity user,
+                                                   HackathonEventEntity event,
+                                                   String previousTrackName,
+                                                   String nextTrackName,
+                                                   String reason,
+                                                   LocalDateTime responseDueAt) {
+        if (user == null || event == null) {
+            return;
+        }
+        String title = "Track change approval needed";
+        String message = "Coordinator asked you to move your individual registration for " + event.getName()
+                + " from " + normalizeOptionalText(previousTrackName, "your current track")
+                + " to " + normalizeOptionalText(nextTrackName, "another track")
+                + ". Reason: " + normalizeOptionalText(reason, "Track balancing after registration.")
+                + " Please respond before " + formatDateTime(responseDueAt) + ".";
+        saveNotification(user, event, null, title, message, "EVENT_ROUND_UPDATE", LocalDateTime.now());
+        sendBestEffortEmail(user, "SEAL Hackathon track change approval", buildEmailBody(user, title, message));
+    }
+
+    @Transactional
+    public int notifyTrackMergeImpact(HackathonEventEntity event,
+                                      String sourceTrackName,
+                                      String targetTrackName,
+                                      String reason) {
+        if (event == null) {
+            return 0;
+        }
+        String title = "Track structure updated";
+        String message = normalizeOptionalText(sourceTrackName, "One track")
+                + " was merged into " + normalizeOptionalText(targetTrackName, "another track")
+                + " for " + event.getName()
+                + ". Reason: " + normalizeOptionalText(reason, "Coordinator track balancing after registration.");
+        return notifyRecipients(
+                resolveTrackAssignmentStakeholders(event.getEventId()),
+                event,
+                title,
+                message,
+                "EVENT_ROUND_UPDATE",
+                LocalDateTime.now(),
+                "SEAL Hackathon track structure updated"
+        );
+    }
+
+    @Transactional
+    public int notifyCoordinatorTrackReadinessReminder(HackathonEventEntity event,
+                                                       List<String> unresolvedIssues,
+                                                       LocalDateTime firstRoundStart,
+                                                       int daysRemaining,
+                                                       String reminderCategory) {
+        if (event == null || unresolvedIssues == null || unresolvedIssues.isEmpty()) {
+            return 0;
+        }
+        String title = daysRemaining <= 1
+                ? "Urgent coordinator action required"
+                : "Coordinator action required";
+        String message = event.getName()
+                + " still has unresolved team/track readiness issues before the first round starts on "
+                + formatDateTime(firstRoundStart)
+                + ". Issue(s): " + String.join("; ", unresolvedIssues)
+                + ". Please review and resolve this within "
+                + Math.max(1, daysRemaining)
+                + " day(s) by rebalancing teams, moving teams, merging/reducing tracks, or cancelling the event.";
+        return notifyRecipients(
+                resolveCoordinatorRecipients(),
+                event,
+                title,
+                message,
+                reminderCategory,
+                LocalDateTime.now(),
+                "SEAL Hackathon coordinator action required"
+        );
+    }
+
+    @Transactional
+    public int notifyEventStarted(HackathonEventEntity event) {
+        if (event == null) {
+            return 0;
+        }
+        Set<Integer> recipientIds = resolveEventStakeholdersAndRegistrants(event.getEventId());
+        recipientIds.addAll(resolveCoordinatorRecipients());
+        String title = "Event started";
+        String message = event.getName()
+                + " has started with the final confirmed registration setup. Please open your SEAL dashboard to review your team roster, track assignment, mentors, and upcoming deadlines.";
+        return notifyRecipients(
+                recipientIds,
+                event,
+                title,
+                message,
+                "SYSTEM_EVENT_STARTED",
+                LocalDateTime.now(),
+                "SEAL Hackathon event started"
+        );
+    }
+
+    @Transactional
+    public int notifyEventCancelled(HackathonEventEntity event, String reason) {
+        if (event == null) {
+            return 0;
+        }
+        String title = "Event cancelled";
+        String message = event.getName()
+                + " has been cancelled by the coordinator. Reason: "
+                + normalizeOptionalText(reason, "No reason provided.")
+                + " Please stop any further registration, submission, and judging activity for this event.";
+        return notifyRecipients(
+                resolveEventStakeholdersAndRegistrants(event.getEventId()),
+                event,
+                title,
+                message,
+                "EVENT_ROUND_UPDATE",
+                LocalDateTime.now(),
+                "SEAL Hackathon event cancelled"
+        );
+    }
+
+    @Transactional
+    public int notifyEventAutoCancelled(HackathonEventEntity event, String reason) {
+        if (event == null) {
+            return 0;
+        }
+        String title = "Event automatically cancelled";
+        String message = event.getName()
+                + " was automatically cancelled by the system. Reason: "
+                + normalizeOptionalText(reason, "The first round reached its start time before track readiness issues were resolved.")
+                + " Please stop any further registration, submission, and judging activity for this event.";
+        return notifyRecipients(
+                resolveEventStakeholdersAndRegistrants(event.getEventId()),
+                event,
+                title,
+                message,
+                "SYSTEM_EVENT_AUTO_CANCELLED",
+                LocalDateTime.now(),
+                "SEAL Hackathon event automatically cancelled"
+        );
+    }
+
+    @Transactional
+    public int notifyJudgesScoringWindowExtended(HackathonEventEntity event,
+                                                 RoundEntity round,
+                                                 LocalDateTime newScoringDeadline,
+                                                 int extendedDays) {
+        if (event == null || round == null) {
+            return 0;
+        }
+        Set<Integer> recipientIds = resolveJudgeRecipientsForRound(round.getRoundId());
+        if (recipientIds.isEmpty()) {
+            return 0;
+        }
+        String title = "Scoring deadline extended";
+        String message = "The scoring window for " + round.getRoundName()
+                + " in " + event.getName()
+                + " was extended by " + extendedDays + " day(s). "
+                + "Please finalize every assigned submission before "
+                + normalizeOptionalText(formatDateTime(newScoringDeadline), "the updated deadline") + ".";
+        return notifyRecipients(
+                recipientIds,
+                event,
+                title,
+                message,
+                "ROUND_SCORING_DEADLINE_EXTENDED",
+                LocalDateTime.now(),
+                "SEAL Hackathon scoring deadline extended"
+        );
     }
 
     private void sendTeamMatchedEmail(UserEntity user, HackathonEventEntity event, TeamEntity team) {
@@ -578,6 +970,34 @@ public class EventUpdateNotificationService {
         return recipientIds;
     }
 
+    private Set<Integer> resolveCoordinatorRecipients() {
+        return new LinkedHashSet<>(userRoleRepository.findDistinctActiveUserIdsByRoleType(RoleType.COORDINATOR.getDbValue()));
+    }
+
+    private Set<Integer> resolveJudgeRecipientsForRound(Integer roundId) {
+        if (roundId == null) {
+            return Set.of();
+        }
+        return judgeAssignmentRepository.findByRoundRoundId(roundId).stream()
+                .map(item -> item.getJudge().getUserRole().getUser())
+                .filter(java.util.Objects::nonNull)
+                .map(UserEntity::getUserId)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Set<Integer> resolveTrackAssignmentStakeholders(Integer eventId) {
+        Set<Integer> recipientIds = new LinkedHashSet<>();
+        recipientIds.addAll(trackMentorRepository.findDistinctMentorUserIdsByEventId(eventId));
+        recipientIds.addAll(judgeAssignmentRepository.findDistinctJudgeUserIdsByEventId(eventId));
+        return recipientIds;
+    }
+
+    private Set<Integer> resolveEventStakeholdersAndRegistrants(Integer eventId) {
+        Set<Integer> recipientIds = resolveEventStakeholders(eventId);
+        recipientIds.addAll(individualRegistrationRepository.findDistinctRegisteredStudentUserIdsByEventId(eventId));
+        return recipientIds;
+    }
+
     private String emptyAudienceMessage(String audience) {
         if ("STUDENTS".equalsIgnoreCase(audience)) {
             return "No active students found for this event/audience.";
@@ -851,6 +1271,11 @@ public class EventUpdateNotificationService {
 
     private String formatDateTime(LocalDateTime value) {
         return value == null ? "an upcoming update" : value.format(DATE_TIME_FORMATTER);
+    }
+
+    private String formatPrizeAmount(Long amountVnd) {
+        long safeAmount = amountVnd == null ? 0L : amountVnd;
+        return String.format(Locale.US, "%,d VND", safeAmount);
     }
 
     private boolean isNotifiableEvent(HackathonEventEntity event) {

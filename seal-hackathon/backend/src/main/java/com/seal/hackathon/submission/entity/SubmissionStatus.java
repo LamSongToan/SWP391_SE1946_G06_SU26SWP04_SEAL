@@ -5,7 +5,8 @@ public enum SubmissionStatus {
     EVALUATING("Evaluating"),
     QUALIFIED("Qualified"),
     ELIMINATED("Eliminated"),
-    DISQUALIFIED("Disqualified");
+    DISQUALIFIED("Disqualified"),
+    FINALIZED("Finalized");
 
     private final String dbValue;
 

@@ -355,6 +355,7 @@ export default function StudentSubmissionPanel() {
                         </Button>
                         <Button
                           size="small"
+                          variant="outlined"
                           startIcon={<HistoryRoundedIcon />}
                           onClick={() => openHistoryDialog(existing)}
                         >

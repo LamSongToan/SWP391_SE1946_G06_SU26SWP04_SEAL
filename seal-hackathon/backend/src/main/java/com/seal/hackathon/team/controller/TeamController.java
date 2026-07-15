@@ -1,6 +1,7 @@
 package com.seal.hackathon.team.controller;
 
 import com.seal.hackathon.common.ApiResponse;
+import com.seal.hackathon.evaluation.dto.TeamLeaderboardDto;
 import com.seal.hackathon.event.dto.TrackDto;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.InviteTeamMemberRequest;
@@ -10,6 +11,7 @@ import com.seal.hackathon.team.dto.RegisterIndividualRequest;
 import com.seal.hackathon.team.dto.RegisterTeamForEventRequest;
 import com.seal.hackathon.team.dto.TeamDto;
 import com.seal.hackathon.team.dto.TeamInvitationDto;
+import com.seal.hackathon.team.dto.UpdateTeamAutoAssignmentPreferenceRequest;
 import com.seal.hackathon.team.service.TeamFormationService;
 import com.seal.hackathon.team.service.TeamService;
 import jakarta.validation.Valid;
@@ -59,6 +61,15 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.ok("Team fetched", teamService.getTeam(authentication, teamId)));
     }
 
+    @GetMapping("/{teamId}/leaderboard")
+    public ResponseEntity<ApiResponse<TeamLeaderboardDto>> getTeamLeaderboard(Authentication authentication,
+                                                                              @PathVariable Integer teamId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Team leaderboard fetched",
+                teamService.getTeamLeaderboard(authentication, teamId)
+        ));
+    }
+
     @GetMapping("/events/{eventId}/tracks")
     public ResponseEntity<ApiResponse<List<TrackDto>>> getRegistrationTracks(@PathVariable Integer eventId) {
         return ResponseEntity.ok(ApiResponse.ok("Registration tracks fetched", teamService.listRegistrationTracks(eventId)));
@@ -72,6 +83,26 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.ok(
                 "Individual registration saved",
                 teamFormationService.registerIndividual(authentication, eventId, request == null ? null : request.trackId())
+        ));
+    }
+
+    @PostMapping("/my/individual-registrations/{individualRegistrationId}/track-change/accept")
+    public ResponseEntity<ApiResponse<IndividualRegistrationDto>> acceptTrackChange(
+            Authentication authentication,
+            @PathVariable Integer individualRegistrationId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Track change accepted",
+                teamFormationService.acceptIndividualTrackChange(authentication, individualRegistrationId)
+        ));
+    }
+
+    @PostMapping("/my/individual-registrations/{individualRegistrationId}/track-change/reject")
+    public ResponseEntity<ApiResponse<IndividualRegistrationDto>> rejectTrackChange(
+            Authentication authentication,
+            @PathVariable Integer individualRegistrationId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Track change rejected",
+                teamFormationService.rejectIndividualTrackChange(authentication, individualRegistrationId)
         ));
     }
 
@@ -138,12 +169,27 @@ public class TeamController {
     }
 
     @PatchMapping("/{teamId}/leader/{userRoleId}")
-    public ResponseEntity<ApiResponse<TeamDto>> transferLeadership(Authentication authentication,
-                                                                  @PathVariable Integer teamId,
-                                                                  @PathVariable Integer userRoleId) {
+    public ResponseEntity<ApiResponse<TeamInvitationDto>> transferLeadership(Authentication authentication,
+                                                                             @PathVariable Integer teamId,
+                                                                             @PathVariable Integer userRoleId) {
         return ResponseEntity.ok(ApiResponse.ok(
-                "Team leadership transferred",
+                "Leadership transfer request sent",
                 teamService.transferLeadership(authentication, teamId, userRoleId)
+        ));
+    }
+
+    @PatchMapping("/{teamId}/auto-assignment-preference")
+    public ResponseEntity<ApiResponse<TeamDto>> updateAutoAssignmentPreference(
+            Authentication authentication,
+            @PathVariable Integer teamId,
+            @RequestBody(required = false) UpdateTeamAutoAssignmentPreferenceRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Team auto-assignment preference updated",
+                teamService.updateAutoAssignmentPreference(
+                        authentication,
+                        teamId,
+                        request != null && Boolean.TRUE.equals(request.acceptAutoAssignedMembers())
+                )
         ));
     }
 

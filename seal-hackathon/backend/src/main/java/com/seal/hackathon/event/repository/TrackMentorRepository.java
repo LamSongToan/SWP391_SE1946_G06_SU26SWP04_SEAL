@@ -23,6 +23,19 @@ public interface TrackMentorRepository extends JpaRepository<TrackMentorEntity, 
     })
     List<TrackMentorEntity> findByMentorUserRoleId(Integer mentorUserRoleId);
 
+    @EntityGraph(attributePaths = {
+        "mentor", "mentor.userRole", "mentor.userRole.user",
+        "track"
+    })
+    @Query("""
+            SELECT tm
+            FROM TrackMentorEntity tm
+            WHERE tm.mentor.userRoleId = :mentorUserRoleId
+              AND tm.track.eventId = :eventId
+            """)
+    List<TrackMentorEntity> findByMentorUserRoleIdAndTrackEventId(@Param("mentorUserRoleId") Integer mentorUserRoleId,
+                                                                  @Param("eventId") Integer eventId);
+
     boolean existsByTrackTrackIdAndMentorUserRoleId(Integer trackId, Integer mentorUserRoleId);
 
     Optional<TrackMentorEntity> findByTrackTrackIdAndMentorUserRoleId(Integer trackId, Integer mentorUserRoleId);
@@ -39,4 +52,17 @@ public interface TrackMentorRepository extends JpaRepository<TrackMentorEntity, 
         "track"
     })
     List<TrackMentorEntity> findByTrackEventId(Integer eventId);
+
+    @EntityGraph(attributePaths = {
+        "mentor", "mentor.userRole", "mentor.userRole.user",
+        "track"
+    })
+    @Query("""
+            SELECT tm
+            FROM TrackMentorEntity tm
+            WHERE tm.mentor.userRole.user.userId = :userId
+              AND tm.track.eventId = :eventId
+            """)
+    List<TrackMentorEntity> findByMentorUserIdAndTrackEventId(@Param("userId") Integer userId,
+                                                              @Param("eventId") Integer eventId);
 }

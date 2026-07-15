@@ -8,6 +8,8 @@ public record TrackMentorDto(
         String trackName,
         Integer eventId,
         String eventName,
+        String eventStatus,
+        Boolean feedbackEnabled,
         Integer mentorUserRoleId,
         String mentorName,
         String mentorEmail,

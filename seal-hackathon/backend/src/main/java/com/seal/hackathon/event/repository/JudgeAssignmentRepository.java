@@ -29,11 +29,23 @@ public interface JudgeAssignmentRepository extends JpaRepository<JudgeAssignment
     })
     List<JudgeAssignmentEntity> findByRoundRoundIdAndTrackTrackId(Integer roundId, Integer trackId);
 
+    @EntityGraph(attributePaths = {
+        "judge", "judge.userRole", "judge.userRole.user",
+        "round", "track"
+    })
+    List<JudgeAssignmentEntity> findByTrackTrackId(Integer trackId);
+
     Optional<JudgeAssignmentEntity> findByRoundRoundIdAndTrackTrackIdAndJudgeUserRoleId(
             Integer roundId, Integer trackId, Integer judgeUserRoleId);
 
+    Optional<JudgeAssignmentEntity> findByRoundRoundIdAndJudgeUserRoleId(
+            Integer roundId, Integer judgeUserRoleId);
+
     boolean existsByRoundRoundIdAndTrackTrackIdAndJudgeUserRoleId(
             Integer roundId, Integer trackId, Integer judgeUserRoleId);
+
+    boolean existsByRoundRoundIdAndJudgeUserRoleId(
+            Integer roundId, Integer judgeUserRoleId);
 
     boolean existsByJudgeAssignmentIdAndJudgeUserRoleId(Integer judgeAssignmentId, Integer judgeUserRoleId);
 
@@ -43,4 +55,17 @@ public interface JudgeAssignmentRepository extends JpaRepository<JudgeAssignment
             WHERE ja.round.eventId = :eventId
             """)
     List<Integer> findDistinctJudgeUserIdsByEventId(@Param("eventId") Integer eventId);
+
+    @EntityGraph(attributePaths = {
+        "judge", "judge.userRole", "judge.userRole.user",
+        "round", "track"
+    })
+    @Query("""
+            SELECT ja
+            FROM JudgeAssignmentEntity ja
+            WHERE ja.judge.userRole.user.userId = :userId
+              AND ja.round.eventId = :eventId
+            """)
+    List<JudgeAssignmentEntity> findByJudgeUserIdAndRoundEventId(@Param("userId") Integer userId,
+                                                                 @Param("eventId") Integer eventId);
 }

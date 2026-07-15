@@ -8,14 +8,19 @@ public record IndividualRegistrationDto(
         String eventName,
         Integer trackId,
         String trackName,
+        Integer suggestedTrackId,
+        String suggestedTrackName,
         Integer userRoleId,
         String username,
         String email,
         String fullName,
         String status,
+        String statusReason,
         Integer assignedTeamId,
         String assignedTeamName,
         LocalDateTime createdAt,
-        LocalDateTime matchedAt
+        LocalDateTime matchedAt,
+        LocalDateTime responseDueAt,
+        LocalDateTime respondedAt
 ) {
 }

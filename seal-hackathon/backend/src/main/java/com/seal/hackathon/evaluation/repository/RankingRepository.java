@@ -14,4 +14,6 @@ public interface RankingRepository extends JpaRepository<RankingEntity, Integer>
     boolean existsByRoundRoundId(Integer roundId);
 
     void deleteByRoundRoundId(Integer roundId);
+
+    void deleteByTeamTeamIdAndRoundEventId(Integer teamId, Integer eventId);
 }

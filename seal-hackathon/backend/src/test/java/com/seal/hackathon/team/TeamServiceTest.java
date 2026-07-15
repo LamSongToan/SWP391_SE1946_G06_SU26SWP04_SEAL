@@ -17,12 +17,17 @@ import com.seal.hackathon.submission.repository.SubmissionRepository;
 import com.seal.hackathon.team.dto.CreateTeamRequest;
 import com.seal.hackathon.team.dto.RegisterTeamForEventRequest;
 import com.seal.hackathon.team.dto.TeamDto;
+import com.seal.hackathon.team.dto.TeamInvitationDto;
+import com.seal.hackathon.team.entity.IndividualRegistrationEntity;
 import com.seal.hackathon.team.entity.TeamEntity;
+import com.seal.hackathon.team.entity.TeamInvitationEntity;
 import com.seal.hackathon.team.entity.TeamMemberEntity;
+import com.seal.hackathon.team.repository.IndividualRegistrationRepository;
 import com.seal.hackathon.team.repository.TeamInvitationRepository;
 import com.seal.hackathon.team.repository.TeamMemberRepository;
 import com.seal.hackathon.team.repository.TeamRepository;
 import com.seal.hackathon.team.service.TeamService;
+import com.seal.hackathon.evaluation.service.LeaderboardService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,6 +56,8 @@ class TeamServiceTest {
     @Mock
     private TeamInvitationRepository invitationRepository;
     @Mock
+    private IndividualRegistrationRepository individualRegistrationRepository;
+    @Mock
     private StudentProfileRepository studentProfileRepository;
     @Mock
     private UserRepository userRepository;
@@ -64,6 +71,8 @@ class TeamServiceTest {
     private AuditLogService auditLogService;
     @Mock
     private EventUpdateNotificationService notificationService;
+    @Mock
+    private LeaderboardService leaderboardService;
 
     @InjectMocks
     private TeamService teamService;
@@ -88,9 +97,11 @@ class TeamServiceTest {
         });
         when(memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(40))
                 .thenAnswer(invocation -> List.of(savedMember.get()));
-        when(submissionRepository.findTopByTeamTeamIdOrderBySubmittedAtDesc(40)).thenReturn(Optional.empty());
 
-        TeamDto result = teamService.createTeam(authentication("leader@example.com"), new CreateTeamRequest("Seal Coders"));
+        TeamDto result = teamService.createTeam(
+                authentication("leader@example.com"),
+                new CreateTeamRequest("Seal Coders", true)
+        );
 
         Assertions.assertEquals(1, result.memberCount());
         Assertions.assertEquals(10, result.leaderUserRoleId());
@@ -99,6 +110,7 @@ class TeamServiceTest {
         Assertions.assertNull(result.eventId());
         Assertions.assertNull(result.trackId());
         Assertions.assertEquals(8, result.joinCode().length());
+        Assertions.assertTrue(result.acceptAutoAssignedMembers());
         verify(memberRepository).save(any(TeamMemberEntity.class));
     }
 
@@ -135,6 +147,46 @@ class TeamServiceTest {
     }
 
     @Test
+    void registerTeamForEvent_shouldRejectMemberWithIndividualRegistrationInSameEvent() {
+        StudentProfileEntity leader = student(1, 10, "leader@example.com", "Team Leader");
+        StudentProfileEntity teammate = student(2, 11, "member@example.com", "Team Member");
+        TeamEntity team = new TeamEntity();
+        team.setTeamId(40);
+        team.setLeader(leader);
+        team.setTeamName("Another Team");
+        HackathonEventEntity event = registrationOpenEvent(30);
+        event.setTrackSelectionMode("TEAM_SELECT");
+
+        IndividualRegistrationEntity existingRegistration = new IndividualRegistrationEntity();
+        existingRegistration.setStudent(teammate);
+        existingRegistration.setEvent(event);
+
+        stubCurrentStudent(leader);
+        when(teamRepository.findDetailedById(40)).thenReturn(Optional.of(team));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(event));
+        when(memberRepository.countByTeamTeamId(40)).thenReturn(3L);
+        when(memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(40)).thenReturn(List.of(
+                teamMember(team, leader),
+                teamMember(team, teammate),
+                teamMember(team, student(3, 12, "other@example.com", "Other Member"))
+        ));
+        when(memberRepository.existsMembershipInEvent(10, 30)).thenReturn(false);
+        when(memberRepository.existsMembershipInEvent(11, 30)).thenReturn(false);
+        when(individualRegistrationRepository.findByEventEventIdAndStudentUserRoleId(30, 10)).thenReturn(Optional.empty());
+        when(individualRegistrationRepository.findByEventEventIdAndStudentUserRoleId(30, 11)).thenReturn(Optional.of(existingRegistration));
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> teamService.registerTeamForEvent(
+                        authentication("leader@example.com"),
+                        40,
+                        new RegisterTeamForEventRequest(30, 20)
+                ));
+
+        Assertions.assertTrue(ex.getMessage().contains("already has an individual registration"));
+        verify(teamRepository, never()).save(any(TeamEntity.class));
+    }
+
+    @Test
     void joinByCode_shouldRejectTeamWithFiveMembers() {
         StudentProfileEntity student = student(2, 11, "member@example.com", "Team Member");
         TeamEntity team = new TeamEntity();
@@ -154,6 +206,24 @@ class TeamServiceTest {
     }
 
     @Test
+    void joinByCode_shouldRejectCompetitionTeamAfterRegistrationDeadline() {
+        StudentProfileEntity student = student(2, 11, "member@example.com", "Team Member");
+        TeamEntity team = new TeamEntity();
+        team.setTeamId(40);
+        team.setTrack(track(20, 30, "Web Platform"));
+
+        stubCurrentStudent(student);
+        when(teamRepository.findByJoinCodeIgnoreCase("SEAL2026")).thenReturn(Optional.of(team));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(eventAfterRegistrationDeadline(30)));
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> teamService.joinByCode(authentication("member@example.com"), "seal2026"));
+
+        Assertions.assertTrue(ex.getMessage().contains("Team roster is locked after the registration deadline"));
+        verify(memberRepository, never()).save(any(TeamMemberEntity.class));
+    }
+
+    @Test
     void disbandTeam_shouldRejectTeamWithSubmission() {
         StudentProfileEntity leader = student(1, 10, "leader@example.com", "Team Leader");
         TeamEntity team = ledTeam(leader);
@@ -168,6 +238,22 @@ class TeamServiceTest {
 
         Assertions.assertTrue(ex.getMessage().contains("cannot be disbanded after a submission"));
         verify(teamRepository, never()).delete(any(TeamEntity.class));
+    }
+
+    @Test
+    void inviteMember_shouldRejectCompetitionTeamAfterRegistrationDeadline() {
+        StudentProfileEntity leader = student(1, 10, "leader@example.com", "Team Leader");
+        TeamEntity team = ledTeam(leader);
+
+        stubCurrentStudent(leader);
+        when(teamRepository.findDetailedById(40)).thenReturn(Optional.of(team));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(eventAfterRegistrationDeadline(30)));
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> teamService.inviteMember(authentication("leader@example.com"), 40, "candidate@example.com"));
+
+        Assertions.assertTrue(ex.getMessage().contains("Team roster is locked after the registration deadline"));
+        verify(invitationRepository, never()).save(any());
     }
 
     @Test
@@ -204,7 +290,23 @@ class TeamServiceTest {
     }
 
     @Test
-    void transferLeadership_shouldAssignExistingMember() {
+    void removeMember_shouldRejectCompetitionTeamAfterRegistrationDeadline() {
+        StudentProfileEntity leader = student(1, 10, "leader@example.com", "Team Leader");
+        TeamEntity team = ledTeam(leader);
+
+        stubCurrentStudent(leader);
+        when(teamRepository.findDetailedById(40)).thenReturn(Optional.of(team));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(eventAfterRegistrationDeadline(30)));
+
+        ApiException ex = Assertions.assertThrows(ApiException.class,
+                () -> teamService.removeMember(authentication("leader@example.com"), 40, 11));
+
+        Assertions.assertTrue(ex.getMessage().contains("Team roster is locked after the registration deadline"));
+        verify(memberRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void transferLeadership_shouldCreatePendingLeadershipInvitation() {
         StudentProfileEntity leader = student(1, 10, "leader@example.com", "Team Leader");
         StudentProfileEntity member = student(2, 11, "member@example.com", "Team Member");
         TeamEntity team = ledTeam(leader);
@@ -214,15 +316,58 @@ class TeamServiceTest {
         when(eventRepository.findById(30)).thenReturn(Optional.of(registrationOpenEvent(30)));
         when(memberRepository.existsByTeamTeamIdAndStudentUserRoleId(40, 11)).thenReturn(true);
         when(studentProfileRepository.findById(11)).thenReturn(Optional.of(member));
-        when(teamRepository.save(team)).thenReturn(team);
-        when(memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(40)).thenReturn(List.of());
-        when(submissionRepository.findTopByTeamTeamIdOrderBySubmittedAtDesc(40)).thenReturn(Optional.empty());
+        when(invitationRepository.save(any(TeamInvitationEntity.class))).thenAnswer(invocation -> {
+            TeamInvitationEntity invitation = invocation.getArgument(0);
+            invitation.setInvitationId(70);
+            invitation.prePersist();
+            return invitation;
+        });
 
-        TeamDto result = teamService.transferLeadership(authentication("leader@example.com"), 40, 11);
+        TeamInvitationDto result = teamService.transferLeadership(authentication("leader@example.com"), 40, 11);
+
+        Assertions.assertEquals(70, result.invitationId());
+        Assertions.assertEquals("LEADERSHIP_TRANSFER", result.invitationType());
+        Assertions.assertEquals("Pending", result.status());
+        Assertions.assertEquals(leader.getUserRole().getUser().getFullName(), result.invitedByName());
+        Assertions.assertEquals(member.getUserRole().getUser().getFullName(), result.inviteeName());
+        Assertions.assertEquals(leader, team.getLeader());
+        verify(invitationRepository).save(any(TeamInvitationEntity.class));
+        verify(teamRepository, never()).save(team);
+    }
+
+    @Test
+    void acceptInvitation_shouldTransferLeadershipOnlyAfterInviteeAccepts() {
+        StudentProfileEntity leader = student(1, 10, "leader@example.com", "Team Leader");
+        StudentProfileEntity member = student(2, 11, "member@example.com", "Team Member");
+        TeamEntity team = ledTeam(leader);
+
+        TeamInvitationEntity invitation = new TeamInvitationEntity();
+        invitation.setInvitationId(70);
+        invitation.setTeam(team);
+        invitation.setInvitee(member);
+        invitation.setInvitedBy(leader);
+        invitation.setInvitationType("LEADERSHIP_TRANSFER");
+        invitation.setStatus("Pending");
+
+        stubCurrentStudent(member);
+        when(invitationRepository.findById(70)).thenReturn(Optional.of(invitation));
+        when(eventRepository.findById(30)).thenReturn(Optional.of(registrationOpenEvent(30)));
+        when(memberRepository.existsByTeamTeamIdAndStudentUserRoleId(40, 11)).thenReturn(true);
+        when(teamRepository.save(team)).thenReturn(team);
+        when(invitationRepository.findByTeamTeamIdAndStatusIgnoreCaseAndInvitationTypeIgnoreCase(40, "Pending", "LEADERSHIP_TRANSFER"))
+                .thenReturn(List.of(invitation));
+        when(invitationRepository.save(invitation)).thenReturn(invitation);
+        when(memberRepository.findByTeamTeamIdOrderByJoinedAtAsc(40)).thenReturn(List.of(
+                teamMember(team, leader),
+                teamMember(team, member)
+        ));
+
+        TeamDto result = teamService.acceptInvitation(authentication("member@example.com"), 70);
 
         Assertions.assertEquals(member, team.getLeader());
         Assertions.assertEquals(11, result.leaderUserRoleId());
-        Assertions.assertFalse(result.currentUserLeader());
+        Assertions.assertTrue(result.currentUserLeader());
+        Assertions.assertEquals("Accepted", invitation.getStatus());
         verify(teamRepository).save(team);
     }
 
@@ -255,8 +400,10 @@ class TeamServiceTest {
         when(teamRepository.countByTrackTrackId(20)).thenReturn(0L);
         when(teamRepository.countByTrackTrackId(21)).thenReturn(0L);
         when(trackRepository.findByEventIdOrderByTrackIdAsc(30)).thenReturn(List.of(webTrack, aiTrack));
+        when(individualRegistrationRepository.findByEventEventIdAndStudentUserRoleId(30, 10)).thenReturn(Optional.empty());
+        when(individualRegistrationRepository.findByEventEventIdAndStudentUserRoleId(30, 11)).thenReturn(Optional.empty());
+        when(individualRegistrationRepository.findByEventEventIdAndStudentUserRoleId(30, 12)).thenReturn(Optional.empty());
         when(teamRepository.save(any(TeamEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(submissionRepository.findTopByTeamTeamIdOrderBySubmittedAtDesc(40)).thenReturn(Optional.empty());
 
         TeamDto result = teamService.registerTeamForEvent(
                 authentication("leader@example.com"),
@@ -325,6 +472,18 @@ class TeamServiceTest {
         event.setStatus(EventStatus.ONGOING.getDbValue());
         event.setRegistrationStartAt(java.time.LocalDateTime.now().minusDays(1));
         event.setRegistrationEndAt(java.time.LocalDateTime.now().plusDays(1));
+        event.setCompetitionEndAt(java.time.LocalDateTime.now().plusDays(30));
+        return event;
+    }
+
+    private HackathonEventEntity eventAfterRegistrationDeadline(Integer eventId) {
+        HackathonEventEntity event = new HackathonEventEntity();
+        event.setEventId(eventId);
+        event.setName("SEAL Summer 2026");
+        event.setStatus(EventStatus.ONGOING.getDbValue());
+        event.setRegistrationStartAt(java.time.LocalDateTime.now().minusDays(10));
+        event.setRegistrationEndAt(java.time.LocalDateTime.now().minusDays(1));
+        event.setCompetitionEndAt(java.time.LocalDateTime.now().plusDays(30));
         return event;
     }
 }

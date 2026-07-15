@@ -24,7 +24,7 @@ public class GitMetadataController {
     }
 
     @PostMapping("/refresh")
-    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE')")
+    @PreAuthorize("hasAnyRole('COORDINATOR','JUDGE','MENTOR')")
     public ResponseEntity<ApiResponse<GitMetadataDto>> refresh(@PathVariable Integer submissionId) {
         return ResponseEntity.ok(ApiResponse.ok("Git metadata refreshed", service.fetchAndStore(submissionId)));
     }

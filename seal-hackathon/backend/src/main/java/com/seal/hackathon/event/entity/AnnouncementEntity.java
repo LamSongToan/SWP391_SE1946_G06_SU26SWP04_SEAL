@@ -44,7 +44,7 @@ public class AnnouncementEntity {
     @Column(name = "message", nullable = false, length = 1000)
     private String message;
 
-    @Column(name = "audience", nullable = false, length = 30)
+    @Column(name = "audience", nullable = false, length = 64)
     private String audience;
 
     @Column(name = "recipient_count", nullable = false)

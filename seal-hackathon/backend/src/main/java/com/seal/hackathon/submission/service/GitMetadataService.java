@@ -103,10 +103,33 @@ public class GitMetadataService {
             }
         } catch (Exception ignored) {}
 
+        int contributorCount = 0;
+        try {
+            HttpRequest.Builder contributorsBuilder = githubRequest("https://api.github.com/repos/" + owner + "/" + repo + "/contributors?per_page=1&anon=1").GET();
+            HttpResponse<String> contributorsResponse = httpClient.send(contributorsBuilder.build(), HttpResponse.BodyHandlers.ofString());
+            String link = contributorsResponse.headers().firstValue("Link").orElse("");
+            if (link.contains("rel=\"last\"")) {
+                String lastUrl = link.replaceAll(".*<([^>]+)>; rel=\"last\".*", "$1");
+                for (String param : URI.create(lastUrl).getQuery().split("&")) {
+                    if (param.startsWith("page=")) contributorCount = Integer.parseInt(param.substring(5));
+                }
+            } else if (contributorsResponse.statusCode() == 200) {
+                JsonNode contributorsNode = objectMapper.readTree(contributorsResponse.body());
+                if (contributorsNode.isArray()) {
+                    contributorCount = contributorsNode.size();
+                }
+            }
+        } catch (Exception ignored) {}
+
+        double repositorySizeMb = node.path("size").asDouble(0D) / 1024D;
+
         return new GitMetadataDto(url, owner, repo, "github",
+                node.path("private").asBoolean(false) ? "Private" : "Public",
                 node.path("stargazers_count").asInt(0),
                 node.path("forks_count").asInt(0),
                 node.path("open_issues_count").asInt(0),
+                contributorCount,
+                repositorySizeMb,
                 node.path("default_branch").asText("main"),
                 node.path("description").asText(null),
                 node.path("language").asText(null),
@@ -164,15 +187,32 @@ public class GitMetadataService {
         if (response.statusCode() == 404) throw new ApiException(HttpStatus.NOT_FOUND, "Repository not found or is private");
         if (response.statusCode() != 200) throw new ApiException(HttpStatus.BAD_GATEWAY, "GitLab API returned " + response.statusCode());
         JsonNode node = objectMapper.readTree(response.body());
+        JsonNode statistics = node.path("statistics");
+        double repositorySizeMb = statistics.path("repository_size").asDouble(0D) / (1024D * 1024D);
         return new GitMetadataDto(url, owner, repo, "gitlab",
+                normalizeGitLabVisibility(node.path("visibility").asText(null)),
                 node.path("star_count").asInt(0),
                 node.path("forks_count").asInt(0),
                 node.path("open_issues_count").asInt(0),
+                null,
+                repositorySizeMb > 0 ? repositorySizeMb : null,
                 node.path("default_branch").asText("main"),
                 node.path("description").asText(null),
                 null,
                 node.path("last_activity_at").asText(null),
                 0, null);
+    }
+
+    private String normalizeGitLabVisibility(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "private" -> "Private";
+            case "public" -> "Public";
+            case "internal" -> "Internal";
+            default -> value;
+        };
     }
 
     private SubmissionEntity getOrThrow(Integer submissionId) {

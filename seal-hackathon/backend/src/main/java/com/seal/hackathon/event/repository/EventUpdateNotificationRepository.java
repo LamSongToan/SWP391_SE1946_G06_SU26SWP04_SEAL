@@ -37,4 +37,6 @@ public interface EventUpdateNotificationRepository extends JpaRepository<EventUp
                                                               @Param("title") String title,
                                                               @Param("message") String message,
                                                               @Param("audience") String audience);
+
+    boolean existsByEventIdAndAnnouncementAudienceIgnoreCase(Integer eventId, String announcementAudience);
 }

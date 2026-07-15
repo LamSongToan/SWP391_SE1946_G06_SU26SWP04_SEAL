@@ -10,6 +10,7 @@ public record AssignedRoundDto(
         String roundName,
         Integer roundOrder,
         LocalDateTime submissionDeadline,
+        LocalDateTime scoringDeadline,
         Boolean scoreLocked,
         Integer trackId,
         String trackName,

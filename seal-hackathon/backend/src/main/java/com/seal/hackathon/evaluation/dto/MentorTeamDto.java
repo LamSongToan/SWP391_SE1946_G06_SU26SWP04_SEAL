@@ -9,6 +9,8 @@ public record MentorTeamDto(
         String trackName,
         Integer eventId,
         String eventName,
+        String eventStatus,
+        Boolean feedbackEnabled,
         Integer memberCount,
         String teamStatus,
         List<EvaluationSubmissionDto> submissions

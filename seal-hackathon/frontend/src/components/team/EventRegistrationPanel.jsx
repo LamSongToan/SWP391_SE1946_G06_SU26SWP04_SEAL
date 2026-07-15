@@ -61,10 +61,56 @@ function registrationUnavailableReason(event) {
   return "This event is visible, but registration is not available right now.";
 }
 
+function isTeamEventFinished(team) {
+  const normalized = String(team?.eventStatus || "").trim().toUpperCase();
+  if (normalized === "ENDED" || normalized === "CANCELLED") {
+    return true;
+  }
+  return String(team?.validationMessage || "").toLowerCase().includes("event has ended");
+}
+
+function getIndividualRegistrationPresentation(registration) {
+  const normalizedStatus = String(registration?.status || "").trim().toUpperCase();
+  if (registration?.assignedTeamName || normalizedStatus === "MATCHED") {
+    return {
+      label: "Matched",
+      color: "success",
+      message: `Assigned to ${registration.assignedTeamName}. Check Team Management for members, track, and submissions.`,
+    };
+  }
+  if (normalizedStatus === "UNSUCCESSFUL") {
+    return {
+      label: "Not formed",
+      color: "error",
+      message: registration?.statusReason || "Registration closed without enough eligible placement options, so a team could not be formed for you in this event.",
+    };
+  }
+  if (normalizedStatus === "TRACKCHANGEPENDING") {
+    return {
+      label: "Respond",
+      color: "warning",
+      message: `Coordinator asked you to move to ${registration?.suggestedTrackName || "another track"}. Please respond before ${formatDateTime(registration?.responseDueAt)}.`,
+    };
+  }
+  if (normalizedStatus === "COORDINATORREVIEW") {
+    return {
+      label: "Under review",
+      color: "warning",
+      message: registration?.statusReason || "Coordinator is reviewing why you could not be matched automatically after registration closed.",
+    };
+  }
+  return {
+    label: "Waiting",
+    color: "warning",
+    message: "Individual registration saved. The system will wait until the registration deadline closes, then form balanced 3-5 member teams automatically.",
+  };
+}
+
 export default function EventRegistrationPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [individualSaving, setIndividualSaving] = useState(false);
+  const [individualResponseLoadingId, setIndividualResponseLoadingId] = useState(null);
   const [events, setEvents] = useState([]);
   const [teams, setTeams] = useState([]);
   const [individualRegistrations, setIndividualRegistrations] = useState([]);
@@ -120,17 +166,21 @@ export default function EventRegistrationPanel() {
   }, []);
 
   const teamOptions = useMemo(
-    () => teams.filter((team) => team.currentUserLeader && !team.eventId && team.membershipValid),
+    () => teams.filter((team) => team.currentUserLeader && team.membershipValid && (!team.eventId || isTeamEventFinished(team))),
     [teams]
   );
 
   const userRegisteredEventIds = useMemo(
-    () => new Set(teams.filter((team) => team.eventId).map((team) => String(team.eventId))),
+    () => new Set(
+      teams
+        .filter((team) => team.eventId && !isTeamEventFinished(team))
+        .map((team) => String(team.eventId))
+    ),
     [teams]
   );
 
   const registeredTeams = useMemo(
-    () => teams.filter((team) => team.eventId),
+    () => teams.filter((team) => team.eventId && !isTeamEventFinished(team)),
     [teams]
   );
 
@@ -243,12 +293,10 @@ export default function EventRegistrationPanel() {
         trackId: trackId ? Number(trackId) : null,
       });
       const registration = response.data?.data;
-      if (registration?.assignedTeamName) {
-        setSuccess(`You were automatically matched into ${registration.assignedTeamName}.`);
-      } else if (registration?.trackName) {
-        setSuccess(`Individual registration saved for ${registration.trackName}. The system will wait until enough students are available, then auto-form a 3-5 member team.`);
+      if (registration?.trackName) {
+        setSuccess(`Individual registration saved for ${registration.trackName}. Matching will run after the registration deadline closes.`);
       } else {
-        setSuccess("Individual registration saved. The system will wait until enough students are available, then auto-form a 3-5 member team for this event.");
+        setSuccess("Individual registration saved. Matching will run after the registration deadline closes.");
       }
       closeIndividualDialog();
       await loadWorkspace();
@@ -289,8 +337,32 @@ export default function EventRegistrationPanel() {
     await submitIndividualRegistration(event, trackId);
   };
 
+  const respondToTrackChange = async (registrationId, action) => {
+    if (!registrationId) return;
+    setIndividualResponseLoadingId(registrationId);
+    setError("");
+    setSuccess("");
+    try {
+      const endpoint = action === "accept"
+        ? `/api/teams/my/individual-registrations/${registrationId}/track-change/accept`
+        : `/api/teams/my/individual-registrations/${registrationId}/track-change/reject`;
+      await http.post(endpoint);
+      setSuccess(action === "accept"
+        ? "Track change accepted. The system will try matching you again with the updated track."
+        : "Track change declined. Coordinator review is still required for this registration.");
+      await loadWorkspace();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to update the track change request"));
+    } finally {
+      setIndividualResponseLoadingId(null);
+    }
+  };
+
   const canRegisterEvent = (event) =>
-    event.registrationAvailable && !userRegisteredEventIds.has(String(event.eventId)) && teamOptions.length > 0;
+    event.registrationAvailable
+    && !userRegisteredEventIds.has(String(event.eventId))
+    && !individualRegistrationByEvent.has(String(event.eventId))
+    && teamOptions.length > 0;
 
   const canRegisterIndividually = (event) =>
     !individualSaving
@@ -303,7 +375,7 @@ export default function EventRegistrationPanel() {
       return "Already joined this event";
     }
     if (individualRegistrationByEvent.has(String(event.eventId))) {
-      return "Individual registration saved";
+      return "Team registration unavailable";
     }
     if (!event.registrationAvailable) {
       return registrationUnavailableLabel(event);
@@ -319,13 +391,13 @@ export default function EventRegistrationPanel() {
       return "One of your teams is already registered in this event.";
     }
     if (individualRegistrationByEvent.has(String(event.eventId))) {
-      return "You already registered individually for this event. Check your matching status above.";
+      return "You already registered individually for this event, so team registration is blocked for your account in the same event.";
     }
     if (!event.registrationAvailable) {
       return registrationUnavailableReason(event);
     }
     if (!teamOptions.length) {
-      return "Create a ready team, or register individually so the system can match you into a team.";
+      return "Create a ready team, or register individually so the system can process team matching after registration closes.";
     }
     return "";
   };
@@ -430,39 +502,65 @@ export default function EventRegistrationPanel() {
         <Card className="ms-data-card" sx={{ mb: 2 }}>
           <CardContent>
             <Typography sx={{ fontWeight: 950, mb: 0.5 }}>Individual matching status</Typography>
-            <Typography color="text.secondary" variant="body2" sx={{ mb: 1.4 }}>
-              Follow events where you registered without a team. The system will wait for enough individual registrations, then build a 3-5 member team automatically.
+                <Typography color="text.secondary" variant="body2" sx={{ mb: 1.4 }}>
+              Follow events where you registered without a team. Matching runs after registration closes so the system can build balanced 3-5 member teams and flag anything that still needs coordinator review.
             </Typography>
             <Stack spacing={1}>
               {individualRegistrations.map((registration) => (
+                (() => {
+                  const presentation = getIndividualRegistrationPresentation(registration);
+                  const normalizedStatus = String(registration?.status || "").trim().toUpperCase();
+                  return (
                 <Box
                   key={registration.individualRegistrationId}
                   sx={{
                     p: 1.4,
                     border: "1px solid #e7ebf3",
                     borderRadius: 3,
-                    bgcolor: registration.assignedTeamName ? "#F0FDF4" : "#FFF7ED",
+                    bgcolor: presentation.color === "success" ? "#F0FDF4" : presentation.color === "error" ? "#FEF2F2" : "#FFF7ED",
                   }}
                 >
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
                     <Box>
                       <Typography sx={{ fontWeight: 900 }}>{registration.eventName}</Typography>
                       <Typography color="text.secondary" variant="body2">
-                        {registration.assignedTeamName
-                          ? `Assigned to ${registration.assignedTeamName}. Check Team Management for members, track, and submissions.`
-                          : "Waiting for automatic matching. The system will form a 3-5 member team when enough individual registrations are available."}
+                        {presentation.message}
                       </Typography>
                       <Typography color="text.secondary" variant="body2" sx={{ mt: 0.45 }}>
                         Track: {registration.trackName || "System assignment pending"}
                       </Typography>
+                      {normalizedStatus === "TRACKCHANGEPENDING" ? (
+                        <Stack direction="row" spacing={1} sx={{ mt: 1.1 }}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="warning"
+                            disabled={individualResponseLoadingId === registration.individualRegistrationId}
+                            onClick={() => respondToTrackChange(registration.individualRegistrationId, "accept")}
+                          >
+                            Accept track change
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="inherit"
+                            disabled={individualResponseLoadingId === registration.individualRegistrationId}
+                            onClick={() => respondToTrackChange(registration.individualRegistrationId, "reject")}
+                          >
+                            Reject
+                          </Button>
+                        </Stack>
+                      ) : null}
                     </Box>
                     <Chip
-                      label={registration.assignedTeamName ? "Matched" : "Waiting"}
-                      color={registration.assignedTeamName ? "success" : "warning"}
+                      label={presentation.label}
+                      color={presentation.color}
                       sx={{ alignSelf: { xs: "flex-start", sm: "center" }, fontWeight: 850 }}
                     />
                   </Stack>
                 </Box>
+                  );
+                })()
               ))}
             </Stack>
           </CardContent>
@@ -473,7 +571,7 @@ export default function EventRegistrationPanel() {
         events={events}
         mode="student"
         sectionTitle="Choose an event for your team"
-        sectionDescription="Use the same event catalog flow as the public site, then register one ready team into the event you want to join, or register individually and wait for automatic team matching."
+        sectionDescription="Use the same event catalog flow as the public site, then register one ready team into the event you want to join, or register individually so the system can batch-match students after registration closes."
         onRegister={openRegisterDialog}
         onIndividualRegister={openIndividualRegisterDialog}
         canRegisterEvent={canRegisterEvent}
@@ -502,7 +600,7 @@ export default function EventRegistrationPanel() {
               onChange={(event) => setRegisterDialog((current) => ({ ...current, teamId: event.target.value }))}
               helperText={
                 teamOptions.length
-                  ? "Only your ready teams that are not registered yet are shown here."
+                  ? "Only your ready teams that are not registered yet are shown here. Team registration is blocked if any member already registered individually in this event."
                   : "You need a ready team with 3 to 5 members before registering for an event."
               }
               fullWidth
@@ -527,7 +625,7 @@ export default function EventRegistrationPanel() {
                   const full = track.maxTeams != null && Number(track.teamCount || 0) >= Number(track.maxTeams);
                   return (
                   <MenuItem key={track.trackId} value={String(track.trackId)} disabled={full}>
-                    {track.name} {track.maxTeams != null ? `(${track.teamCount || 0}/${track.maxTeams})` : ""}{full ? " - Full" : ""}
+                    {track.name} {track.maxTeams != null ? `(${track.teamCount || 0}/${track.maxTeams} teams)` : ""}{full ? " - Full" : ""}
                   </MenuItem>
                 );})}
               </TextField>
@@ -542,7 +640,7 @@ export default function EventRegistrationPanel() {
               >
                 <Typography sx={{ fontWeight: 800 }}>Track assignment</Typography>
                 <Typography color="text.secondary" variant="body2">
-                  This event will assign the track automatically after registration, prioritizing balanced distribution across tracks.
+                  This event uses automatic balanced track assignment. New teams are distributed as evenly as possible across tracks, and registration stops once every track is full.
                 </Typography>
               </Box>
             )}
@@ -580,7 +678,7 @@ export default function EventRegistrationPanel() {
                 const full = track.maxTeams != null && Number(track.teamCount || 0) >= Number(track.maxTeams);
                 return (
                   <MenuItem key={track.trackId} value={String(track.trackId)} disabled={full}>
-                    {track.name} {track.maxTeams != null ? `(${track.teamCount || 0}/${track.maxTeams})` : ""}{full ? " - Full" : ""}
+                    {track.name} {track.maxTeams != null ? `(${track.teamCount || 0}/${track.maxTeams} teams)` : ""}{full ? " - Full" : ""}
                   </MenuItem>
                 );
               })}

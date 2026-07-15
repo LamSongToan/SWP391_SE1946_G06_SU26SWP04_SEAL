@@ -12,6 +12,7 @@ public record TeamFormationDashboardDto(
         Integer maxTeamSize,
         String trackSelectionMode,
         boolean registrationClosed,
+        boolean eventStartConfirmed,
         List<TeamFormationActionRequiredDto> actionRequired,
         List<TeamDto> teams,
         List<IndividualRegistrationDto> waitingIndividuals,

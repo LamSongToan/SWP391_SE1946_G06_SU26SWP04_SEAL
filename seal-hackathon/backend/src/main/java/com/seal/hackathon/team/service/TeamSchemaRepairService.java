@@ -36,6 +36,20 @@ public class TeamSchemaRepairService {
                 BEGIN
                     ALTER TABLE Track ADD max_teams INT NULL;
                 END
+                IF COL_LENGTH('Team', 'accept_auto_assigned_members') IS NULL
+                BEGIN
+                    ALTER TABLE Team ADD accept_auto_assigned_members BIT NULL;
+                END
+                IF COL_LENGTH('TeamInvitation', 'invitation_type') IS NULL
+                BEGIN
+                    ALTER TABLE TeamInvitation ADD invitation_type VARCHAR(50) NULL;
+                END
+                UPDATE Team
+                SET accept_auto_assigned_members = 0
+                WHERE accept_auto_assigned_members IS NULL;
+                UPDATE TeamInvitation
+                SET invitation_type = 'MEMBER_INVITE'
+                WHERE invitation_type IS NULL;
                 """);
         jdbcTemplate.execute("""
                 IF OBJECT_ID('IndividualRegistration', 'U') IS NULL
@@ -46,18 +60,39 @@ public class TeamSchemaRepairService {
                         user_role_id INT NOT NULL,
                         preferred_track_id INT NULL,
                         assigned_team_id INT NULL,
+                        suggested_track_id INT NULL,
                         status VARCHAR(30) NOT NULL CONSTRAINT DF_IndividualRegistration_Status DEFAULT 'Waiting',
+                        status_reason VARCHAR(1000) NULL,
                         created_at DATETIME2 NOT NULL CONSTRAINT DF_IndividualRegistration_CreatedAt DEFAULT SYSUTCDATETIME(),
                         matched_at DATETIME2 NULL,
+                        response_due_at DATETIME2 NULL,
+                        responded_at DATETIME2 NULL,
                         CONSTRAINT FK_IndividualRegistration_Event FOREIGN KEY (event_id) REFERENCES HackathonEvent(event_id),
                         CONSTRAINT FK_IndividualRegistration_Student FOREIGN KEY (user_role_id) REFERENCES StudentProfile(user_role_id),
                         CONSTRAINT FK_IndividualRegistration_PreferredTrack FOREIGN KEY (preferred_track_id) REFERENCES Track(track_id),
+                        CONSTRAINT FK_IndividualRegistration_SuggestedTrack FOREIGN KEY (suggested_track_id) REFERENCES Track(track_id),
                         CONSTRAINT FK_IndividualRegistration_Team FOREIGN KEY (assigned_team_id) REFERENCES Team(team_id)
                     );
                 END
                 IF COL_LENGTH('IndividualRegistration', 'preferred_track_id') IS NULL
                 BEGIN
                     ALTER TABLE IndividualRegistration ADD preferred_track_id INT NULL;
+                END
+                IF COL_LENGTH('IndividualRegistration', 'suggested_track_id') IS NULL
+                BEGIN
+                    ALTER TABLE IndividualRegistration ADD suggested_track_id INT NULL;
+                END
+                IF COL_LENGTH('IndividualRegistration', 'status_reason') IS NULL
+                BEGIN
+                    ALTER TABLE IndividualRegistration ADD status_reason VARCHAR(1000) NULL;
+                END
+                IF COL_LENGTH('IndividualRegistration', 'response_due_at') IS NULL
+                BEGIN
+                    ALTER TABLE IndividualRegistration ADD response_due_at DATETIME2 NULL;
+                END
+                IF COL_LENGTH('IndividualRegistration', 'responded_at') IS NULL
+                BEGIN
+                    ALTER TABLE IndividualRegistration ADD responded_at DATETIME2 NULL;
                 END
                 IF NOT EXISTS (
                     SELECT 1 FROM sys.foreign_keys
@@ -67,6 +102,15 @@ public class TeamSchemaRepairService {
                     ALTER TABLE IndividualRegistration
                     ADD CONSTRAINT FK_IndividualRegistration_PreferredTrack
                     FOREIGN KEY (preferred_track_id) REFERENCES Track(track_id);
+                END
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.foreign_keys
+                    WHERE name = 'FK_IndividualRegistration_SuggestedTrack'
+                )
+                BEGIN
+                    ALTER TABLE IndividualRegistration
+                    ADD CONSTRAINT FK_IndividualRegistration_SuggestedTrack
+                    FOREIGN KEY (suggested_track_id) REFERENCES Track(track_id);
                 END
                 IF NOT EXISTS (
                     SELECT 1 FROM sys.indexes

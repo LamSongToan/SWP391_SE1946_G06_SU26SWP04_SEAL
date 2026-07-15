@@ -34,6 +34,19 @@ public interface TeamRepository extends JpaRepository<TeamEntity, Integer> {
             """)
     List<TeamEntity> findDetailedByEventId(@Param("eventId") Integer eventId);
 
+    @EntityGraph(attributePaths = {"track", "leader", "leader.userRole", "leader.userRole.user"})
+    @Query("""
+            SELECT t
+            FROM TeamEntity t
+            LEFT JOIN t.track track
+            ORDER BY CASE WHEN track.eventId IS NULL THEN 0 ELSE 1 END,
+                     track.eventId ASC,
+                     CASE WHEN track.trackId IS NULL THEN 0 ELSE 1 END,
+                     track.trackId ASC,
+                     t.teamName ASC
+            """)
+    List<TeamEntity> findAllDetailed();
+
     @Query("""
             SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END
             FROM TeamEntity t

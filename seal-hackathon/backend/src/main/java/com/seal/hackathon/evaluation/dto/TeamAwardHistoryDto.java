@@ -10,6 +10,7 @@ public record TeamAwardHistoryDto(
         Integer trackId,
         String trackName,
         String awardName,
+        Long prizeAmountVnd,
         Integer rankPosition,
         BigDecimal totalScore,
         LocalDateTime awardedAt

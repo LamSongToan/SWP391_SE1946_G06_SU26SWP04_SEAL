@@ -10,6 +10,7 @@ public record RoundFinalizationDto(
         String roundName,
         Integer roundOrder,
         Integer promotionRuleTopN,
+        boolean promotionRulesConfigured,
         Integer nextRoundId,
         String nextRoundName,
         boolean scoreLocked,
@@ -23,6 +24,12 @@ public record RoundFinalizationDto(
         boolean advancementApplied,
         String advancementNote,
         LocalDateTime finalizedAt,
+        LocalDateTime scoringDeadline,
+        boolean scoringDeadlinePassed,
+        boolean forceFinalizeAllowed,
+        boolean canExtendScoring,
+        Integer unresolvedSubmissionCount,
+        String overdueWarningMessage,
         List<FinalizationSubmissionDto> submissions
 ) {
 }

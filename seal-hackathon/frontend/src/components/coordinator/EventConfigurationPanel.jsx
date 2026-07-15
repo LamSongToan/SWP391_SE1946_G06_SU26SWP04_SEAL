@@ -76,6 +76,7 @@ const FINAL_CRITERIA_TEMPLATE = [
 const STATUS_TONE = {
   Draft: { bg: "#F4F6FB", color: "#16213E" },
   Ongoing: { bg: "#FFF2E8", color: "#E17C32" },
+  Upcoming: { bg: "#FFF7ED", color: "#EA580C" },
   Ended: { bg: "#EEF1F6", color: "#64748B" },
 };
 
@@ -235,18 +236,33 @@ function createQualifyingRound(round = {}, fallbackOrder = 1) {
   return {
     roundId: round.roundId ?? null,
     roundName: round.roundName || "",
+    startAt: round.startAt ? toDateTimeInput(round.startAt) : "",
     submissionDeadline: round.submissionDeadline ? toDateTimeInput(round.submissionDeadline) : "",
-    topNPerTrack: round.promotionRuleTopN ?? 1,
+    endAt: round.endAt ? toDateTimeInput(round.endAt) : "",
+    trackPromotionRules: (round.trackPromotionRules || []).map((rule) => ({
+      trackId: rule.trackId ?? null,
+      trackName: rule.trackName || "",
+      topN: rule.topN ?? "",
+    })),
     roundOrder: round.roundOrder ?? fallbackOrder,
     criteria: roundCriteriaOrTemplate(round.criteria, QUALIFIER_CRITERIA_TEMPLATE).map(createCriterion),
   };
+}
+
+function promotionRuleForTrack(round, track) {
+  return (round.trackPromotionRules || []).find((rule) => (
+    (track.trackId != null && rule.trackId === track.trackId)
+    || String(rule.trackName || "").trim().toLowerCase() === String(track.name || "").trim().toLowerCase()
+  ));
 }
 
 function createFinalRound(round = {}) {
   return {
     roundId: round.roundId ?? null,
     roundName: normalizeFinalRoundName(round.roundName),
+    startAt: round.startAt ? toDateTimeInput(round.startAt) : "",
     submissionDeadline: round.submissionDeadline ? toDateTimeInput(round.submissionDeadline) : "",
+    endAt: round.endAt ? toDateTimeInput(round.endAt) : "",
     criteria: roundCriteriaOrTemplate(round.criteria, FINAL_CRITERIA_TEMPLATE).map(createCriterion),
   };
 }
@@ -255,7 +271,18 @@ function createAward(award = {}) {
   return {
     awardName: award.awardName || "",
     quantity: award.quantity ?? 1,
+    prizeAmountVnd: award.prizeAmountVnd ?? 0,
   };
+}
+
+function normalizeWholeNumberInput(value) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.replace(/^0+(?=\d)/, "");
+}
+
+function formatWholeNumberInput(value) {
+  const digits = normalizeWholeNumberInput(value);
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function createEmptyWizard() {
@@ -272,10 +299,10 @@ function createEmptyWizard() {
     minTeamSize: 3,
     maxTeamSize: 5,
     tracks: [],
-    qualifyingRounds: [],
-    finalRound: createFinalRound(),
+    qualifyingRounds: [createQualifyingRound({ roundName: "Elimination", promotionRuleTopN: 1 })],
+    finalRound: createFinalRound({ roundName: "Final" }),
     rankingMethod: FINAL_ROUND_RANKING_METHOD,
-    awards: [createAward({ awardName: "Champion", quantity: 1 })],
+    awards: [createAward({ awardName: "Champion", quantity: 1, prizeAmountVnd: 20000000 })],
     status: "Draft",
     published: false,
     editable: true,
@@ -304,7 +331,7 @@ function mapEventToWizard(detail) {
       : [],
     finalRound: createFinalRound(detail.finalRound || {}),
     rankingMethod: detail.rankingMethod || FINAL_ROUND_RANKING_METHOD,
-    awards: (detail.awards || []).length ? detail.awards.map(createAward) : [createAward({ awardName: "Champion", quantity: 1 })],
+    awards: (detail.awards || []).length ? detail.awards.map(createAward) : [createAward({ awardName: "Champion", quantity: 1, prizeAmountVnd: 20000000 })],
     status: detail.status || "Draft",
     published: Boolean(detail.published),
     editable: Boolean(detail.editable),
@@ -372,6 +399,69 @@ function formatDateRange(event) {
   return `${formatDateTime(event.competitionStartAt)} - ${formatDateTime(event.competitionEndAt)}`;
 }
 
+function getCurrentSemesterName() {
+  const currentMonth = new Date().getMonth() + 1;
+  if (currentMonth <= 4) return "Spring";
+  if (currentMonth <= 8) return "Summer";
+  return "Fall";
+}
+
+function getSemesterOrder(semester) {
+  const normalized = normalizeSemesterName(semester);
+  if (normalized === "Spring") return 1;
+  if (normalized === "Summer") return 2;
+  if (normalized === "Fall") return 3;
+  return 0;
+}
+
+function resolveEventDisplayStatus(event) {
+  const persistedStatus = String(event?.status || "").trim();
+  const normalizedPersistedStatus = persistedStatus.toLowerCase();
+  if (normalizedPersistedStatus === "draft") {
+    return "Draft";
+  }
+  if (normalizedPersistedStatus === "ended") {
+    return "Ended";
+  }
+
+  const eventSemester = normalizeSemesterName(event?.semester);
+  const eventYear = Number.parseInt(String(event?.year ?? "").trim(), 10);
+  const currentYear = new Date().getFullYear();
+  const currentSemester = getCurrentSemesterName();
+
+  if (eventSemester && Number.isFinite(eventYear)) {
+    if (eventYear > currentYear) {
+      return "Upcoming";
+    }
+    if (eventYear < currentYear) {
+      return "Ended";
+    }
+
+    const eventSemesterRank = getSemesterOrder(eventSemester);
+    const currentSemesterRank = getSemesterOrder(currentSemester);
+    if (eventSemesterRank > currentSemesterRank) {
+      return "Upcoming";
+    }
+    if (eventSemesterRank < currentSemesterRank) {
+      return "Ended";
+    }
+    return "Ongoing";
+  }
+
+  const now = Date.now();
+  const competitionStartAt = event?.competitionStartAt ? new Date(event.competitionStartAt).getTime() : null;
+  const competitionEndAt = event?.competitionEndAt ? new Date(event.competitionEndAt).getTime() : null;
+
+  if (competitionEndAt && competitionEndAt < now) {
+    return "Ended";
+  }
+  if (competitionStartAt && competitionStartAt > now) {
+    return "Upcoming";
+  }
+
+  return persistedStatus || "Draft";
+}
+
 function getSemesterWindow(semester, year) {
   if (!semester || !year) return null;
   const numericYear = Number(year);
@@ -430,6 +520,30 @@ function validateCriteriaBlock(criteria, label, issues) {
   }
 }
 
+function validateRoundTimeline(round, label, competitionStart, competitionEnd, previousRoundEnd, issues) {
+  if (!round.startAt || !round.submissionDeadline || !round.endAt) {
+    issues.push(`${label} needs a start time, submission deadline, and end time.`);
+    return previousRoundEnd;
+  }
+
+  const startAt = new Date(round.startAt);
+  const submissionDeadline = new Date(round.submissionDeadline);
+  const endAt = new Date(round.endAt);
+  if (competitionStart && competitionEnd && (startAt < competitionStart || endAt > competitionEnd)) {
+    issues.push(`${label} timeline must stay inside the competition window.`);
+  }
+  if (submissionDeadline <= startAt) {
+    issues.push(`${label} submission deadline must be after its start time.`);
+  }
+  if (endAt < submissionDeadline) {
+    issues.push(`${label} end time cannot be before its submission deadline.`);
+  }
+  if (previousRoundEnd && startAt < previousRoundEnd) {
+    issues.push(`${label} cannot overlap the previous round.`);
+  }
+  return endAt;
+}
+
 function buildPayload(form) {
   const { semester, year } = parseSemesterValue(form.semesterSelection);
   return {
@@ -458,8 +572,20 @@ function buildPayload(form) {
         roundId: round.roundId,
         roundName: round.roundName.trim(),
         roundOrder: index + 1,
+        startAt: round.startAt || null,
         submissionDeadline: round.submissionDeadline || null,
-        promotionRuleTopN: Number(round.topNPerTrack || 0),
+        endAt: round.endAt || null,
+        promotionRuleTopN: null,
+        trackPromotionRules: form.tracks
+          .filter((track) => track.name.trim())
+          .map((track) => {
+            const rule = promotionRuleForTrack(round, track);
+            return {
+              trackId: track.trackId,
+              trackName: track.name.trim(),
+              topN: rule?.topN === "" || rule?.topN == null ? null : Number(rule.topN),
+            };
+          }),
         finalRound: false,
         criteria: (round.criteria || [])
           .filter((criterion) => criterion.criterionName.trim())
@@ -474,7 +600,9 @@ function buildPayload(form) {
           roundId: form.finalRound.roundId,
           roundName: normalizeFinalRoundName(form.finalRound.roundName),
           roundOrder: form.qualifyingRounds.filter((round) => round.roundName.trim()).length + 1,
+          startAt: form.finalRound.startAt || null,
           submissionDeadline: form.finalRound.submissionDeadline || null,
+          endAt: form.finalRound.endAt || null,
           finalRound: true,
           criteria: (form.finalRound.criteria || [])
             .filter((criterion) => criterion.criterionName.trim())
@@ -488,7 +616,21 @@ function buildPayload(form) {
     rankingMethod: FINAL_ROUND_RANKING_METHOD,
     awards: form.awards
       .filter((award) => award.awardName.trim())
-      .map((award) => ({ awardName: award.awardName.trim(), quantity: Number(award.quantity || 0) })),
+      .map((award) => ({
+        awardName: award.awardName.trim(),
+        quantity: Number(award.quantity || 0),
+        prizeAmountVnd: Number(award.prizeAmountVnd || 0),
+      })),
+  };
+}
+
+function buildCreatePayload(form) {
+  return {
+    ...buildPayload(form),
+    tracks: [],
+    qualifyingRounds: [],
+    finalRound: null,
+    awards: [],
   };
 }
 
@@ -541,34 +683,38 @@ function getStepIssues(stepIndex, form) {
     if (!form.competitionStartAt || !form.competitionEndAt) issues.push("Competition dates must be configured before rounds.");
     const competitionStart = form.competitionStartAt ? new Date(form.competitionStartAt) : null;
     const competitionEnd = form.competitionEndAt ? new Date(form.competitionEndAt) : null;
-    let previousSubmissionDeadline = null;
+    let previousRoundEnd = null;
     qualifyingRounds.forEach((round, index) => {
-      if (!round.submissionDeadline) issues.push(`Qualifying round ${index + 1} needs a submission deadline.`);
-      if (competitionStart && competitionEnd && round.submissionDeadline) {
-        const submissionDeadline = new Date(round.submissionDeadline);
-        if (submissionDeadline < competitionStart || submissionDeadline > competitionEnd) {
-          issues.push(`Qualifying round ${index + 1} must stay inside the competition window.`);
+      previousRoundEnd = validateRoundTimeline(
+        round,
+        `Qualifying round ${index + 1}`,
+        competitionStart,
+        competitionEnd,
+        previousRoundEnd,
+        issues,
+      );
+      const validTracks = form.tracks.filter((track) => track.name.trim());
+      validTracks.forEach((track) => {
+        const rule = promotionRuleForTrack(round, track);
+        const topN = Number(rule?.topN || 0);
+        if (topN < 1) {
+          issues.push(`Qualifying round ${index + 1} needs Top N for track ${track.name}.`);
+        } else if (track.maxTeams !== "" && track.maxTeams != null && topN > Number(track.maxTeams)) {
+          issues.push(`Top N for ${track.name} cannot exceed its maximum team capacity.`);
         }
-        if (previousSubmissionDeadline && submissionDeadline <= previousSubmissionDeadline) {
-          issues.push(`Qualifying round ${index + 1} must have a later submission deadline than the previous round.`);
-        }
-        previousSubmissionDeadline = submissionDeadline;
-      }
-      if (Number(round.topNPerTrack || 0) < 1) issues.push(`Qualifying round ${index + 1} needs Top N greater than 0.`);
+      });
       validateCriteriaBlock(round.criteria, `Qualifying round ${index + 1}`, issues);
     });
 
-    if (!form.finalRound.submissionDeadline) issues.push("Final round needs a submission deadline.");
+    validateRoundTimeline(
+      form.finalRound,
+      "Final round",
+      competitionStart,
+      competitionEnd,
+      previousRoundEnd,
+      issues,
+    );
     validateCriteriaBlock(form.finalRound.criteria, "Final round", issues);
-    if (competitionStart && competitionEnd && form.finalRound.submissionDeadline) {
-      const finalDeadline = new Date(form.finalRound.submissionDeadline);
-      if (finalDeadline < competitionStart || finalDeadline > competitionEnd) {
-        issues.push("Final round must stay inside the competition window.");
-      }
-      if (previousSubmissionDeadline && finalDeadline <= previousSubmissionDeadline) {
-        issues.push("Final round must have a later submission deadline than the last qualifying round.");
-      }
-    }
     return issues;
   }
 
@@ -578,6 +724,9 @@ function getStepIssues(stepIndex, form) {
     validAwards.forEach((award, index) => {
       if (Number(award.quantity || 0) < 1) {
         issues.push(`Award ${index + 1} needs quantity greater than 0.`);
+      }
+      if (Number(award.prizeAmountVnd ?? 0) < 0) {
+        issues.push(`Award ${index + 1} needs prize money of 0 VND or more.`);
       }
     });
   }
@@ -835,6 +984,54 @@ function DateTimeField({
   );
 }
 
+function RoundTimelineFields({
+  round,
+  onChange,
+  competitionStartAt,
+  competitionEndAt,
+  disabled = false,
+}) {
+  const fields = [
+    {
+      key: "startAt",
+      label: "Round Start",
+      min: competitionStartAt,
+      max: round.submissionDeadline || round.endAt || competitionEndAt,
+    },
+    {
+      key: "submissionDeadline",
+      label: "Submission Deadline",
+      min: round.startAt || competitionStartAt,
+      max: round.endAt || competitionEndAt,
+    },
+    {
+      key: "endAt",
+      label: "Round End",
+      min: round.submissionDeadline || round.startAt || competitionStartAt,
+      max: competitionEndAt,
+    },
+  ];
+
+  return (
+    <Box sx={ROUND_INNER_SECTION_SX}>
+      <Stack spacing={1.8}>
+        {fields.map((field) => (
+          <DateTimeField
+            key={field.key}
+            label={field.label}
+            value={round[field.key] || ""}
+            onChange={(nextValue) => onChange(field.key, nextValue)}
+            minDateTime={field.min || ""}
+            maxDateTime={field.max || ""}
+            disabled={disabled}
+            framed={false}
+          />
+        ))}
+      </Stack>
+    </Box>
+  );
+}
+
 function EmptyState({ text, compact = false }) {
   return (
     <Box
@@ -973,6 +1170,28 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
     updateWizard("qualifyingRounds", nextRounds);
   };
 
+  const updateTrackPromotionRule = (roundIndex, track, value) => {
+    const nextRounds = wizard.qualifyingRounds.map((round, index) => {
+      if (index !== roundIndex) return round;
+      const remainingRules = (round.trackPromotionRules || []).filter((rule) => !(
+        (track.trackId != null && rule.trackId === track.trackId)
+        || String(rule.trackName || "").trim().toLowerCase() === String(track.name || "").trim().toLowerCase()
+      ));
+      return {
+        ...round,
+        trackPromotionRules: [
+          ...remainingRules,
+          {
+            trackId: track.trackId,
+            trackName: track.name,
+            topN: value,
+          },
+        ],
+      };
+    });
+    updateWizard("qualifyingRounds", nextRounds);
+  };
+
   const updateQualifyingCriterion = (roundIndex, criterionIndex, value) => {
     const nextRounds = wizard.qualifyingRounds.map((round, itemIndex) => {
       if (itemIndex !== roundIndex) return round;
@@ -1057,9 +1276,9 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
   const detailMode = viewMode === "detail";
 
   const saveDraft = async () => {
-    const payload = buildPayload(wizard);
+    const payload = createMode ? buildCreatePayload(wizard) : buildPayload(wizard);
     if (createMode) {
-      const issues = [0, 1].flatMap((index) => getStepIssues(index, wizard));
+      const issues = CREATE_STEPS.map((_, index) => index).flatMap((index) => getStepIssues(index, wizard));
       if (issues.length) {
         setStepErrors(issues);
         const firstInvalidStep = CREATE_STEPS.findIndex((_, index) => getStepIssues(index, wizard).length > 0);
@@ -1172,6 +1391,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
 
   const editable = wizard.editable;
   const publishButtonLabel = wizard.published ? "Published" : "Publish";
+  const wizardDisplayStatus = resolveEventDisplayStatus(wizard);
 
   return (
     <Box sx={{ px: { xs: 2, md: 3 }, py: 2.5 }}>
@@ -1221,7 +1441,8 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
           ) : events.length ? (
             <Stack spacing={2}>
               {events.map((event) => {
-                const tone = STATUS_TONE[event.status] || STATUS_TONE.Draft;
+                const displayStatus = resolveEventDisplayStatus(event);
+                const tone = STATUS_TONE[displayStatus] || STATUS_TONE.Draft;
                 return (
                   <Card
                     key={event.eventId}
@@ -1259,7 +1480,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                         >
                           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1.35, position: "relative" }}>
                             <Chip
-                              label={event.status}
+                              label={displayStatus}
                               size="small"
                               sx={{ bgcolor: tone.bg, color: tone.color, fontWeight: 900, height: 28 }}
                             />
@@ -1446,7 +1667,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                 Create Event
               </Typography>
               <Typography sx={{ color: "#64748B", mt: 0.6 }}>
-                Set the event identity and schedule first. Tracks, rounds, scoring criteria, and publishing come next inside the event detail page.
+                Create the event identity and schedule first. Tracks, per-track promotion rules, rounds, criteria, and awards are configured afterward on the event detail page.
               </Typography>
             </Box>
           </Box>
@@ -1576,6 +1797,7 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                   </Grid2>
                 </Stack>
               ) : null}
+
             </CardContent>
           </Card>
 
@@ -1634,9 +1856,13 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                   {wizard.name || "Event Detail"}
                 </Typography>
                 <Chip
-                  label={wizard.status}
+                  label={wizardDisplayStatus}
                   size="small"
-                  sx={{ bgcolor: (STATUS_TONE[wizard.status] || STATUS_TONE.Draft).bg, color: (STATUS_TONE[wizard.status] || STATUS_TONE.Draft).color, fontWeight: 900 }}
+                  sx={{
+                    bgcolor: (STATUS_TONE[wizardDisplayStatus] || STATUS_TONE.Draft).bg,
+                    color: (STATUS_TONE[wizardDisplayStatus] || STATUS_TONE.Draft).color,
+                    fontWeight: 900,
+                  }}
                 />
                 {wizard.semesterSelection ? (
                   <Chip
@@ -1805,15 +2031,6 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                     disabled={!editable}
                                     sx={CONFIG_FIELD_SX}
                                   />
-                                  <TextField
-                                    label="Top N per track"
-                                    type="number"
-                                    value={round.topNPerTrack}
-                                    onChange={(event) => updateQualifyingRound(index, "topNPerTrack", event.target.value)}
-                                    disabled={!editable}
-                                    inputProps={{ min: 1 }}
-                                    sx={{ width: { xs: "100%", md: 200 }, ...CONFIG_FIELD_SX }}
-                                  />
                                   {editable ? (
                                     <Button
                                       variant="outlined"
@@ -1825,15 +2042,59 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                     </Button>
                                   ) : null}
                                 </Stack>
-                                <DateTimeField
-                                  label="Submission Deadline"
-                                  value={round.submissionDeadline}
-                                  onChange={(nextValue) => updateQualifyingRound(index, "submissionDeadline", nextValue)}
-                                  minDateTime={competitionMinDateTime}
-                                  maxDateTime={competitionMaxDateTime}
-                                  helperText="This is the submission cut-off for the round and must stay inside the competition window."
+                                <Box sx={{ ...ROUND_INNER_SECTION_SX, pt: 1.4 }}>
+                                  <Typography sx={{ fontWeight: 800, color: "#16213E", mb: 1.2 }}>
+                                    Promotion Top N by track
+                                  </Typography>
+                                  <Stack
+                                    sx={{
+                                      overflow: "hidden",
+                                      border: "1px solid #E2E8F0",
+                                      borderRadius: 2.5,
+                                      bgcolor: "#FFFFFF",
+                                    }}
+                                  >
+                                    {wizard.tracks.filter((track) => track.name.trim()).map((track, trackIndex, tracks) => (
+                                      <Box
+                                        key={`promotion-${round.roundId || index}-${track.trackId || track.name}`}
+                                        sx={{
+                                          display: "flex",
+                                          flexDirection: { xs: "column", sm: "row" },
+                                          alignItems: { xs: "stretch", sm: "center" },
+                                          justifyContent: "space-between",
+                                          gap: 1.5,
+                                          px: { xs: 1.5, sm: 2 },
+                                          py: 1.4,
+                                          borderBottom: trackIndex < tracks.length - 1 ? "1px solid #E2E8F0" : "none",
+                                        }}
+                                      >
+                                        <Box>
+                                          <Typography sx={{ color: "#16213E", fontWeight: 800 }}>
+                                            {track.name}
+                                          </Typography>
+                                          <Typography sx={{ color: "#64748B", fontSize: 13 }}>
+                                            {track.maxTeams ? `Up to ${track.maxTeams} teams in this track` : "No maximum team capacity configured"}
+                                          </Typography>
+                                        </Box>
+                                        <TextField
+                                          label="Top N"
+                                          type="number"
+                                          value={promotionRuleForTrack(round, track)?.topN ?? ""}
+                                          onChange={(event) => updateTrackPromotionRule(index, track, event.target.value)}
+                                          disabled={!editable}
+                                          inputProps={{ min: 1, max: track.maxTeams || undefined }}
+                                          sx={{ ...CONFIG_FIELD_SX, width: { xs: "100%", sm: 150 }, flexShrink: 0 }}
+                                        />
+                                      </Box>
+                                    ))}
+                                  </Stack>
+                                </Box>
+                                <RoundTimelineFields
+                                  round={round}
+                                  onChange={(key, nextValue) => updateQualifyingRound(index, key, nextValue)}
+                                  competitionStartAt={competitionMinDateTime}
+                                  competitionEndAt={competitionMaxDateTime}
                                   disabled={!editable}
-                                  framed={false}
                                 />
                                 <Box sx={ROUND_INNER_SECTION_SX}>
                                     <Stack spacing={1.4}>
@@ -1914,15 +2175,12 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                             disabled={!editable}
                             sx={CONFIG_FIELD_SX}
                           />
-                          <DateTimeField
-                            label="Submission Deadline"
-                            value={wizard.finalRound.submissionDeadline}
-                            onChange={(nextValue) => updateWizard("finalRound", { ...wizard.finalRound, submissionDeadline: nextValue })}
-                            minDateTime={competitionMinDateTime}
-                            maxDateTime={competitionMaxDateTime}
-                            helperText="This is the final submission cut-off before judges begin the final assessment."
+                          <RoundTimelineFields
+                            round={wizard.finalRound}
+                            onChange={(key, nextValue) => updateWizard("finalRound", { ...wizard.finalRound, [key]: nextValue })}
+                            competitionStartAt={competitionMinDateTime}
+                            competitionEndAt={competitionMaxDateTime}
                             disabled={!editable}
-                            framed={false}
                           />
                           <Box sx={ROUND_INNER_SECTION_SX}>
                               <Stack spacing={1.4}>
@@ -2015,6 +2273,19 @@ export default function EventConfigurationPanel({ onDirtyChange = () => {} }) {
                                         inputProps={{ min: 1 }}
                                         disabled={!editable}
                                         sx={{ width: { xs: "100%", md: 160 }, ...CONFIG_FIELD_SX }}
+                                      />
+                                      <TextField
+                                        label="Prize Money (VND)"
+                                        type="text"
+                                        value={formatWholeNumberInput(award.prizeAmountVnd)}
+                                        onChange={(event) => updateAward(
+                                          index,
+                                          "prizeAmountVnd",
+                                          normalizeWholeNumberInput(event.target.value),
+                                        )}
+                                        inputProps={{ inputMode: "numeric", pattern: "[0-9,]*" }}
+                                        disabled={!editable}
+                                        sx={{ width: { xs: "100%", md: 220 }, ...CONFIG_FIELD_SX }}
                                       />
                                       {editable ? (
                                         <Button

@@ -32,7 +32,6 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import DomainVerificationRoundedIcon from "@mui/icons-material/DomainVerificationRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import PermIdentityRoundedIcon from "@mui/icons-material/PermIdentityRounded";
@@ -40,6 +39,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
+import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
@@ -52,20 +52,22 @@ import CoordinatorScoringPanel from "../components/coordinator/CoordinatorScorin
 import EventConfigurationPanel from "../components/coordinator/EventConfigurationPanel";
 import GuestJudgePanel from "../components/coordinator/GuestJudgePanel";
 import JudgeAssignmentPanel from "../components/coordinator/JudgeAssignmentPanel";
+import IndividualRegistrationManagementPanel from "../components/coordinator/IndividualRegistrationManagementPanel";
 import MentorAssignmentPanel from "../components/coordinator/MentorAssignmentPanel";
 import TeamFormationPanel from "../components/coordinator/TeamFormationPanel";
+import AwardCenterPanel from "../components/award/AwardCenterPanel";
 import UserProfilePanel from "../components/profile/UserProfilePanel";
 import UserDirectoryPanel from "../components/user/UserDirectoryPanel";
 import ChangePasswordPage from "./ChangePasswordPage";
 import TeamManagementPanel from "../components/team/TeamManagementPanel";
 import EventRegistrationPanel from "../components/team/EventRegistrationPanel";
+import TeamLeaderboardPanel from "../components/team/TeamLeaderboardPanel";
 import StudentSubmissionPanel from "../components/team/StudentSubmissionPanel";
 import EvaluationWorkspacePanel from "../components/evaluation/EvaluationWorkspacePanel";
+import AppLogo from "../components/branding/AppLogo";
 import { brand, roleColors, roleLabels } from "../styles/designTokens";
 
 const DRAWER_WIDTH = 270;
-
-const APP_NAME = "SEAL";
 
 const HOME_NAV = [
   { key: "dashboard", label: "Dashboard", icon: <HomeRoundedIcon fontSize="small" /> },
@@ -75,6 +77,8 @@ const STUDENT_CORE_NAV = [
   { key: "teams", label: "My Teams", icon: <GroupsRoundedIcon fontSize="small" /> },
   { key: "event-registration", label: "Event Registration", icon: <EventRoundedIcon fontSize="small" /> },
   { key: "submissions", label: "Submissions", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
+  { key: "leaderboard", label: "Leaderboard", icon: <EmojiEventsRoundedIcon fontSize="small" /> },
+  { key: "awards", label: "Awards", icon: <WorkspacePremiumRoundedIcon fontSize="small" /> },
 ];
 
 const COORDINATOR_CORE_NAV = [
@@ -86,7 +90,9 @@ const COORDINATOR_CORE_NAV = [
   { key: "mentor-assignment", label: "Mentor Assignment", icon: <SupervisorAccountRoundedIcon fontSize="small" /> },
   { key: "announcements", label: "Announcements", icon: <CampaignRoundedIcon fontSize="small" /> },
   { key: "scoring-management", label: "Scoring Finalization", icon: <AssignmentTurnedInRoundedIcon fontSize="small" /> },
+  { key: "awards", label: "Awards", icon: <WorkspacePremiumRoundedIcon fontSize="small" /> },
   { key: "audit-logs", label: "Audit Logs", icon: <HistoryRoundedIcon fontSize="small" /> },
+  { key: "individual-registrations", label: "Individual Registrations", icon: <AssignmentIndRoundedIcon fontSize="small" /> },
 ];
 
 const MENTOR_CORE_NAV = [
@@ -112,13 +118,15 @@ const COORDINATOR_NAV_SECTIONS = [
   { title: "Workspace", items: HOME_NAV },
   {
     title: "Event Operations",
-    items: [
-      COORDINATOR_CORE_NAV[1],
-      COORDINATOR_CORE_NAV[2],
-      COORDINATOR_CORE_NAV[6],
-      COORDINATOR_CORE_NAV[7],
-    ],
-  },
+      items: [
+        COORDINATOR_CORE_NAV[1],
+        COORDINATOR_CORE_NAV[2],
+        COORDINATOR_CORE_NAV[10],
+        COORDINATOR_CORE_NAV[6],
+        COORDINATOR_CORE_NAV[7],
+        COORDINATOR_CORE_NAV[8],
+      ],
+    },
   {
     title: "People & Assignments",
     items: [
@@ -128,7 +136,7 @@ const COORDINATOR_NAV_SECTIONS = [
       COORDINATOR_CORE_NAV[5],
     ],
   },
-  { title: "Review & Logs", items: [COORDINATOR_CORE_NAV[8]] },
+  { title: "Review & Logs", items: [COORDINATOR_CORE_NAV[9]] },
 ];
 
 const MENTOR_NAV_SECTIONS = [
@@ -1051,11 +1059,13 @@ export default function DashboardPage() {
       if (activeKey === "users") return <AccountApprovalPanel />;
       if (activeKey === "event-config") return <EventConfigurationPanel onDirtyChange={() => {}} />;
       if (activeKey === "team-formation") return <TeamFormationPanel />;
+      if (activeKey === "individual-registrations") return <IndividualRegistrationManagementPanel />;
       if (activeKey === "guest-judges") return <GuestJudgePanel />;
       if (activeKey === "judge-assignment") return <JudgeAssignmentPanel />;
       if (activeKey === "mentor-assignment") return <MentorAssignmentPanel />;
       if (activeKey === "announcements") return <AnnouncementManagementPanel />;
       if (activeKey === "scoring-management") return <CoordinatorScoringPanel />;
+      if (activeKey === "awards") return <AwardCenterPanel />;
       if (activeKey === "audit-logs") return <AuditLogPanel />;
       return null;
     }
@@ -1082,6 +1092,12 @@ export default function DashboardPage() {
     }
     if (activeKey === "submissions") {
       return <StudentSubmissionPanel />;
+    }
+    if (activeKey === "leaderboard") {
+      return <TeamLeaderboardPanel />;
+    }
+    if (activeKey === "awards") {
+      return <AwardCenterPanel />;
     }
     return null;
   };
@@ -1238,23 +1254,7 @@ export default function DashboardPage() {
           cursor: "pointer",
         }}
       >
-        <Box
-          sx={{
-            width: 32,
-            height: 32,
-            borderRadius: 2,
-            display: "grid",
-            placeItems: "center",
-            color: "#FFFFFF",
-            background: brand.gradients.orange,
-            flex: "0 0 32px",
-          }}
-        >
-          <DomainVerificationRoundedIcon fontSize="small" />
-        </Box>
-        <Typography sx={{ color: brand.colors.text, fontSize: 20, fontWeight: 700, lineHeight: 1 }}>
-          {APP_NAME}
-        </Typography>
+        <AppLogo variant="full" height={72} to={null} sx={{ flex: "0 1 auto" }} />
       </Box>
 
       <Box sx={{ flex: 1, overflowY: "auto", py: 0.75 }}>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Alert,
   Autocomplete,
@@ -18,12 +18,25 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { useCallback } from "react";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import { http } from "../../api/http";
-import ModulePageHeader from "../layout/ModulePageHeader";
 import { brand } from "../../styles/designTokens";
+import ModulePageHeader from "../layout/ModulePageHeader";
+
+function isEndedEvent(event) {
+  const normalizedStatus = String(event?.status || "").trim().toUpperCase();
+  if (["ENDED", "COMPLETED", "CANCELLED", "FINISHED"].includes(normalizedStatus)) {
+    return true;
+  }
+  if (!event?.competitionEndAt) {
+    return false;
+  }
+  const endTime = new Date(event.competitionEndAt).getTime();
+  return !Number.isNaN(endTime) && endTime <= Date.now();
+}
 
 function getInitials(name = "") {
   const words = name.trim().split(/\s+/);
@@ -69,7 +82,6 @@ function AssignMentorDialog({ open, onClose, trackId, mentorOptions, onAssigned 
           options={mentorOptions}
           getOptionLabel={(o) => `${o.mentorName} (${o.mentorEmail || ""})`}
           onChange={(_, v) => {
-            console.log("selected:", v);
             setMentorUserRoleId(v?.mentorUserRoleId || null);
           }}
           renderInput={(params) => <TextField {...params} label="Select Mentor" required />}
@@ -87,7 +99,7 @@ function AssignMentorDialog({ open, onClose, trackId, mentorOptions, onAssigned 
   );
 }
 
-function TrackMentorCard({ track, mentorPool }) {
+function TrackMentorCard({ track, mentorPool, eventMentorAssignments, onAssignmentsChanged }) {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -98,14 +110,28 @@ function TrackMentorCard({ track, mentorPool }) {
     let mounted = true;
     setLoading(true);
     http.get(`/api/tracks/${track.trackId}/mentors`)
-      .then((r) => { if (mounted) setAssignments(r.data?.data || []); })
+      .then((r) => {
+        if (!mounted) {
+          return;
+        }
+        const nextAssignments = r.data?.data || [];
+        setAssignments(nextAssignments);
+        onAssignmentsChanged(track.trackId, nextAssignments);
+      })
       .catch(() => { if (mounted) setError("Failed to load mentors"); })
       .finally(() => { if (mounted) setLoading(false); });
-    return () => { mounted = false; };
-  }, [track.trackId]);
+    return () => {
+      mounted = false;
+      onAssignmentsChanged(track.trackId, []);
+    };
+  }, [onAssignmentsChanged, track.trackId]);
 
   const handleAssigned = (assignment) => {
-    setAssignments((prev) => [...prev, assignment]);
+    setAssignments((prev) => {
+      const nextAssignments = [...prev, assignment];
+      onAssignmentsChanged(track.trackId, nextAssignments);
+      return nextAssignments;
+    });
   };
 
   const handleRemove = async (trackMentorId) => {
@@ -113,7 +139,11 @@ function TrackMentorCard({ track, mentorPool }) {
     setError("");
     try {
       await http.delete(`/api/coordinator/track-mentors/${trackMentorId}`);
-      setAssignments((prev) => prev.filter((a) => a.trackMentorId !== trackMentorId));
+      setAssignments((prev) => {
+        const nextAssignments = prev.filter((a) => a.trackMentorId !== trackMentorId);
+        onAssignmentsChanged(track.trackId, nextAssignments);
+        return nextAssignments;
+      });
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to remove mentor");
     } finally {
@@ -121,9 +151,26 @@ function TrackMentorCard({ track, mentorPool }) {
     }
   };
 
-  const availableMentors = mentorPool.filter(
-    (m) => !assignments.some((a) => a.mentorUserRoleId === m.mentorUserRoleId)
-  );
+  const assignedMentorTrackById = new Map();
+  eventMentorAssignments.forEach((assignment) => {
+    if (!assignedMentorTrackById.has(assignment.mentorUserRoleId)) {
+      assignedMentorTrackById.set(assignment.mentorUserRoleId, assignment.trackId);
+    }
+  });
+
+  const availableMentors = mentorPool.filter((mentor) => {
+    if (assignments.some((assignment) => assignment.mentorUserRoleId === mentor.mentorUserRoleId)) {
+      return false;
+    }
+    const assignedTrackId = assignedMentorTrackById.get(mentor.mentorUserRoleId);
+    return !assignedTrackId || assignedTrackId === track.trackId;
+  });
+  const assignLocked = Boolean(track.mentorAssignmentLocked);
+  const assignmentHint = track.mentorAssignmentLockReason || "";
+  const canAssign = !assignLocked && availableMentors.length > 0;
+  const mentorCapacityHint = !assignLocked && mentorPool.length > 0 && availableMentors.length === 0
+    ? "Every available mentor is already assigned to another track in this event. A mentor can only mentor one track per event."
+    : "";
 
   return (
     <Box sx={{ borderRadius: brand.radius.lg, border: `1px solid ${brand.colors.line}`, bgcolor: brand.colors.surface, overflow: "hidden" }}>
@@ -144,7 +191,7 @@ function TrackMentorCard({ track, mentorPool }) {
             sx={{ bgcolor: "#EFF6FF", color: "#3B82F6", fontWeight: 900 }} />
           <Button size="small" variant="outlined" startIcon={<AddRoundedIcon />}
             onClick={() => setAssignOpen(true)}
-            disabled={availableMentors.length === 0}
+            disabled={!canAssign}
             sx={{ borderRadius: 999, borderColor: brand.colors.line, color: brand.colors.text, "&:hover": { borderColor: brand.colors.orange, color: brand.colors.orange } }}>
             Assign
           </Button>
@@ -154,6 +201,16 @@ function TrackMentorCard({ track, mentorPool }) {
       <Divider />
       <Box sx={{ p: 2 }}>
         {error ? <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert> : null}
+        {assignmentHint ? (
+          <Alert severity={assignLocked ? "warning" : "info"} sx={{ mb: 1.5 }}>
+            {assignmentHint}
+          </Alert>
+        ) : null}
+        {mentorCapacityHint ? (
+          <Alert severity="info" sx={{ mb: 1.5 }}>
+            {mentorCapacityHint}
+          </Alert>
+        ) : null}
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
             <CircularProgress size={22} sx={{ color: brand.colors.orange }} />
@@ -175,7 +232,7 @@ function TrackMentorCard({ track, mentorPool }) {
                     <Typography sx={{ color: brand.colors.text, fontWeight: 800, fontSize: 14 }} noWrap>{a.mentorName}</Typography>
                     <Typography sx={{ color: brand.colors.muted, fontSize: 12 }} noWrap>
                       {a.mentorEmail}
-                      {a.specialization ? ` · ${a.specialization}` : ""}
+                      {a.specialization ? ` Â· ${a.specialization}` : ""}
                     </Typography>
                   </Box>
                 </Stack>
@@ -210,6 +267,7 @@ export default function MentorAssignmentPanel() {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [tracks, setTracks] = useState([]);
   const [mentorPool, setMentorPool] = useState([]);
+  const [assignmentsByTrack, setAssignmentsByTrack] = useState({});
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [error, setError] = useState("");
@@ -222,16 +280,13 @@ export default function MentorAssignmentPanel() {
     ]).then(([eventsResult, mentorsResult]) => {
       if (!mounted) return;
       if (eventsResult.status === "fulfilled") {
-        const evList = eventsResult.value.data?.data || [];
+        const evList = (eventsResult.value.data?.data || []).filter((event) => !isEndedEvent(event));
         setEvents(evList);
         if (evList.length > 0) setSelectedEventId(evList[0].eventId);
       }
       if (mentorsResult.status === "fulfilled") {
         const pool = mentorsResult.value.data?.data || [];
-        console.log("mentorPool loaded:", pool); // 👈 check this
         setMentorPool(pool);
-      } else {
-        console.error("mentors fetch failed:", mentorsResult.reason); // 👈 check this
       }
       setLoadingEvents(false);
     });
@@ -243,6 +298,7 @@ export default function MentorAssignmentPanel() {
     let mounted = true;
     setLoadingTracks(true);
     setError("");
+    setAssignmentsByTrack({});
     http.get(`/api/coordinator/events/${selectedEventId}/tracks`)
       .then((r) => { if (mounted) setTracks(r.data?.data || []); })
       .catch(() => { if (mounted) setError("Failed to load tracks"); })
@@ -250,12 +306,21 @@ export default function MentorAssignmentPanel() {
     return () => { mounted = false; };
   }, [selectedEventId]);
 
+  const handleAssignmentsChanged = useCallback((trackId, nextAssignments) => {
+    setAssignmentsByTrack((current) => ({
+      ...current,
+      [trackId]: nextAssignments,
+    }));
+  }, []);
+
+  const eventMentorAssignments = Object.values(assignmentsByTrack).flat();
+
   return (
     <Box>
       <ModulePageHeader
         eyebrow="Event Setup"
         title="Mentor Assignment"
-        description="Assign mentors to tracks across events."
+        description="Assign mentors to tracks for events that have not ended. Past event assignments are read-only history."
       />
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
@@ -266,8 +331,8 @@ export default function MentorAssignmentPanel() {
         </Box>
       ) : events.length === 0 ? (
         <Box className="ms-empty">
-          <Typography fontWeight={800}>No events configured</Typography>
-          <Typography color="text.secondary" variant="body2">Create an event first before assigning mentors.</Typography>
+          <Typography fontWeight={800}>No active events available</Typography>
+          <Typography color="text.secondary" variant="body2">Mentor assignments are closed after an event ends.</Typography>
         </Box>
       ) : (
         <>
@@ -299,7 +364,13 @@ export default function MentorAssignmentPanel() {
           ) : (
             <Stack spacing={1.5}>
               {tracks.map((track) => (
-                <TrackMentorCard key={track.trackId} track={track} mentorPool={mentorPool} />
+                <TrackMentorCard
+                  key={track.trackId}
+                  track={track}
+                  mentorPool={mentorPool}
+                  eventMentorAssignments={eventMentorAssignments}
+                  onAssignmentsChanged={handleAssignmentsChanged}
+                />
               ))}
             </Stack>
           )}
