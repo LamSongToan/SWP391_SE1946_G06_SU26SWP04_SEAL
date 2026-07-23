@@ -12,6 +12,11 @@
 3. Import both JSON files from this folder
 4. Select environment `SEAL Local`
 
+The collection contains every operation exposed by the backend OpenAPI document.
+The curated folders `01` through `09` contain the recommended end-to-end flows.
+Folder `10 Complete API (Generated)` contains the remaining API requests grouped
+by controller.
+
 ## Backend
 
 Start backend before testing:
@@ -58,6 +63,32 @@ http://localhost:8080
 8. `06 Team Management -> Get Registration Tracks By Event`
 9. `06 Team Management -> Create Team`
 10. `06 Team Management -> Invite Student By Username`
+
+## Testing APIs By Role
+
+Run the matching login request before testing a protected API. Each login request
+automatically replaces `accessToken` in the selected environment:
+
+- Student APIs: `02 Auth -> Login Student`
+- Coordinator APIs: `02 Auth -> Login Coordinator`
+- Mentor APIs: `02 Auth -> Login Mentor`
+- Judge APIs: `02 Auth -> Login Judge`
+
+Create or fetch parent resources before testing requests that contain ID variables.
+Successful JSON responses automatically save common IDs such as `eventId`, `roundId`,
+`trackId`, `teamId`, `submissionId`, and `userId`. You can also edit any value in the
+`SEAL Local` environment manually.
+
+## Sync After Backend API Changes
+
+Start the backend, then run:
+
+```powershell
+node scripts\sync-postman.mjs
+```
+
+The script reads `http://localhost:8080/v3/api-docs`, preserves the curated requests,
+and regenerates the complete API folder and missing environment variables.
 
 ## Notes
 
