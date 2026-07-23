@@ -1,101 +1,102 @@
-# SU26SWP04_Group06
-TV: Hệ thống quản lý cuộc thi SEAL Hackathon ngành Kỹ thuật Phần mềm.  TA: SEAL – Software Engineering Hackathon Management System
+# Postman Setup
 
-# SEAL – Software Engineering Hackathon Management System
+## Files
 
-## Project Information
+- `SEAL-Hackathon.postman_collection.json`
+- `SEAL-Local.postman_environment.json`
 
-- Course: SWP391
-- Class: SE1946
-- Group: G06
-- Topic Code: SU26SWP04
+## Import
 
-## Overview
+1. Open Postman
+2. Click `Import`
+3. Import both JSON files from this folder
+4. Select environment `SEAL Local`
 
-SEAL is a hackathon management system for organizing multi-round software engineering hackathon events.
+The collection contains every operation exposed by the backend OpenAPI document.
+The curated folders `01` through `09` contain the recommended end-to-end flows.
+Folder `10 Complete API (Generated)` contains the remaining API requests grouped
+by controller.
 
-The platform supports event management, team registration, judging, scoring, ranking, submissions, and research-oriented judge consistency analysis.
+## Backend
 
-## Core Features
+Start backend before testing:
 
-- Authentication & Role Management
-- Event & Round Management
-- Team Registration
-- Submission Management
-- Judge Assignment & Scoring
-- Ranking & Advancement
-- CSV/Excel Export
-- Audit Logs
-- Research Data Collection (RBL)
-
-## Actors
-
-- Team Member
-- Team Leader
-- Mentor
-- Judge
-- Event Coordinator
-
-## Tech Stack
-
-### Frontend
-TBD
-
-### Backend
-TBD
-
-### Database
-TBD
-
-## Project Structure
-
-```txt
-/docs
-/frontend
-/backend
-/database
-/research
-/assets
+```powershell
+cd C:\Users\nem\Desktop\my-project\SWP391_SE1946_G06_SU26SWP04_SEAL\seal-hackathon\backend
+mvn spring-boot:run
 ```
 
-## Team Members
+Default base URL:
 
-| Name | Responsibility |
-|------|----------------|
-| Member 1 | Project Management |
-| Member 2 | Backend |
-| Member 3 | Frontend |
-| Member 4 | Database |
+```text
+http://localhost:8080
+```
 
-## Documentation
+## Seed Accounts
 
-- Project Proposal
-- SRS
-- ERD
-- System Architecture
-- API Documentation
+- Student: `an.seal.demo@gmail.com / Seal@2026`
+- Student: `linh.seal.demo@gmail.com / Seal@2026`
+- Student: `bao.seal.demo@gmail.com / Seal@2026`
+- Student: `quynh.seal.demo@gmail.com / Seal@2026`
+- Student: `phuc.seal.demo@gmail.com / Seal@2026`
+- Student: `nhat.seal.demo@gmail.com / Seal@2026`
+- Student: `thao.seal.demo@gmail.com / Seal@2026`
+- Student: `lam.seal.demo@gmail.com / Seal@2026`
+- Coordinator: `toan.seal.demo@gmail.com / Seal@2026`
+- Coordinator: `anh.seal.demo@gmail.com / Seal@2026`
+- Mentor: `kiet.seal.demo@gmail.com / Seal@2026`
+- Mentor: `vy.seal.demo@gmail.com / Seal@2026`
+- Mentor: `duc.seal.demo@gmail.com / Seal@2026`
+- Judge: `ngon.seal.demo@gmail.com / Seal@2026`
+- Judge: `hao.seal.demo@gmail.com / Seal@2026`
+- Judge: `trinh.seal.demo@gmail.com / Seal@2026`
 
-## Git Workflow
+## Recommended Demo Flow
 
-- `main`
-- `develop`
-- `feature/*`
+1. `01 Public -> Get Upcoming Events`
+2. `02 Auth -> Login Student`
+3. `03 Profile -> Get My Profile`
+4. `09 Authz Demo -> Demo Student`
+5. `02 Auth -> Login Coordinator`
+6. `04 Coordinator - User Approval -> Get Pending Users`
+7. `05 Coordinator - Event Configuration -> Create Event With Setup`
+8. `06 Team Management -> Get Registration Tracks By Event`
+9. `06 Team Management -> Create Team`
+10. `06 Team Management -> Invite Student By Username`
 
-# Đồ án Môn học: SWP391 - SE1946 - Nhóm 06
+## Testing APIs By Role
 
-## 📝 Đề tài: SEAL Hackathon Management System
-Hệ thống quản lý các cuộc thi Hackathon dành cho sinh viên, hỗ trợ đăng ký, quản lý đội thi, gửi lời mời và phê duyệt thành viên.
+Run the matching login request before testing a protected API. Each login request
+automatically replaces `accessToken` in the selected environment:
 
-## 👥 Thành viên nhóm & Phân công nhiệm vụ
-1. **Nguyễn Văn A** (Trưởng nhóm) - Làm Backend (Auth, Team Management), Cấu hình Azure SQL & Render Deployment.
-2. **Trần Thị B** - Làm Frontend ReactJS (Giao diện Auth, Dashboard), Kết nối API.
-3. **Lê Văn C** - Làm Frontend ReactJS (Giao diện Quản lý nhóm, Lời mời).
-4. **Phạm Văn D** - Thiết kế Cơ sở dữ liệu SQL Server, Viết file Script Data Test.
-5. **Hoàng Thị E** - Viết Tài liệu (API Contracts, Meeting Notes, Figma Mockup).
+- Student APIs: `02 Auth -> Login Student`
+- Coordinator APIs: `02 Auth -> Login Coordinator`
+- Mentor APIs: `02 Auth -> Login Mentor`
+- Judge APIs: `02 Auth -> Login Judge`
 
-## 🌐 Đường link Sản phẩm trực tuyến (Production)
-- **Website (Frontend)**: [https://onrender.com](https://onrender.com)
-- **Hệ thống API (Backend)**: [https://onrender.com](https://onrender.com)
+Create or fetch parent resources before testing requests that contain ID variables.
+Successful JSON responses automatically save common IDs such as `eventId`, `roundId`,
+`trackId`, `teamId`, `submissionId`, and `userId`. You can also edit any value in the
+`SEAL Local` environment manually.
 
----
-👉 *Để xem hướng dẫn chi tiết cách cài đặt và chạy mã nguồn dưới máy Local, vui lòng truy cập vào thư mục con:* `[seal-hackathon/README.md](./seal-hackathon/README.md)`
+## Sync After Backend API Changes
+
+Start the backend, then run:
+
+```powershell
+node scripts\sync-postman.mjs
+```
+
+The script reads `http://localhost:8080/v3/api-docs`, preserves the curated requests,
+and regenerates the complete API folder and missing environment variables.
+
+## Notes
+
+- `Login Student` and `Login Coordinator` automatically save `accessToken`
+- Some requests also auto-save:
+  - `eventId`
+  - `trackId`
+  - `teamId`
+  - `invitationId`
+- `Forgot Password` requires SMTP to be configured if you want real OTP email delivery
+- `Upload Avatar` is not included in the collection because Postman file upload is easier to create manually with `form-data`
