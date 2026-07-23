@@ -6,18 +6,18 @@ SET NOCOUNT ON;
 DECLARE @ScenarioKey NVARCHAR(120) = N'registration_closed';
 DECLARE @ScenarioTitle NVARCHAR(180) = N'Registration closed';
 DECLARE @ScenarioDescription NVARCHAR(500) = N'Lifecycle demo: Summer 2026 registration is closed, the qualifier has not opened yet, and there are still no submissions.';
-DECLARE @ScenarioNow DATETIME2 = '2026-07-15T09:00:00';
-DECLARE @PublishedAt DATETIME2 = '2026-07-03T09:00:00';
-DECLARE @RegistrationStart DATETIME2 = '2026-07-05T09:00:00';
-DECLARE @RegistrationEnd DATETIME2 = '2026-07-14T09:00:00';
-DECLARE @CompetitionStart DATETIME2 = '2026-07-16T09:00:00';
-DECLARE @CompetitionEnd DATETIME2 = '2026-08-12T09:00:00';
-DECLARE @QualifierStart DATETIME2 = '2026-07-16T09:00:00';
-DECLARE @QualifierDeadline DATETIME2 = '2026-07-21T09:00:00';
-DECLARE @QualifierEnd DATETIME2 = '2026-07-23T09:00:00';
-DECLARE @FinalStart DATETIME2 = '2026-08-02T09:00:00';
-DECLARE @FinalDeadline DATETIME2 = '2026-08-06T09:00:00';
-DECLARE @FinalEnd DATETIME2 = '2026-08-08T09:00:00';
+DECLARE @ScenarioNow DATETIME2 = '2026-07-23T09:00:00';
+DECLARE @PublishedAt DATETIME2 = '2026-07-11T09:00:00';
+DECLARE @RegistrationStart DATETIME2 = '2026-07-13T09:00:00';
+DECLARE @RegistrationEnd DATETIME2 = '2026-07-22T09:00:00';
+DECLARE @CompetitionStart DATETIME2 = '2026-07-24T09:00:00';
+DECLARE @CompetitionEnd DATETIME2 = '2026-08-20T09:00:00';
+DECLARE @QualifierStart DATETIME2 = '2026-07-24T09:00:00';
+DECLARE @QualifierDeadline DATETIME2 = '2026-07-29T09:00:00';
+DECLARE @QualifierEnd DATETIME2 = '2026-07-31T09:00:00';
+DECLARE @FinalStart DATETIME2 = '2026-08-10T09:00:00';
+DECLARE @FinalDeadline DATETIME2 = '2026-08-14T09:00:00';
+DECLARE @FinalEnd DATETIME2 = '2026-08-16T09:00:00';
 
 DECLARE @EventId INT = (
     SELECT TOP 1 event_id

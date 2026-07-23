@@ -27,19 +27,11 @@ import com.seal.hackathon.team.entity.TeamEntity;
 import com.seal.hackathon.team.entity.TeamMemberEntity;
 import com.seal.hackathon.team.repository.IndividualRegistrationRepository;
 import com.seal.hackathon.team.repository.TeamMemberRepository;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.MailException;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -65,13 +57,6 @@ public class EventUpdateNotificationService {
     private final TrackMentorRepository trackMentorRepository;
     private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final AuditLogService auditLogService;
-    private final ObjectProvider<JavaMailSender> mailSenderProvider;
-
-    @Value("${app.mail.from:}")
-    private String mailFrom;
-
-    @Value("${spring.mail.host:}")
-    private String mailHost;
 
     public EventUpdateNotificationService(EventUpdateNotificationRepository notificationRepository,
                                           AnnouncementRepository announcementRepository,
@@ -82,8 +67,7 @@ public class EventUpdateNotificationService {
                                           IndividualRegistrationRepository individualRegistrationRepository,
                                           TrackMentorRepository trackMentorRepository,
                                           JudgeAssignmentRepository judgeAssignmentRepository,
-                                          AuditLogService auditLogService,
-                                          ObjectProvider<JavaMailSender> mailSenderProvider) {
+                                          AuditLogService auditLogService) {
         this.notificationRepository = notificationRepository;
         this.announcementRepository = announcementRepository;
         this.userRepository = userRepository;
@@ -94,7 +78,6 @@ public class EventUpdateNotificationService {
         this.trackMentorRepository = trackMentorRepository;
         this.judgeAssignmentRepository = judgeAssignmentRepository;
         this.auditLogService = auditLogService;
-        this.mailSenderProvider = mailSenderProvider;
     }
 
     @Transactional
@@ -111,8 +94,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "EVENT_ROUND_UPDATE",
-                LocalDateTime.now(),
-                "SEAL Hackathon event updated"
+                LocalDateTime.now()
         );
     }
 
@@ -131,8 +113,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "REGISTRATION_DEADLINE",
-                LocalDateTime.now(),
-                "SEAL Hackathon registration deadline"
+                LocalDateTime.now()
         );
     }
 
@@ -153,8 +134,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "EVENT_ROUND_UPDATE",
-                LocalDateTime.now(),
-                "SEAL Hackathon round updated"
+                LocalDateTime.now()
         );
     }
 
@@ -176,8 +156,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "RESULTS",
-                createdAt,
-                "SEAL Hackathon final results published"
+                createdAt
         );
     }
 
@@ -203,8 +182,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "RESULTS",
-                createdAt,
-                "SEAL Hackathon round leaderboard published"
+                createdAt
         );
     }
 
@@ -225,14 +203,12 @@ public class EventUpdateNotificationService {
                     + " in " + event.getName()
                     + " (" + formatPrizeAmount(award.prizeAmountVnd()) + ")"
                     + ". Check the published results for ranking and score details.";
-            String subject = "SEAL Hackathon award received";
             for (TeamMemberEntity member : teamMemberRepository.findByTeamTeamIdOrderByJoinedAtAsc(award.teamId())) {
                 UserEntity user = member.getStudent().getUserRole().getUser();
                 if (user == null) {
                     continue;
                 }
                 saveNotification(user, event, null, title, message, "AWARD", createdAt);
-                sendBestEffortEmail(user, subject, buildEmailBody(user, title, message));
                 notificationCount += 1;
             }
         }
@@ -249,7 +225,6 @@ public class EventUpdateNotificationService {
                 + " for " + event.getName()
                 + ". Please check your team workspace for members, track, mentor, and submission details.";
         saveNotification(user, event, null, title, message, "TEAM_MATCHING", LocalDateTime.now());
-        sendTeamMatchedEmail(user, event, team);
     }
 
     @Transactional
@@ -270,7 +245,6 @@ public class EventUpdateNotificationService {
                 continue;
             }
             saveNotification(user, event, null, title, message, "TEAM_INELIGIBLE", createdAt);
-            sendBestEffortEmail(user, "SEAL Hackathon team eligibility update", buildEmailBody(user, title, message));
             notificationCount += 1;
         }
         return notificationCount;
@@ -294,11 +268,6 @@ public class EventUpdateNotificationService {
                 + " in " + event.getName()
                 + ". Reason: " + normalizeOptionalText(reason, "No reason provided.");
         saveNotification(removedUser, event, null, removedUserTitle, removedUserMessage, "TEAM_MEMBER_REMOVED", createdAt);
-        sendBestEffortEmail(
-                removedUser,
-                "SEAL Hackathon team membership updated",
-                buildEmailBody(removedUser, removedUserTitle, removedUserMessage)
-        );
 
         String rosterUpdateTitle = "Team roster updated";
         String rosterUpdateMessage = coordinatorName
@@ -311,11 +280,6 @@ public class EventUpdateNotificationService {
                 return;
             }
             saveNotification(user, event, null, rosterUpdateTitle, rosterUpdateMessage, "TEAM_MEMBERSHIP_UPDATE", createdAt);
-            sendBestEffortEmail(
-                    user,
-                    "SEAL Hackathon team roster updated",
-                    buildEmailBody(user, rosterUpdateTitle, rosterUpdateMessage)
-            );
         });
     }
 
@@ -334,11 +298,6 @@ public class EventUpdateNotificationService {
                 + " in " + event.getName()
                 + ". Reason: " + normalizeOptionalText(reason, "Automatic coordinator placement after registration.");
         saveNotification(addedUser, event, null, addedUserTitle, addedUserMessage, "TEAM_MATCHING", createdAt);
-        sendBestEffortEmail(
-                addedUser,
-                "SEAL Hackathon team assignment",
-                buildEmailBody(addedUser, addedUserTitle, addedUserMessage)
-        );
 
         String rosterUpdateTitle = "New teammate assigned";
         String rosterUpdateMessage = resolveRecipientName(addedUser)
@@ -351,11 +310,6 @@ public class EventUpdateNotificationService {
                 return;
             }
             saveNotification(user, event, null, rosterUpdateTitle, rosterUpdateMessage, "TEAM_MEMBERSHIP_UPDATE", createdAt);
-            sendBestEffortEmail(
-                    user,
-                    "SEAL Hackathon team roster updated",
-                    buildEmailBody(user, rosterUpdateTitle, rosterUpdateMessage)
-            );
         });
     }
 
@@ -372,11 +326,6 @@ public class EventUpdateNotificationService {
                 "We could not assign you to a team because there were not enough available members or open teams."
         ) + " You are not eligible to continue in " + event.getName() + ".";
         saveNotification(user, event, null, title, message, "TEAM_MATCHING", LocalDateTime.now());
-        sendBestEffortEmail(
-                user,
-                "SEAL Hackathon individual registration update",
-                buildEmailBody(user, title, message)
-        );
     }
 
     @Transactional
@@ -402,7 +351,6 @@ public class EventUpdateNotificationService {
                 continue;
             }
             saveNotification(user, event, null, title, message, "EVENT_ROUND_UPDATE", createdAt);
-            sendBestEffortEmail(user, "SEAL Hackathon track update", buildEmailBody(user, title, message));
             notificationCount += 1;
         }
         return notificationCount;
@@ -431,7 +379,6 @@ public class EventUpdateNotificationService {
                 continue;
             }
             saveNotification(user, event, null, memberTitle, memberMessage, "TEAM_DISQUALIFIED", createdAt);
-            sendBestEffortEmail(user, "SEAL Hackathon team disqualified", buildEmailBody(user, memberTitle, memberMessage));
             notificationCount += 1;
         }
 
@@ -445,7 +392,6 @@ public class EventUpdateNotificationService {
                 continue;
             }
             saveNotification(mentor, event, null, mentorTitle, mentorMessage, "TEAM_DISQUALIFIED", createdAt);
-            sendBestEffortEmail(mentor, "SEAL Hackathon mentored team disqualified", buildEmailBody(mentor, mentorTitle, mentorMessage));
             notificationCount += 1;
         }
         return notificationCount;
@@ -466,7 +412,6 @@ public class EventUpdateNotificationService {
                 + " to " + normalizeOptionalText(nextTrackName, "a new track")
                 + ". Reason: " + normalizeOptionalText(reason, "Coordinator track balancing after registration.");
         saveNotification(user, event, null, title, message, "EVENT_ROUND_UPDATE", LocalDateTime.now());
-        sendBestEffortEmail(user, "SEAL Hackathon registration track update", buildEmailBody(user, title, message));
     }
 
     @Transactional
@@ -486,7 +431,6 @@ public class EventUpdateNotificationService {
                 + ". Reason: " + normalizeOptionalText(reason, "Track balancing after registration.")
                 + " Please respond before " + formatDateTime(responseDueAt) + ".";
         saveNotification(user, event, null, title, message, "EVENT_ROUND_UPDATE", LocalDateTime.now());
-        sendBestEffortEmail(user, "SEAL Hackathon track change approval", buildEmailBody(user, title, message));
     }
 
     @Transactional
@@ -508,8 +452,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "EVENT_ROUND_UPDATE",
-                LocalDateTime.now(),
-                "SEAL Hackathon track structure updated"
+                LocalDateTime.now()
         );
     }
 
@@ -538,8 +481,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 reminderCategory,
-                LocalDateTime.now(),
-                "SEAL Hackathon coordinator action required"
+                LocalDateTime.now()
         );
     }
 
@@ -559,8 +501,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "SYSTEM_EVENT_STARTED",
-                LocalDateTime.now(),
-                "SEAL Hackathon event started"
+                LocalDateTime.now()
         );
     }
 
@@ -580,8 +521,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "EVENT_ROUND_UPDATE",
-                LocalDateTime.now(),
-                "SEAL Hackathon event cancelled"
+                LocalDateTime.now()
         );
     }
 
@@ -601,8 +541,7 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "SYSTEM_EVENT_AUTO_CANCELLED",
-                LocalDateTime.now(),
-                "SEAL Hackathon event automatically cancelled"
+                LocalDateTime.now()
         );
     }
 
@@ -630,69 +569,8 @@ public class EventUpdateNotificationService {
                 title,
                 message,
                 "ROUND_SCORING_DEADLINE_EXTENDED",
-                LocalDateTime.now(),
-                "SEAL Hackathon scoring deadline extended"
+                LocalDateTime.now()
         );
-    }
-
-    private void sendTeamMatchedEmail(UserEntity user, HackathonEventEntity event, TeamEntity team) {
-        if (mailHost == null || mailHost.isBlank() || user.getEmail() == null || user.getEmail().isBlank()) {
-            return;
-        }
-        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-        if (mailSender == null) {
-            return;
-        }
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
-            if (mailFrom != null && !mailFrom.isBlank()) {
-                helper.setFrom(mailFrom);
-            }
-            helper.setTo(user.getEmail());
-            helper.setSubject("You have been assigned to a SEAL Hackathon team");
-            helper.setText(buildTeamMatchedEmailBody(user, event, team), true);
-            mailSender.send(message);
-        } catch (MailException | MessagingException ignored) {
-            // In-app notification is authoritative; email is best-effort for local/demo environments.
-        }
-    }
-
-    private String buildTeamMatchedEmailBody(UserEntity user, HackathonEventEntity event, TeamEntity team) {
-        String recipientName = user.getFullName() == null || user.getFullName().isBlank()
-                ? user.getUsername()
-                : user.getFullName().trim();
-        String trackName = team.getTrack() == null || team.getTrack().getName() == null
-                ? "Track pending"
-                : team.getTrack().getName();
-
-        return """
-                <div style="margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1d2638;">
-                  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dfe6ef;border-radius:16px;overflow:hidden;">
-                    <div style="padding:24px 32px;background:linear-gradient(135deg,#0f766e 0%%,#16a34a 100%%);color:#ffffff;">
-                      <div style="font-size:28px;font-weight:800;letter-spacing:0.5px;">SEAL</div>
-                      <div style="margin-top:8px;font-size:15px;opacity:0.92;">Team assignment confirmed</div>
-                    </div>
-                    <div style="padding:32px;">
-                      <p style="margin:0 0 12px;font-size:15px;">Hello %s,</p>
-                      <p style="margin:0 0 18px;font-size:15px;line-height:1.65;">
-                        You have been assigned to <strong>%s</strong> for <strong>%s</strong>.
-                      </p>
-                      <div style="margin:0 0 18px;padding:18px;border-radius:14px;background:#f0fdf4;border:1px solid #bbf7d0;">
-                        <div style="font-size:13px;font-weight:700;color:#15803d;letter-spacing:1.2px;text-transform:uppercase;">Your team</div>
-                        <div style="margin-top:10px;font-size:20px;font-weight:800;color:#1d2638;">%s</div>
-                        <div style="margin-top:6px;font-size:14px;color:#4f5d75;">Track: %s</div>
-                      </div>
-                      <p style="margin:0;font-size:14px;line-height:1.6;color:#4f5d75;">
-                        Please open your SEAL dashboard to check team members, track/mentor details, and submission deadlines.
-                      </p>
-                    </div>
-                    <div style="padding:18px 32px;background:#f8fafc;border-top:1px solid #e5edf5;font-size:12px;color:#637381;">
-                      SEAL Hackathon Management System
-                    </div>
-                  </div>
-                </div>
-                """.formatted(recipientName, team.getTeamName(), event.getName(), team.getTeamName(), trackName);
     }
 
     @Transactional
@@ -728,19 +606,9 @@ public class EventUpdateNotificationService {
                 continue;
             }
             saveNotification(user, event, savedAnnouncement, title, message, audience, createdAt);
-            sendBestEffortEmail(
-                    user,
-                    "SEAL Hackathon announcement",
-                    buildEmailBody(user, title, message)
-            );
         }
         if (!recipientIds.contains(coordinator.getUserId())) {
             saveNotification(coordinator, event, savedAnnouncement, title, message, "COORDINATOR_COPY", createdAt);
-            sendBestEffortEmail(
-                    coordinator,
-                    "SEAL Hackathon announcement copy",
-                    buildEmailBody(coordinator, title, message)
-            );
         }
 
         auditLogService.record(
@@ -1036,8 +904,7 @@ public class EventUpdateNotificationService {
                                  String title,
                                  String message,
                                  String category,
-                                 LocalDateTime createdAt,
-                                 String emailSubject) {
+                                 LocalDateTime createdAt) {
         if (event == null || recipientIds == null || recipientIds.isEmpty()) {
             return 0;
         }
@@ -1048,7 +915,6 @@ public class EventUpdateNotificationService {
                 continue;
             }
             saveNotification(user, event, null, title, message, category, createdAt);
-            sendBestEffortEmail(user, emailSubject, buildEmailBody(user, title, message));
             savedCount += 1;
         }
         return savedCount;
@@ -1198,56 +1064,6 @@ public class EventUpdateNotificationService {
                 Boolean.TRUE.equals(notification.getRead()),
                 notification.getReadAt(),
                 notification.getCreatedAt()
-        );
-    }
-
-    private void sendBestEffortEmail(UserEntity user, String subject, String htmlBody) {
-        if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
-            return;
-        }
-        if (mailHost == null || mailHost.isBlank()) {
-            return;
-        }
-        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-        if (mailSender == null) {
-            return;
-        }
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
-            if (mailFrom != null && !mailFrom.isBlank()) {
-                helper.setFrom(mailFrom);
-            }
-            helper.setTo(user.getEmail());
-            helper.setSubject(subject);
-            helper.setText(htmlBody, true);
-            mailSender.send(message);
-        } catch (MailException | MessagingException ignored) {
-            // In-app notification is authoritative; email is best-effort for local/demo environments.
-        }
-    }
-
-    private String buildEmailBody(UserEntity user, String title, String message) {
-        return """
-                <div style="margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#1d2638;">
-                  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dfe6ef;border-radius:16px;overflow:hidden;">
-                    <div style="padding:24px 32px;background:linear-gradient(135deg,#071a2f 0%%,#0d2a47 55%%,#f37021 135%%);color:#ffffff;">
-                      <div style="font-size:28px;font-weight:800;letter-spacing:0.5px;">SEAL</div>
-                      <div style="margin-top:8px;font-size:15px;opacity:0.92;">%s</div>
-                    </div>
-                    <div style="padding:32px;">
-                      <p style="margin:0 0 12px;font-size:15px;">Hello %s,</p>
-                      <p style="margin:0;font-size:15px;line-height:1.7;color:#334155;">%s</p>
-                    </div>
-                    <div style="padding:18px 32px;background:#f8fafc;border-top:1px solid #e5edf5;font-size:12px;color:#637381;">
-                      Open your SEAL dashboard for the latest details.
-                    </div>
-                  </div>
-                </div>
-                """.formatted(
-                title,
-                resolveRecipientName(user),
-                message
         );
     }
 
