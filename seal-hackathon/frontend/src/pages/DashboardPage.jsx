@@ -43,6 +43,7 @@ import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRou
 import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
+import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
 import { authStorage, http, logout, resolveAssetUrl } from "../api/http";
 import { useSearchParams } from "react-router-dom";
 import AccountApprovalPanel from "../components/coordinator/AccountApprovalPanel";
@@ -55,6 +56,7 @@ import JudgeAssignmentPanel from "../components/coordinator/JudgeAssignmentPanel
 import IndividualRegistrationManagementPanel from "../components/coordinator/IndividualRegistrationManagementPanel";
 import MentorAssignmentPanel from "../components/coordinator/MentorAssignmentPanel";
 import TeamFormationPanel from "../components/coordinator/TeamFormationPanel";
+import DemoImportPanel from "../components/coordinator/DemoImportPanel";
 import AwardCenterPanel from "../components/award/AwardCenterPanel";
 import UserProfilePanel from "../components/profile/UserProfilePanel";
 import UserDirectoryPanel from "../components/user/UserDirectoryPanel";
@@ -93,6 +95,7 @@ const COORDINATOR_CORE_NAV = [
   { key: "awards", label: "Awards", icon: <WorkspacePremiumRoundedIcon fontSize="small" /> },
   { key: "audit-logs", label: "Audit Logs", icon: <HistoryRoundedIcon fontSize="small" /> },
   { key: "individual-registrations", label: "Individual Registrations", icon: <AssignmentIndRoundedIcon fontSize="small" /> },
+  { key: "demo-import", label: "Import Data", icon: <FileUploadRoundedIcon fontSize="small" /> },
 ];
 
 const MENTOR_CORE_NAV = [
@@ -125,6 +128,7 @@ const COORDINATOR_NAV_SECTIONS = [
         COORDINATOR_CORE_NAV[6],
         COORDINATOR_CORE_NAV[7],
         COORDINATOR_CORE_NAV[8],
+        COORDINATOR_CORE_NAV[11],
       ],
     },
   {
@@ -1067,6 +1071,7 @@ export default function DashboardPage() {
       if (activeKey === "scoring-management") return <CoordinatorScoringPanel />;
       if (activeKey === "awards") return <AwardCenterPanel />;
       if (activeKey === "audit-logs") return <AuditLogPanel />;
+      if (activeKey === "demo-import") return <DemoImportPanel />;
       return null;
     }
 
