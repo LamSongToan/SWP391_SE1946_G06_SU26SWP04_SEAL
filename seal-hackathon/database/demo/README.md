@@ -15,6 +15,7 @@ Mỗi nút tương ứng với một trạng thái chính của Main Flow. Khi i
 | --- | --- | --- |
 | 01 Event Configuration | Reset demo | `01_event_configuration/00_event_configuration_base.sql` |
 | 02 Team Formation & Submission | Registration open | `02_team_formation_submission_management/01_registration_open_team_formation.sql` |
+| Special Cases | Individual matching & track balance | `05_special_cases/01_individual_matching_track_balance.sql` |
 | 02 Team Formation & Submission | Qualifier submission open | `02_team_formation_submission_management/02_round1_submission_open.sql` |
 | 03 Scoring, Promotion & Publish | Qualifier scoring open | `03_scoring_promotion_publish/01_scoring_open_judge_ready.sql` |
 | 03 Scoring, Promotion & Publish | Qualifier ready to finalize | `03_scoring_promotion_publish/02_ready_for_finalize_promote_publish.sql` |
@@ -54,6 +55,17 @@ trường demo đã được bảo vệ quyền coordinator và có backup dữ 
 4. Xác nhận import.
 5. Thực hiện flow trên web.
 6. Khi cần quay lại từ đầu, chọn `Reset demo`.
+
+### Demo ghép cá nhân và cân bằng track
+
+1. Import `Individual matching & track balance`.
+2. Mở `Team Management`; hệ thống ghép 3 đăng ký cá nhân AI & Data thành một
+   team mới, làm phân bố chuyển từ Web 6 / AI 2 thành Web 6 / AI 3.
+3. Kiểm tra các cảnh báo `TRACK_BELOW_MINIMUM`,
+   `TRACK_CONFIGURATION_REVIEW` và `TRACK_REBALANCE_RECOMMENDED`.
+4. Chọn `Balance track`, nhập lý do và xác nhận.
+5. Hệ thống chuyển một team từ Web sang AI; kết quả cuối là Web 5 / AI 4,
+   cả hai track đạt minimum 4 và không còn action-required.
 
 Import bắt đầu bằng bước khôi phục phạm vi event seed: mọi event được tạo thêm
 ngoài `SEAL Spring 2026` và `SEAL Summer 2026` sẽ bị xóa cùng dữ liệu phụ thuộc.

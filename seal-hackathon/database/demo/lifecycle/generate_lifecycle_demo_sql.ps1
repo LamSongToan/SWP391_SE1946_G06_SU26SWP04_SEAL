@@ -93,7 +93,8 @@ function New-Scenario {
         [bool]$IncludeFinalSubmissions,
         [bool]$IncludeFinalScores,
         [bool]$LockFinalRound,
-        [bool]$PublishFinalResults
+        [bool]$PublishFinalResults,
+        [int]$TrackMinTeams = 8
     )
 
     return @{
@@ -124,6 +125,7 @@ function New-Scenario {
         IncludeFinalScores = $IncludeFinalScores
         LockFinalRound = $LockFinalRound
         PublishFinalResults = $PublishFinalResults
+        TrackMinTeams = $TrackMinTeams
     }
 }
 
@@ -395,7 +397,7 @@ SET start_date = CAST(@CompetitionStart AS DATE),
 WHERE event_id = @EventId;
 
 UPDATE Track
-SET min_teams = 8,
+SET min_teams = __TRACK_MIN_TEAMS__,
     max_teams = 10
 WHERE track_id IN (@WebTrackId, @AiTrackId);
 
@@ -1208,6 +1210,7 @@ ORDER BY tp.awarded_at, p.prize_name, tm.team_name;
     $sql = $sql.Replace("__INCLUDE_FINAL_SCORES__", (ConvertTo-SqlBit $Scenario.IncludeFinalScores))
     $sql = $sql.Replace("__LOCK_FINAL__", (ConvertTo-SqlBit $Scenario.LockFinalRound))
     $sql = $sql.Replace("__PUBLISH_FINAL_RESULTS__", (ConvertTo-SqlBit $Scenario.PublishFinalResults))
+    $sql = $sql.Replace("__TRACK_MIN_TEAMS__", $Scenario.TrackMinTeams.ToString())
     $sql = $sql.Replace("__TEAM_SEED_VALUES__", (Render-TeamSeedValues $TeamSeeds))
     $sql = $sql.Replace("__WAITING_SEED_VALUES__", (Render-WaitingSeedValues $WaitingSeeds))
 
@@ -1302,7 +1305,7 @@ SET start_date = CAST(@CompetitionStart AS DATE),
 WHERE event_id = @EventId;
 
 UPDATE Track
-SET min_teams = 8,
+SET min_teams = $($Scenario.TrackMinTeams),
     max_teams = 10
 WHERE track_id IN (@WebTrackId, @AiTrackId);
 
@@ -1375,6 +1378,23 @@ $fullTeamSeeds = $limitedTeamSeeds + @(
 $waitingSeeds = @(
     @{ Username = "huy.student"; TrackName = "Web Platform" },
     @{ Username = "minh.student"; TrackName = "Web Platform" },
+    @{ Username = "dat.student"; TrackName = "AI & Data" }
+)
+
+$individualMatchingTeamSeeds = @(
+    @{ SortNo = 1; TeamName = "SEAL Coders"; TrackName = "Web Platform"; JoinCode = "SEAL2026"; RepoSlug = "seal-coders"; QualifierScore = "8.91"; FinalScore = "9.18"; AcceptAutoAssignedMembers = $true },
+    @{ SortNo = 2; TeamName = "Web Velocity"; TrackName = "Web Platform"; JoinCode = "WEBV1001"; RepoSlug = "web-velocity"; QualifierScore = "8.55"; FinalScore = "8.85"; AcceptAutoAssignedMembers = $false },
+    @{ SortNo = 3; TeamName = "Pixel Raiders"; TrackName = "Web Platform"; JoinCode = "WEBV1002"; RepoSlug = "pixel-raiders"; QualifierScore = "8.10"; FinalScore = "8.42"; AcceptAutoAssignedMembers = $false },
+    @{ SortNo = 4; TeamName = "Sprint Canvas"; TrackName = "Web Platform"; JoinCode = "WEBV1003"; RepoSlug = "sprint-canvas"; QualifierScore = "7.85"; FinalScore = "8.10"; AcceptAutoAssignedMembers = $false },
+    @{ SortNo = 5; TeamName = "Urban Web Crew"; TrackName = "Web Platform"; JoinCode = "WEBV1004"; RepoSlug = "urban-web-crew"; QualifierScore = "7.30"; FinalScore = "7.95"; AcceptAutoAssignedMembers = $false },
+    @{ SortNo = 6; TeamName = "Web Orbit"; TrackName = "Web Platform"; JoinCode = "AIDT1001"; RepoSlug = "ai-pioneers"; QualifierScore = "8.75"; FinalScore = "9.32"; AcceptAutoAssignedMembers = $true },
+    @{ SortNo = 7; TeamName = "Neural Forge"; TrackName = "AI & Data"; JoinCode = "AIDT1002"; RepoSlug = "neural-forge"; QualifierScore = "8.40"; FinalScore = "8.78"; AcceptAutoAssignedMembers = $true },
+    @{ SortNo = 8; TeamName = "Signal Stack"; TrackName = "AI & Data"; JoinCode = "AIDT1003"; RepoSlug = "signal-stack"; QualifierScore = "7.95"; FinalScore = "8.18"; AcceptAutoAssignedMembers = $false }
+)
+
+$individualMatchingWaitingSeeds = @(
+    @{ Username = "huy.student"; TrackName = "AI & Data" },
+    @{ Username = "minh.student"; TrackName = "AI & Data" },
     @{ Username = "dat.student"; TrackName = "AI & Data" }
 )
 
@@ -1463,6 +1483,35 @@ $scenarios = @(
         -IncludeFinalScores $false `
         -LockFinalRound $false `
         -PublishFinalResults $false),
+    (New-Scenario `
+        -FileName "02b_individual_matching_track_balance.sql" `
+        -Key "individual_matching_track_balance" `
+        -Title "Individual matching and track balance" `
+        -Description "Lifecycle demo: Registration has closed with three unmatched AI & Data students and an uneven 6-to-2 track distribution. Opening Team Management auto-forms their team, then the coordinator can balance tracks from 6-to-3 into a valid 5-to-4 setup." `
+        -PublishedAt $anchor.AddDays(-12) `
+        -RegistrationStart $anchor.AddDays(-10) `
+        -RegistrationEnd $anchor.AddDays(-1) `
+        -CompetitionStart $anchor.AddDays(3) `
+        -CompetitionEnd $anchor.AddDays(30) `
+        -QualifierStart $anchor.AddDays(3) `
+        -QualifierDeadline $anchor.AddDays(8) `
+        -QualifierEnd $anchor.AddDays(10) `
+        -FinalStart $anchor.AddDays(20) `
+        -FinalDeadline $anchor.AddDays(24) `
+        -FinalEnd $anchor.AddDays(26) `
+        -EventStatus "Ongoing" `
+        -IncludeTeams $true `
+        -IncludeWaitingIndividuals $true `
+        -IncludeQualifierSubmissions $false `
+        -IncludeQualifierScores $false `
+        -LockQualifierRound $false `
+        -CalculateQualifier $false `
+        -ApplyAdvancement $false `
+        -IncludeFinalSubmissions $false `
+        -IncludeFinalScores $false `
+        -LockFinalRound $false `
+        -PublishFinalResults $false `
+        -TrackMinTeams 4),
     (New-Scenario `
         -FileName "03_qualifier_submission_open.sql" `
         -Key "qualifier_submission_open" `
@@ -1662,16 +1711,24 @@ $scenarios = @(
 )
 
 foreach ($scenario in $scenarios) {
-    $scenarioTeamSeeds = if ($scenario.Key -in @("registration_open", "registration_closed")) {
+    $scenarioTeamSeeds = if ($scenario.Key -eq "individual_matching_track_balance") {
+        $individualMatchingTeamSeeds
+    } elseif ($scenario.Key -in @("registration_open", "registration_closed")) {
         $limitedTeamSeeds
     } else {
         $fullTeamSeeds
     }
 
+    $scenarioWaitingSeeds = if ($scenario.Key -eq "individual_matching_track_balance") {
+        $individualMatchingWaitingSeeds
+    } else {
+        $waitingSeeds
+    }
+
     $sql = if ($scenario.Key -eq "registration_closed") {
         Render-RegistrationClosedTransitionSql -Scenario $scenario -ScenarioNow $anchor
     } else {
-        Render-ScenarioSql -Scenario $scenario -TeamSeeds $scenarioTeamSeeds -WaitingSeeds $waitingSeeds -ScenarioNow $anchor
+        Render-ScenarioSql -Scenario $scenario -TeamSeeds $scenarioTeamSeeds -WaitingSeeds $scenarioWaitingSeeds -ScenarioNow $anchor
     }
     $targetPath = Join-Path $scriptDirectory $scenario.FileName
     Set-Content -Path $targetPath -Value $sql -Encoding UTF8

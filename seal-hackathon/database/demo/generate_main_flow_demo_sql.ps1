@@ -73,6 +73,16 @@ $flowMappings = @(
                 Description = "Final round submissions and scores are ready so the coordinator can finalize and publish final results with awards."
             }
         )
+    },
+    @{
+        Folder = "05_special_cases"
+        Files = @(
+            @{
+                Source = "02b_individual_matching_track_balance.sql"
+                Target = "01_individual_matching_track_balance.sql"
+                Description = "Registration is closed with waiting individual students and uneven tracks so the coordinator can demonstrate automatic team matching and track balancing."
+            }
+        )
     }
 )
 

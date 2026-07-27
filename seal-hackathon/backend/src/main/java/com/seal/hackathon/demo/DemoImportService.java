@@ -87,7 +87,9 @@ public class DemoImportService {
         try {
             Path scriptPath = resolveScenarioPath(scenario);
             String sourceSql = readAndValidateScript(scriptPath);
-            String executableSql = resetNonSeedEventsSql() + prepareExecutableSql(sourceSql, anchor);
+            String executableSql = resetNonSeedEventsSql()
+                    + (scenario.isReset() ? resetSummerCoreConfigurationSql() : "")
+                    + prepareExecutableSql(sourceSql, anchor);
             executeDemoSql(executableSql);
 
             return new DemoImportResultDto(
@@ -260,6 +262,122 @@ public class DemoImportService {
 
                 DELETE FROM HackathonEvent
                 WHERE event_id IN (SELECT event_id FROM @DemoResetEvents);
+                """;
+    }
+
+    /**
+     * A coordinator may legitimately merge or replace the seeded Summer tracks.
+     * Reset must therefore rebuild the canonical event structure before the
+     * generated reset scenario validates and populates it.
+     */
+    String resetSummerCoreConfigurationSql() {
+        return """
+                SET NOCOUNT ON;
+
+                DECLARE @DemoCoreEventId INT = (
+                    SELECT TOP 1 event_id
+                    FROM HackathonEvent
+                    WHERE name = N'SEAL Summer 2026'
+                    ORDER BY event_id DESC
+                );
+
+                IF @DemoCoreEventId IS NOT NULL
+                BEGIN
+                    DECLARE @DemoCoreTracks TABLE (track_id INT PRIMARY KEY);
+                    INSERT INTO @DemoCoreTracks (track_id)
+                    SELECT track_id FROM Track WHERE event_id = @DemoCoreEventId;
+
+                    DECLARE @DemoCoreRounds TABLE (round_id INT PRIMARY KEY);
+                    INSERT INTO @DemoCoreRounds (round_id)
+                    SELECT round_id FROM [Round] WHERE event_id = @DemoCoreEventId;
+
+                    DECLARE @DemoCoreTeams TABLE (team_id INT PRIMARY KEY);
+                    INSERT INTO @DemoCoreTeams (team_id)
+                    SELECT team_id FROM Team
+                    WHERE track_id IN (SELECT track_id FROM @DemoCoreTracks);
+
+                    DECLARE @DemoCoreSubmissions TABLE (submission_id INT PRIMARY KEY);
+                    INSERT INTO @DemoCoreSubmissions (submission_id)
+                    SELECT submission_id FROM Submission
+                    WHERE team_id IN (SELECT team_id FROM @DemoCoreTeams)
+                       OR round_id IN (SELECT round_id FROM @DemoCoreRounds);
+
+                    DECLARE @DemoCoreEvaluations TABLE (evaluation_id INT PRIMARY KEY);
+                    INSERT INTO @DemoCoreEvaluations (evaluation_id)
+                    SELECT evaluation_id FROM JudgeEvaluation
+                    WHERE submission_id IN (SELECT submission_id FROM @DemoCoreSubmissions);
+
+                    DECLARE @DemoCorePrizes TABLE (prize_id INT PRIMARY KEY);
+                    INSERT INTO @DemoCorePrizes (prize_id)
+                    SELECT prize_id FROM Prize WHERE event_id = @DemoCoreEventId;
+
+                    DELETE FROM AuditLog
+                    WHERE (target_entity = 'EVENT' AND target_id = @DemoCoreEventId)
+                       OR (target_entity = 'ROUND' AND target_id IN (SELECT round_id FROM @DemoCoreRounds))
+                       OR (target_entity = 'TRACK' AND target_id IN (SELECT track_id FROM @DemoCoreTracks))
+                       OR (target_entity = 'TEAM' AND target_id IN (SELECT team_id FROM @DemoCoreTeams))
+                       OR (target_entity = 'SUBMISSION' AND target_id IN (SELECT submission_id FROM @DemoCoreSubmissions));
+
+                    IF OBJECT_ID('dbo.EventUpdateNotification', 'U') IS NOT NULL
+                        DELETE FROM dbo.EventUpdateNotification WHERE event_id = @DemoCoreEventId;
+
+                    IF OBJECT_ID('dbo.Announcement', 'U') IS NOT NULL
+                        DELETE FROM dbo.Announcement WHERE event_id = @DemoCoreEventId;
+
+                    DELETE FROM Feedback
+                    WHERE submission_id IN (SELECT submission_id FROM @DemoCoreSubmissions);
+                    DELETE FROM ScoreHistory
+                    WHERE evaluation_id IN (SELECT evaluation_id FROM @DemoCoreEvaluations);
+                    DELETE FROM Score
+                    WHERE submission_id IN (SELECT submission_id FROM @DemoCoreSubmissions);
+                    DELETE FROM JudgeEvaluation
+                    WHERE evaluation_id IN (SELECT evaluation_id FROM @DemoCoreEvaluations);
+                    DELETE FROM SubmissionHistory
+                    WHERE submission_id IN (SELECT submission_id FROM @DemoCoreSubmissions);
+                    DELETE FROM EliminationRecord
+                    WHERE submission_id IN (SELECT submission_id FROM @DemoCoreSubmissions);
+                    DELETE FROM Ranking
+                    WHERE round_id IN (SELECT round_id FROM @DemoCoreRounds);
+                    DELETE FROM TeamPrize
+                    WHERE prize_id IN (SELECT prize_id FROM @DemoCorePrizes);
+                    DELETE FROM Prize WHERE event_id = @DemoCoreEventId;
+                    DELETE FROM IndividualRegistration WHERE event_id = @DemoCoreEventId;
+                    DELETE FROM TeamInvitation
+                    WHERE team_id IN (SELECT team_id FROM @DemoCoreTeams);
+                    DELETE FROM Submission
+                    WHERE submission_id IN (SELECT submission_id FROM @DemoCoreSubmissions);
+                    DELETE FROM TeamMember
+                    WHERE team_id IN (SELECT team_id FROM @DemoCoreTeams);
+                    DELETE FROM Team
+                    WHERE team_id IN (SELECT team_id FROM @DemoCoreTeams);
+                    DELETE FROM TrackMentor
+                    WHERE track_id IN (SELECT track_id FROM @DemoCoreTracks);
+                    DELETE FROM JudgeAssignment
+                    WHERE round_id IN (SELECT round_id FROM @DemoCoreRounds)
+                       OR track_id IN (SELECT track_id FROM @DemoCoreTracks);
+                    DELETE FROM RoundTrackPromotionRule
+                    WHERE round_id IN (SELECT round_id FROM @DemoCoreRounds)
+                       OR track_id IN (SELECT track_id FROM @DemoCoreTracks);
+                    DELETE FROM ScoringCriteria
+                    WHERE round_id IN (SELECT round_id FROM @DemoCoreRounds);
+                    DELETE FROM EventCoordinatorAssignment WHERE event_id = @DemoCoreEventId;
+
+                    DELETE FROM [Round] WHERE event_id = @DemoCoreEventId;
+                    DELETE FROM Track WHERE event_id = @DemoCoreEventId;
+
+                    INSERT INTO Track (event_id, name, min_teams, max_teams)
+                    VALUES
+                    (@DemoCoreEventId, N'Web Platform', 8, 10),
+                    (@DemoCoreEventId, N'AI & Data', 8, 10);
+
+                    INSERT INTO [Round] (
+                        event_id, round_name, round_order, start_at, end_at,
+                        submission_deadline, promotion_rule_top_n, is_final, score_locked
+                    )
+                    VALUES
+                    (@DemoCoreEventId, N'Elimination', 1, GETDATE(), GETDATE(), GETDATE(), 2, 0, 0),
+                    (@DemoCoreEventId, N'Finals', 2, GETDATE(), GETDATE(), GETDATE(), NULL, 1, 0);
+                END;
                 """;
     }
 

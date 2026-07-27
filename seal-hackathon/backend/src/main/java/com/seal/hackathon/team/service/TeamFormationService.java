@@ -14,12 +14,14 @@ import com.seal.hackathon.evaluation.dto.ManualEliminationRequest;
 import com.seal.hackathon.evaluation.service.AuditLogService;
 import com.seal.hackathon.event.entity.EventStatus;
 import com.seal.hackathon.event.entity.HackathonEventEntity;
+import com.seal.hackathon.event.entity.RoundTrackPromotionRuleEntity;
 import com.seal.hackathon.event.entity.TrackEntity;
 import com.seal.hackathon.event.entity.JudgeAssignmentEntity;
 import com.seal.hackathon.event.entity.TrackMentorEntity;
 import com.seal.hackathon.event.repository.EventUpdateNotificationRepository;
 import com.seal.hackathon.event.repository.HackathonEventRepository;
 import com.seal.hackathon.event.repository.JudgeAssignmentRepository;
+import com.seal.hackathon.event.repository.RoundTrackPromotionRuleRepository;
 import com.seal.hackathon.event.repository.TrackMentorRepository;
 import com.seal.hackathon.event.repository.TrackRepository;
 import com.seal.hackathon.event.service.EventUpdateNotificationService;
@@ -80,6 +82,7 @@ public class TeamFormationService {
     private final TrackRepository trackRepository;
     private final TrackMentorRepository trackMentorRepository;
     private final JudgeAssignmentRepository judgeAssignmentRepository;
+    private final RoundTrackPromotionRuleRepository promotionRuleRepository;
     private final SubmissionRepository submissionRepository;
     private final SubmissionHistoryRepository submissionHistoryRepository;
     private final ScoreRepository scoreRepository;
@@ -100,6 +103,7 @@ public class TeamFormationService {
                                 TrackRepository trackRepository,
                                 TrackMentorRepository trackMentorRepository,
                                 JudgeAssignmentRepository judgeAssignmentRepository,
+                                RoundTrackPromotionRuleRepository promotionRuleRepository,
                                 SubmissionRepository submissionRepository,
                                 SubmissionHistoryRepository submissionHistoryRepository,
                                 ScoreRepository scoreRepository,
@@ -119,6 +123,7 @@ public class TeamFormationService {
         this.trackRepository = trackRepository;
         this.trackMentorRepository = trackMentorRepository;
         this.judgeAssignmentRepository = judgeAssignmentRepository;
+        this.promotionRuleRepository = promotionRuleRepository;
         this.submissionRepository = submissionRepository;
         this.submissionHistoryRepository = submissionHistoryRepository;
         this.scoreRepository = scoreRepository;
@@ -816,11 +821,13 @@ public class TeamFormationService {
 
         List<IndividualRegistrationEntity> registrations = individualRegistrationRepository.findByEventEventIdOrderByCreatedAtAsc(eventId);
         Set<Integer> sourceTrackIdSet = new HashSet<>(normalizedSourceTrackIds);
-        List<IndividualRegistrationEntity> affectedRegistrations = registrations.stream()
-                .filter(registration -> registration.getAssignedTeam() == null)
+        List<IndividualRegistrationEntity> trackRegistrations = registrations.stream()
                 .filter(registration -> belongsToSourceTrack(sourceTrackIdSet, registration.getPreferredTrack())
                         || belongsToSourceTrack(sourceTrackIdSet, registration.getSuggestedTrack()))
                 .toList();
+        long affectedRegistrationCount = trackRegistrations.stream()
+                .filter(registration -> registration.getAssignedTeam() == null)
+                .count();
 
         Integer mergedMinTeams = sourceTracks.stream()
                 .map(TrackEntity::getMinTeams)
@@ -842,19 +849,22 @@ public class TeamFormationService {
         oldValue.put("sourceTrackIds", normalizedSourceTrackIds);
         oldValue.put("sourceTrackNames", sourceTracks.stream().map(TrackEntity::getName).toList());
         oldValue.put("sourceTeamCount", sourceTeams.size());
-        oldValue.put("affectedRegistrationCount", affectedRegistrations.size());
+        oldValue.put("affectedRegistrationCount", affectedRegistrationCount);
 
         for (TrackEntity sourceTrack : sourceTracks) {
             migrateTrackMentors(sourceTrack, mergedTrack);
             migrateJudgeAssignments(sourceTrack, mergedTrack);
         }
+        migratePromotionRules(sourceTrackIdSet, mergedTrack);
 
         for (TeamEntity team : sourceTeams) {
             team.setTrack(mergedTrack);
             teamRepository.save(team);
         }
 
-        for (IndividualRegistrationEntity registration : affectedRegistrations) {
+        // Every registration may still reference a source track, including registrations
+        // already assigned to a team. Update all FK references before deleting source tracks.
+        for (IndividualRegistrationEntity registration : trackRegistrations) {
             if (belongsToSourceTrack(sourceTrackIdSet, registration.getPreferredTrack())) {
                 registration.setPreferredTrack(mergedTrack);
             }
@@ -863,6 +873,8 @@ public class TeamFormationService {
             }
             individualRegistrationRepository.save(registration);
         }
+        // Ensure FK updates are persisted before source tracks are deleted.
+        individualRegistrationRepository.flush();
 
         for (TrackEntity sourceTrack : sourceTracks) {
             trackRepository.delete(sourceTrack);
@@ -1428,6 +1440,33 @@ public class TeamFormationService {
 
     private boolean isTeamDisqualified(TeamEntity team) {
         return team != null && TEAM_STATUS_DISQUALIFIED.equalsIgnoreCase(String.valueOf(team.getStatus()));
+    }
+
+    private void migratePromotionRules(Set<Integer> sourceTrackIds, TrackEntity targetTrack) {
+        List<RoundTrackPromotionRuleEntity> sourceRules = promotionRuleRepository
+                .findByTrackIdInOrderByRoundIdAscTrackIdAsc(sourceTrackIds);
+        Map<Integer, Integer> mergedTopNByRound = sourceRules.stream()
+                .collect(Collectors.toMap(
+                        RoundTrackPromotionRuleEntity::getRoundId,
+                        RoundTrackPromotionRuleEntity::getTopN,
+                        Integer::sum,
+                        LinkedHashMap::new
+                ));
+
+        sourceTrackIds.forEach(promotionRuleRepository::deleteByTrackId);
+        promotionRuleRepository.flush();
+
+        List<RoundTrackPromotionRuleEntity> mergedRules = mergedTopNByRound.entrySet().stream()
+                .map(entry -> {
+                    RoundTrackPromotionRuleEntity rule = new RoundTrackPromotionRuleEntity();
+                    rule.setRoundId(entry.getKey());
+                    rule.setTrackId(targetTrack.getTrackId());
+                    rule.setTopN(entry.getValue());
+                    return rule;
+                })
+                .toList();
+        promotionRuleRepository.saveAll(mergedRules);
+        promotionRuleRepository.flush();
     }
 
     private void migrateTrackMentors(TrackEntity sourceTrack, TrackEntity targetTrack) {

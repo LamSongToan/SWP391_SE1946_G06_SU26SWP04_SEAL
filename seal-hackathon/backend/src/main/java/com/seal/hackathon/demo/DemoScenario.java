@@ -58,6 +58,14 @@ public enum DemoScenario {
             "Prepare final submissions and scores for finalization, result publication, and awards.",
             "04_awards/01_final_ready_for_award_publish.sql",
             false
+    ),
+    INDIVIDUAL_MATCHING_TRACK_BALANCE(
+            "individual-matching-track-balance",
+            "Special Cases",
+            "Individual matching & track balance",
+            "Close registration with three waiting individual students and uneven tracks, then demonstrate automatic team matching and coordinator track balancing.",
+            "05_special_cases/01_individual_matching_track_balance.sql",
+            false
     );
 
     private final String key;

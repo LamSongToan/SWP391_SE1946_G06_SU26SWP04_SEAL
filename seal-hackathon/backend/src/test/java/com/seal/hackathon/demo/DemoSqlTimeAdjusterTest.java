@@ -93,6 +93,24 @@ class DemoSqlTimeAdjusterTest {
     }
 
     @Test
+    void resetSummerCoreConfigurationSql_shouldRebuildCanonicalTracksAndRounds() {
+        DemoImportService service = new DemoImportService(
+                null,
+                true,
+                "../database/demo",
+                "Asia/Ho_Chi_Minh"
+        );
+
+        String resetSql = service.resetSummerCoreConfigurationSql();
+
+        Assertions.assertTrue(resetSql.contains("DELETE FROM Track WHERE event_id = @DemoCoreEventId"));
+        Assertions.assertTrue(resetSql.contains("N'Web Platform'"));
+        Assertions.assertTrue(resetSql.contains("N'AI & Data'"));
+        Assertions.assertTrue(resetSql.contains("N'Elimination'"));
+        Assertions.assertTrue(resetSql.contains("N'Finals'"));
+    }
+
+    @Test
     void executeDemoSql_shouldAlwaysRestoreNoCountAfterScriptFailure() throws Exception {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         Connection connection = mock(Connection.class);
