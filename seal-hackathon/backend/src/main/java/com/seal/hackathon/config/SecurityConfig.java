@@ -53,8 +53,10 @@ public class SecurityConfig {
         // SỬA TẠI ĐÂY: Liệt kê chính xác các đường link được phép truy cập hệ thống
         configuration.setAllowedOrigins(List.of(
                 "https://frontend-swp391-se1946-g06-su26swp04-seal.onrender.com", // Điền link Frontend Render thực tế
+                "https://seal-hackathon.id.vn/", // link Frontend
                 "http://localhost:5173",
                 "http://127.0.0.1:5173"
+
         ));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
