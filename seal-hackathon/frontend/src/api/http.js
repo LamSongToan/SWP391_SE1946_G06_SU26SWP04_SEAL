@@ -159,7 +159,7 @@ export const logout = async () => {
 
 export const http = axios.create({
   baseURL: BASE_URL,
-  timeout: 120000, // Allow free cloud backends a little extra time to wake up.
+  timeout: 60000, // Allow free cloud backends a little extra time to wake up.
   headers: {
     "Content-Type": "application/json",
   },
