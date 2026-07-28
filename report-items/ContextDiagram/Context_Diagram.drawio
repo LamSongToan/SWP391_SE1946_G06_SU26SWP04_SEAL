@@ -1,0 +1,477 @@
+<mxfile host="Electron" agent="Codex" compressed="false">
+  <diagram id="seal-context-diagram" name="Context Diagram">
+    <mxGraphModel dx="532" dy="282" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1830" pageHeight="1084" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" value="Connectors" />
+        <mxCell id="e-account-registration" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="136" />
+              <mxPoint x="603" y="136" />
+              <mxPoint x="603" y="402" />
+              <mxPoint x="742" y="402" />
+            </Array>
+            <mxPoint x="380" y="199" as="sourcePoint" />
+            <mxPoint x="742" y="424.7" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-team-join-request" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="416" y="164" />
+              <mxPoint x="577" y="164" />
+              <mxPoint x="577" y="430" />
+              <mxPoint x="728" y="430" />
+            </Array>
+            <mxPoint x="416" y="199" as="sourcePoint" />
+            <mxPoint x="728" y="437.7" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-account-approval-status" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="457" />
+            </Array>
+            <mxPoint x="712.5" y="457" as="sourcePoint" />
+            <mxPoint x="450" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-team-information" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="419" y="486" />
+            </Array>
+            <mxPoint x="698.9" y="486" as="sourcePoint" />
+            <mxPoint x="419" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-team-registration-status" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="773" y="380" />
+              <mxPoint x="653" y="380" />
+              <mxPoint x="653" y="66" />
+            </Array>
+            <mxPoint x="773" y="404.1" as="sourcePoint" />
+            <mxPoint x="819" y="66" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-ranking-information" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="793" y="367" />
+              <mxPoint x="674" y="367" />
+              <mxPoint x="674" y="86" />
+            </Array>
+            <mxPoint x="793" y="394.6" as="sourcePoint" />
+            <mxPoint x="819" y="86" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-published-results-leader" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="816" y="354" />
+              <mxPoint x="695" y="354" />
+              <mxPoint x="695" y="106" />
+            </Array>
+            <mxPoint x="816" y="386.2" as="sourcePoint" />
+            <mxPoint x="819" y="106" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-team-registration-request" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="870" y="116" as="sourcePoint" />
+            <mxPoint x="870" y="375" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-submission-links" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="969" y="116" as="sourcePoint" />
+            <mxPoint x="969" y="379.7" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-management-dashboard" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="997" y="136" />
+              <mxPoint x="1238" y="136" />
+              <mxPoint x="1238" y="66" />
+              <mxPoint x="1622" y="66" />
+            </Array>
+            <mxPoint x="997" y="387.2" as="sourcePoint" />
+            <mxPoint x="1622" y="151" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-ranking-data" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1015" y="164" />
+              <mxPoint x="1266" y="164" />
+              <mxPoint x="1266" y="87" />
+              <mxPoint x="1580" y="87" />
+            </Array>
+            <mxPoint x="1015" y="393.7" as="sourcePoint" />
+            <mxPoint x="1580" y="151" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-report-file" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1032" y="185" />
+              <mxPoint x="1293" y="185" />
+              <mxPoint x="1293" y="108" />
+              <mxPoint x="1538" y="108" />
+            </Array>
+            <mxPoint x="1032" y="401.5" as="sourcePoint" />
+            <mxPoint x="1538" y="151" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-event-configuration" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1496" y="248" />
+              <mxPoint x="1084" y="248" />
+              <mxPoint x="1084" y="374" />
+              <mxPoint x="1043" y="374" />
+            </Array>
+            <mxPoint x="1496" y="220" as="sourcePoint" />
+            <mxPoint x="1043" y="407.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-account-approval-decision" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1538" y="269" />
+              <mxPoint x="1098" y="269" />
+              <mxPoint x="1098" y="389" />
+              <mxPoint x="1058" y="389" />
+            </Array>
+            <mxPoint x="1538" y="220" as="sourcePoint" />
+            <mxPoint x="1058" y="417.1" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-mentor-assignment" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1580" y="290" />
+              <mxPoint x="1112" y="290" />
+              <mxPoint x="1112" y="405" />
+              <mxPoint x="1067" y="405" />
+            </Array>
+            <mxPoint x="1580" y="220" as="sourcePoint" />
+            <mxPoint x="1067" y="423.9" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-judge-assignment" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1622" y="311" />
+              <mxPoint x="1127" y="311" />
+              <mxPoint x="1127" y="415" />
+              <mxPoint x="1076" y="415" />
+            </Array>
+            <mxPoint x="1622" y="220" as="sourcePoint" />
+            <mxPoint x="1076" y="431.7" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-assigned-submissions" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1147" y="500" />
+              <mxPoint x="1147" y="415" />
+              <mxPoint x="1636" y="415" />
+            </Array>
+            <mxPoint x="1114.1" y="500" as="sourcePoint" />
+            <mxPoint x="1636" y="478" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-scoring-rubric" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1182" y="527" />
+              <mxPoint x="1182" y="443" />
+              <mxPoint x="1559" y="443" />
+            </Array>
+            <mxPoint x="1113.9" y="527" as="sourcePoint" />
+            <mxPoint x="1559" y="478" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-criterion-scores" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;entryX=0.98;entryY=0.647;entryDx=0;entryDy=0;entryPerimeter=0;" target="system">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1559" y="555" />
+            </Array>
+            <mxPoint x="1559" y="549" as="sourcePoint" />
+            <mxPoint x="1107.9" y="555" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-judge-feedback" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1636" y="578" />
+            </Array>
+            <mxPoint x="1636" y="549" as="sourcePoint" />
+            <mxPoint x="1091" y="578" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-published-event-information" edge="1" parent="1" source="system" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;exitX=0.841;exitY=0.869;exitDx=0;exitDy=0;exitPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1182" y="617" />
+              <mxPoint x="1182" y="694" />
+              <mxPoint x="1559" y="694" />
+            </Array>
+            <mxPoint x="1045.6" y="617" as="sourcePoint" />
+            <mxPoint x="1559" y="751" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-published-results-public" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1162" y="632" />
+              <mxPoint x="1162" y="722" />
+              <mxPoint x="1530" y="722" />
+            </Array>
+            <mxPoint x="1015.6" y="632" as="sourcePoint" />
+            <mxPoint x="1530" y="751" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-event-information-request" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;entryX=0.721;entryY=0.953;entryDx=0;entryDy=0;entryPerimeter=0;" target="system">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1496" y="834" />
+              <mxPoint x="1147" y="834" />
+              <mxPoint x="1147" y="640" />
+              <mxPoint x="1080" y="640" />
+            </Array>
+            <mxPoint x="1496" y="814" as="sourcePoint" />
+            <mxPoint x="1015.6" y="632" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-published-result-request" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1517" y="855" />
+              <mxPoint x="1133" y="855" />
+              <mxPoint x="1133" y="646" />
+            </Array>
+            <mxPoint x="1517" y="814" as="sourcePoint" />
+            <mxPoint x="970.6" y="646" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-otp-delivery-request" edge="1" parent="1" source="system" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;exitX=0.631;exitY=0.983;exitDx=0;exitDy=0;exitPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="740" />
+              <mxPoint x="960" y="834" />
+              <mxPoint x="1092" y="834" />
+              <mxPoint x="1092" y="1017" />
+            </Array>
+            <mxPoint x="986" y="642.2" as="sourcePoint" />
+            <mxPoint x="1030" y="1017" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-notification-delivery-request" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="904" y="870" />
+              <mxPoint x="1050" y="870" />
+              <mxPoint x="1050" y="995" />
+            </Array>
+            <mxPoint x="904" y="653" as="sourcePoint" />
+            <mxPoint x="1030" y="995" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-delivery-status" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="771" y="1006" />
+              <mxPoint x="771" y="890" />
+              <mxPoint x="863" y="890" />
+            </Array>
+            <mxPoint x="820" y="1006" as="sourcePoint" />
+            <mxPoint x="863" y="650.2" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-verified-identity-information" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="332" y="757" />
+              <mxPoint x="737" y="757" />
+            </Array>
+            <mxPoint x="332" y="946" as="sourcePoint" />
+            <mxPoint x="737" y="597" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-identity-verification-request" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="778" y="827" />
+              <mxPoint x="520" y="827" />
+              <mxPoint x="520" y="980" />
+            </Array>
+            <mxPoint x="778" y="624.5" as="sourcePoint" />
+            <mxPoint x="487" y="980" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-mentor-feedback" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="248" y="540" />
+            </Array>
+            <mxPoint x="248" y="555" as="sourcePoint" />
+            <mxPoint x="698.9" y="540" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-assigned-team-information" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="565" />
+              <mxPoint x="650" y="667" />
+              <mxPoint x="220" y="667" />
+            </Array>
+            <mxPoint x="710" y="565" as="sourcePoint" />
+            <mxPoint x="220" y="618" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-team-submissions" edge="1" parent="1" style="edgeStyle=none;html=1;rounded=0;strokeWidth=2.2;endArrow=classic;endFill=1;endSize=8;strokeColor=default;labelBackgroundColor=none;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="670" y="584" />
+              <mxPoint x="670" y="640" />
+              <mxPoint x="670" y="695" />
+              <mxPoint x="165" y="695" />
+            </Array>
+            <mxPoint x="724" y="584" as="sourcePoint" />
+            <mxPoint x="165" y="618" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2" parent="0" value="Shapes and Labels" />
+        <mxCell id="system" parent="2" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=28;fontStyle=1;align=center;verticalAlign=middle;" value="SEAL Hackathon&lt;br&gt;Management System" vertex="1">
+          <mxGeometry height="280" width="420" x="695" y="373" as="geometry" />
+        </mxCell>
+        <mxCell id="student" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Student /&lt;br&gt;Team Member" vertex="1">
+          <mxGeometry height="71" width="210" x="300" y="199" as="geometry" />
+        </mxCell>
+        <mxCell id="team-leader" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Team Leader" vertex="1">
+          <mxGeometry height="63" width="212" x="819" y="53" as="geometry" />
+        </mxCell>
+        <mxCell id="event-coordinator" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Event Coordinator" vertex="1">
+          <mxGeometry height="69" width="224" x="1461" y="151" as="geometry" />
+        </mxCell>
+        <mxCell id="judge" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Judge /&lt;br&gt;Guest Judge" vertex="1">
+          <mxGeometry height="71" width="209" x="1497" y="478" as="geometry" />
+        </mxCell>
+        <mxCell id="public-visitor" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Public Visitor" vertex="1">
+          <mxGeometry height="63" width="211" x="1426" y="751" as="geometry" />
+        </mxCell>
+        <mxCell id="email-otp" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Email / OTP Service" vertex="1">
+          <mxGeometry height="64" width="210" x="820" y="974" as="geometry" />
+        </mxCell>
+        <mxCell id="google-identity" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Google Identity" vertex="1">
+          <mxGeometry height="64" width="211" x="276" y="946" as="geometry" />
+        </mxCell>
+        <mxCell id="mentor" parent="2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="Mentor" vertex="1">
+          <mxGeometry height="63" width="197" x="95" y="555" as="geometry" />
+        </mxCell>
+        <mxCell id="l-account-registration" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Account registration information" vertex="1">
+          <mxGeometry height="24" width="220" x="372" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="l-team-join-request" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Team join request" vertex="1">
+          <mxGeometry height="24" width="145" x="429" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="l-account-approval-status" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Account approval status" vertex="1">
+          <mxGeometry height="25" width="185" x="482" y="431" as="geometry" />
+        </mxCell>
+        <mxCell id="l-team-information" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Team information" vertex="1">
+          <mxGeometry height="24" width="145" x="512" y="461" as="geometry" />
+        </mxCell>
+        <mxCell id="l-team-registration-status" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Team registration status" vertex="1">
+          <mxGeometry height="24" width="176" x="630" y="38" as="geometry" />
+        </mxCell>
+        <mxCell id="l-ranking-information" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Ranking information" vertex="1">
+          <mxGeometry height="13" width="146" x="660" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l-published-results-leader" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Published results" vertex="1">
+          <mxGeometry height="22" width="130" x="676" y="84" as="geometry" />
+        </mxCell>
+        <mxCell id="l-team-registration-request" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Team&lt;br&gt;registration&lt;br&gt;request" vertex="1">
+          <mxGeometry height="62" width="82" x="780" y="183" as="geometry" />
+        </mxCell>
+        <mxCell id="l-submission-links" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Submission&lt;br&gt;links" vertex="1">
+          <mxGeometry height="46" width="82" x="878" y="194" as="geometry" />
+        </mxCell>
+        <mxCell id="l-management-dashboard" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Management dashboard" vertex="1">
+          <mxGeometry height="24" width="184" x="1245" y="38" as="geometry" />
+        </mxCell>
+        <mxCell id="l-ranking-data" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Ranking data" vertex="1">
+          <mxGeometry height="13" width="130" x="1360" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="l-report-file" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Report file" vertex="1">
+          <mxGeometry height="22" width="94" x="1448" y="84" as="geometry" />
+        </mxCell>
+        <mxCell id="l-event-configuration" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Event configuration" vertex="1">
+          <mxGeometry height="24" width="178" x="1094" y="222" as="geometry" />
+        </mxCell>
+        <mxCell id="l-account-approval-decision" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Account approval decision" vertex="1">
+          <mxGeometry height="24" width="200" x="1148" y="244" as="geometry" />
+        </mxCell>
+        <mxCell id="l-mentor-assignment" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Mentor assignment" vertex="1">
+          <mxGeometry height="24" width="160" x="1240" y="266" as="geometry" />
+        </mxCell>
+        <mxCell id="l-judge-assignment" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Judge assignment" vertex="1">
+          <mxGeometry height="24" width="150" x="1328" y="287" as="geometry" />
+        </mxCell>
+        <mxCell id="l-assigned-submissions" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Assigned submissions" vertex="1">
+          <mxGeometry height="24" width="175" x="1172" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="l-scoring-rubric" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Scoring rubric" vertex="1">
+          <mxGeometry height="24" width="135" x="1250" y="418" as="geometry" />
+        </mxCell>
+        <mxCell id="l-criterion-scores" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Criterion scores" vertex="1">
+          <mxGeometry height="24" width="145" x="1320" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="l-judge-feedback" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;labelBackgroundColor=none;" value="Judge feedback" vertex="1">
+          <mxGeometry height="24" width="140" x="1394" y="554" as="geometry" />
+        </mxCell>
+        <mxCell id="l-published-event-information" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Published event information" vertex="1">
+          <mxGeometry height="24" width="220" x="1192" y="669" as="geometry" />
+        </mxCell>
+        <mxCell id="l-published-results-public" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Published results" vertex="1">
+          <mxGeometry height="24" width="145" x="1260" y="697" as="geometry" />
+        </mxCell>
+        <mxCell id="l-event-information-request" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Event information request" vertex="1">
+          <mxGeometry height="24" width="210" x="1210" y="808" as="geometry" />
+        </mxCell>
+        <mxCell id="l-published-result-request" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Published result request" vertex="1">
+          <mxGeometry height="24" width="195" x="1310" y="832" as="geometry" />
+        </mxCell>
+        <mxCell id="l-otp-delivery-request" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="OTP delivery&lt;br&gt;request" vertex="1">
+          <mxGeometry height="43" width="105" x="990" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="l-notification-delivery-request" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Notification delivery&lt;br&gt;request" vertex="1">
+          <mxGeometry height="43" width="140" x="902" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="l-delivery-status" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Delivery&lt;br&gt;status" vertex="1">
+          <mxGeometry height="43" width="88" x="776" y="844" as="geometry" />
+        </mxCell>
+        <mxCell id="l-verified-identity-information" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Verified identity information" vertex="1">
+          <mxGeometry height="24" width="220" x="465" y="728" as="geometry" />
+        </mxCell>
+        <mxCell id="l-identity-verification-request" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Identity verification request" vertex="1">
+          <mxGeometry height="24" width="215" x="558" y="797" as="geometry" />
+        </mxCell>
+        <mxCell id="l-mentor-feedback" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Mentor feedback" vertex="1">
+          <mxGeometry height="24" width="145" x="480" y="514" as="geometry" />
+        </mxCell>
+        <mxCell id="l-assigned-team-information" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Assigned team information" vertex="1">
+          <mxGeometry height="24" width="210" x="382" y="638" as="geometry" />
+        </mxCell>
+        <mxCell id="l-team-submissions" parent="2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=14;fontStyle=1;" value="Team submissions" vertex="1">
+          <mxGeometry height="24" width="155" x="305" y="668" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
