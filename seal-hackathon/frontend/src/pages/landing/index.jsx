@@ -32,6 +32,9 @@ import { getApiErrorMessage, http } from "../../api/http";
 import AppLogo from "../../components/branding/AppLogo";
 import { brand } from "../../styles/designTokens";
 import EventCatalogExperience from "../../components/event/EventCatalogExperience";
+import Button from '@mui/material/Button';
+import GitHubIcon from '@mui/icons-material/GitHub';
+
 
 const navItems = [
   ["About", "#about"],
@@ -416,6 +419,35 @@ export default function LandingPage() {
                 <Typography className="seal-hero-lead" sx={{ mt: 2.2, color: "rgba(255,255,255,0.78)", fontSize: { xs: 16, md: 18 }, lineHeight: 1.75, maxWidth: 620 }}>
                   An annual academic Hackathon system and technology experience for Information Technology students at FPT University HCMC and other universities in Ho Chi Minh City.
                 </Typography>
+                <Typography className="seal-hero-lead" sx={{ mt: 2.2, color: "rgba(255,255,255,0.78)", fontSize: { xs: 16, md: 18 }, lineHeight: 1.75, maxWidth: 620 }}>
+                  Join the ultimate coding challenge and build next-generation applications.
+                </Typography>
+
+                {/* REPOSITORY LINK BUTTON */}
+                <Button
+                  component="a"
+                  href="https://github.com/LamSongToan/SWP391_SE1946_G06_SU26SWP04_SEAL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  startIcon={<GitHubIcon />}
+                  variant="contained"
+                  sx={{
+                    mt: 3.5,
+                    bgcolor: brand.colors.amber,
+                    color: "#000",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    fontSize: "16px",
+                    padding: "10px 24px",
+                    borderRadius: "8px",
+                    "&:hover": {
+                      bgcolor: brand.colors.amber,
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  View Repository
+                </Button>
                 <Stack className="seal-cta-row" direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 3.2 }}>
                   <Button className="seal-cta-primary" component={RouterLink} to="/register/verify-email" size="large" variant="contained" endIcon={<KeyboardArrowRightRoundedIcon />} sx={{ height: 52, px: 3.2, bgcolor: brand.colors.orange, "&:hover": { bgcolor: brand.colors.orangeDark } }}>
                     Register
