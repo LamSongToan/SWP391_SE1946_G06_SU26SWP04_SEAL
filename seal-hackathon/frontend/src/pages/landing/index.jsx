@@ -3,7 +3,7 @@ import { Link as RouterLink } from "react-router-dom";
 import {
   AppBar,
   Box,
-  Button,
+  Button, // Đã có sẵn Button ở đây
   Chip,
   Container,
   Divider,
@@ -28,12 +28,11 @@ import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
+import GitHubIcon from '@mui/icons-material/GitHub'; // Giữ lại icon GitHub
 import { getApiErrorMessage, http } from "../../api/http";
 import AppLogo from "../../components/branding/AppLogo";
 import { brand } from "../../styles/designTokens";
 import EventCatalogExperience from "../../components/event/EventCatalogExperience";
-import Button from '@mui/material/Button';
-import GitHubIcon from '@mui/icons-material/GitHub';
 
 
 const navItems = [
